@@ -703,33 +703,35 @@ export default function LandingPage() {
 
       {/* ═══ TESTIMONIAL — asymmetric, large ═══ */}
       <Reveal>
-        <section className="bg-primary text-primary-foreground py-24 md:py-32">
+        <section className="py-24 md:py-32">
           <div className="mx-auto max-w-5xl px-6 sm:px-10">
-            <div className="grid md:grid-cols-5 gap-10 items-center">
-              <div className="md:col-span-3">
-                <div className="flex gap-1 mb-8">
-                  {[1, 2, 3, 4, 5].map((s) => (
-                    <svg key={s} className="h-6 w-6 text-warning fill-warning" viewBox="0 0 20 20">
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                  ))}
-                </div>
-                <blockquote
-                  className="text-2xl md:text-3xl font-medium leading-snug"
-                  style={{ lineHeight: "1.3" } as React.CSSProperties}
-                >
-                  "Avant LIGNIA, mes devis traînaient une semaine. Maintenant je les envoie le soir même depuis le chantier."
-                </blockquote>
-              </div>
-              <div className="md:col-span-2 flex md:justify-end">
-                <div className="flex items-center gap-5">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-foreground/10 text-primary-foreground text-lg font-bold">
-                    PL
+            <div className="rounded-3xl border bg-card p-10 md:p-16 shadow-lg shadow-primary/5">
+              <div className="grid md:grid-cols-5 gap-10 items-center">
+                <div className="md:col-span-3">
+                  <div className="flex gap-1 mb-8">
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <svg key={s} className="h-6 w-6 text-warning fill-warning" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                    ))}
                   </div>
-                  <div>
-                    <p className="text-lg font-semibold">Patrick Lefèvre</p>
-                    <p className="text-sm text-primary-foreground/60">Artisan chauffagiste</p>
-                    <p className="text-sm text-primary-foreground/40">Annecy (74)</p>
+                  <blockquote
+                    className="text-2xl md:text-3xl font-medium leading-snug text-foreground"
+                    style={{ lineHeight: "1.3" } as React.CSSProperties}
+                  >
+                    "Avant LIGNIA, mes devis traînaient une semaine. Maintenant je les envoie le soir même depuis le chantier."
+                  </blockquote>
+                </div>
+                <div className="md:col-span-2 flex md:justify-end">
+                  <div className="flex items-center gap-5">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-accent/10 text-accent text-lg font-bold">
+                      PL
+                    </div>
+                    <div>
+                      <p className="text-lg font-semibold">Patrick Lefèvre</p>
+                      <p className="text-sm text-muted-foreground">Artisan chauffagiste</p>
+                      <p className="text-sm text-muted-foreground/60">Annecy (74)</p>
+                    </div>
                   </div>
                 </div>
               </div>

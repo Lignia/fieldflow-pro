@@ -487,38 +487,22 @@ export default function LandingPage() {
         </Reveal>
       </section>
 
-      {/* ═══ SOCIAL PROOF STRIP — floating above next section ═══ */}
-      <section className="relative z-10 pt-28 md:pt-40 pb-0">
-        <div className="mx-auto max-w-6xl px-6 sm:px-10">
-          <Reveal>
-            <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4 text-muted-foreground/50">
-              {["Chauffage bois", "HVAC", "Plomberie", "Ramonage", "Pompe à chaleur"].map((m, i) => (
-                <span key={m} className="text-[13px] font-medium tracking-wide uppercase">{m}</span>
-              ))}
-            </div>
-          </Reveal>
-        </div>
-      </section>
-
       {/* ═══ PROBLEM — full-bleed immersive, staggered layout ═══ */}
-      <section className="bg-primary text-primary-foreground pt-32 md:pt-40 pb-24 md:pb-32 relative overflow-hidden mt-20">
-        {/* Decorative blobs */}
+      <section className="bg-primary text-primary-foreground pt-28 md:pt-36 pb-20 md:pb-28 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-accent/[0.04] rounded-full blur-[140px] pointer-events-none" />
         <div className="absolute bottom-[-100px] left-[-100px] w-[400px] h-[400px] bg-warning/[0.03] rounded-full blur-[100px] pointer-events-none" />
         
         <div className="mx-auto max-w-7xl px-6 sm:px-10 relative z-10">
-          {/* Big statement — left-aligned, massive */}
           <Reveal>
             <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-primary-foreground/25 mb-5">Le constat</p>
             <h2 className="text-4xl md:text-[3.5rem] lg:text-[4rem] font-bold leading-[1.04] max-w-3xl mb-6" style={{ letterSpacing: "-0.02em" }}>
               Vous jonglez entre carnets, tableurs et relances oubliées&nbsp;?
             </h2>
-            <p className="text-primary-foreground/40 text-lg leading-relaxed max-w-lg mb-16">
+            <p className="text-primary-foreground/40 text-lg leading-relaxed max-w-lg mb-14">
               Chaque jour, des artisans perdent du temps et de l'argent à cause d'outils inadaptés.
             </p>
           </Reveal>
           
-          {/* Stats — staggered, not aligned */}
           <div className="grid md:grid-cols-3 gap-6 md:gap-8">
             {[
               { stat: "2h", unit: "/jour", label: "perdues en admin", desc: "Devis dans les mails, relances oubliées, papiers égarés", offset: "md:mt-0" },
@@ -542,33 +526,26 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ═══ FEATURE 1 — DASHBOARD — Full-stage hero, product dominates ═══ */}
-      <section id="features" className="pt-28 md:pt-36 pb-0 relative">
+      {/* ═══ FEATURE 1 — DASHBOARD — Full-stage hero ═══ */}
+      <section id="features" className="pt-20 md:pt-28 pb-0 relative">
         <div className="mx-auto max-w-7xl px-6 sm:px-10">
           <Reveal>
-            <div className="grid lg:grid-cols-2 gap-6 items-end mb-12 md:mb-16">
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent mb-3">Tableau de bord</p>
-                <h2 className="text-3xl md:text-[2.75rem] font-bold leading-[1.06]">
-                  Votre activité,<br />en un coup d'œil
-                </h2>
-              </div>
-              <div className="lg:text-right">
-                <p className="text-muted-foreground leading-relaxed max-w-md lg:ml-auto">
-                  CA temps réel, pipeline projets en 17 étapes, interventions planifiées, factures impayées — tout est là.
-                </p>
-              </div>
+            <div className="mb-10 md:mb-14">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent mb-3">Tableau de bord</p>
+              <h2 className="text-3xl md:text-[2.75rem] font-bold leading-[1.06] max-w-xl">
+                Votre activité, en un coup d'œil
+              </h2>
+              <p className="text-muted-foreground leading-relaxed max-w-lg mt-4">
+                CA temps réel, pipeline projets en 17 étapes, interventions planifiées, factures impayées — tout est là.
+              </p>
             </div>
           </Reveal>
         </div>
         
-        {/* Product hero — bleeds wider than content, overlaps next section */}
         <Reveal delay={100}>
           <div className="relative mx-auto max-w-[90rem] px-4 sm:px-8 md:px-12">
-            {/* Depth layers behind the mockup */}
             <div className="absolute inset-x-[5%] top-8 bottom-[-40px] bg-muted/60 rounded-3xl -z-20" />
             <div className="absolute inset-x-[3%] top-4 bottom-[-20px] bg-muted/30 rounded-3xl -z-30" />
-            
             <div className="relative z-10 mb-[-60px] md:mb-[-100px]">
               <HeroMockup />
             </div>
@@ -576,156 +553,136 @@ export default function LandingPage() {
         </Reveal>
       </section>
 
-      {/* ═══ FEATURE 2 — PLANNING — Offset overlap layout ═══ */}
-      <section className="pt-32 md:pt-44 pb-24 md:pb-32 bg-muted/30 relative overflow-hidden">
-        {/* Subtle texture */}
+      {/* ═══ FEATURE 2 — PLANNING — Full-width mockup, text below ═══ */}
+      <section className="pt-28 md:pt-40 pb-16 md:pb-24 bg-muted/30 relative overflow-hidden">
         <div className="absolute top-0 left-0 right-0 h-px bg-border/40" />
-        <div className="absolute top-[-200px] right-[-200px] w-[500px] h-[500px] bg-warning/[0.03] rounded-full blur-[100px] pointer-events-none" />
         
         <div className="mx-auto max-w-7xl px-6 sm:px-10 relative z-10">
-          <div className="grid lg:grid-cols-12 gap-8 lg:gap-0 items-center">
-            {/* Mockup — spans 8 cols, overlaps to the left edge */}
-            <div className="lg:col-span-8 relative">
-              <Reveal>
-                <div className="relative lg:-ml-8 xl:-ml-16">
-                  {/* Shadow layer */}
-                  <div className="absolute inset-x-3 top-3 bottom-[-8px] bg-warning/[0.06] rounded-2xl -z-10" />
-                  <PlanningMockup />
-                </div>
-              </Reveal>
+          <Reveal>
+            <div className="mb-8 md:mb-12">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-warning mb-3">Planning</p>
+              <h3 className="text-2xl md:text-[2.5rem] font-bold mb-4 leading-[1.08]">
+                Votre planning, enfin lisible
+              </h3>
             </div>
-            
-            {/* Text — spans 4 cols, pushed right */}
-            <div className="lg:col-span-4 lg:pl-8">
-              <Reveal delay={150}>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-warning mb-3">Planning</p>
-                <h3 className="text-2xl md:text-3xl font-bold mb-5 leading-tight">
-                  Votre planning,<br />enfin lisible
-                </h3>
-                <p className="text-muted-foreground leading-relaxed mb-8">
-                  Planifiez ramonages, SAV et installations. Vos techniciens voient leur agenda en temps réel depuis leur mobile.
-                </p>
-                <div className="space-y-3">
-                  {[
-                    { text: "Vue semaine / jour / technicien", accent: false },
-                    { text: "3 workstreams colorés", accent: true },
-                    { text: "Drag & drop intuitif", accent: false },
-                  ].map((h) => (
-                    <div key={h.text} className="flex items-center gap-3 text-sm">
-                      <div className={`h-1.5 w-1.5 rounded-full shrink-0 ${h.accent ? "bg-warning" : "bg-muted-foreground/30"}`} />
-                      <span className="font-medium">{h.text}</span>
-                    </div>
-                  ))}
-                </div>
-              </Reveal>
+          </Reveal>
+          
+          {/* Full-width mockup with depth */}
+          <Reveal delay={80}>
+            <div className="relative">
+              <div className="absolute inset-x-2 top-3 bottom-[-10px] bg-warning/[0.06] rounded-2xl -z-10" />
+              <PlanningMockup />
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ FEATURE 3 — DEVIS — Reverse, accent bleed, floating elements ═══ */}
-      <section className="py-24 md:py-36 relative overflow-hidden">
-        {/* Accent bleed — asymmetric background shape */}
-        <div className="absolute top-[10%] right-0 w-[60%] h-[80%] bg-accent/[0.03] rounded-l-[3rem] -z-10" />
-        
-        <div className="mx-auto max-w-7xl px-6 sm:px-10 relative z-10">
-          <div className="grid lg:grid-cols-12 gap-8 lg:gap-0 items-center">
-            {/* Text — narrow left column */}
-            <div className="lg:col-span-4 lg:pr-8">
-              <Reveal>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-accent mb-3">Facturation</p>
-                <h3 className="text-2xl md:text-[2.5rem] font-bold mb-5 leading-[1.08]">
-                  Du devis à la facture, sans friction
-                </h3>
-                <p className="text-muted-foreground leading-relaxed mb-8">
-                  Créez vos devis depuis votre catalogue. Un clic pour convertir en facture. Suivi des paiements et relances automatiques.
-                </p>
-                <div className="space-y-3">
-                  {["Catalogue produits intégré", "Double TVA 5.5% / 10%", "Numérotation DEV-YYYY-NNNN", "Signature électronique"].map((h) => (
-                    <div key={h} className="flex items-center gap-3 text-sm">
-                      <CheckCircle2 className="h-4 w-4 text-accent shrink-0" />
-                      <span className="font-medium">{h}</span>
-                    </div>
-                  ))}
-                </div>
-              </Reveal>
-            </div>
-            
-            {/* Mockup — wider, with depth layers, overlaps right edge */}
-            <div className="lg:col-span-8 relative">
-              <Reveal delay={150}>
-                <div className="relative lg:-mr-8 xl:-mr-16">
-                  {/* Floating conversion badge */}
-                  <div className="absolute -left-3 md:left-2 top-[20%] z-20 hidden lg:block">
-                    <div className="rounded-xl border bg-card p-3 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.15)] backdrop-blur-sm">
-                      <p className="text-[8px] text-muted-foreground uppercase tracking-wider mb-0.5">Conversion auto</p>
-                      <p className="text-[10px] font-semibold text-accent">DEV → FAC en 1 clic</p>
-                    </div>
+          </Reveal>
+          
+          {/* Features below mockup — 3 cols */}
+          <Reveal delay={160}>
+            <div className="grid md:grid-cols-3 gap-6 mt-10 md:mt-14">
+              {[
+                { title: "Vue semaine / jour", desc: "Basculez entre les vues pour organiser le travail de chaque technicien." },
+                { title: "3 workstreams colorés", desc: "Installation, SAV et entretien — chaque type d'intervention se distingue visuellement." },
+                { title: "Drag & drop intuitif", desc: "Déplacez les interventions pour réorganiser le planning en un geste." },
+              ].map((f) => (
+                <div key={f.title}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="h-1.5 w-1.5 rounded-full bg-warning" />
+                    <h4 className="text-sm font-bold">{f.title}</h4>
                   </div>
-                  
-                  {/* Shadow layers */}
-                  <div className="absolute inset-x-4 top-4 bottom-[-10px] bg-accent/[0.05] rounded-2xl -z-10" />
-                  <QuoteMockup />
+                  <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
                 </div>
-              </Reveal>
+              ))}
             </div>
-          </div>
+          </Reveal>
         </div>
       </section>
 
-      {/* ═══ SURVEY — immersive dark section with product centered ═══ */}
-      <section className="bg-primary text-primary-foreground py-0 relative overflow-hidden">
-        {/* Decorative elements */}
-        <div className="absolute top-0 left-0 right-0 h-24 bg-background" style={{ clipPath: "polygon(0 0, 100% 0, 100% 40%, 0 100%)" }} />
-        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-accent/[0.04] rounded-full blur-[120px] pointer-events-none" />
-        <div className="absolute top-[30%] right-[-100px] w-[300px] h-[300px] bg-warning/[0.03] rounded-full blur-[80px] pointer-events-none" />
+      {/* ═══ FEATURE 3 — DEVIS — Full-width mockup, text below ═══ */}
+      <section className="py-16 md:py-24 relative overflow-hidden">
+        <div className="absolute top-[10%] right-0 w-[50%] h-[70%] bg-accent/[0.03] rounded-l-[3rem] -z-10" />
         
-        <div className="relative z-10 pt-32 md:pt-40 pb-24 md:pb-32">
-          {/* Centered title — big and impactful */}
-          <div className="mx-auto max-w-7xl px-6 sm:px-10 mb-16 md:mb-20">
+        <div className="mx-auto max-w-7xl px-6 sm:px-10 relative z-10">
+          <Reveal>
+            <div className="mb-8 md:mb-12">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-accent mb-3">Facturation</p>
+              <h3 className="text-2xl md:text-[2.5rem] font-bold mb-4 leading-[1.08]">
+                Du devis à la facture, sans friction
+              </h3>
+            </div>
+          </Reveal>
+          
+          {/* Full-width mockup with floating badge */}
+          <Reveal delay={80}>
+            <div className="relative">
+              {/* Floating conversion badge */}
+              <div className="absolute -right-2 md:right-4 top-[15%] z-20 hidden lg:block">
+                <div className="rounded-xl border bg-card p-3.5 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.15)] backdrop-blur-sm">
+                  <p className="text-[8px] text-muted-foreground uppercase tracking-wider mb-0.5">Conversion auto</p>
+                  <p className="text-[11px] font-semibold text-accent">DEV → FAC en 1 clic</p>
+                </div>
+              </div>
+              
+              <div className="absolute inset-x-2 top-3 bottom-[-10px] bg-accent/[0.05] rounded-2xl -z-10" />
+              <QuoteMockup />
+            </div>
+          </Reveal>
+          
+          {/* Features below mockup — 4 cols */}
+          <Reveal delay={160}>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mt-10 md:mt-14">
+              {["Catalogue produits intégré", "Double TVA 5.5% / 10%", "Numérotation DEV-YYYY-NNNN", "Signature électronique"].map((h) => (
+                <div key={h} className="flex items-center gap-2.5 text-sm">
+                  <CheckCircle2 className="h-4 w-4 text-accent shrink-0" />
+                  <span className="font-medium">{h}</span>
+                </div>
+              ))}
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ═══ SURVEY — immersive dark, full-width mockup centered ═══ */}
+      <section className="bg-primary text-primary-foreground relative overflow-hidden">
+        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-accent/[0.04] rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute top-[20%] right-[-100px] w-[300px] h-[300px] bg-warning/[0.03] rounded-full blur-[80px] pointer-events-none" />
+        
+        <div className="relative z-10 pt-20 md:pt-28 pb-20 md:pb-28">
+          <div className="mx-auto max-w-7xl px-6 sm:px-10 mb-10 md:mb-14">
             <Reveal>
               <div className="max-w-2xl">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-accent mb-4">Terrain</p>
                 <h2 className="text-3xl md:text-[3rem] font-bold leading-[1.06] mb-5">
                   Le relevé technique<br />qui ne perd rien
                 </h2>
-                <p className="text-primary-foreground/40 text-base leading-relaxed max-w-lg">
+                <p className="text-primary-foreground/50 text-base leading-relaxed max-w-lg">
                   55 points de contrôle en 8 sections guidées. Remplissez sur chantier, même hors ligne. Zéro papier perdu.
                 </p>
               </div>
             </Reveal>
           </div>
           
-          {/* Product mockup — heroized, wider than content */}
-          <div className="mx-auto max-w-6xl px-4 sm:px-8">
-            <Reveal delay={120}>
-              <div className="grid lg:grid-cols-12 gap-8 items-start">
-                {/* Survey mockup — takes 8 cols */}
-                <div className="lg:col-span-8 relative">
-                  {/* Glow behind */}
-                  <div className="absolute -inset-4 bg-accent/[0.03] rounded-3xl -z-10" />
-                  <SurveyMockup />
-                </div>
-                
-                {/* Feature pills — 4 cols, stacked vertically with stagger */}
-                <div className="lg:col-span-4 space-y-3 lg:pt-8">
-                  {[
-                    { icon: ClipboardCheck, label: "8 sections guidées", desc: "Projet → Habitation → Pièce → Conduit → Fumisterie → Ventilation → Photos → Validation" },
-                    { icon: Zap, label: "Sauvegarde auto", desc: "Brouillon persistant, reprise exacte même après coupure réseau" },
-                    { icon: Camera, label: "Photos intégrées", desc: "Capturez conduit, pièce et accès directement dans le formulaire" },
-                    { icon: Clock, label: "Optimisé terrain", desc: "Cibles tactiles 44px, formulaire scrollable à une main" },
-                  ].map((item, i) => (
-                    <Reveal key={item.label} delay={200 + i * 80}>
-                      <div className="rounded-xl border border-primary-foreground/[0.06] bg-primary-foreground/[0.02] p-4 hover:bg-primary-foreground/[0.05] transition-colors duration-300">
-                        <div className="flex items-center gap-2.5 mb-2">
-                          <item.icon className="h-4 w-4 text-accent shrink-0" />
-                          <span className="text-[13px] font-semibold text-primary-foreground/80">{item.label}</span>
-                        </div>
-                        <p className="text-[11px] text-primary-foreground/35 leading-relaxed">{item.desc}</p>
-                      </div>
-                    </Reveal>
-                  ))}
-                </div>
+          {/* Full-width survey mockup */}
+          <div className="mx-auto max-w-5xl px-4 sm:px-8">
+            <Reveal delay={100}>
+              <div className="relative">
+                <div className="absolute -inset-4 bg-accent/[0.04] rounded-3xl -z-10" />
+                <SurveyMockup />
+              </div>
+            </Reveal>
+            
+            {/* Feature pills — horizontal row below mockup */}
+            <Reveal delay={200}>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-8 md:mt-12">
+                {[
+                  { icon: ClipboardCheck, label: "8 sections guidées" },
+                  { icon: Zap, label: "Sauvegarde auto" },
+                  { icon: Camera, label: "Photos intégrées" },
+                  { icon: Clock, label: "Optimisé terrain" },
+                ].map((item) => (
+                  <div key={item.label} className="flex items-center gap-2.5 rounded-xl border border-primary-foreground/[0.08] bg-primary-foreground/[0.03] px-4 py-3 hover:bg-primary-foreground/[0.06] transition-colors duration-300">
+                    <item.icon className="h-4 w-4 text-accent shrink-0" />
+                    <span className="text-[12px] font-semibold text-primary-foreground/70">{item.label}</span>
+                  </div>
+                ))}
               </div>
             </Reveal>
           </div>
@@ -733,10 +690,10 @@ export default function LandingPage() {
       </section>
 
       {/* ═══ HOW — asymmetric timeline, not 3 equal columns ═══ */}
-      <section id="how" className="py-28 md:py-36 relative">
+      <section id="how" className="py-20 md:py-28 relative">
         <div className="mx-auto max-w-6xl px-6 sm:px-10">
           <Reveal>
-            <div className="mb-16 md:mb-20">
+            <div className="mb-12 md:mb-16">
               <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent mb-3">Démarrage</p>
               <h2 className="text-3xl md:text-4xl font-bold" style={{ lineHeight: "1.08" }}>En route en 3 étapes</h2>
             </div>
@@ -773,7 +730,7 @@ export default function LandingPage() {
       </section>
 
       {/* ═══ TESTIMONIAL — integrated into the rhythm, not isolated ═══ */}
-      <section className="pb-8 pt-0">
+      <section className="pb-16 pt-4">
         <div className="mx-auto max-w-7xl px-6 sm:px-10">
           <Reveal>
             <div className="grid lg:grid-cols-12 gap-8 items-center">
@@ -817,7 +774,7 @@ export default function LandingPage() {
 
       {/* ═══ FINAL CTA — immersive, product behind ═══ */}
       <Reveal>
-        <section className="bg-primary text-primary-foreground py-28 md:py-36 relative overflow-hidden mt-16">
+        <section className="bg-primary text-primary-foreground py-20 md:py-28 relative overflow-hidden mt-8">
           {/* Large decorative elements */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-accent/[0.05] rounded-full blur-[120px] pointer-events-none" />
           <div className="absolute bottom-0 right-0 w-[300px] h-[300px] bg-warning/[0.03] rounded-full blur-[80px] pointer-events-none" />

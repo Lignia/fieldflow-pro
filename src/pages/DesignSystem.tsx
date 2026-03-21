@@ -91,9 +91,9 @@ const BUSINESS_CONTEXTS = [
 function ProjectScene() {
   return (
     <div className="space-y-3">
-      <ProjectCard name="Poêle à bois — Dupont" reference="PRJ-2024-047" status="signed" clientName="M. Dupont" city="Annecy" amount={8450} />
-      <ProjectCard name="Insert cheminée — Martin" reference="PRJ-2024-052" status="vt_planned" clientName="Mme Martin" city="Chambéry" />
-      <ProjectCard name="Chaudière granulés — Leroy" reference="PRJ-2024-038" status="lost" clientName="M. Leroy" city="Grenoble" amount={12800} />
+      <ProjectCard projectNumber="PRJ-2024-047" status="signed" customerName="M. Dupont" propertyCity="Annecy" amount={8450} date="2024-10-15" />
+      <ProjectCard projectNumber="PRJ-2024-052" status="vt_planned" customerName="Mme Martin" propertyCity="Chambéry" date="2024-11-02" />
+      <ProjectCard projectNumber="PRJ-2024-038" status="lost" customerName="M. Leroy" propertyCity="Grenoble" amount={12800} date="2024-09-20" />
     </div>
   );
 }

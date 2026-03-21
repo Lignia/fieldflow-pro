@@ -469,15 +469,15 @@ export default function LandingPage() {
 
       {/* ═══ PROBLEM — dark band ═══ */}
       <Reveal>
-        <section className="bg-primary text-primary-foreground py-24 md:py-32">
+        <section className="bg-muted/40 border-y py-24 md:py-32">
           <div className="mx-auto max-w-5xl px-6 sm:px-10 text-center">
             <h2
-              className="text-3xl md:text-4xl font-bold mb-5"
+              className="text-3xl md:text-4xl font-bold mb-5 text-foreground"
               style={{ lineHeight: "1.1" } as React.CSSProperties}
             >
               Vous jonglez entre carnets, tableurs<br className="hidden md:block" /> et relances oubliées ?
             </h2>
-            <p className="text-primary-foreground/50 text-base mb-16 max-w-lg mx-auto leading-relaxed">
+            <p className="text-muted-foreground text-base mb-16 max-w-lg mx-auto leading-relaxed">
               Chaque jour, des artisans perdent du temps et de l'argent à cause d'outils inadaptés.
             </p>
             <div className="grid md:grid-cols-3 gap-6 md:gap-10">
@@ -503,15 +503,15 @@ export default function LandingPage() {
               ].map((p, i) => (
                 <Reveal key={i} delay={i * 100}>
                   <div className="flex flex-col items-center text-center">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-foreground/[0.07] mb-5">
-                      <p.icon className="h-6 w-6 text-primary-foreground/70" />
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-destructive/10 mb-5">
+                      <p.icon className="h-6 w-6 text-destructive" />
                     </div>
-                    <p className="text-sm font-medium leading-snug text-primary-foreground/80 mb-6 max-w-[220px]">
+                    <p className="text-sm font-medium leading-snug text-foreground mb-6 max-w-[220px]">
                       {p.text}
                     </p>
-                    <div className="pt-4 border-t border-primary-foreground/10 w-full">
-                      <p className="text-3xl md:text-4xl font-bold font-mono text-warning">{p.stat}</p>
-                      <p className="text-[11px] text-primary-foreground/40 mt-1">{p.statLabel}</p>
+                    <div className="pt-4 border-t border-border w-full">
+                      <p className="text-3xl md:text-4xl font-bold font-mono text-destructive">{p.stat}</p>
+                      <p className="text-[11px] text-muted-foreground mt-1">{p.statLabel}</p>
                     </div>
                   </div>
                 </Reveal>
@@ -703,33 +703,35 @@ export default function LandingPage() {
 
       {/* ═══ TESTIMONIAL — asymmetric, large ═══ */}
       <Reveal>
-        <section className="bg-primary text-primary-foreground py-24 md:py-32">
+        <section className="py-24 md:py-32">
           <div className="mx-auto max-w-5xl px-6 sm:px-10">
-            <div className="grid md:grid-cols-5 gap-10 items-center">
-              <div className="md:col-span-3">
-                <div className="flex gap-1 mb-8">
-                  {[1, 2, 3, 4, 5].map((s) => (
-                    <svg key={s} className="h-6 w-6 text-warning fill-warning" viewBox="0 0 20 20">
-                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                    </svg>
-                  ))}
-                </div>
-                <blockquote
-                  className="text-2xl md:text-3xl font-medium leading-snug"
-                  style={{ lineHeight: "1.3" } as React.CSSProperties}
-                >
-                  "Avant LIGNIA, mes devis traînaient une semaine. Maintenant je les envoie le soir même depuis le chantier."
-                </blockquote>
-              </div>
-              <div className="md:col-span-2 flex md:justify-end">
-                <div className="flex items-center gap-5">
-                  <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary-foreground/10 text-primary-foreground text-lg font-bold">
-                    PL
+            <div className="rounded-3xl border bg-card p-10 md:p-16 shadow-lg shadow-primary/5">
+              <div className="grid md:grid-cols-5 gap-10 items-center">
+                <div className="md:col-span-3">
+                  <div className="flex gap-1 mb-8">
+                    {[1, 2, 3, 4, 5].map((s) => (
+                      <svg key={s} className="h-6 w-6 text-warning fill-warning" viewBox="0 0 20 20">
+                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                      </svg>
+                    ))}
                   </div>
-                  <div>
-                    <p className="text-lg font-semibold">Patrick Lefèvre</p>
-                    <p className="text-sm text-primary-foreground/60">Artisan chauffagiste</p>
-                    <p className="text-sm text-primary-foreground/40">Annecy (74)</p>
+                  <blockquote
+                    className="text-2xl md:text-3xl font-medium leading-snug text-foreground"
+                    style={{ lineHeight: "1.3" } as React.CSSProperties}
+                  >
+                    "Avant LIGNIA, mes devis traînaient une semaine. Maintenant je les envoie le soir même depuis le chantier."
+                  </blockquote>
+                </div>
+                <div className="md:col-span-2 flex md:justify-end">
+                  <div className="flex items-center gap-5">
+                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-accent/10 text-accent text-lg font-bold">
+                      PL
+                    </div>
+                    <div>
+                      <p className="text-lg font-semibold">Patrick Lefèvre</p>
+                      <p className="text-sm text-muted-foreground">Artisan chauffagiste</p>
+                      <p className="text-sm text-muted-foreground/60">Annecy (74)</p>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -740,7 +742,7 @@ export default function LandingPage() {
 
       {/* ═══ FINAL CTA — accent band ═══ */}
       <Reveal>
-        <section className="py-28 md:py-36">
+        <section className="bg-primary text-primary-foreground py-28 md:py-36">
           <div className="mx-auto max-w-3xl px-6 sm:px-10 text-center">
             <h2
               className="text-3xl md:text-4xl font-bold mb-5"
@@ -748,7 +750,7 @@ export default function LandingPage() {
             >
               Prêt à structurer votre activité ?
             </h2>
-            <p className="text-muted-foreground mb-10 max-w-md mx-auto text-lg">
+            <p className="text-primary-foreground/50 mb-10 max-w-md mx-auto text-lg">
               Essayez LIGNIA gratuitement pendant 14 jours. Aucune carte bancaire requise.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -765,7 +767,7 @@ export default function LandingPage() {
               <Button
                 size="lg"
                 variant="outline"
-                className="active:scale-[0.97] transition-transform h-13 rounded-xl text-base"
+                className="border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground active:scale-[0.97] transition-transform h-13 rounded-xl text-base"
               >
                 Demander une démo
               </Button>

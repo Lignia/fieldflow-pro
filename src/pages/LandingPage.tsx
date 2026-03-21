@@ -509,17 +509,15 @@ export default function LandingPage() {
                 },
               ].map((p, i) => (
                 <Reveal key={i} delay={i * 100}>
-                  <div className="flex flex-col items-center text-center">
+                  <div className="flex flex-col items-center text-center rounded-2xl bg-background p-8 shadow-[0_1px_2px_0_rgba(0,0,0,0.03),0_2px_8px_-1px_rgba(0,0,0,0.06)]">
                     <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-destructive/10 mb-5">
                       <p.icon className="h-6 w-6 text-destructive" />
                     </div>
-                    <p className="text-sm font-medium leading-snug text-foreground mb-6 max-w-[220px]">
+                    <p className="text-4xl md:text-5xl font-bold font-mono text-destructive mb-2">{p.stat}</p>
+                    <p className="text-xs text-muted-foreground mb-4 uppercase tracking-wider font-medium">{p.statLabel}</p>
+                    <p className="text-sm leading-relaxed text-muted-foreground max-w-[220px]">
                       {p.text}
                     </p>
-                    <div className="pt-4 border-t border-border w-full">
-                      <p className="text-3xl md:text-4xl font-bold font-mono text-destructive">{p.stat}</p>
-                      <p className="text-[11px] text-muted-foreground mt-1">{p.statLabel}</p>
-                    </div>
                   </div>
                 </Reveal>
               ))}

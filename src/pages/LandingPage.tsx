@@ -448,7 +448,7 @@ export default function LandingPage() {
 
       {/* ═══ SOCIAL PROOF strip ═══ */}
       <Reveal>
-        <section className="py-12 md:py-16 border-b">
+        <section className="pt-28 md:pt-40 pb-12 md:pb-16 border-b">
           <div className="mx-auto max-w-4xl px-6 sm:px-10">
             <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4 text-sm text-muted-foreground">
               {[

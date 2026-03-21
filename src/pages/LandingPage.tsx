@@ -29,6 +29,11 @@ import {
   MessageSquare,
   Video,
   Camera,
+  Phone,
+  MapPin,
+  TrendingUp,
+  Shield,
+  Truck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useRef } from "react";
@@ -84,10 +89,10 @@ function Reveal({
   );
 }
 
-/* ═══ Hero mockup — the star ═══ */
+/* ═══ Hero mockup — Dashboard ═══ */
 function HeroMockup() {
   return (
-    <div className="rounded-2xl border border-border/50 bg-card shadow-[0_32px_100px_-16px_rgba(0,0,0,0.15),0_0_0_1px_rgba(0,0,0,0.03)] overflow-hidden">
+    <div className="rounded-2xl border border-border/60 bg-card shadow-[0_32px_100px_-16px_rgba(0,0,0,0.18),0_0_0_1px_rgba(0,0,0,0.04)] overflow-hidden">
       <div className="flex items-center gap-2 px-5 py-3 border-b bg-muted/30">
         <div className="flex gap-1.5">
           <div className="h-2.5 w-2.5 rounded-full bg-destructive/25" />
@@ -157,7 +162,7 @@ function HeroMockup() {
 /* ═══ Planning mockup ═══ */
 function PlanningMockup() {
   return (
-    <div className="rounded-2xl border bg-card shadow-[0_24px_72px_-12px_rgba(0,0,0,0.12)] overflow-hidden">
+    <div className="rounded-2xl border bg-card shadow-[0_24px_72px_-12px_rgba(0,0,0,0.14)] overflow-hidden">
       <div className="px-5 py-3 border-b bg-muted/30 flex items-center justify-between">
         <span className="text-[11px] font-semibold">Planning — Semaine 12</span>
         <div className="flex gap-2">
@@ -166,7 +171,7 @@ function PlanningMockup() {
           <span className="text-[8px] rounded-full px-2 py-0.5 bg-info/10 text-info font-semibold">Entretien</span>
         </div>
       </div>
-      <div className="grid grid-cols-3 divide-x">
+      <div className="grid grid-cols-5 divide-x">
         {[
           { day: "Lun 17", slots: [
             { time: "08:00–10:00", label: "Morel — Ramonage", type: "sav", tech: "P. Lefèvre" },
@@ -174,14 +179,22 @@ function PlanningMockup() {
           ] },
           { day: "Mar 18", slots: [
             { time: "09:00–12:00", label: "Durand — VT chaudière", type: "install", tech: "P. Lefèvre" },
-            { time: "14:30–16:00", label: "Garnier — Entretien annuel", type: "entretien", tech: "M. Roux" },
+            { time: "14:30–16:00", label: "Garnier — Entretien", type: "entretien", tech: "M. Roux" },
           ] },
           { day: "Mer 19", slots: [
             { time: "08:30–11:30", label: "Mercier — MES poêle", type: "install", tech: "P. Lefèvre" },
-            { time: "15:00–16:30", label: "Bonnet — Diagnostic panne", type: "sav", tech: "M. Roux" },
+            { time: "15:00–16:30", label: "Bonnet — Diagnostic", type: "sav", tech: "M. Roux" },
+          ] },
+          { day: "Jeu 20", slots: [
+            { time: "08:00–12:00", label: "Lemaire — Tubage inox", type: "install", tech: "P. Lefèvre" },
+            { time: "13:30–15:00", label: "Petit — Fuite raccord", type: "sav", tech: "M. Roux" },
+          ] },
+          { day: "Ven 21", slots: [
+            { time: "09:00–11:00", label: "Bernard — Entretien", type: "entretien", tech: "P. Lefèvre" },
+            { time: "14:00–17:00", label: "Martin — Pose chaudière", type: "install", tech: "M. Roux" },
           ] },
         ].map((d) => (
-          <div key={d.day} className="p-3">
+          <div key={d.day} className="p-2.5">
             <p className="text-[9px] font-semibold text-muted-foreground mb-2 text-center">{d.day}</p>
             <div className="space-y-1.5">
               {d.slots.map((s) => (
@@ -190,8 +203,8 @@ function PlanningMockup() {
                   s.type === "entretien" ? "border-l-info bg-info/[0.04]" :
                   "border-l-warning bg-warning/[0.04]"
                 }`}>
-                  <p className="text-[8px] font-mono text-muted-foreground">{s.time}</p>
-                  <p className="text-[9px] font-medium mt-0.5 leading-snug">{s.label}</p>
+                  <p className="text-[7px] font-mono text-muted-foreground">{s.time}</p>
+                  <p className="text-[8px] font-medium mt-0.5 leading-snug">{s.label}</p>
                   <p className="text-[7px] text-muted-foreground/50 mt-0.5">{s.tech}</p>
                 </div>
               ))}
@@ -206,7 +219,7 @@ function PlanningMockup() {
 /* ═══ Quote mockup ═══ */
 function QuoteMockup() {
   return (
-    <div className="rounded-2xl border bg-card shadow-[0_24px_72px_-12px_rgba(0,0,0,0.12)] overflow-hidden">
+    <div className="rounded-2xl border bg-card shadow-[0_24px_72px_-12px_rgba(0,0,0,0.14)] overflow-hidden">
       <div className="px-5 py-3 border-b bg-muted/30 flex items-center justify-between">
         <div>
           <span className="text-[11px] font-semibold">Devis DEV-2026-0047</span>
@@ -252,8 +265,8 @@ function QuoteMockup() {
         <div className="flex justify-end">
           <div className="w-48 space-y-1">
             <div className="flex justify-between text-[9px]"><span className="text-muted-foreground">Total HT</span><span className="font-mono font-medium">4 188,00 €</span></div>
-            <div className="flex justify-between text-[8px]"><span className="text-muted-foreground/60">TVA 5.5% (fourniture)</span><span className="font-mono text-muted-foreground/60">158,95 €</span></div>
-            <div className="flex justify-between text-[8px]"><span className="text-muted-foreground/60">TVA 10% (pose)</span><span className="font-mono text-muted-foreground/60">129,80 €</span></div>
+            <div className="flex justify-between text-[8px]"><span className="text-muted-foreground/60">TVA 5.5%</span><span className="font-mono text-muted-foreground/60">158,95 €</span></div>
+            <div className="flex justify-between text-[8px]"><span className="text-muted-foreground/60">TVA 10%</span><span className="font-mono text-muted-foreground/60">129,80 €</span></div>
             <div className="flex justify-between text-[11px] font-bold pt-1 border-t"><span>Total TTC</span><span className="font-mono text-accent">4 476,75 €</span></div>
           </div>
         </div>
@@ -265,7 +278,7 @@ function QuoteMockup() {
 /* ═══ Survey mockup ═══ */
 function SurveyMockup() {
   return (
-    <div className="rounded-2xl border bg-card shadow-[0_24px_72px_-12px_rgba(0,0,0,0.12)] overflow-hidden">
+    <div className="rounded-2xl border bg-card shadow-[0_24px_72px_-12px_rgba(0,0,0,0.14)] overflow-hidden">
       <div className="px-5 py-3 border-b bg-muted/30 flex items-center justify-between">
         <span className="text-[11px] font-semibold">Relevé technique — Morel</span>
         <span className="text-[8px] rounded-full px-2 py-0.5 bg-accent/15 text-accent font-semibold">v1 · Brouillon</span>
@@ -395,129 +408,403 @@ export default function LandingPage() {
             <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground rounded-lg font-medium text-[13px] h-9" asChild>
               <Link to="/dashboard">Connexion</Link>
             </Button>
-            <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.97] transition-all rounded-lg font-medium text-[13px] h-9 px-4 shadow-none" asChild>
-              <Link to="/dashboard">Démarrer maintenant</Link>
+            <Button size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90 active:scale-[0.97] transition-all rounded-lg font-medium text-[13px] h-9 px-4 shadow-[0_1px_3px_rgba(0,0,0,0.08)]" asChild>
+              <Link to="/dashboard">Essai gratuit</Link>
             </Button>
           </div>
         </div>
       </nav>
 
-      {/* ═══ HERO — product-first, asymmetric ═══ */}
-      <section className="relative pt-16 pb-0 md:pt-24 overflow-hidden">
-        {/* Accent gradient blob — top right, guides the eye */}
-        <div className="absolute -top-20 right-0 w-[600px] h-[600px] bg-accent/[0.07] rounded-full blur-[100px] pointer-events-none" />
-        <div className="absolute top-40 -left-20 w-[300px] h-[300px] bg-warning/[0.04] rounded-full blur-[80px] pointer-events-none" />
+      {/* ═══ HERO — Bold statement, product-first ═══ */}
+      <section className="relative pt-14 pb-0 md:pt-20 overflow-hidden">
+        {/* Color blobs — guide the eye diagonally */}
+        <div className="absolute -top-32 -right-32 w-[700px] h-[500px] bg-accent/[0.06] rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute top-[60%] -left-40 w-[400px] h-[400px] bg-warning/[0.04] rounded-full blur-[100px] pointer-events-none" />
         
         <div className="mx-auto max-w-7xl px-6 sm:px-10 relative z-10">
-          {/* Text — left-aligned, narrow, punchy */}
-          <div className="max-w-xl mb-12 md:mb-16">
-            <Reveal>
-              <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/[0.07] px-3.5 py-1 text-[11px] font-medium text-accent mb-6">
-                <Flame className="h-3 w-3" />
-                Chauffage · HVAC · Plomberie
-              </div>
-            </Reveal>
-            <Reveal delay={60}>
-              <h1 className="text-4xl sm:text-5xl lg:text-[3.5rem] font-bold tracking-tight text-foreground" style={{ lineHeight: "1.06" }}>
-                Gérez votre activité artisanale.{" "}
-                <span className="text-accent">Simplement.</span>
-              </h1>
-            </Reveal>
-            <Reveal delay={120}>
-              <p className="mt-5 text-base text-muted-foreground max-w-md leading-relaxed">
-                De la demande client à la facturation, LIGNIA structure votre quotidien sans le compliquer.
-              </p>
-            </Reveal>
-            <Reveal delay={180}>
-              <div className="mt-7 flex items-center gap-4">
-                <Button size="lg" className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-[0_1px_3px_rgba(0,0,0,0.1),0_6px_24px_-4px_rgba(0,0,0,0.12)] active:scale-[0.97] transition-all text-sm font-semibold px-7 h-11 rounded-lg" asChild>
-                  <Link to="/dashboard">
-                    Démarrer maintenant
-                    <ArrowRight className="ml-2 h-4 w-4" />
-                  </Link>
-                </Button>
-              </div>
-            </Reveal>
-            <Reveal delay={240}>
-              <div className="mt-5 flex items-center gap-3 text-xs text-muted-foreground">
-                <div className="flex items-center gap-0.5">
-                  {[...Array(5)].map((_, i) => <Star key={i} className="h-3.5 w-3.5 fill-warning text-warning" />)}
-                  <span className="ml-1 font-semibold text-foreground">4.8</span>
+          <div className="grid lg:grid-cols-12 gap-8 lg:gap-0 items-end">
+            {/* Text — 5 cols, left-heavy, bold */}
+            <div className="lg:col-span-5 pb-8 md:pb-16">
+              <Reveal>
+                <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/[0.06] px-3 py-1 text-[11px] font-medium text-accent mb-5">
+                  <Flame className="h-3 w-3" />
+                  Chauffage bois · HVAC · Plomberie
                 </div>
-                <span className="text-border">|</span>
-                <span>200+ artisans équipés</span>
-              </div>
-            </Reveal>
+              </Reveal>
+              <Reveal delay={60}>
+                <h1 className="text-[2.5rem] sm:text-5xl lg:text-[3.2rem] xl:text-[3.6rem] font-bold tracking-tight text-foreground" style={{ lineHeight: "1.04" }}>
+                  Vos chantiers.<br />
+                  Votre rythme.<br />
+                  <span className="text-accent">Zéro paperasse.</span>
+                </h1>
+              </Reveal>
+              <Reveal delay={120}>
+                <p className="mt-5 text-[15px] text-muted-foreground max-w-sm leading-relaxed">
+                  Devis envoyé le soir même. Planning techniciens synchronisé. Factures qui partent à l'heure. LIGNIA, c'est ça.
+                </p>
+              </Reveal>
+              <Reveal delay={180}>
+                <div className="mt-7 flex flex-col sm:flex-row items-start gap-3">
+                  <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-[0_2px_8px_rgba(0,0,0,0.08),0_8px_32px_-4px_hsl(142_40%_45%/0.25)] active:scale-[0.97] transition-all text-sm font-semibold px-7 h-12 rounded-xl" asChild>
+                    <Link to="/dashboard">
+                      Essai gratuit 14 jours
+                      <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                  </Button>
+                  <Button size="lg" variant="outline" className="text-sm font-medium h-12 rounded-xl border-border/60 hover:bg-muted/40">
+                    Voir la démo
+                  </Button>
+                </div>
+              </Reveal>
+              <Reveal delay={240}>
+                <div className="mt-6 flex items-center gap-3 text-xs text-muted-foreground">
+                  <div className="flex items-center gap-0.5">
+                    {[...Array(5)].map((_, i) => <Star key={i} className="h-3.5 w-3.5 fill-warning text-warning" />)}
+                    <span className="ml-1 font-semibold text-foreground">4.8</span>
+                  </div>
+                  <span className="text-border">|</span>
+                  <span>200+ artisans · sans carte bancaire</span>
+                </div>
+              </Reveal>
+            </div>
+
+            {/* Product — 7 cols, overlaps down into next section */}
+            <div className="lg:col-span-7 relative">
+              <Reveal delay={200}>
+                <div className="relative lg:-mr-12 xl:-mr-20">
+                  {/* Layered depth behind mockup */}
+                  <div className="absolute inset-x-4 top-6 bottom-0 bg-accent/[0.06] rounded-3xl -z-10" />
+                  <div className="absolute inset-x-8 top-10 bottom-4 bg-accent/[0.03] rounded-3xl -z-20" />
+                  
+                  {/* Floating notification — breaks the frame */}
+                  <div className="absolute -left-4 md:-left-8 top-[20%] z-20 hidden md:block">
+                    <div className="rounded-xl border bg-card p-3 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.15)] backdrop-blur-sm animate-fade-up">
+                      <div className="flex items-center gap-2">
+                        <div className="h-6 w-6 rounded-full bg-accent/15 flex items-center justify-center">
+                          <CheckCircle2 className="h-3.5 w-3.5 text-accent" />
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-semibold">Devis DEV-0047 signé</p>
+                          <p className="text-[7px] text-muted-foreground">M. Morel · il y a 3 min</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Floating stat — bottom right */}
+                  <div className="absolute -right-2 md:-right-6 bottom-[15%] z-20 hidden md:block">
+                    <div className="rounded-xl border bg-card p-3 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.15)] backdrop-blur-sm">
+                      <p className="text-[8px] text-muted-foreground uppercase tracking-wider mb-0.5">Conversion devis</p>
+                      <p className="text-xl font-bold font-mono text-accent leading-none">72%</p>
+                      <p className="text-[8px] text-accent font-medium mt-0.5">↑ +8pts vs trim. dernier</p>
+                    </div>
+                  </div>
+
+                  <div className="relative mb-[-60px] md:mb-[-100px]">
+                    <HeroMockup />
+                  </div>
+                </div>
+              </Reveal>
+            </div>
           </div>
         </div>
+      </section>
 
-        {/* HERO PRODUCT — full-width, bleeds to edges, heroized */}
-        <Reveal delay={200}>
-          <div className="relative mx-auto max-w-6xl px-4 sm:px-8">
-            {/* Accent line — runs under the mockup */}
-            <div className="absolute bottom-0 left-[10%] right-[10%] h-px bg-gradient-to-r from-transparent via-accent/30 to-transparent" />
-            
-            {/* Floating stat cards — break the grid, add depth */}
-            <div className="absolute -left-2 md:left-4 top-[15%] z-20 hidden lg:block">
-              <div className="rounded-xl border bg-card p-3 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.12)] backdrop-blur-sm">
-                <p className="text-[9px] text-muted-foreground uppercase tracking-wider mb-1">Nouveaux clients</p>
-                <p className="text-lg font-bold font-mono text-accent leading-none">+23</p>
-                <p className="text-[8px] text-accent mt-0.5 font-medium">↑ ce mois</p>
-              </div>
-            </div>
-            <div className="absolute -right-2 md:right-6 top-[30%] z-20 hidden lg:block">
-              <div className="rounded-xl border bg-card p-3 shadow-[0_8px_32px_-8px_rgba(0,0,0,0.12)] backdrop-blur-sm">
-                <p className="text-[9px] text-muted-foreground uppercase tracking-wider mb-1">Taux conversion</p>
-                <p className="text-lg font-bold font-mono text-foreground leading-none">72%</p>
-                <div className="flex gap-0.5 mt-1.5">
-                  {[60, 45, 70, 55, 80, 65, 72].map((v, i) => (
-                    <div key={i} className="w-2 rounded-sm bg-accent/30" style={{ height: `${v * 0.2}px` }}>
-                      {i === 6 && <div className="w-full rounded-sm bg-accent" style={{ height: '100%' }} />}
-                    </div>
-                  ))}
+      {/* ═══ PROBLEM — Full-bleed, staggered, visceral ═══ */}
+      <section className="bg-primary text-primary-foreground pt-24 md:pt-36 pb-16 md:pb-24 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-accent/[0.04] rounded-full blur-[140px] pointer-events-none" />
+        
+        <div className="mx-auto max-w-7xl px-6 sm:px-10 relative z-10">
+          <div className="grid lg:grid-cols-12 gap-8 lg:gap-16 items-start">
+            {/* Left col — statement */}
+            <div className="lg:col-span-5">
+              <Reveal>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-warning/60 mb-4">Le problème</p>
+                <h2 className="text-3xl md:text-[2.75rem] font-bold leading-[1.06] mb-5" style={{ letterSpacing: "-0.02em" }}>
+                  Votre savoir-faire mérite mieux que des post-it et des tableurs
+                </h2>
+                <p className="text-primary-foreground/35 text-base leading-relaxed mb-8">
+                  Vous êtes artisan, pas secrétaire. Pourtant vous passez vos soirées à relancer, recopier et chercher ce devis parti où déjà…
+                </p>
+                {/* Accent stat — large, punchy */}
+                <div className="inline-flex items-end gap-2 rounded-2xl border border-warning/20 bg-warning/[0.06] px-6 py-4">
+                  <span className="text-5xl font-bold font-mono text-warning leading-none">67%</span>
+                  <span className="text-sm text-warning/70 mb-1 leading-tight">des artisans facturent<br />avec plus de 15j de retard</span>
                 </div>
-              </div>
+              </Reveal>
             </div>
 
-            {/* Main mockup — pushed down to overlap next section */}
-            <div className="relative mb-[-80px] md:mb-[-120px]">
+            {/* Right col — staggered pain cards */}
+            <div className="lg:col-span-7">
+              <div className="grid sm:grid-cols-2 gap-4">
+                {[
+                  { stat: "2h", unit: "/jour", label: "Perdues en admin", desc: "Devis recopiés à la main, mails non relancés, factures oubliées dans la boîte à gants du camion.", icon: Clock, offset: "" },
+                  { stat: "30", unit: "%", label: "De trajets inutiles", desc: "Sans planning partagé, vos techniciens se croisent sur les mêmes chantiers ou font 80 km pour rien.", icon: Truck, offset: "sm:mt-8" },
+                  { stat: "1/3", unit: "", label: "Des devis ne sont jamais relancés", desc: "Le client attend, vous oubliez, un concurrent répond plus vite.", icon: FileText, offset: "" },
+                  { stat: "45j", unit: "", label: "Délai moyen de paiement", desc: "Parce que facturer prend du temps, et relancer encore plus.", icon: Euro, offset: "sm:mt-8" },
+                ].map((p, i) => (
+                  <Reveal key={i} delay={i * 100}>
+                    <div className={`${p.offset}`}>
+                      <div className="rounded-2xl border border-primary-foreground/[0.06] bg-primary-foreground/[0.02] p-5 md:p-6 hover:bg-primary-foreground/[0.04] transition-colors duration-300 group">
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="h-8 w-8 rounded-lg bg-warning/10 flex items-center justify-center">
+                            <p.icon className="h-4 w-4 text-warning/70" />
+                          </div>
+                          <p className="text-[10px] text-primary-foreground/30 uppercase tracking-[0.12em] font-semibold">{p.label}</p>
+                        </div>
+                        <div className="mb-2">
+                          <span className="text-4xl font-bold font-mono text-warning/80 leading-none">{p.stat}</span>
+                          {p.unit && <span className="text-xl font-bold text-warning/40 ml-0.5">{p.unit}</span>}
+                        </div>
+                        <p className="text-[13px] text-primary-foreground/40 leading-relaxed">{p.desc}</p>
+                      </div>
+                    </div>
+                  </Reveal>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ TRANSITION — Accent band with value props ═══ */}
+      <section className="bg-accent text-accent-foreground py-5 relative overflow-hidden">
+        <div className="mx-auto max-w-7xl px-6 sm:px-10">
+          <div className="flex flex-wrap items-center justify-between gap-4 md:gap-8">
+            {[
+              "17 statuts projet",
+              "Devis signé → facture en 1 clic",
+              "Planning multi-technicien",
+              "Relevé terrain 55 points",
+            ].map((t) => (
+              <span key={t} className="text-[12px] font-semibold tracking-wide flex items-center gap-2">
+                <CheckCircle2 className="h-3.5 w-3.5" />
+                {t}
+              </span>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ FEATURE 1 — DASHBOARD — Product stage, asymmetric text ═══ */}
+      <section id="features" className="pt-20 md:pt-28 pb-4 relative">
+        <div className="mx-auto max-w-7xl px-6 sm:px-10">
+          <Reveal>
+            <div className="grid lg:grid-cols-12 gap-4 mb-8 md:mb-12">
+              <div className="lg:col-span-7">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent mb-3">Tableau de bord</p>
+                <h2 className="text-3xl md:text-[2.75rem] font-bold leading-[1.06]">
+                  Votre activité en un regard,<br />pas en dix onglets
+                </h2>
+              </div>
+              <div className="lg:col-span-5 flex items-end">
+                <p className="text-muted-foreground leading-relaxed max-w-sm">
+                  CA du mois, pipeline en 17 étapes, interventions de la semaine, impayés — tout ce qui compte, rien de superflu.
+                </p>
+              </div>
+            </div>
+          </Reveal>
+        </div>
+        
+        {/* Full-bleed product stage */}
+        <Reveal delay={100}>
+          <div className="relative mx-auto max-w-[88rem] px-4 sm:px-8 md:px-12">
+            {/* Depth layers */}
+            <div className="absolute inset-x-[5%] top-8 bottom-[-40px] bg-muted/60 rounded-3xl -z-20" />
+            <div className="absolute inset-x-[3%] top-4 bottom-[-20px] bg-muted/30 rounded-3xl -z-30" />
+            <div className="relative z-10 mb-[-50px] md:mb-[-90px]">
               <HeroMockup />
             </div>
           </div>
         </Reveal>
       </section>
 
-      {/* ═══ PROBLEM — full-bleed immersive, staggered layout ═══ */}
-      <section className="bg-primary text-primary-foreground pt-28 md:pt-36 pb-20 md:pb-28 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-accent/[0.04] rounded-full blur-[140px] pointer-events-none" />
-        <div className="absolute bottom-[-100px] left-[-100px] w-[400px] h-[400px] bg-warning/[0.03] rounded-full blur-[100px] pointer-events-none" />
+      {/* ═══ FEATURE 2 — PLANNING — Angled section, product dominant ═══ */}
+      <section className="pt-24 md:pt-36 pb-16 md:pb-24 bg-muted/40 relative overflow-hidden">
+        {/* Diagonal accent — adds visual tension */}
+        <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-transparent via-warning/20 to-transparent" />
         
         <div className="mx-auto max-w-7xl px-6 sm:px-10 relative z-10">
           <Reveal>
-            <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-primary-foreground/25 mb-5">Le constat</p>
-            <h2 className="text-4xl md:text-[3.5rem] lg:text-[4rem] font-bold leading-[1.04] max-w-3xl mb-6" style={{ letterSpacing: "-0.02em" }}>
-              Vous jonglez entre carnets, tableurs et relances oubliées&nbsp;?
-            </h2>
-            <p className="text-primary-foreground/40 text-lg leading-relaxed max-w-lg mb-14">
-              Chaque jour, des artisans perdent du temps et de l'argent à cause d'outils inadaptés.
-            </p>
+            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8 md:mb-12">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-warning mb-3">Planning</p>
+                <h3 className="text-2xl md:text-[2.5rem] font-bold leading-[1.06]">
+                  Fini le planning sur le frigo
+                </h3>
+              </div>
+              <p className="text-muted-foreground text-[15px] leading-relaxed max-w-sm">
+                Chaque technicien voit sa semaine. Vous voyez tout le monde. Et quand un client appelle, vous savez qui est dispo dans l'heure.
+              </p>
+            </div>
           </Reveal>
           
-          <div className="grid md:grid-cols-3 gap-6 md:gap-8">
-            {[
-              { stat: "2h", unit: "/jour", label: "perdues en admin", desc: "Devis dans les mails, relances oubliées, papiers égarés", offset: "md:mt-0" },
-              { stat: "30", unit: "%", label: "de trajets évitables", desc: "Planning techniciens sur carnet, jamais synchronisé", offset: "md:mt-12" },
-              { stat: "45", unit: "j", label: "délai moyen de paiement", desc: "Facturation en retard, trésorerie sous tension permanente", offset: "md:mt-4" },
-            ].map((p, i) => (
-              <Reveal key={i} delay={i * 120}>
-                <div className={`${p.offset}`}>
-                  <div className="rounded-2xl border border-primary-foreground/[0.06] bg-primary-foreground/[0.02] p-6 md:p-8 backdrop-blur-sm hover:bg-primary-foreground/[0.04] transition-colors duration-300">
-                    <div className="mb-4">
-                      <span className="text-5xl md:text-6xl font-bold font-mono text-warning/80 leading-none">{p.stat}</span>
-                      <span className="text-2xl font-bold text-warning/50 ml-0.5">{p.unit}</span>
+          {/* Product — full width with depth */}
+          <Reveal delay={80}>
+            <div className="relative">
+              <div className="absolute inset-x-3 top-4 bottom-[-12px] bg-warning/[0.06] rounded-2xl -z-10" />
+              <PlanningMockup />
+            </div>
+          </Reveal>
+          
+          {/* Feature pills — asymmetric, not a clean grid */}
+          <Reveal delay={160}>
+            <div className="flex flex-wrap gap-3 mt-8 md:mt-12">
+              {[
+                "Vue semaine / jour / mois",
+                "Code couleur par type",
+                "Drag & drop interventions",
+                "Notification technicien en temps réel",
+              ].map((f) => (
+                <div key={f} className="flex items-center gap-2 rounded-full border bg-card px-4 py-2 text-[13px] font-medium shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
+                  <div className="h-1.5 w-1.5 rounded-full bg-warning" />
+                  {f}
+                </div>
+              ))}
+            </div>
+          </Reveal>
+        </div>
+      </section>
+
+      {/* ═══ FEATURE 3 — DEVIS — Asymmetric layout, product hero ═══ */}
+      <section className="py-16 md:py-24 relative overflow-hidden">
+        {/* Background shape — organic, not centered */}
+        <div className="absolute top-[5%] -right-20 w-[60%] h-[90%] bg-accent/[0.03] rounded-l-[4rem] -z-10" />
+        
+        <div className="mx-auto max-w-7xl px-6 sm:px-10 relative z-10">
+          <div className="grid lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+            {/* Product — 7 cols, dominant */}
+            <div className="lg:col-span-7 order-2 lg:order-1">
+              <Reveal delay={80}>
+                <div className="relative">
+                  <div className="absolute inset-x-3 top-4 bottom-[-12px] bg-accent/[0.05] rounded-2xl -z-10" />
+                  
+                  {/* Floating conversion badge */}
+                  <div className="absolute -right-3 md:-right-6 top-[12%] z-20 hidden lg:block">
+                    <div className="rounded-xl border bg-card p-3 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.15)] backdrop-blur-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="h-6 w-6 rounded-full bg-accent/15 flex items-center justify-center">
+                          <Zap className="h-3.5 w-3.5 text-accent" />
+                        </div>
+                        <div>
+                          <p className="text-[9px] font-semibold">Conversion auto</p>
+                          <p className="text-[8px] text-accent font-medium">DEV → FAC en 1 clic</p>
+                        </div>
+                      </div>
                     </div>
-                    <p className="text-[10px] text-primary-foreground/30 uppercase tracking-[0.15em] font-semibold mb-2">{p.label}</p>
-                    <p className="text-sm text-primary-foreground/45 leading-relaxed">{p.desc}</p>
+                  </div>
+                  
+                  <QuoteMockup />
+                </div>
+              </Reveal>
+            </div>
+
+            {/* Text — 5 cols, right */}
+            <div className="lg:col-span-5 order-1 lg:order-2">
+              <Reveal>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-accent mb-3">Devis & Facturation</p>
+                <h3 className="text-2xl md:text-[2.5rem] font-bold mb-5 leading-[1.06]">
+                  Le client dit oui à 18h.<br />La facture part à 18h02.
+                </h3>
+                <p className="text-muted-foreground text-[15px] leading-relaxed mb-6">
+                  Créez vos devis depuis le catalogue, gérez la double TVA 5.5%/10%, envoyez pour signature. Quand c'est signé, la facture d'acompte se génère toute seule.
+                </p>
+                <div className="space-y-3">
+                  {[
+                    "Catalogue produits avec références fournisseur",
+                    "Numérotation DEV-YYYY-NNNN automatique",
+                    "Historique de versions (v1, v2, v3…)",
+                    "Signature électronique intégrée",
+                  ].map((h) => (
+                    <div key={h} className="flex items-start gap-2.5 text-[13px]">
+                      <CheckCircle2 className="h-4 w-4 text-accent shrink-0 mt-0.5" />
+                      <span className="font-medium leading-snug">{h}</span>
+                    </div>
+                  ))}
+                </div>
+              </Reveal>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ SURVEY — Immersive dark section with character ═══ */}
+      <section className="bg-primary text-primary-foreground relative overflow-hidden">
+        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-accent/[0.04] rounded-full blur-[120px] pointer-events-none" />
+        
+        <div className="relative z-10 pt-16 md:pt-24 pb-16 md:pb-24">
+          <div className="mx-auto max-w-7xl px-6 sm:px-10">
+            <div className="grid lg:grid-cols-12 gap-8 lg:gap-12 items-center">
+              {/* Text — 5 cols */}
+              <div className="lg:col-span-5">
+                <Reveal>
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-accent mb-4">Sur le terrain</p>
+                  <h2 className="text-3xl md:text-[2.75rem] font-bold leading-[1.06] mb-5">
+                    Le relevé technique qui tient dans la poche
+                  </h2>
+                  <p className="text-primary-foreground/40 text-[15px] leading-relaxed mb-8">
+                    55 points de contrôle en 8 sections guidées. Remplissez entre deux coups de marteau, même sans réseau. Quand vous rentrez, tout est déjà synchronisé.
+                  </p>
+                  <div className="space-y-2.5">
+                    {[
+                      { icon: ClipboardCheck, label: "8 sections : projet, habitation, conduit, fumisterie…" },
+                      { icon: Zap, label: "Sauvegarde auto à chaque champ" },
+                      { icon: Camera, label: "Photos directement dans le relevé" },
+                      { icon: Shield, label: "Fonctionne hors connexion" },
+                    ].map((item) => (
+                      <div key={item.label} className="flex items-center gap-3 rounded-xl border border-primary-foreground/[0.06] bg-primary-foreground/[0.02] px-4 py-3 hover:bg-primary-foreground/[0.05] transition-colors duration-300">
+                        <item.icon className="h-4 w-4 text-accent shrink-0" />
+                        <span className="text-[13px] font-medium text-primary-foreground/65">{item.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </Reveal>
+              </div>
+
+              {/* Product — 7 cols */}
+              <div className="lg:col-span-7">
+                <Reveal delay={100}>
+                  <div className="relative lg:-mr-8 xl:-mr-16">
+                    <div className="absolute -inset-3 bg-accent/[0.04] rounded-3xl -z-10" />
+                    <SurveyMockup />
+                  </div>
+                </Reveal>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ HOW — Confident, not cute ═══ */}
+      <section id="how" className="py-16 md:py-24 relative">
+        <div className="mx-auto max-w-7xl px-6 sm:px-10">
+          <Reveal>
+            <div className="text-center mb-12 md:mb-16">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent mb-3">Démarrage</p>
+              <h2 className="text-3xl md:text-4xl font-bold" style={{ lineHeight: "1.08" }}>Opérationnel en 15 minutes</h2>
+              <p className="text-muted-foreground mt-3 max-w-md mx-auto">Pas de formation, pas d'intégrateur, pas de consultant à 800€/jour.</p>
+            </div>
+          </Reveal>
+          
+          {/* Horizontal steps on desktop, vertical on mobile */}
+          <div className="grid md:grid-cols-3 gap-6 md:gap-4 relative">
+            {/* Connector line */}
+            <div className="hidden md:block absolute top-[36px] left-[16.67%] right-[16.67%] h-px bg-border z-0" />
+            
+            {[
+              { num: "01", title: "Créez votre compte", desc: "2 minutes. Sans carte bancaire. Votre espace est prêt, pré-configuré pour les métiers du bâtiment.", color: "bg-accent", iconBg: "bg-accent/10" },
+              { num: "02", title: "Importez vos données", desc: "Glissez un CSV de clients ou saisissez-les un par un. Ajoutez votre catalogue produits. C'est tout.", color: "bg-primary", iconBg: "bg-primary/10" },
+              { num: "03", title: "Vous êtes prêt", desc: "Premier devis ce soir. Premier planning demain matin. Vos techniciens ont l'app sur leur téléphone.", color: "bg-warning", iconBg: "bg-warning/10" },
+            ].map((s, i) => (
+              <Reveal key={i} delay={i * 120}>
+                <div className="relative">
+                  {/* Step circle */}
+                  <div className={`flex h-[72px] w-[72px] items-center justify-center rounded-2xl ${s.color} text-white text-xl font-bold font-mono shadow-[0_4px_16px_rgba(0,0,0,0.1)] relative z-10 mx-auto md:mx-0 mb-5`}>
+                    {s.num}
+                  </div>
+                  <div className="text-center md:text-left">
+                    <h3 className="text-lg font-bold mb-2">{s.title}</h3>
+                    <p className="text-muted-foreground text-[14px] leading-relaxed max-w-xs mx-auto md:mx-0">{s.desc}</p>
                   </div>
                 </div>
               </Reveal>
@@ -526,244 +813,46 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ═══ FEATURE 1 — DASHBOARD — Full-stage hero ═══ */}
-      <section id="features" className="pt-20 md:pt-28 pb-0 relative">
+      {/* ═══ TESTIMONIAL — Not isolated, integrated with conviction ═══ */}
+      <section className="pb-16 pt-4 relative">
         <div className="mx-auto max-w-7xl px-6 sm:px-10">
           <Reveal>
-            <div className="mb-10 md:mb-14">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent mb-3">Tableau de bord</p>
-              <h2 className="text-3xl md:text-[2.75rem] font-bold leading-[1.06] max-w-xl">
-                Votre activité, en un coup d'œil
-              </h2>
-              <p className="text-muted-foreground leading-relaxed max-w-lg mt-4">
-                CA temps réel, pipeline projets en 17 étapes, interventions planifiées, factures impayées — tout est là.
-              </p>
-            </div>
-          </Reveal>
-        </div>
-        
-        <Reveal delay={100}>
-          <div className="relative mx-auto max-w-[90rem] px-4 sm:px-8 md:px-12">
-            <div className="absolute inset-x-[5%] top-8 bottom-[-40px] bg-muted/60 rounded-3xl -z-20" />
-            <div className="absolute inset-x-[3%] top-4 bottom-[-20px] bg-muted/30 rounded-3xl -z-30" />
-            <div className="relative z-10 mb-[-60px] md:mb-[-100px]">
-              <HeroMockup />
-            </div>
-          </div>
-        </Reveal>
-      </section>
-
-      {/* ═══ FEATURE 2 — PLANNING — Full-width mockup, text below ═══ */}
-      <section className="pt-28 md:pt-40 pb-16 md:pb-24 bg-muted/30 relative overflow-hidden">
-        <div className="absolute top-0 left-0 right-0 h-px bg-border/40" />
-        
-        <div className="mx-auto max-w-7xl px-6 sm:px-10 relative z-10">
-          <Reveal>
-            <div className="mb-8 md:mb-12">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-warning mb-3">Planning</p>
-              <h3 className="text-2xl md:text-[2.5rem] font-bold mb-4 leading-[1.08]">
-                Votre planning, enfin lisible
-              </h3>
-            </div>
-          </Reveal>
-          
-          {/* Full-width mockup with depth */}
-          <Reveal delay={80}>
-            <div className="relative">
-              <div className="absolute inset-x-2 top-3 bottom-[-10px] bg-warning/[0.06] rounded-2xl -z-10" />
-              <PlanningMockup />
-            </div>
-          </Reveal>
-          
-          {/* Features below mockup — 3 cols */}
-          <Reveal delay={160}>
-            <div className="grid md:grid-cols-3 gap-6 mt-10 md:mt-14">
-              {[
-                { title: "Vue semaine / jour", desc: "Basculez entre les vues pour organiser le travail de chaque technicien." },
-                { title: "3 workstreams colorés", desc: "Installation, SAV et entretien — chaque type d'intervention se distingue visuellement." },
-                { title: "Drag & drop intuitif", desc: "Déplacez les interventions pour réorganiser le planning en un geste." },
-              ].map((f) => (
-                <div key={f.title}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="h-1.5 w-1.5 rounded-full bg-warning" />
-                    <h4 className="text-sm font-bold">{f.title}</h4>
-                  </div>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{f.desc}</p>
-                </div>
-              ))}
-            </div>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* ═══ FEATURE 3 — DEVIS — Full-width mockup, text below ═══ */}
-      <section className="py-16 md:py-24 relative overflow-hidden">
-        <div className="absolute top-[10%] right-0 w-[50%] h-[70%] bg-accent/[0.03] rounded-l-[3rem] -z-10" />
-        
-        <div className="mx-auto max-w-7xl px-6 sm:px-10 relative z-10">
-          <Reveal>
-            <div className="mb-8 md:mb-12">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-accent mb-3">Facturation</p>
-              <h3 className="text-2xl md:text-[2.5rem] font-bold mb-4 leading-[1.08]">
-                Du devis à la facture, sans friction
-              </h3>
-            </div>
-          </Reveal>
-          
-          {/* Full-width mockup with floating badge */}
-          <Reveal delay={80}>
-            <div className="relative">
-              {/* Floating conversion badge */}
-              <div className="absolute -right-2 md:right-4 top-[15%] z-20 hidden lg:block">
-                <div className="rounded-xl border bg-card p-3.5 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.15)] backdrop-blur-sm">
-                  <p className="text-[8px] text-muted-foreground uppercase tracking-wider mb-0.5">Conversion auto</p>
-                  <p className="text-[11px] font-semibold text-accent">DEV → FAC en 1 clic</p>
-                </div>
-              </div>
-              
-              <div className="absolute inset-x-2 top-3 bottom-[-10px] bg-accent/[0.05] rounded-2xl -z-10" />
-              <QuoteMockup />
-            </div>
-          </Reveal>
-          
-          {/* Features below mockup — 4 cols */}
-          <Reveal delay={160}>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-5 mt-10 md:mt-14">
-              {["Catalogue produits intégré", "Double TVA 5.5% / 10%", "Numérotation DEV-YYYY-NNNN", "Signature électronique"].map((h) => (
-                <div key={h} className="flex items-center gap-2.5 text-sm">
-                  <CheckCircle2 className="h-4 w-4 text-accent shrink-0" />
-                  <span className="font-medium">{h}</span>
-                </div>
-              ))}
-            </div>
-          </Reveal>
-        </div>
-      </section>
-
-      {/* ═══ SURVEY — immersive dark, full-width mockup centered ═══ */}
-      <section className="bg-primary text-primary-foreground relative overflow-hidden">
-        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-accent/[0.04] rounded-full blur-[120px] pointer-events-none" />
-        <div className="absolute top-[20%] right-[-100px] w-[300px] h-[300px] bg-warning/[0.03] rounded-full blur-[80px] pointer-events-none" />
-        
-        <div className="relative z-10 pt-20 md:pt-28 pb-20 md:pb-28">
-          <div className="mx-auto max-w-7xl px-6 sm:px-10 mb-10 md:mb-14">
-            <Reveal>
-              <div className="max-w-2xl">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-accent mb-4">Terrain</p>
-                <h2 className="text-3xl md:text-[3rem] font-bold leading-[1.06] mb-5">
-                  Le relevé technique<br />qui ne perd rien
-                </h2>
-                <p className="text-primary-foreground/50 text-base leading-relaxed max-w-lg">
-                  55 points de contrôle en 8 sections guidées. Remplissez sur chantier, même hors ligne. Zéro papier perdu.
-                </p>
-              </div>
-            </Reveal>
-          </div>
-          
-          {/* Full-width survey mockup */}
-          <div className="mx-auto max-w-5xl px-4 sm:px-8">
-            <Reveal delay={100}>
-              <div className="relative">
-                <div className="absolute -inset-4 bg-accent/[0.04] rounded-3xl -z-10" />
-                <SurveyMockup />
-              </div>
-            </Reveal>
-            
-            {/* Feature pills — horizontal row below mockup */}
-            <Reveal delay={200}>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-8 md:mt-12">
-                {[
-                  { icon: ClipboardCheck, label: "8 sections guidées" },
-                  { icon: Zap, label: "Sauvegarde auto" },
-                  { icon: Camera, label: "Photos intégrées" },
-                  { icon: Clock, label: "Optimisé terrain" },
-                ].map((item) => (
-                  <div key={item.label} className="flex items-center gap-2.5 rounded-xl border border-primary-foreground/[0.08] bg-primary-foreground/[0.03] px-4 py-3 hover:bg-primary-foreground/[0.06] transition-colors duration-300">
-                    <item.icon className="h-4 w-4 text-accent shrink-0" />
-                    <span className="text-[12px] font-semibold text-primary-foreground/70">{item.label}</span>
-                  </div>
-                ))}
-              </div>
-            </Reveal>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ HOW — asymmetric timeline, not 3 equal columns ═══ */}
-      <section id="how" className="py-20 md:py-28 relative">
-        <div className="mx-auto max-w-6xl px-6 sm:px-10">
-          <Reveal>
-            <div className="mb-12 md:mb-16">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent mb-3">Démarrage</p>
-              <h2 className="text-3xl md:text-4xl font-bold" style={{ lineHeight: "1.08" }}>En route en 3 étapes</h2>
-            </div>
-          </Reveal>
-          
-          {/* Vertical timeline — left-aligned, not centered */}
-          <div className="relative">
-            {/* Vertical line */}
-            <div className="hidden md:block absolute left-[28px] top-0 bottom-0 w-px bg-border" />
-            
-            <div className="space-y-12 md:space-y-16">
-              {[
-                { num: "01", title: "Créez votre compte", desc: "En 2 minutes, sans carte bancaire. Votre espace est prêt immédiatement.", color: "bg-accent text-accent-foreground", borderColor: "border-accent/20" },
-                { num: "02", title: "Importez vos données", desc: "Clients, projets, catalogue produits — importez un CSV ou saisissez manuellement. LIGNIA s'adapte à votre existant.", color: "bg-primary text-primary-foreground", borderColor: "border-primary/20" },
-                { num: "03", title: "Pilotez votre activité", desc: "Planifiez, chiffrez et facturez depuis un seul endroit. Vos techniciens accèdent au planning depuis leur mobile.", color: "bg-warning text-warning-foreground", borderColor: "border-warning/20" },
-              ].map((s, i) => (
-                <Reveal key={i} delay={i * 120}>
-                  <div className="flex gap-6 md:gap-10 items-start">
-                    {/* Step number — on the timeline */}
-                    <div className={`shrink-0 flex h-14 w-14 items-center justify-center rounded-2xl ${s.color} text-lg font-bold font-mono shadow-sm relative z-10`}>
-                      {s.num}
+            <div className="grid lg:grid-cols-12 gap-6 items-stretch">
+              {/* Quote — 8 cols, dominant */}
+              <div className="lg:col-span-8">
+                <div className="relative rounded-2xl bg-primary text-primary-foreground p-8 md:p-12 h-full flex flex-col justify-between overflow-hidden">
+                  {/* Subtle background texture */}
+                  <div className="absolute top-0 right-0 w-[300px] h-[300px] bg-accent/[0.05] rounded-full blur-[80px] pointer-events-none" />
+                  
+                  <div className="relative z-10">
+                    <div className="flex items-center gap-0.5 mb-6">
+                      {[...Array(5)].map((_, i) => <Star key={i} className="h-4 w-4 fill-warning text-warning" />)}
                     </div>
-                    {/* Content */}
-                    <div className={`flex-1 rounded-2xl border ${s.borderColor} bg-card p-6 md:p-8 shadow-[0_4px_24px_-8px_rgba(0,0,0,0.06)]`}>
-                      <h3 className="text-lg md:text-xl font-bold mb-2">{s.title}</h3>
-                      <p className="text-muted-foreground leading-relaxed max-w-lg">{s.desc}</p>
-                    </div>
-                  </div>
-                </Reveal>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* ═══ TESTIMONIAL — integrated into the rhythm, not isolated ═══ */}
-      <section className="pb-16 pt-4">
-        <div className="mx-auto max-w-7xl px-6 sm:px-10">
-          <Reveal>
-            <div className="grid lg:grid-cols-12 gap-8 items-center">
-              {/* Quote — takes 7 cols */}
-              <div className="lg:col-span-7">
-                <div className="relative rounded-2xl bg-muted/40 p-8 md:p-12 lg:p-14">
-                  {/* Accent line */}
-                  <div className="absolute top-8 left-8 md:left-12 lg:left-14 w-1 h-14 rounded-full bg-accent" />
-                  <div className="pl-7">
-                    <blockquote className="text-xl md:text-2xl lg:text-[1.75rem] font-semibold text-foreground mb-8 leading-snug" style={{ textWrap: "balance" } as React.CSSProperties}>
-                      Avant LIGNIA, mes devis traînaient une semaine. Maintenant je les envoie le soir même depuis le chantier.
+                    <blockquote className="text-xl md:text-2xl font-semibold leading-snug mb-8" style={{ textWrap: "balance" } as React.CSSProperties}>
+                      Avant LIGNIA, mes devis traînaient une semaine. Maintenant je les envoie le soir même depuis le chantier. Et mes factures partent le lendemain de l'intervention — pas trois semaines après.
                     </blockquote>
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-bold">PL</div>
-                      <div>
-                        <p className="text-sm font-semibold">Patrick Lefèvre</p>
-                        <p className="text-xs text-muted-foreground">Artisan chauffagiste · Annecy (74)</p>
-                      </div>
+                  </div>
+                  <div className="flex items-center gap-3 relative z-10">
+                    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-accent text-accent-foreground text-sm font-bold">PL</div>
+                    <div>
+                      <p className="text-sm font-semibold">Patrick Lefèvre</p>
+                      <p className="text-xs text-primary-foreground/50">Artisan chauffagiste · Annecy (74) · 6 employés</p>
                     </div>
                   </div>
                 </div>
               </div>
               
-              {/* Stats summary — 5 cols */}
-              <div className="lg:col-span-5 space-y-4">
+              {/* Stats — 4 cols, stacked */}
+              <div className="lg:col-span-4 flex flex-col gap-4">
                 {[
-                  { value: "200+", label: "artisans équipés" },
-                  { value: "4.8/5", label: "satisfaction client" },
-                  { value: "15 min", label: "prise en main" },
+                  { value: "200+", label: "artisans équipés", sub: "chauffage, HVAC, plomberie" },
+                  { value: "4.8/5", label: "satisfaction client", sub: "sur 127 avis vérifiés" },
+                  { value: "15 min", label: "prise en main", sub: "sans formation préalable" },
                 ].map((s) => (
-                  <div key={s.label} className="flex items-center gap-4 rounded-xl border bg-card p-4">
-                    <span className="text-2xl font-bold font-mono text-accent">{s.value}</span>
-                    <span className="text-sm text-muted-foreground">{s.label}</span>
+                  <div key={s.label} className="flex-1 flex flex-col justify-center rounded-2xl border bg-card p-5 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
+                    <span className="text-2xl font-bold font-mono text-accent leading-none mb-1">{s.value}</span>
+                    <span className="text-sm font-semibold text-foreground">{s.label}</span>
+                    <span className="text-xs text-muted-foreground mt-0.5">{s.sub}</span>
                   </div>
                 ))}
               </div>
@@ -772,40 +861,37 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ═══ FINAL CTA — immersive, product behind ═══ */}
+      {/* ═══ FINAL CTA — immersive, confident ═══ */}
       <Reveal>
-        <section className="bg-primary text-primary-foreground py-20 md:py-28 relative overflow-hidden mt-8">
-          {/* Large decorative elements */}
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-accent/[0.05] rounded-full blur-[120px] pointer-events-none" />
-          <div className="absolute bottom-0 right-0 w-[300px] h-[300px] bg-warning/[0.03] rounded-full blur-[80px] pointer-events-none" />
-          
-          <div className="mx-auto max-w-4xl px-6 sm:px-10 text-center relative z-10">
-            <Reveal>
-              <h2 className="text-3xl md:text-[3rem] font-bold mb-5 leading-[1.06]">
-                Prêt à structurer<br />votre activité&nbsp;?
+        <section className="relative overflow-hidden mt-4">
+          {/* Accent background — not just dark, has life */}
+          <div className="bg-primary text-primary-foreground py-20 md:py-28 relative">
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[400px] bg-accent/[0.06] rounded-full blur-[120px] pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-[400px] h-[300px] bg-warning/[0.03] rounded-full blur-[80px] pointer-events-none" />
+            
+            <div className="mx-auto max-w-3xl px-6 sm:px-10 text-center relative z-10">
+              <h2 className="text-3xl md:text-[3.2rem] font-bold mb-5 leading-[1.06]">
+                Arrêtez de courir<br />après la paperasse
               </h2>
-            </Reveal>
-            <Reveal delay={80}>
-              <p className="text-primary-foreground/40 mb-10 max-w-md mx-auto text-base leading-relaxed">
-                Essayez LIGNIA gratuitement pendant 14 jours. Aucune carte bancaire requise.
+              <p className="text-primary-foreground/40 mb-10 max-w-md mx-auto text-[15px] leading-relaxed">
+                14 jours gratuits. Sans engagement, sans carte bancaire. Si après 14 jours vous revenez au tableur — c'est que ça n'était pas pour vous.
               </p>
-            </Reveal>
-            <Reveal delay={160}>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-[0_2px_8px_rgba(0,0,0,0.08),0_8px_32px_-4px_rgba(0,0,0,0.15)] active:scale-[0.97] transition-all text-sm font-semibold px-8 h-12 rounded-xl" asChild>
+                <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-[0_2px_8px_rgba(0,0,0,0.08),0_8px_32px_-4px_hsl(142_40%_45%/0.25)] active:scale-[0.97] transition-all text-sm font-semibold px-8 h-12 rounded-xl" asChild>
                   <Link to="/dashboard">Essai gratuit 14 jours<ArrowRight className="ml-2 h-4 w-4" /></Link>
                 </Button>
                 <Button size="lg" variant="outline" className="border-primary-foreground/20 bg-primary-foreground/[0.06] text-primary-foreground hover:bg-primary-foreground/15 active:scale-[0.97] transition-all text-sm font-medium h-12 rounded-xl">
                   Demander une démo
                 </Button>
               </div>
-            </Reveal>
+              <p className="mt-6 text-[12px] text-primary-foreground/25">Aucune carte bancaire requise · Données hébergées en France · Support réactif</p>
+            </div>
           </div>
         </section>
       </Reveal>
 
       {/* ═══ FOOTER ═══ */}
-      <footer className="border-t py-12">
+      <footer className="border-t py-10">
         <div className="mx-auto max-w-7xl px-6 sm:px-10 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
           <div className="flex items-center gap-2.5">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-accent-foreground font-bold text-[11px]">L</div>

@@ -111,8 +111,8 @@ function InterventionScene() {
 function PropertyScene() {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-      <PropertyCard address="12 rue des Alpes" city="Annecy" type="house" installationCount={2} />
-      <PropertyCard address="8 place Victor Hugo" city="Chambéry" type="apartment" installationCount={1} floor="3e étage" />
+      <PropertyCard addressLine1="12 rue des Alpes" city="Annecy" postalCode="74000" propertyType="house" installationCount={2} />
+      <PropertyCard addressLine1="8 place Victor Hugo" city="Chambéry" postalCode="73000" propertyType="apartment" installationCount={1} />
     </div>
   );
 }

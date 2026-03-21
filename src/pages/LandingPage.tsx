@@ -741,8 +741,8 @@ export default function LandingPage() {
                   <h2 className="text-3xl md:text-[2.75rem] font-bold leading-[1.06] mb-5">
                     Le relevé technique qui tient dans la poche
                   </h2>
-                  <p className="text-primary-foreground/40 text-[15px] leading-relaxed mb-8">
-                    55 points de contrôle en 8 sections guidées. Remplissez entre deux coups de marteau, même sans réseau. Quand vous rentrez, tout est déjà synchronisé.
+                  <p className="text-primary-foreground/55 text-base leading-relaxed mb-8">
+                    55 points de contrôle en 8 sections guidées. Remplissez entre deux coups de marteau, même sans réseau.
                   </p>
                   <div className="space-y-2.5">
                     {[
@@ -751,9 +751,9 @@ export default function LandingPage() {
                       { icon: Camera, label: "Photos directement dans le relevé" },
                       { icon: Shield, label: "Fonctionne hors connexion" },
                     ].map((item) => (
-                      <div key={item.label} className="flex items-center gap-3 rounded-xl border border-primary-foreground/[0.06] bg-primary-foreground/[0.02] px-4 py-3 hover:bg-primary-foreground/[0.05] transition-colors duration-300">
+                      <div key={item.label} className="flex items-center gap-3 rounded-xl border border-primary-foreground/[0.08] bg-primary-foreground/[0.03] px-4 py-3 hover:bg-primary-foreground/[0.06] transition-colors duration-300">
                         <item.icon className="h-4 w-4 text-accent shrink-0" />
-                        <span className="text-[13px] font-medium text-primary-foreground/65">{item.label}</span>
+                        <span className="text-sm font-medium text-primary-foreground/70">{item.label}</span>
                       </div>
                     ))}
                   </div>

@@ -361,29 +361,29 @@ function SurveyMockup() {
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
-      {/* ─── Navbar — white, detached ─── */}
-      <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/50 shadow-sm">
-        <div className="mx-auto max-w-7xl flex items-center justify-between px-6 sm:px-10 h-16">
+      {/* ─── Navbar ─── */}
+      <nav className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/40">
+        <div className="mx-auto max-w-7xl flex items-center justify-between px-6 sm:px-10 h-[60px]">
           <Link to="/" className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-xs">
               L
             </div>
-            <span className="text-lg font-bold tracking-tight text-foreground">LIGNIA</span>
+            <span className="text-[15px] font-bold tracking-tight text-foreground">LIGNIA</span>
           </Link>
 
           {/* Navigation with mega-menus */}
           <div className="hidden md:flex items-center">
             <NavigationMenu>
-              <NavigationMenuList>
+              <NavigationMenuList className="gap-0.5">
                 {/* Produit mega-menu */}
                 <NavigationMenuItem>
-                  <NavigationMenuTrigger className="text-sm font-medium text-muted-foreground bg-transparent hover:bg-transparent hover:text-foreground data-[state=open]:text-foreground data-[state=open]:bg-transparent focus:bg-transparent">
+                  <NavigationMenuTrigger className="text-[13px] font-medium text-muted-foreground bg-transparent hover:bg-muted/50 hover:text-foreground data-[state=open]:text-foreground data-[state=open]:bg-muted/50 focus:bg-muted/50 rounded-lg h-9 px-3 transition-all duration-200">
                     Produit
                   </NavigationMenuTrigger>
                   <NavigationMenuContent>
-                    <div className="w-[560px] p-6">
-                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">Fonctionnalités</p>
-                      <div className="grid grid-cols-2 gap-1">
+                    <div className="w-[520px] p-5">
+                      <p className="text-[11px] font-semibold text-muted-foreground/70 uppercase tracking-[0.15em] mb-3 px-2">Fonctionnalités</p>
+                      <div className="grid grid-cols-2 gap-0.5">
                         {[
                           { icon: Briefcase, title: "Gestion clients", desc: "Fiches clients, historique et suivi complet" },
                           { icon: ClipboardCheck, title: "Relevé technique", desc: "Formulaires terrain sur mobile et tablette" },
@@ -395,16 +395,14 @@ export default function LandingPage() {
                           <NavigationMenuLink key={item.title} asChild>
                             <a
                               href="#features"
-                              className={cn(
-                                "flex items-start gap-3 rounded-lg p-3 transition-colors hover:bg-muted/60 group"
-                              )}
+                              className="flex items-start gap-3 rounded-xl p-3 transition-all duration-200 hover:bg-accent/[0.06] group cursor-pointer"
                             >
-                              <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-md border bg-background shadow-sm group-hover:border-accent/30 transition-colors">
-                                <item.icon className="h-4 w-4 text-muted-foreground group-hover:text-accent transition-colors" />
+                              <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-background group-hover:border-accent/40 group-hover:bg-accent/[0.06] transition-all duration-200">
+                                <item.icon className="h-[15px] w-[15px] text-muted-foreground/70 group-hover:text-accent transition-colors duration-200" />
                               </div>
-                              <div>
-                                <p className="text-sm font-medium text-foreground leading-tight">{item.title}</p>
-                                <p className="text-xs text-muted-foreground mt-0.5 leading-snug">{item.desc}</p>
+                              <div className="min-w-0">
+                                <p className="text-[13px] font-medium text-foreground leading-tight">{item.title}</p>
+                                <p className="text-[11px] text-muted-foreground/70 mt-0.5 leading-snug">{item.desc}</p>
                               </div>
                             </a>
                           </NavigationMenuLink>
@@ -416,12 +414,12 @@ export default function LandingPage() {
 
                 {/* Ressources mega-menu */}
                 <NavigationMenuItem>
-                  <NavigationMenuTrigger className="text-sm font-medium text-muted-foreground bg-transparent hover:bg-transparent hover:text-foreground data-[state=open]:text-foreground data-[state=open]:bg-transparent focus:bg-transparent">
+                  <NavigationMenuTrigger className="text-[13px] font-medium text-muted-foreground bg-transparent hover:bg-muted/50 hover:text-foreground data-[state=open]:text-foreground data-[state=open]:bg-muted/50 focus:bg-muted/50 rounded-lg h-9 px-3 transition-all duration-200">
                     Ressources
                   </NavigationMenuTrigger>
                   <NavigationMenuContent>
-                    <div className="w-[420px] p-6">
-                      <div className="grid gap-1">
+                    <div className="w-[380px] p-5">
+                      <div className="grid gap-0.5">
                         {[
                           { icon: BookOpen, title: "Guide de démarrage", desc: "Prenez en main LIGNIA en 15 minutes" },
                           { icon: Video, title: "Tutoriels vidéo", desc: "Apprenez chaque fonctionnalité pas à pas" },
@@ -431,16 +429,14 @@ export default function LandingPage() {
                           <NavigationMenuLink key={item.title} asChild>
                             <a
                               href="#"
-                              className={cn(
-                                "flex items-start gap-3 rounded-lg p-3 transition-colors hover:bg-muted/60 group"
-                              )}
+                              className="flex items-start gap-3 rounded-xl p-3 transition-all duration-200 hover:bg-accent/[0.06] group cursor-pointer"
                             >
-                              <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-md border bg-background shadow-sm group-hover:border-accent/30 transition-colors">
-                                <item.icon className="h-4 w-4 text-muted-foreground group-hover:text-accent transition-colors" />
+                              <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-background group-hover:border-accent/40 group-hover:bg-accent/[0.06] transition-all duration-200">
+                                <item.icon className="h-[15px] w-[15px] text-muted-foreground/70 group-hover:text-accent transition-colors duration-200" />
                               </div>
-                              <div>
-                                <p className="text-sm font-medium text-foreground leading-tight">{item.title}</p>
-                                <p className="text-xs text-muted-foreground mt-0.5 leading-snug">{item.desc}</p>
+                              <div className="min-w-0">
+                                <p className="text-[13px] font-medium text-foreground leading-tight">{item.title}</p>
+                                <p className="text-[11px] text-muted-foreground/70 mt-0.5 leading-snug">{item.desc}</p>
                               </div>
                             </a>
                           </NavigationMenuLink>
@@ -453,7 +449,7 @@ export default function LandingPage() {
                 {/* Simple link */}
                 <NavigationMenuItem>
                   <NavigationMenuLink asChild>
-                    <a href="#how" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-4 py-2">
+                    <a href="#how" className="text-[13px] font-medium text-muted-foreground hover:text-foreground transition-colors duration-200 px-3 py-2 rounded-lg hover:bg-muted/50">
                       Tarifs
                     </a>
                   </NavigationMenuLink>
@@ -462,11 +458,11 @@ export default function LandingPage() {
             </NavigationMenu>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground rounded-lg font-medium" asChild>
+          <div className="flex items-center gap-1.5">
+            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground rounded-lg font-medium text-[13px] h-9" asChild>
               <Link to="/dashboard">Connexion</Link>
             </Button>
-            <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm active:scale-[0.97] transition-all rounded-lg font-medium" asChild>
+            <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 active:scale-[0.97] transition-all rounded-lg font-medium text-[13px] h-9 px-4 shadow-none" asChild>
               <Link to="/dashboard">Démarrer maintenant</Link>
             </Button>
           </div>

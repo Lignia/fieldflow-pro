@@ -15,6 +15,7 @@ import Invoices from "./pages/Invoices";
 import ServiceRequests from "./pages/ServiceRequests";
 import NotFound from "./pages/NotFound";
 import IconShowcase from "./pages/IconShowcase";
+import DesignSystem from "./pages/DesignSystem";
 
 const queryClient = new QueryClient();
 
@@ -27,6 +28,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/icons" element={<IconShowcase />} />
+          <Route path="/design-system" element={<DesignSystem />} />
           <Route element={<AppLayout />}>
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/clients" element={<Clients />} />

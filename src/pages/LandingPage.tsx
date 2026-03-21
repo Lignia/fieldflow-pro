@@ -28,6 +28,7 @@ import {
   HelpCircle,
   MessageSquare,
   Video,
+  Camera,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useEffect, useRef } from "react";

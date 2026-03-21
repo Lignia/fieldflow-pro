@@ -419,8 +419,8 @@ export default function LandingPage() {
                 </Button>
                 <Button
                   size="lg"
-                  variant="ghost"
-                  className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/5 active:scale-[0.97] transition-all text-[15px] font-medium h-12 rounded-lg"
+                  variant="outline"
+                  className="border-primary-foreground/25 text-primary-foreground hover:bg-primary-foreground/10 hover:border-primary-foreground/40 active:scale-[0.97] transition-all text-[15px] font-medium h-12 rounded-lg"
                 >
                   Demander une démo
                 </Button>

@@ -734,7 +734,7 @@ export default function LandingPage() {
               <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-[0_1px_3px_rgba(0,0,0,0.1),0_6px_24px_-4px_rgba(0,0,0,0.15)] active:scale-[0.97] transition-all text-sm font-semibold px-7 h-11 rounded-lg" asChild>
                 <Link to="/dashboard">Essai gratuit 14 jours<ArrowRight className="ml-2 h-4 w-4" /></Link>
               </Button>
-              <Button size="lg" variant="outline" className="border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10 active:scale-[0.97] transition-all text-sm font-medium h-11 rounded-lg">
+              <Button size="lg" variant="outline" className="border-primary-foreground/30 bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20 active:scale-[0.97] transition-all text-sm font-medium h-11 rounded-lg">
                 Demander une démo
               </Button>
             </div>

@@ -683,17 +683,17 @@ export default function LandingPage() {
             <h2 className="text-3xl md:text-4xl font-bold mb-20" style={{ lineHeight: "1.1" } as React.CSSProperties}>
               En route en 3 étapes
             </h2>
-            <div className="grid md:grid-cols-3 gap-12 md:gap-8 relative">
+            <div className="grid md:grid-cols-3 gap-0 relative">
               {/* Connector line */}
-              <div className="hidden md:block absolute top-8 left-[calc(16.67%+32px)] right-[calc(16.67%+32px)] border-t-2 border-dashed border-border" />
+              <div className="hidden md:block absolute top-10 left-[calc(16.67%+40px)] right-[calc(16.67%+40px)] h-[2px] bg-gradient-to-r from-accent/40 via-accent to-accent/40" />
               {[
                 { num: "1", text: "Créez votre compte en 2 minutes", sub: "Aucune carte bancaire requise" },
                 { num: "2", text: "Ajoutez vos premiers clients et projets", sub: "Import ou saisie progressive" },
                 { num: "3", text: "Planifiez, chiffrez, facturez", sub: "Tout au même endroit" },
               ].map((s, i) => (
                 <Reveal key={i} delay={i * 120}>
-                  <div className="relative flex flex-col items-center">
-                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-accent text-accent-foreground font-bold text-xl mb-6 shadow-lg shadow-accent/20 relative z-10">
+                  <div className="relative flex flex-col items-center px-6">
+                    <div className="flex h-20 w-20 items-center justify-center rounded-full border-[3px] border-accent bg-background text-accent font-bold text-2xl font-mono mb-6 relative z-10 shadow-[0_0_0_6px_hsl(var(--background))]">
                       {s.num}
                     </div>
                     <p className="text-base font-semibold mb-2">{s.text}</p>

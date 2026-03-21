@@ -487,327 +487,368 @@ export default function LandingPage() {
         </Reveal>
       </section>
 
-      {/* ═══ FEATURE BAR — floats above the next section ═══ */}
-      <section className="relative z-10 pt-28 md:pt-36 pb-8">
-        <div className="mx-auto max-w-5xl px-6 sm:px-10">
+      {/* ═══ SOCIAL PROOF STRIP — floating above next section ═══ */}
+      <section className="relative z-10 pt-28 md:pt-40 pb-0">
+        <div className="mx-auto max-w-6xl px-6 sm:px-10">
           <Reveal>
-            <div className="rounded-2xl bg-primary text-primary-foreground p-1">
-              <div className="grid grid-cols-2 md:grid-cols-4">
-                {[
-                  { icon: Briefcase, label: "Gestion clients" },
-                  { icon: ClipboardCheck, label: "Relevé terrain" },
-                  { icon: Receipt, label: "Devis & factures" },
-                  { icon: CalendarDays, label: "Planning" },
-                ].map((f) => (
-                  <div key={f.label} className="flex items-center gap-2.5 px-4 py-3.5 text-[13px] font-medium text-primary-foreground/80">
-                    <f.icon className="h-4 w-4 text-accent shrink-0" />
-                    <span>{f.label}</span>
-                  </div>
-                ))}
-              </div>
+            <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4 text-muted-foreground/50">
+              {["Chauffage bois", "HVAC", "Plomberie", "Ramonage", "Pompe à chaleur"].map((m, i) => (
+                <span key={m} className="text-[13px] font-medium tracking-wide uppercase">{m}</span>
+              ))}
             </div>
           </Reveal>
         </div>
       </section>
 
-      {/* ═══ PROBLEM — asymmetric, not 3 equal cards ═══ */}
-      <Reveal>
-        <section className="bg-primary text-primary-foreground py-24 md:py-32 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-accent/[0.03] rounded-full blur-[120px] pointer-events-none" />
-          <div className="mx-auto max-w-6xl px-6 sm:px-10 relative z-10">
-            <div className="grid lg:grid-cols-2 gap-16 items-center">
-              {/* Left — big statement */}
-              <div>
-                <Reveal>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-primary-foreground/30 mb-4">Le constat</p>
-                  <h2 className="text-3xl md:text-[2.75rem] font-bold leading-[1.08] mb-5">
-                    Vous jonglez entre carnets, tableurs et relances oubliées&nbsp;?
-                  </h2>
-                  <p className="text-primary-foreground/45 text-base leading-relaxed max-w-md">
-                    Chaque jour, des artisans perdent du temps et de l'argent à cause d'outils inadaptés.
-                  </p>
-                </Reveal>
-              </div>
-              {/* Right — stacked stats, not a grid */}
-              <div className="space-y-4">
-                {[
-                  { stat: "2h/jour", label: "perdues en admin", desc: "Devis perdus dans les mails, relances oubliées", icon: FileText },
-                  { stat: "30%", label: "de trajets évitables", desc: "Planning techniciens sur carnet, jamais à jour", icon: CalendarDays },
-                  { stat: "45j", label: "délai moyen de paiement", desc: "Facturation en retard, trésorerie sous tension", icon: Euro },
-                ].map((p, i) => (
-                  <Reveal key={i} delay={i * 100}>
-                    <div className="flex items-start gap-5 rounded-xl border border-primary-foreground/[0.07] bg-primary-foreground/[0.03] p-5 backdrop-blur-sm">
-                      <div className="shrink-0">
-                        <p className="text-2xl font-bold font-mono text-warning/90 leading-none">{p.stat}</p>
-                        <p className="text-[9px] text-primary-foreground/35 uppercase tracking-wider font-medium mt-1">{p.label}</p>
-                      </div>
-                      <div className="flex-1 pt-0.5">
-                        <p className="text-sm text-primary-foreground/55 leading-relaxed">{p.desc}</p>
-                      </div>
+      {/* ═══ PROBLEM — full-bleed immersive, staggered layout ═══ */}
+      <section className="bg-primary text-primary-foreground pt-32 md:pt-40 pb-24 md:pb-32 relative overflow-hidden mt-20">
+        {/* Decorative blobs */}
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-accent/[0.04] rounded-full blur-[140px] pointer-events-none" />
+        <div className="absolute bottom-[-100px] left-[-100px] w-[400px] h-[400px] bg-warning/[0.03] rounded-full blur-[100px] pointer-events-none" />
+        
+        <div className="mx-auto max-w-7xl px-6 sm:px-10 relative z-10">
+          {/* Big statement — left-aligned, massive */}
+          <Reveal>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-primary-foreground/25 mb-5">Le constat</p>
+            <h2 className="text-4xl md:text-[3.5rem] lg:text-[4rem] font-bold leading-[1.04] max-w-3xl mb-6" style={{ letterSpacing: "-0.02em" }}>
+              Vous jonglez entre carnets, tableurs et relances oubliées&nbsp;?
+            </h2>
+            <p className="text-primary-foreground/40 text-lg leading-relaxed max-w-lg mb-16">
+              Chaque jour, des artisans perdent du temps et de l'argent à cause d'outils inadaptés.
+            </p>
+          </Reveal>
+          
+          {/* Stats — staggered, not aligned */}
+          <div className="grid md:grid-cols-3 gap-6 md:gap-8">
+            {[
+              { stat: "2h", unit: "/jour", label: "perdues en admin", desc: "Devis dans les mails, relances oubliées, papiers égarés", offset: "md:mt-0" },
+              { stat: "30", unit: "%", label: "de trajets évitables", desc: "Planning techniciens sur carnet, jamais synchronisé", offset: "md:mt-12" },
+              { stat: "45", unit: "j", label: "délai moyen de paiement", desc: "Facturation en retard, trésorerie sous tension permanente", offset: "md:mt-4" },
+            ].map((p, i) => (
+              <Reveal key={i} delay={i * 120}>
+                <div className={`${p.offset}`}>
+                  <div className="rounded-2xl border border-primary-foreground/[0.06] bg-primary-foreground/[0.02] p-6 md:p-8 backdrop-blur-sm hover:bg-primary-foreground/[0.04] transition-colors duration-300">
+                    <div className="mb-4">
+                      <span className="text-5xl md:text-6xl font-bold font-mono text-warning/80 leading-none">{p.stat}</span>
+                      <span className="text-2xl font-bold text-warning/50 ml-0.5">{p.unit}</span>
                     </div>
-                  </Reveal>
-                ))}
-              </div>
-            </div>
+                    <p className="text-[10px] text-primary-foreground/30 uppercase tracking-[0.15em] font-semibold mb-2">{p.label}</p>
+                    <p className="text-sm text-primary-foreground/45 leading-relaxed">{p.desc}</p>
+                  </div>
+                </div>
+              </Reveal>
+            ))}
           </div>
-        </section>
-      </Reveal>
+        </div>
+      </section>
 
-      {/* ═══ FEATURES — varied layouts, product-centric ═══ */}
-      <section id="features" className="py-24 md:py-32">
+      {/* ═══ FEATURE 1 — DASHBOARD — Full-stage hero, product dominates ═══ */}
+      <section id="features" className="pt-28 md:pt-36 pb-0 relative">
         <div className="mx-auto max-w-7xl px-6 sm:px-10">
           <Reveal>
-            <div className="mb-20">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent mb-3">Fonctionnalités</p>
-              <h2 className="text-3xl md:text-4xl font-bold max-w-lg" style={{ lineHeight: "1.1" }}>
-                Tout ce qu'il faut,<br />rien de superflu
-              </h2>
+            <div className="grid lg:grid-cols-2 gap-6 items-end mb-12 md:mb-16">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent mb-3">Tableau de bord</p>
+                <h2 className="text-3xl md:text-[2.75rem] font-bold leading-[1.06]">
+                  Votre activité,<br />en un coup d'œil
+                </h2>
+              </div>
+              <div className="lg:text-right">
+                <p className="text-muted-foreground leading-relaxed max-w-md lg:ml-auto">
+                  CA temps réel, pipeline projets en 17 étapes, interventions planifiées, factures impayées — tout est là.
+                </p>
+              </div>
             </div>
           </Reveal>
-
-          {/* Feature 1 — FULL WIDTH product hero, text overlaid at bottom */}
-          <div className="mb-28 md:mb-36">
-            <Reveal>
-              <div className="relative">
-                {/* Big mockup — takes the full stage */}
-                <div className="relative z-10">
-                  <HeroMockup />
-                </div>
-                {/* Accent bar at bottom — grounds it */}
-                <div className="absolute bottom-0 left-0 right-0 h-1/3 bg-gradient-to-t from-accent/[0.04] to-transparent rounded-b-2xl pointer-events-none" />
-              </div>
-            </Reveal>
-            <Reveal delay={120}>
-              <div className="grid md:grid-cols-3 gap-8 mt-10">
-                <div>
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent/10 text-accent">
-                      <Users className="h-4.5 w-4.5" />
-                    </div>
-                    <h3 className="text-lg font-bold">Clients & Projets</h3>
-                  </div>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    Centralisez vos clients et projets. Pipeline visuel en 17 étapes, du premier contact à la clôture.
-                  </p>
-                </div>
-                <div>
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent/10 text-accent">
-                      <BarChart3 className="h-4.5 w-4.5" />
-                    </div>
-                    <h3 className="text-lg font-bold">Tableau de bord</h3>
-                  </div>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    CA, devis, interventions, impayés — vos KPIs en un coup d'œil, actualisés en temps réel.
-                  </p>
-                </div>
-                <div>
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-accent/10 text-accent">
-                      <Wrench className="h-4.5 w-4.5" />
-                    </div>
-                    <h3 className="text-lg font-bold">Demandes SAV</h3>
-                  </div>
-                  <p className="text-sm text-muted-foreground leading-relaxed">
-                    Centralisez les réclamations, planifiez les interventions et suivez les résolutions.
-                  </p>
-                </div>
-              </div>
-            </Reveal>
+        </div>
+        
+        {/* Product hero — bleeds wider than content, overlaps next section */}
+        <Reveal delay={100}>
+          <div className="relative mx-auto max-w-[90rem] px-4 sm:px-8 md:px-12">
+            {/* Depth layers behind the mockup */}
+            <div className="absolute inset-x-[5%] top-8 bottom-[-40px] bg-muted/60 rounded-3xl -z-20" />
+            <div className="absolute inset-x-[3%] top-4 bottom-[-20px] bg-muted/30 rounded-3xl -z-30" />
+            
+            <div className="relative z-10 mb-[-60px] md:mb-[-100px]">
+              <HeroMockup />
+            </div>
           </div>
+        </Reveal>
+      </section>
 
-          {/* Feature 2 — Split but ASYMMETRIC: 7/5 not 6/6, mockup offset */}
-          <div className="grid lg:grid-cols-12 gap-8 lg:gap-12 items-center mb-28 md:mb-36">
-            <div className="lg:col-span-7 relative">
+      {/* ═══ FEATURE 2 — PLANNING — Offset overlap layout ═══ */}
+      <section className="pt-32 md:pt-44 pb-24 md:pb-32 bg-muted/30 relative overflow-hidden">
+        {/* Subtle texture */}
+        <div className="absolute top-0 left-0 right-0 h-px bg-border/40" />
+        <div className="absolute top-[-200px] right-[-200px] w-[500px] h-[500px] bg-warning/[0.03] rounded-full blur-[100px] pointer-events-none" />
+        
+        <div className="mx-auto max-w-7xl px-6 sm:px-10 relative z-10">
+          <div className="grid lg:grid-cols-12 gap-8 lg:gap-0 items-center">
+            {/* Mockup — spans 8 cols, overlaps to the left edge */}
+            <div className="lg:col-span-8 relative">
               <Reveal>
-                {/* Mockup slightly rotated and elevated */}
-                <div className="relative">
-                  <div className="absolute -inset-4 bg-warning/[0.03] rounded-3xl -z-10" />
+                <div className="relative lg:-ml-8 xl:-ml-16">
+                  {/* Shadow layer */}
+                  <div className="absolute inset-x-3 top-3 bottom-[-8px] bg-warning/[0.06] rounded-2xl -z-10" />
                   <PlanningMockup />
                 </div>
               </Reveal>
             </div>
-            <div className="lg:col-span-5">
-              <Reveal delay={120}>
+            
+            {/* Text — spans 4 cols, pushed right */}
+            <div className="lg:col-span-4 lg:pl-8">
+              <Reveal delay={150}>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-warning mb-3">Planning</p>
-                <h3 className="text-2xl md:text-3xl font-bold mb-4 leading-tight">
+                <h3 className="text-2xl md:text-3xl font-bold mb-5 leading-tight">
                   Votre planning,<br />enfin lisible
                 </h3>
-                <p className="text-muted-foreground leading-relaxed mb-6">
+                <p className="text-muted-foreground leading-relaxed mb-8">
                   Planifiez ramonages, SAV et installations. Vos techniciens voient leur agenda en temps réel depuis leur mobile.
                 </p>
-                <div className="space-y-2.5">
-                  {["Vue semaine / jour", "Code couleur par métier", "Drag & drop intuitif"].map((h) => (
-                    <div key={h} className="flex items-center gap-2.5 text-sm">
-                      <CheckCircle2 className="h-4 w-4 text-warning shrink-0" />
+                <div className="space-y-3">
+                  {[
+                    { text: "Vue semaine / jour / technicien", accent: false },
+                    { text: "3 workstreams colorés", accent: true },
+                    { text: "Drag & drop intuitif", accent: false },
+                  ].map((h) => (
+                    <div key={h.text} className="flex items-center gap-3 text-sm">
+                      <div className={`h-1.5 w-1.5 rounded-full shrink-0 ${h.accent ? "bg-warning" : "bg-muted-foreground/30"}`} />
+                      <span className="font-medium">{h.text}</span>
+                    </div>
+                  ))}
+                </div>
+              </Reveal>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ FEATURE 3 — DEVIS — Reverse, accent bleed, floating elements ═══ */}
+      <section className="py-24 md:py-36 relative overflow-hidden">
+        {/* Accent bleed — asymmetric background shape */}
+        <div className="absolute top-[10%] right-0 w-[60%] h-[80%] bg-accent/[0.03] rounded-l-[3rem] -z-10" />
+        
+        <div className="mx-auto max-w-7xl px-6 sm:px-10 relative z-10">
+          <div className="grid lg:grid-cols-12 gap-8 lg:gap-0 items-center">
+            {/* Text — narrow left column */}
+            <div className="lg:col-span-4 lg:pr-8">
+              <Reveal>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-accent mb-3">Facturation</p>
+                <h3 className="text-2xl md:text-[2.5rem] font-bold mb-5 leading-[1.08]">
+                  Du devis à la facture, sans friction
+                </h3>
+                <p className="text-muted-foreground leading-relaxed mb-8">
+                  Créez vos devis depuis votre catalogue. Un clic pour convertir en facture. Suivi des paiements et relances automatiques.
+                </p>
+                <div className="space-y-3">
+                  {["Catalogue produits intégré", "Double TVA 5.5% / 10%", "Numérotation DEV-YYYY-NNNN", "Signature électronique"].map((h) => (
+                    <div key={h} className="flex items-center gap-3 text-sm">
+                      <CheckCircle2 className="h-4 w-4 text-accent shrink-0" />
                       <span className="font-medium">{h}</span>
                     </div>
                   ))}
                 </div>
               </Reveal>
             </div>
-          </div>
-
-          {/* Feature 3 — REVERSE asymmetric 5/7, with accent background bleed */}
-          <div className="relative mb-28 md:mb-36">
-            <div className="absolute top-[-40px] bottom-[-40px] -left-6 -right-6 bg-accent/[0.04] rounded-3xl -z-10" />
-            <div className="grid lg:grid-cols-12 gap-8 lg:gap-12 items-center py-10">
-              <div className="lg:col-span-5 lg:order-1">
-                <Reveal>
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-accent mb-3">Facturation</p>
-                  <h3 className="text-2xl md:text-3xl font-bold mb-4 leading-tight">
-                    Du devis à la facture,<br />sans friction
-                  </h3>
-                  <p className="text-muted-foreground leading-relaxed mb-6">
-                    Créez vos devis depuis votre catalogue. Un clic pour convertir en facture. Suivi des paiements et relances automatiques.
-                  </p>
-                  <div className="space-y-2.5">
-                    {["Catalogue produits intégré", "Calcul TVA temps réel", "Signature électronique"].map((h) => (
-                      <div key={h} className="flex items-center gap-2.5 text-sm">
-                        <CheckCircle2 className="h-4 w-4 text-accent shrink-0" />
-                        <span className="font-medium">{h}</span>
-                      </div>
-                    ))}
+            
+            {/* Mockup — wider, with depth layers, overlaps right edge */}
+            <div className="lg:col-span-8 relative">
+              <Reveal delay={150}>
+                <div className="relative lg:-mr-8 xl:-mr-16">
+                  {/* Floating conversion badge */}
+                  <div className="absolute -left-3 md:left-2 top-[20%] z-20 hidden lg:block">
+                    <div className="rounded-xl border bg-card p-3 shadow-[0_12px_40px_-8px_rgba(0,0,0,0.15)] backdrop-blur-sm">
+                      <p className="text-[8px] text-muted-foreground uppercase tracking-wider mb-0.5">Conversion auto</p>
+                      <p className="text-[10px] font-semibold text-accent">DEV → FAC en 1 clic</p>
+                    </div>
                   </div>
-                </Reveal>
-              </div>
-              <div className="lg:col-span-7 lg:order-2">
-                <Reveal delay={120}>
+                  
+                  {/* Shadow layers */}
+                  <div className="absolute inset-x-4 top-4 bottom-[-10px] bg-accent/[0.05] rounded-2xl -z-10" />
                   <QuoteMockup />
-                </Reveal>
-              </div>
+                </div>
+              </Reveal>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ═══ SURVEY — immersive full-bleed dark section ═══ */}
-      <Reveal>
-        <section className="bg-primary text-primary-foreground py-20 md:py-28 relative overflow-hidden">
-          <div className="absolute bottom-0 left-0 w-[400px] h-[400px] bg-accent/[0.05] rounded-full blur-[100px] pointer-events-none" />
-          <div className="mx-auto max-w-7xl px-6 sm:px-10 relative z-10">
-            <div className="grid lg:grid-cols-12 gap-10 lg:gap-16 items-center">
-              <div className="lg:col-span-5">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent mb-3">Terrain</p>
-                <h2 className="text-3xl md:text-4xl font-bold mb-5 leading-tight">
-                  Relevé technique<br />terrain
+      {/* ═══ SURVEY — immersive dark section with product centered ═══ */}
+      <section className="bg-primary text-primary-foreground py-0 relative overflow-hidden">
+        {/* Decorative elements */}
+        <div className="absolute top-0 left-0 right-0 h-24 bg-background" style={{ clipPath: "polygon(0 0, 100% 0, 100% 40%, 0 100%)" }} />
+        <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-accent/[0.04] rounded-full blur-[120px] pointer-events-none" />
+        <div className="absolute top-[30%] right-[-100px] w-[300px] h-[300px] bg-warning/[0.03] rounded-full blur-[80px] pointer-events-none" />
+        
+        <div className="relative z-10 pt-32 md:pt-40 pb-24 md:pb-32">
+          {/* Centered title — big and impactful */}
+          <div className="mx-auto max-w-7xl px-6 sm:px-10 mb-16 md:mb-20">
+            <Reveal>
+              <div className="max-w-2xl">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-accent mb-4">Terrain</p>
+                <h2 className="text-3xl md:text-[3rem] font-bold leading-[1.06] mb-5">
+                  Le relevé technique<br />qui ne perd rien
                 </h2>
-                <p className="text-primary-foreground/50 leading-relaxed mb-8">
-                  Remplissez vos relevés sur chantier, même hors ligne. 55 points de contrôle, zéro papier perdu.
+                <p className="text-primary-foreground/40 text-base leading-relaxed max-w-lg">
+                  55 points de contrôle en 8 sections guidées. Remplissez sur chantier, même hors ligne. Zéro papier perdu.
                 </p>
-                <div className="grid grid-cols-2 gap-2.5">
+              </div>
+            </Reveal>
+          </div>
+          
+          {/* Product mockup — heroized, wider than content */}
+          <div className="mx-auto max-w-6xl px-4 sm:px-8">
+            <Reveal delay={120}>
+              <div className="grid lg:grid-cols-12 gap-8 items-start">
+                {/* Survey mockup — takes 8 cols */}
+                <div className="lg:col-span-8 relative">
+                  {/* Glow behind */}
+                  <div className="absolute -inset-4 bg-accent/[0.03] rounded-3xl -z-10" />
+                  <SurveyMockup />
+                </div>
+                
+                {/* Feature pills — 4 cols, stacked vertically with stagger */}
+                <div className="lg:col-span-4 space-y-3 lg:pt-8">
                   {[
-                    { icon: ClipboardCheck, label: "8 sections guidées" },
-                    { icon: Zap, label: "Sauvegarde auto" },
-                    { icon: BarChart3, label: "55 points de contrôle" },
-                    { icon: Clock, label: "Optimisé mobile" },
-                  ].map((item) => (
-                    <div key={item.label} className="flex items-center gap-2 rounded-lg border border-primary-foreground/[0.08] bg-primary-foreground/[0.03] px-3 py-2.5">
-                      <item.icon className="h-3.5 w-3.5 text-accent shrink-0" />
-                      <span className="text-[12px] font-medium text-primary-foreground/70">{item.label}</span>
-                    </div>
+                    { icon: ClipboardCheck, label: "8 sections guidées", desc: "Projet → Habitation → Pièce → Conduit → Fumisterie → Ventilation → Photos → Validation" },
+                    { icon: Zap, label: "Sauvegarde auto", desc: "Brouillon persistant, reprise exacte même après coupure réseau" },
+                    { icon: Camera, label: "Photos intégrées", desc: "Capturez conduit, pièce et accès directement dans le formulaire" },
+                    { icon: Clock, label: "Optimisé terrain", desc: "Cibles tactiles 44px, formulaire scrollable à une main" },
+                  ].map((item, i) => (
+                    <Reveal key={item.label} delay={200 + i * 80}>
+                      <div className="rounded-xl border border-primary-foreground/[0.06] bg-primary-foreground/[0.02] p-4 hover:bg-primary-foreground/[0.05] transition-colors duration-300">
+                        <div className="flex items-center gap-2.5 mb-2">
+                          <item.icon className="h-4 w-4 text-accent shrink-0" />
+                          <span className="text-[13px] font-semibold text-primary-foreground/80">{item.label}</span>
+                        </div>
+                        <p className="text-[11px] text-primary-foreground/35 leading-relaxed">{item.desc}</p>
+                      </div>
+                    </Reveal>
                   ))}
                 </div>
               </div>
-              <div className="lg:col-span-7">
-                <Reveal delay={150}>
-                  {/* Survey mockup on dark — stands out */}
-                  <div className="relative">
-                    <div className="absolute -inset-3 bg-accent/[0.04] rounded-3xl" />
-                    <div className="relative">
-                      <SurveyMockup />
+            </Reveal>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ HOW — asymmetric timeline, not 3 equal columns ═══ */}
+      <section id="how" className="py-28 md:py-36 relative">
+        <div className="mx-auto max-w-6xl px-6 sm:px-10">
+          <Reveal>
+            <div className="mb-16 md:mb-20">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent mb-3">Démarrage</p>
+              <h2 className="text-3xl md:text-4xl font-bold" style={{ lineHeight: "1.08" }}>En route en 3 étapes</h2>
+            </div>
+          </Reveal>
+          
+          {/* Vertical timeline — left-aligned, not centered */}
+          <div className="relative">
+            {/* Vertical line */}
+            <div className="hidden md:block absolute left-[28px] top-0 bottom-0 w-px bg-border" />
+            
+            <div className="space-y-12 md:space-y-16">
+              {[
+                { num: "01", title: "Créez votre compte", desc: "En 2 minutes, sans carte bancaire. Votre espace est prêt immédiatement.", color: "bg-accent text-accent-foreground", borderColor: "border-accent/20" },
+                { num: "02", title: "Importez vos données", desc: "Clients, projets, catalogue produits — importez un CSV ou saisissez manuellement. LIGNIA s'adapte à votre existant.", color: "bg-primary text-primary-foreground", borderColor: "border-primary/20" },
+                { num: "03", title: "Pilotez votre activité", desc: "Planifiez, chiffrez et facturez depuis un seul endroit. Vos techniciens accèdent au planning depuis leur mobile.", color: "bg-warning text-warning-foreground", borderColor: "border-warning/20" },
+              ].map((s, i) => (
+                <Reveal key={i} delay={i * 120}>
+                  <div className="flex gap-6 md:gap-10 items-start">
+                    {/* Step number — on the timeline */}
+                    <div className={`shrink-0 flex h-14 w-14 items-center justify-center rounded-2xl ${s.color} text-lg font-bold font-mono shadow-sm relative z-10`}>
+                      {s.num}
+                    </div>
+                    {/* Content */}
+                    <div className={`flex-1 rounded-2xl border ${s.borderColor} bg-card p-6 md:p-8 shadow-[0_4px_24px_-8px_rgba(0,0,0,0.06)]`}>
+                      <h3 className="text-lg md:text-xl font-bold mb-2">{s.title}</h3>
+                      <p className="text-muted-foreground leading-relaxed max-w-lg">{s.desc}</p>
                     </div>
                   </div>
                 </Reveal>
-              </div>
+              ))}
             </div>
           </div>
-        </section>
-      </Reveal>
+        </div>
+      </section>
 
-      {/* ═══ HOW — horizontal timeline, connected ═══ */}
-      <Reveal>
-        <section id="how" className="py-24 md:py-32">
-          <div className="mx-auto max-w-5xl px-6 sm:px-10">
-            <div className="text-center mb-14">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent mb-3">Démarrage</p>
-              <h2 className="text-3xl md:text-4xl font-bold" style={{ lineHeight: "1.1" }}>En route en 3 étapes</h2>
-            </div>
-            <div className="relative">
-              {/* Connecting line */}
-              <div className="hidden md:block absolute top-10 left-[16.67%] right-[16.67%] h-px bg-border" />
-              <div className="grid md:grid-cols-3 gap-8 relative z-10">
-                {[
-                  { num: "01", text: "Créez votre compte", sub: "En 2 minutes, sans carte bancaire.", icon: Zap, color: "text-accent bg-accent/10" },
-                  { num: "02", text: "Ajoutez vos données", sub: "Clients, projets, catalogue — importez ou saisissez.", icon: Users, color: "text-primary bg-primary/10" },
-                  { num: "03", text: "Pilotez votre activité", sub: "Planifiez, chiffrez et facturez depuis un seul endroit.", icon: BarChart3, color: "text-warning bg-warning/10" },
-                ].map((s, i) => (
-                  <Reveal key={i} delay={i * 100}>
-                    <div className="text-center">
-                      <div className={cn("inline-flex h-10 w-10 items-center justify-center rounded-xl mb-5 shadow-sm", s.color)}>
-                        <s.icon className="h-5 w-5" />
+      {/* ═══ TESTIMONIAL — integrated into the rhythm, not isolated ═══ */}
+      <section className="pb-8 pt-0">
+        <div className="mx-auto max-w-7xl px-6 sm:px-10">
+          <Reveal>
+            <div className="grid lg:grid-cols-12 gap-8 items-center">
+              {/* Quote — takes 7 cols */}
+              <div className="lg:col-span-7">
+                <div className="relative rounded-2xl bg-muted/40 p-8 md:p-12 lg:p-14">
+                  {/* Accent line */}
+                  <div className="absolute top-8 left-8 md:left-12 lg:left-14 w-1 h-14 rounded-full bg-accent" />
+                  <div className="pl-7">
+                    <blockquote className="text-xl md:text-2xl lg:text-[1.75rem] font-semibold text-foreground mb-8 leading-snug" style={{ textWrap: "balance" } as React.CSSProperties}>
+                      Avant LIGNIA, mes devis traînaient une semaine. Maintenant je les envoie le soir même depuis le chantier.
+                    </blockquote>
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-bold">PL</div>
+                      <div>
+                        <p className="text-sm font-semibold">Patrick Lefèvre</p>
+                        <p className="text-xs text-muted-foreground">Artisan chauffagiste · Annecy (74)</p>
                       </div>
-                      <p className="text-[11px] font-bold font-mono text-muted-foreground/40 mb-2">{s.num}</p>
-                      <h3 className="text-base font-bold mb-2">{s.text}</h3>
-                      <p className="text-sm text-muted-foreground leading-relaxed">{s.sub}</p>
                     </div>
-                  </Reveal>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-      </Reveal>
-
-      {/* ═══ TESTIMONIAL — integrated, not isolated ═══ */}
-      <Reveal>
-        <section className="py-16 md:py-24">
-          <div className="mx-auto max-w-4xl px-6 sm:px-10">
-            <div className="relative rounded-2xl bg-muted/40 p-8 md:p-12">
-              {/* Accent dot */}
-              <div className="absolute top-6 left-8 md:left-12 w-1 h-12 rounded-full bg-accent" />
-              <div className="pl-6">
-                <blockquote className="text-xl md:text-2xl font-semibold text-foreground mb-6 leading-snug" style={{ textWrap: "balance" } as React.CSSProperties}>
-                  Avant LIGNIA, mes devis traînaient une semaine. Maintenant je les envoie le soir même depuis le chantier.
-                </blockquote>
-                <div className="flex items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary text-primary-foreground text-xs font-bold">PL</div>
-                  <div>
-                    <p className="text-sm font-semibold">Patrick Lefèvre</p>
-                    <p className="text-xs text-muted-foreground">Artisan chauffagiste · Annecy (74)</p>
                   </div>
                 </div>
               </div>
+              
+              {/* Stats summary — 5 cols */}
+              <div className="lg:col-span-5 space-y-4">
+                {[
+                  { value: "200+", label: "artisans équipés" },
+                  { value: "4.8/5", label: "satisfaction client" },
+                  { value: "15 min", label: "prise en main" },
+                ].map((s) => (
+                  <div key={s.label} className="flex items-center gap-4 rounded-xl border bg-card p-4">
+                    <span className="text-2xl font-bold font-mono text-accent">{s.value}</span>
+                    <span className="text-sm text-muted-foreground">{s.label}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        </section>
-      </Reveal>
+          </Reveal>
+        </div>
+      </section>
 
-      {/* ═══ FINAL CTA ═══ */}
+      {/* ═══ FINAL CTA — immersive, product behind ═══ */}
       <Reveal>
-        <section className="bg-primary text-primary-foreground py-24 md:py-32 relative overflow-hidden">
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[300px] bg-accent/[0.06] rounded-full blur-[100px] pointer-events-none" />
-          <div className="mx-auto max-w-3xl px-6 sm:px-10 text-center relative z-10">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4" style={{ lineHeight: "1.1" }}>
-              Prêt à structurer votre activité ?
-            </h2>
-            <p className="text-primary-foreground/45 mb-8 max-w-md mx-auto">
-              Essayez LIGNIA gratuitement pendant 14 jours. Aucune carte bancaire requise.
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-[0_1px_3px_rgba(0,0,0,0.1),0_6px_24px_-4px_rgba(0,0,0,0.15)] active:scale-[0.97] transition-all text-sm font-semibold px-7 h-11 rounded-lg" asChild>
-                <Link to="/dashboard">Essai gratuit 14 jours<ArrowRight className="ml-2 h-4 w-4" /></Link>
-              </Button>
-              <Button size="lg" variant="outline" className="border-primary-foreground/30 bg-primary-foreground/10 text-primary-foreground hover:bg-primary-foreground/20 active:scale-[0.97] transition-all text-sm font-medium h-11 rounded-lg">
-                Demander une démo
-              </Button>
-            </div>
+        <section className="bg-primary text-primary-foreground py-28 md:py-36 relative overflow-hidden mt-16">
+          {/* Large decorative elements */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-accent/[0.05] rounded-full blur-[120px] pointer-events-none" />
+          <div className="absolute bottom-0 right-0 w-[300px] h-[300px] bg-warning/[0.03] rounded-full blur-[80px] pointer-events-none" />
+          
+          <div className="mx-auto max-w-4xl px-6 sm:px-10 text-center relative z-10">
+            <Reveal>
+              <h2 className="text-3xl md:text-[3rem] font-bold mb-5 leading-[1.06]">
+                Prêt à structurer<br />votre activité&nbsp;?
+              </h2>
+            </Reveal>
+            <Reveal delay={80}>
+              <p className="text-primary-foreground/40 mb-10 max-w-md mx-auto text-base leading-relaxed">
+                Essayez LIGNIA gratuitement pendant 14 jours. Aucune carte bancaire requise.
+              </p>
+            </Reveal>
+            <Reveal delay={160}>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-[0_2px_8px_rgba(0,0,0,0.08),0_8px_32px_-4px_rgba(0,0,0,0.15)] active:scale-[0.97] transition-all text-sm font-semibold px-8 h-12 rounded-xl" asChild>
+                  <Link to="/dashboard">Essai gratuit 14 jours<ArrowRight className="ml-2 h-4 w-4" /></Link>
+                </Button>
+                <Button size="lg" variant="outline" className="border-primary-foreground/20 bg-primary-foreground/[0.06] text-primary-foreground hover:bg-primary-foreground/15 active:scale-[0.97] transition-all text-sm font-medium h-12 rounded-xl">
+                  Demander une démo
+                </Button>
+              </div>
+            </Reveal>
           </div>
         </section>
       </Reveal>
 
       {/* ═══ FOOTER ═══ */}
-      <footer className="border-t py-10">
+      <footer className="border-t py-12">
         <div className="mx-auto max-w-7xl px-6 sm:px-10 flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
           <div className="flex items-center gap-2.5">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-accent-foreground font-bold text-[11px]">L</div>

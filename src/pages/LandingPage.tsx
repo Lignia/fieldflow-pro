@@ -521,9 +521,9 @@ export default function LandingPage() {
               <Reveal>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-warning/60 mb-4">Le problème</p>
                 <h2 className="text-3xl md:text-[2.75rem] font-bold leading-[1.06] mb-5" style={{ letterSpacing: "-0.02em" }}>
-                  Votre savoir-faire mérite mieux que des post-it et des tableurs
+                  Votre savoir-faire mérite mieux que des post-it
                 </h2>
-                <p className="text-primary-foreground/35 text-base leading-relaxed mb-8">
+                <p className="text-primary-foreground/50 text-base md:text-lg leading-relaxed mb-8">
                   Vous êtes artisan, pas secrétaire. Pourtant vous passez vos soirées à relancer, recopier et chercher ce devis parti où déjà…
                 </p>
                 {/* Accent stat — large, punchy */}

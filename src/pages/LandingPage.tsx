@@ -774,7 +774,7 @@ export default function LandingPage() {
 
       {/* ═══ FINAL CTA — immersive, product behind ═══ */}
       <Reveal>
-        <section className="bg-primary text-primary-foreground py-28 md:py-36 relative overflow-hidden mt-16">
+        <section className="bg-primary text-primary-foreground py-20 md:py-28 relative overflow-hidden mt-8">
           {/* Large decorative elements */}
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-accent/[0.05] rounded-full blur-[120px] pointer-events-none" />
           <div className="absolute bottom-0 right-0 w-[300px] h-[300px] bg-warning/[0.03] rounded-full blur-[80px] pointer-events-none" />

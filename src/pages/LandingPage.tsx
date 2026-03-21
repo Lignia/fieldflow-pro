@@ -633,8 +633,8 @@ export default function LandingPage() {
                   Fini le planning sur le frigo
                 </h3>
               </div>
-              <p className="text-muted-foreground text-[15px] leading-relaxed max-w-sm">
-                Chaque technicien voit sa semaine. Vous voyez tout le monde. Et quand un client appelle, vous savez qui est dispo dans l'heure.
+              <p className="text-muted-foreground text-base leading-relaxed max-w-sm">
+                Chaque technicien voit sa semaine. Vous voyez tout le monde. Un client appelle ? Vous savez qui est dispo dans l'heure.
               </p>
             </div>
           </Reveal>

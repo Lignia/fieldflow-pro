@@ -706,17 +706,16 @@ export default function LandingPage() {
                 <h3 className="text-2xl md:text-[2.5rem] font-bold mb-5 leading-[1.06]">
                   Le client dit oui à 18h.<br />La facture part à 18h02.
                 </h3>
-                <p className="text-muted-foreground text-[15px] leading-relaxed mb-6">
-                  Créez vos devis depuis le catalogue, gérez la double TVA 5.5%/10%, envoyez pour signature. Quand c'est signé, la facture d'acompte se génère toute seule.
+                <p className="text-muted-foreground text-base leading-relaxed mb-6">
+                  Créez vos devis depuis le catalogue, gérez la double TVA 5.5%/10%, envoyez pour signature. La facture d'acompte se génère toute seule.
                 </p>
                 <div className="space-y-3">
                   {[
                     "Catalogue produits avec références fournisseur",
-                    "Numérotation DEV-YYYY-NNNN automatique",
-                    "Historique de versions (v1, v2, v3…)",
+                    "Double TVA 5.5% / 10% automatique",
                     "Signature électronique intégrée",
                   ].map((h) => (
-                    <div key={h} className="flex items-start gap-2.5 text-[13px]">
+                    <div key={h} className="flex items-start gap-2.5 text-sm">
                       <CheckCircle2 className="h-4 w-4 text-accent shrink-0 mt-0.5" />
                       <span className="font-medium leading-snug">{h}</span>
                     </div>

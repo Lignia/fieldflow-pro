@@ -742,7 +742,7 @@ export default function LandingPage() {
 
       {/* ═══ FINAL CTA — accent band ═══ */}
       <Reveal>
-        <section className="py-28 md:py-36">
+        <section className="bg-primary text-primary-foreground py-28 md:py-36">
           <div className="mx-auto max-w-3xl px-6 sm:px-10 text-center">
             <h2
               className="text-3xl md:text-4xl font-bold mb-5"
@@ -750,7 +750,7 @@ export default function LandingPage() {
             >
               Prêt à structurer votre activité ?
             </h2>
-            <p className="text-muted-foreground mb-10 max-w-md mx-auto text-lg">
+            <p className="text-primary-foreground/50 mb-10 max-w-md mx-auto text-lg">
               Essayez LIGNIA gratuitement pendant 14 jours. Aucune carte bancaire requise.
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -767,7 +767,7 @@ export default function LandingPage() {
               <Button
                 size="lg"
                 variant="outline"
-                className="active:scale-[0.97] transition-transform h-13 rounded-xl text-base"
+                className="border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground active:scale-[0.97] transition-transform h-13 rounded-xl text-base"
               >
                 Demander une démo
               </Button>

@@ -449,51 +449,55 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ═══ SOCIAL PROOF strip ═══ */}
-      <Reveal>
-        <section className="pt-28 md:pt-40 pb-14 md:pb-20 border-b">
-          <div className="mx-auto max-w-5xl px-6 sm:px-10">
-            <p className="text-center text-sm font-semibold text-muted-foreground/70 uppercase tracking-[0.15em] mb-8">
-              Ils nous font confiance
-            </p>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+      {/* ═══ SOCIAL PROOF — big number ribbon ═══ */}
+      <section className="pt-32 md:pt-44 pb-16 md:pb-20">
+        <div className="mx-auto max-w-6xl px-6 sm:px-10">
+          <Reveal>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-0 divide-x divide-border">
               {[
-                { icon: Shield, text: "Données hébergées en France", stat: "100%" },
-                { icon: Users, text: "Artisans équipés", stat: "200+" },
-                { icon: Zap, text: "Prise en main", stat: "10 min" },
-                { icon: Smartphone, text: "Utilisé sur chantier", stat: "87%" },
-              ].map((item) => (
-                <div key={item.text} className="flex flex-col items-center text-center p-5 rounded-xl bg-muted/30">
-                  <item.icon className="h-5 w-5 text-accent mb-3" />
-                  <p className="text-2xl font-bold font-mono text-foreground mb-1">{item.stat}</p>
-                  <p className="text-xs text-muted-foreground font-medium">{item.text}</p>
-                </div>
+                { stat: "200+", label: "Artisans équipés", icon: Users },
+                { stat: "10 min", label: "Prise en main", icon: Zap },
+                { stat: "87%", label: "Utilisé sur chantier", icon: Smartphone },
+                { stat: "100%", label: "Hébergé en France", icon: Shield },
+              ].map((item, i) => (
+                <Reveal key={item.label} delay={i * 80}>
+                  <div className="flex flex-col items-center text-center py-6 md:py-8">
+                    <item.icon className="h-5 w-5 text-accent/60 mb-4" />
+                    <p className="text-3xl md:text-4xl font-bold font-mono text-foreground tracking-tight">{item.stat}</p>
+                    <p className="text-xs text-muted-foreground mt-2 font-medium uppercase tracking-wider">{item.label}</p>
+                  </div>
+                </Reveal>
               ))}
             </div>
-          </div>
-        </section>
-      </Reveal>
+          </Reveal>
+        </div>
+      </section>
 
-      {/* ═══ PROBLEM — dark band ═══ */}
+      {/* ═══ PROBLEM — full dark immersive ═══ */}
       <Reveal>
-        <section className="bg-muted/40 border-y py-24 md:py-32">
-          <div className="mx-auto max-w-5xl px-6 sm:px-10 text-center">
-            <h2
-              className="text-3xl md:text-4xl font-bold mb-5 text-foreground"
-              style={{ lineHeight: "1.1" } as React.CSSProperties}
-            >
-              Vous jonglez entre carnets, tableurs<br className="hidden md:block" /> et relances oubliées ?
-            </h2>
-            <p className="text-muted-foreground text-base mb-16 max-w-lg mx-auto leading-relaxed">
-              Chaque jour, des artisans perdent du temps et de l'argent à cause d'outils inadaptés.
-            </p>
-            <div className="grid md:grid-cols-3 gap-6 md:gap-10">
+        <section className="bg-primary text-primary-foreground py-28 md:py-36 relative overflow-hidden">
+          {/* Subtle glow */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-destructive/5 rounded-full blur-[120px] pointer-events-none" />
+          <div className="mx-auto max-w-5xl px-6 sm:px-10 text-center relative z-10">
+            <Reveal>
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-primary-foreground/40 mb-5">Le constat</p>
+              <h2
+                className="text-3xl md:text-5xl font-bold mb-6"
+                style={{ lineHeight: "1.08" } as React.CSSProperties}
+              >
+                Vous jonglez entre carnets, tableurs<br className="hidden md:block" /> et relances oubliées ?
+              </h2>
+              <p className="text-primary-foreground/50 text-lg mb-20 max-w-lg mx-auto leading-relaxed">
+                Chaque jour, des artisans perdent du temps et de l'argent à cause d'outils inadaptés.
+              </p>
+            </Reveal>
+            <div className="grid md:grid-cols-3 gap-6">
               {[
                 {
                   icon: FileText,
                   text: "Devis perdus dans les mails, relances oubliées",
                   stat: "2h/jour",
-                  statLabel: "perdues en administratif",
+                  statLabel: "perdues en admin",
                 },
                 {
                   icon: CalendarDays,
@@ -508,14 +512,12 @@ export default function LandingPage() {
                   statLabel: "délai moyen de paiement",
                 },
               ].map((p, i) => (
-                <Reveal key={i} delay={i * 100}>
-                  <div className="flex flex-col items-center text-center rounded-2xl bg-background p-8 shadow-[0_1px_2px_0_rgba(0,0,0,0.03),0_2px_8px_-1px_rgba(0,0,0,0.06)]">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-destructive/10 mb-5">
-                      <p.icon className="h-6 w-6 text-destructive" />
-                    </div>
-                    <p className="text-4xl md:text-5xl font-bold font-mono text-destructive mb-2">{p.stat}</p>
-                    <p className="text-xs text-muted-foreground mb-4 uppercase tracking-wider font-medium">{p.statLabel}</p>
-                    <p className="text-sm leading-relaxed text-muted-foreground max-w-[220px]">
+                <Reveal key={i} delay={i * 120}>
+                  <div className="rounded-2xl border border-primary-foreground/10 bg-primary-foreground/[0.04] p-8 backdrop-blur-sm">
+                    <p.icon className="h-5 w-5 text-destructive/80 mb-6 mx-auto" />
+                    <p className="text-5xl md:text-6xl font-bold font-mono text-destructive mb-2 tracking-tight">{p.stat}</p>
+                    <p className="text-[11px] text-primary-foreground/40 uppercase tracking-wider font-medium mb-5">{p.statLabel}</p>
+                    <p className="text-sm leading-relaxed text-primary-foreground/60">
                       {p.text}
                     </p>
                   </div>
@@ -673,31 +675,34 @@ export default function LandingPage() {
         </section>
       </Reveal>
 
-      {/* ═══ HOW IT WORKS ═══ */}
+      {/* ═══ HOW IT WORKS — cards with numbers ═══ */}
       <Reveal>
-        <section id="how" className="py-28 md:py-36">
-          <div className="mx-auto max-w-4xl px-6 sm:px-10 text-center">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent mb-4">
-              Démarrage
-            </p>
-            <h2 className="text-3xl md:text-4xl font-bold mb-20" style={{ lineHeight: "1.1" } as React.CSSProperties}>
-              En route en 3 étapes
-            </h2>
-            <div className="grid md:grid-cols-3 gap-0 relative">
-              {/* Connector line */}
-              <div className="hidden md:block absolute top-10 left-[calc(16.67%+40px)] right-[calc(16.67%+40px)] h-[2px] bg-gradient-to-r from-accent/40 via-accent to-accent/40" />
+        <section id="how" className="bg-muted/30 py-28 md:py-36">
+          <div className="mx-auto max-w-5xl px-6 sm:px-10">
+            <div className="text-center mb-16">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent mb-4">
+                Démarrage
+              </p>
+              <h2 className="text-3xl md:text-4xl font-bold" style={{ lineHeight: "1.1" } as React.CSSProperties}>
+                En route en 3 étapes
+              </h2>
+            </div>
+            <div className="grid md:grid-cols-3 gap-6">
               {[
-                { num: "1", text: "Créez votre compte en 2 minutes", sub: "Aucune carte bancaire requise" },
-                { num: "2", text: "Ajoutez vos premiers clients et projets", sub: "Import ou saisie progressive" },
-                { num: "3", text: "Planifiez, chiffrez, facturez", sub: "Tout au même endroit" },
+                { num: "01", text: "Créez votre compte", sub: "En 2 minutes, sans carte bancaire. Votre espace est prêt.", icon: Zap },
+                { num: "02", text: "Ajoutez vos données", sub: "Clients, projets, catalogue — importez ou saisissez progressivement.", icon: Users },
+                { num: "03", text: "Pilotez votre activité", sub: "Planifiez, chiffrez et facturez depuis un seul endroit.", icon: BarChart3 },
               ].map((s, i) => (
                 <Reveal key={i} delay={i * 120}>
-                  <div className="relative flex flex-col items-center px-6">
-                    <div className="flex h-20 w-20 items-center justify-center rounded-full border-[3px] border-accent bg-background text-accent font-bold text-2xl font-mono mb-6 relative z-10 shadow-[0_0_0_6px_hsl(var(--background))]">
-                      {s.num}
+                  <div className="relative rounded-2xl border bg-card p-8 shadow-[0_1px_2px_0_rgba(0,0,0,0.03),0_2px_8px_-1px_rgba(0,0,0,0.06)] group hover:shadow-[0_2px_4px_0_rgba(0,0,0,0.04),0_8px_24px_-4px_rgba(0,0,0,0.08)] transition-shadow">
+                    <div className="flex items-center gap-4 mb-5">
+                      <span className="text-4xl font-bold font-mono text-accent/20 leading-none">{s.num}</span>
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
+                        <s.icon className="h-5 w-5" />
+                      </div>
                     </div>
-                    <p className="text-base font-semibold mb-2">{s.text}</p>
-                    <p className="text-sm text-muted-foreground">{s.sub}</p>
+                    <h3 className="text-lg font-bold mb-2">{s.text}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{s.sub}</p>
                   </div>
                 </Reveal>
               ))}
@@ -706,32 +711,25 @@ export default function LandingPage() {
         </section>
       </Reveal>
 
-      {/* ═══ TESTIMONIAL — asymmetric, large ═══ */}
+      {/* ═══ TESTIMONIAL — accent border, minimal ═══ */}
       <Reveal>
-        <section className="py-24 md:py-32">
-          <div className="mx-auto max-w-5xl px-6 sm:px-10">
-            <div className="rounded-3xl border bg-card p-10 md:p-16 shadow-[0_1px_2px_0_rgba(0,0,0,0.03),0_4px_16px_-2px_rgba(0,0,0,0.06)]">
-              <div className="grid md:grid-cols-5 gap-10 items-center">
-                <div className="md:col-span-3">
-                  <div className="text-5xl md:text-6xl leading-none text-accent/20 font-serif mb-6 select-none">"</div>
-                  <blockquote
-                    className="text-2xl md:text-3xl font-medium leading-snug text-foreground -mt-4"
-                    style={{ lineHeight: "1.3" } as React.CSSProperties}
-                  >
-                    Avant LIGNIA, mes devis traînaient une semaine. Maintenant je les envoie le soir même depuis le chantier.
-                  </blockquote>
+        <section className="py-28 md:py-36">
+          <div className="mx-auto max-w-4xl px-6 sm:px-10">
+            <div className="relative pl-8 md:pl-12 border-l-4 border-accent">
+              <div className="text-7xl md:text-8xl leading-none text-accent/15 font-serif absolute -top-4 -left-1 select-none">"</div>
+              <blockquote
+                className="text-2xl md:text-4xl font-semibold text-foreground mb-8 relative z-10"
+                style={{ lineHeight: "1.25", textWrap: "balance" } as React.CSSProperties}
+              >
+                Avant LIGNIA, mes devis traînaient une semaine. Maintenant je les envoie le soir même depuis le chantier.
+              </blockquote>
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-bold">
+                  PL
                 </div>
-                <div className="md:col-span-2 flex md:justify-end">
-                  <div className="flex items-center gap-5">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-accent/10 text-accent text-base font-bold">
-                      PL
-                    </div>
-                    <div>
-                      <p className="text-base font-semibold">Patrick Lefèvre</p>
-                      <p className="text-sm text-muted-foreground">Artisan chauffagiste</p>
-                      <p className="text-xs text-muted-foreground/60">Annecy (74)</p>
-                    </div>
-                  </div>
+                <div>
+                  <p className="font-semibold">Patrick Lefèvre</p>
+                  <p className="text-sm text-muted-foreground">Artisan chauffagiste · Annecy (74)</p>
                 </div>
               </div>
             </div>

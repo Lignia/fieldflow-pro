@@ -348,130 +348,114 @@ function SurveyMockup() {
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
-      {/* ─── Navbar ─── */}
-      <nav className="sticky top-0 z-50 bg-primary text-primary-foreground">
+      {/* ─── Navbar — white, detached ─── */}
+      <nav className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border/50 shadow-sm">
         <div className="mx-auto max-w-7xl flex items-center justify-between px-6 sm:px-10 h-16">
           <Link to="/" className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent text-accent-foreground font-bold text-sm">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold text-sm">
               L
             </div>
-            <span className="text-lg font-bold tracking-tight">LIGNIA</span>
+            <span className="text-lg font-bold tracking-tight text-foreground">LIGNIA</span>
           </Link>
           <div className="hidden md:flex items-center gap-8 text-sm">
-            <a href="#features" className="text-primary-foreground/60 hover:text-primary-foreground transition-colors">
+            <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
               Fonctionnalités
             </a>
-            <a href="#how" className="text-primary-foreground/60 hover:text-primary-foreground transition-colors">
+            <a href="#how" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
               Comment ça marche
             </a>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/5 rounded-lg font-medium" asChild>
+            <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground rounded-lg font-medium" asChild>
               <Link to="/dashboard">Connexion</Link>
             </Button>
-            <Button size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-[0_1px_2px_0_rgba(0,0,0,0.05)] active:scale-[0.97] transition-all rounded-lg font-medium" asChild>
-              <Link to="/dashboard">
-                Essai gratuit
-                <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
-              </Link>
+            <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm active:scale-[0.97] transition-all rounded-lg font-medium" asChild>
+              <Link to="/dashboard">Démarrer maintenant</Link>
             </Button>
           </div>
         </div>
       </nav>
 
-      {/* ═══ HERO — dark bg continuous with nav ═══ */}
-      <section className="relative bg-primary text-primary-foreground pt-16 pb-8 md:pt-24 md:pb-12 overflow-hidden">
-        {/* Decorative accent arc */}
-        <div className="absolute top-0 right-0 w-[600px] h-[600px] pointer-events-none">
-          <div className="absolute top-[-100px] right-[-150px] w-[500px] h-[500px] rounded-full border-[40px] border-accent/15" />
-          <div className="absolute top-[-40px] right-[-80px] w-[300px] h-[300px] rounded-full border-[24px] border-accent/10" />
-        </div>
-
+      {/* ═══ HERO — light warm bg ═══ */}
+      <section className="relative bg-accent/[0.07] pt-20 pb-0 md:pt-28 overflow-hidden">
         <div className="mx-auto max-w-7xl px-6 sm:px-10 relative z-10">
-          <div className="max-w-3xl mx-auto text-center mb-16 md:mb-20">
+          <div className="max-w-2xl mb-16 md:mb-20">
             <Reveal>
-              <div className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-4 py-1.5 text-xs font-medium text-accent mb-8">
+              <div className="inline-flex items-center gap-2 rounded-full border border-accent/25 bg-accent/10 px-4 py-1.5 text-xs font-medium text-accent mb-8">
                 <Flame className="h-3.5 w-3.5" />
                 Chauffage bois · HVAC · Plomberie
               </div>
             </Reveal>
             <Reveal delay={80}>
               <h1
-                className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight"
-                style={{ lineHeight: "1.06" } as React.CSSProperties}
+                className="text-4xl sm:text-5xl lg:text-[3.5rem] font-bold tracking-tight text-foreground"
+                style={{ lineHeight: "1.08" } as React.CSSProperties}
               >
                 Gérez votre activité artisanale.{" "}
-                <span className="text-accent">Simplement.</span>
+                <span className="text-accent underline decoration-accent/30 underline-offset-[6px] decoration-2">Simplement.</span>
               </h1>
             </Reveal>
             <Reveal delay={160}>
-              <p className="mt-6 text-lg md:text-xl text-primary-foreground/60 max-w-xl mx-auto leading-relaxed">
+              <p className="mt-6 text-lg text-muted-foreground max-w-lg leading-relaxed">
                 De la demande client à la facturation, LIGNIA structure votre quotidien sans le compliquer.
               </p>
             </Reveal>
             <Reveal delay={240}>
-              <div className="mt-10 flex flex-col sm:flex-row gap-3 justify-center">
+              <div className="mt-8">
                 <Button
                   size="lg"
-                  className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-[0_1px_3px_0_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)] active:scale-[0.97] transition-all text-[15px] font-semibold px-7 h-12 rounded-lg"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-md active:scale-[0.97] transition-all text-[15px] font-semibold px-8 h-12 rounded-lg"
                   asChild
                 >
                   <Link to="/dashboard">
-                    Démarrer gratuitement
+                    Démarrer maintenant
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="border-primary-foreground/25 text-primary-foreground hover:bg-primary-foreground/10 hover:border-primary-foreground/40 active:scale-[0.97] transition-all text-[15px] font-medium h-12 rounded-lg"
-                >
-                  Demander une démo
-                </Button>
               </div>
             </Reveal>
+            {/* Social proof inline */}
             <Reveal delay={320}>
-              <div className="mt-8 flex items-center justify-center gap-6 text-sm text-primary-foreground/50">
-                <span className="flex items-center gap-1.5">
-                  <CheckCircle2 className="h-4 w-4 text-accent" /> 14 jours gratuits
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <CheckCircle2 className="h-4 w-4 text-accent" /> Sans carte bancaire
-                </span>
+              <div className="mt-6 flex items-center gap-4 text-sm text-muted-foreground">
+                <div className="flex items-center gap-1">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} className={`h-4 w-4 ${i < 5 ? "fill-warning text-warning" : "fill-warning/40 text-warning/40"}`} />
+                  ))}
+                  <span className="ml-1.5 font-semibold text-foreground">4.8/5</span>
+                </div>
+                <span className="text-muted-foreground/40">·</span>
+                <span>200+ artisans équipés</span>
               </div>
             </Reveal>
           </div>
 
-          {/* BIG hero mockup — overlaps into next section */}
+          {/* Hero mockup — overlaps into next */}
           <Reveal delay={300}>
-            <div className="relative max-w-5xl mx-auto mb-[-80px] md:mb-[-120px]">
-              <div className="relative">
-                <HeroMockup />
-              </div>
+            <div className="relative max-w-5xl mx-auto mb-[-60px] md:mb-[-100px]">
+              <HeroMockup />
             </div>
           </Reveal>
         </div>
       </section>
 
-      {/* ═══ SOCIAL PROOF — big number ribbon ═══ */}
-      <section className="pt-32 md:pt-44 pb-16 md:pb-20">
-        <div className="mx-auto max-w-6xl px-6 sm:px-10">
+      {/* ═══ FEATURE BAR — horizontal strip ═══ */}
+      <section className="relative z-10 pt-24 md:pt-32 pb-12 md:pb-16">
+        <div className="mx-auto max-w-5xl px-6 sm:px-10">
           <Reveal>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-0 divide-x divide-border">
-              {[
-                { stat: "200+", label: "Artisans équipés", icon: Users },
-                { stat: "10 min", label: "Prise en main", icon: Zap },
-                { stat: "87%", label: "Utilisé sur chantier", icon: Smartphone },
-                { stat: "100%", label: "Hébergé en France", icon: Shield },
-              ].map((item, i) => (
-                <Reveal key={item.label} delay={i * 80}>
-                  <div className="flex flex-col items-center text-center py-6 md:py-8">
-                    <item.icon className="h-5 w-5 text-accent/60 mb-4" />
-                    <p className="text-3xl md:text-4xl font-bold font-mono text-foreground tracking-tight">{item.stat}</p>
-                    <p className="text-xs text-muted-foreground mt-2 font-medium uppercase tracking-wider">{item.label}</p>
+            <div className="rounded-2xl bg-primary text-primary-foreground p-1.5">
+              <div className="grid grid-cols-2 md:grid-cols-4">
+                {[
+                  { icon: Briefcase, label: "Gestion clients & projets" },
+                  { icon: ClipboardCheck, label: "Relevé technique terrain" },
+                  { icon: Receipt, label: "Devis & facturation" },
+                  { icon: CalendarDays, label: "Planning interventions" },
+                ].map((f) => (
+                  <div key={f.label} className="flex items-center gap-3 px-5 py-4 text-sm font-medium text-primary-foreground/80">
+                    <f.icon className="h-5 w-5 text-accent shrink-0" />
+                    <span>{f.label}</span>
                   </div>
-                </Reveal>
-              ))}
+                ))}
+              </div>
             </div>
           </Reveal>
         </div>

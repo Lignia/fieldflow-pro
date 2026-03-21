@@ -361,12 +361,15 @@ export default function LandingPage() {
               Comment ça marche
             </a>
           </div>
-          <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10" asChild>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="sm" className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/5 rounded-lg font-medium" asChild>
               <Link to="/dashboard">Connexion</Link>
             </Button>
-            <Button size="sm" className="bg-accent hover:bg-accent/90 text-accent-foreground" asChild>
-              <Link to="/dashboard">Essai gratuit</Link>
+            <Button size="sm" className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-[0_1px_2px_0_rgba(0,0,0,0.05)] active:scale-[0.97] transition-all rounded-lg font-medium" asChild>
+              <Link to="/dashboard">
+                Essai gratuit
+                <ArrowRight className="ml-1.5 h-3.5 w-3.5" />
+              </Link>
             </Button>
           </div>
         </div>

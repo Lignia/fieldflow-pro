@@ -690,10 +690,10 @@ export default function LandingPage() {
       </section>
 
       {/* ═══ HOW — asymmetric timeline, not 3 equal columns ═══ */}
-      <section id="how" className="py-28 md:py-36 relative">
+      <section id="how" className="py-20 md:py-28 relative">
         <div className="mx-auto max-w-6xl px-6 sm:px-10">
           <Reveal>
-            <div className="mb-16 md:mb-20">
+            <div className="mb-12 md:mb-16">
               <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent mb-3">Démarrage</p>
               <h2 className="text-3xl md:text-4xl font-bold" style={{ lineHeight: "1.08" }}>En route en 3 étapes</h2>
             </div>

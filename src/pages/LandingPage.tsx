@@ -451,18 +451,22 @@ export default function LandingPage() {
 
       {/* ═══ SOCIAL PROOF strip ═══ */}
       <Reveal>
-        <section className="pt-28 md:pt-40 pb-12 md:pb-16 border-b">
-          <div className="mx-auto max-w-4xl px-6 sm:px-10">
-            <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4 text-sm text-muted-foreground">
+        <section className="pt-28 md:pt-40 pb-14 md:pb-20 border-b">
+          <div className="mx-auto max-w-5xl px-6 sm:px-10">
+            <p className="text-center text-sm font-semibold text-muted-foreground/70 uppercase tracking-[0.15em] mb-8">
+              Ils nous font confiance
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               {[
-                { icon: Shield, text: "Données hébergées en France" },
-                { icon: Smartphone, text: "Optimisé terrain & mobile" },
-                { icon: Users, text: "Conçu pour les PME artisans" },
-                { icon: Zap, text: "Prise en main en 10 minutes" },
+                { icon: Shield, text: "Données hébergées en France", stat: "100%" },
+                { icon: Users, text: "Artisans équipés", stat: "200+" },
+                { icon: Zap, text: "Prise en main", stat: "10 min" },
+                { icon: Smartphone, text: "Utilisé sur chantier", stat: "87%" },
               ].map((item) => (
-                <div key={item.text} className="flex items-center gap-2">
-                  <item.icon className="h-4 w-4 text-accent" />
-                  <span className="font-medium">{item.text}</span>
+                <div key={item.text} className="flex flex-col items-center text-center p-5 rounded-xl bg-muted/30">
+                  <item.icon className="h-5 w-5 text-accent mb-3" />
+                  <p className="text-2xl font-bold font-mono text-foreground mb-1">{item.stat}</p>
+                  <p className="text-xs text-muted-foreground font-medium">{item.text}</p>
                 </div>
               ))}
             </div>

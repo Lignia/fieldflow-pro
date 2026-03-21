@@ -675,31 +675,34 @@ export default function LandingPage() {
         </section>
       </Reveal>
 
-      {/* ═══ HOW IT WORKS ═══ */}
+      {/* ═══ HOW IT WORKS — cards with numbers ═══ */}
       <Reveal>
-        <section id="how" className="py-28 md:py-36">
-          <div className="mx-auto max-w-4xl px-6 sm:px-10 text-center">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent mb-4">
-              Démarrage
-            </p>
-            <h2 className="text-3xl md:text-4xl font-bold mb-20" style={{ lineHeight: "1.1" } as React.CSSProperties}>
-              En route en 3 étapes
-            </h2>
-            <div className="grid md:grid-cols-3 gap-0 relative">
-              {/* Connector line */}
-              <div className="hidden md:block absolute top-10 left-[calc(16.67%+40px)] right-[calc(16.67%+40px)] h-[2px] bg-gradient-to-r from-accent/40 via-accent to-accent/40" />
+        <section id="how" className="bg-muted/30 py-28 md:py-36">
+          <div className="mx-auto max-w-5xl px-6 sm:px-10">
+            <div className="text-center mb-16">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent mb-4">
+                Démarrage
+              </p>
+              <h2 className="text-3xl md:text-4xl font-bold" style={{ lineHeight: "1.1" } as React.CSSProperties}>
+                En route en 3 étapes
+              </h2>
+            </div>
+            <div className="grid md:grid-cols-3 gap-6">
               {[
-                { num: "1", text: "Créez votre compte en 2 minutes", sub: "Aucune carte bancaire requise" },
-                { num: "2", text: "Ajoutez vos premiers clients et projets", sub: "Import ou saisie progressive" },
-                { num: "3", text: "Planifiez, chiffrez, facturez", sub: "Tout au même endroit" },
+                { num: "01", text: "Créez votre compte", sub: "En 2 minutes, sans carte bancaire. Votre espace est prêt.", icon: Zap },
+                { num: "02", text: "Ajoutez vos données", sub: "Clients, projets, catalogue — importez ou saisissez progressivement.", icon: Users },
+                { num: "03", text: "Pilotez votre activité", sub: "Planifiez, chiffrez et facturez depuis un seul endroit.", icon: BarChart3 },
               ].map((s, i) => (
                 <Reveal key={i} delay={i * 120}>
-                  <div className="relative flex flex-col items-center px-6">
-                    <div className="flex h-20 w-20 items-center justify-center rounded-full border-[3px] border-accent bg-background text-accent font-bold text-2xl font-mono mb-6 relative z-10 shadow-[0_0_0_6px_hsl(var(--background))]">
-                      {s.num}
+                  <div className="relative rounded-2xl border bg-card p-8 shadow-[0_1px_2px_0_rgba(0,0,0,0.03),0_2px_8px_-1px_rgba(0,0,0,0.06)] group hover:shadow-[0_2px_4px_0_rgba(0,0,0,0.04),0_8px_24px_-4px_rgba(0,0,0,0.08)] transition-shadow">
+                    <div className="flex items-center gap-4 mb-5">
+                      <span className="text-4xl font-bold font-mono text-accent/20 leading-none">{s.num}</span>
+                      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-accent/10 text-accent">
+                        <s.icon className="h-5 w-5" />
+                      </div>
                     </div>
-                    <p className="text-base font-semibold mb-2">{s.text}</p>
-                    <p className="text-sm text-muted-foreground">{s.sub}</p>
+                    <h3 className="text-lg font-bold mb-2">{s.text}</h3>
+                    <p className="text-sm text-muted-foreground leading-relaxed">{s.sub}</p>
                   </div>
                 </Reveal>
               ))}
@@ -708,32 +711,25 @@ export default function LandingPage() {
         </section>
       </Reveal>
 
-      {/* ═══ TESTIMONIAL — asymmetric, large ═══ */}
+      {/* ═══ TESTIMONIAL — accent border, minimal ═══ */}
       <Reveal>
-        <section className="py-24 md:py-32">
-          <div className="mx-auto max-w-5xl px-6 sm:px-10">
-            <div className="rounded-3xl border bg-card p-10 md:p-16 shadow-[0_1px_2px_0_rgba(0,0,0,0.03),0_4px_16px_-2px_rgba(0,0,0,0.06)]">
-              <div className="grid md:grid-cols-5 gap-10 items-center">
-                <div className="md:col-span-3">
-                  <div className="text-5xl md:text-6xl leading-none text-accent/20 font-serif mb-6 select-none">"</div>
-                  <blockquote
-                    className="text-2xl md:text-3xl font-medium leading-snug text-foreground -mt-4"
-                    style={{ lineHeight: "1.3" } as React.CSSProperties}
-                  >
-                    Avant LIGNIA, mes devis traînaient une semaine. Maintenant je les envoie le soir même depuis le chantier.
-                  </blockquote>
+        <section className="py-28 md:py-36">
+          <div className="mx-auto max-w-4xl px-6 sm:px-10">
+            <div className="relative pl-8 md:pl-12 border-l-4 border-accent">
+              <div className="text-7xl md:text-8xl leading-none text-accent/15 font-serif absolute -top-4 -left-1 select-none">"</div>
+              <blockquote
+                className="text-2xl md:text-4xl font-semibold text-foreground mb-8 relative z-10"
+                style={{ lineHeight: "1.25", textWrap: "balance" } as React.CSSProperties}
+              >
+                Avant LIGNIA, mes devis traînaient une semaine. Maintenant je les envoie le soir même depuis le chantier.
+              </blockquote>
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-bold">
+                  PL
                 </div>
-                <div className="md:col-span-2 flex md:justify-end">
-                  <div className="flex items-center gap-5">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-accent/10 text-accent text-base font-bold">
-                      PL
-                    </div>
-                    <div>
-                      <p className="text-base font-semibold">Patrick Lefèvre</p>
-                      <p className="text-sm text-muted-foreground">Artisan chauffagiste</p>
-                      <p className="text-xs text-muted-foreground/60">Annecy (74)</p>
-                    </div>
-                  </div>
+                <div>
+                  <p className="font-semibold">Patrick Lefèvre</p>
+                  <p className="text-sm text-muted-foreground">Artisan chauffagiste · Annecy (74)</p>
                 </div>
               </div>
             </div>

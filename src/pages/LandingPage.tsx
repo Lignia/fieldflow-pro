@@ -345,7 +345,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-background overflow-x-hidden">
       {/* ─── Navbar ─── */}
-      <nav className="sticky top-0 z-50 border-b bg-card/90 backdrop-blur-md">
+      <nav className="sticky top-0 z-50 bg-primary text-primary-foreground">
         <div className="mx-auto max-w-7xl flex items-center justify-between px-6 sm:px-10 h-16">
           <Link to="/" className="flex items-center gap-2.5">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent text-accent-foreground font-bold text-sm">
@@ -354,15 +354,15 @@ export default function LandingPage() {
             <span className="text-lg font-bold tracking-tight">LIGNIA</span>
           </Link>
           <div className="hidden md:flex items-center gap-8 text-sm">
-            <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors">
+            <a href="#features" className="text-primary-foreground/60 hover:text-primary-foreground transition-colors">
               Fonctionnalités
             </a>
-            <a href="#how" className="text-muted-foreground hover:text-foreground transition-colors">
+            <a href="#how" className="text-primary-foreground/60 hover:text-primary-foreground transition-colors">
               Comment ça marche
             </a>
           </div>
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="sm" asChild>
+            <Button variant="ghost" size="sm" className="text-primary-foreground/80 hover:text-primary-foreground hover:bg-primary-foreground/10" asChild>
               <Link to="/dashboard">Connexion</Link>
             </Button>
             <Button size="sm" className="bg-accent hover:bg-accent/90 text-accent-foreground" asChild>
@@ -372,20 +372,25 @@ export default function LandingPage() {
         </div>
       </nav>
 
-      {/* ═══ HERO ═══ */}
-      <section className="relative pt-20 pb-8 md:pt-32 md:pb-12">
-        <div className="mx-auto max-w-7xl px-6 sm:px-10">
-          {/* Centered text */}
+      {/* ═══ HERO — dark bg continuous with nav ═══ */}
+      <section className="relative bg-primary text-primary-foreground pt-16 pb-8 md:pt-24 md:pb-12 overflow-hidden">
+        {/* Decorative accent arc */}
+        <div className="absolute top-0 right-0 w-[600px] h-[600px] pointer-events-none">
+          <div className="absolute top-[-100px] right-[-150px] w-[500px] h-[500px] rounded-full border-[40px] border-accent/15" />
+          <div className="absolute top-[-40px] right-[-80px] w-[300px] h-[300px] rounded-full border-[24px] border-accent/10" />
+        </div>
+
+        <div className="mx-auto max-w-7xl px-6 sm:px-10 relative z-10">
           <div className="max-w-3xl mx-auto text-center mb-16 md:mb-20">
             <Reveal>
-              <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/5 px-4 py-1.5 text-xs font-medium text-accent mb-8">
+              <div className="inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-4 py-1.5 text-xs font-medium text-accent mb-8">
                 <Flame className="h-3.5 w-3.5" />
                 Chauffage bois · HVAC · Plomberie
               </div>
             </Reveal>
             <Reveal delay={80}>
               <h1
-                className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-foreground"
+                className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight"
                 style={{ lineHeight: "1.06" } as React.CSSProperties}
               >
                 Gérez votre activité artisanale.{" "}
@@ -393,7 +398,7 @@ export default function LandingPage() {
               </h1>
             </Reveal>
             <Reveal delay={160}>
-              <p className="mt-6 text-lg md:text-xl text-muted-foreground max-w-xl mx-auto leading-relaxed">
+              <p className="mt-6 text-lg md:text-xl text-primary-foreground/60 max-w-xl mx-auto leading-relaxed">
                 De la demande client à la facturation, LIGNIA structure votre quotidien sans le compliquer.
               </p>
             </Reveal>
@@ -410,16 +415,16 @@ export default function LandingPage() {
                   </Link>
                 </Button>
                 <Button
-                  variant="outline"
                   size="lg"
-                  className="active:scale-[0.97] transition-transform text-base h-13 rounded-xl"
+                  variant="outline"
+                  className="border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground active:scale-[0.97] transition-transform text-base h-13 rounded-xl"
                 >
                   Demander une démo
                 </Button>
               </div>
             </Reveal>
             <Reveal delay={320}>
-              <div className="mt-8 flex items-center justify-center gap-6 text-sm text-muted-foreground">
+              <div className="mt-8 flex items-center justify-center gap-6 text-sm text-primary-foreground/50">
                 <span className="flex items-center gap-1.5">
                   <CheckCircle2 className="h-4 w-4 text-accent" /> 14 jours gratuits
                 </span>

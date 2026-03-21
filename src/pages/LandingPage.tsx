@@ -568,7 +568,7 @@ export default function LandingPage() {
       </section>
 
       {/* ═══ TRANSITION — Accent band with value props ═══ */}
-      <section className="bg-accent text-accent-foreground py-5 relative overflow-hidden">
+      <section className="bg-accent text-accent-foreground py-6 relative overflow-hidden">
         <div className="mx-auto max-w-7xl px-6 sm:px-10">
           <div className="flex flex-wrap items-center justify-between gap-4 md:gap-8">
             {[
@@ -577,8 +577,8 @@ export default function LandingPage() {
               "Planning multi-technicien",
               "Relevé terrain 55 points",
             ].map((t) => (
-              <span key={t} className="text-[12px] font-semibold tracking-wide flex items-center gap-2">
-                <CheckCircle2 className="h-3.5 w-3.5" />
+              <span key={t} className="text-sm font-semibold tracking-wide flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4" />
                 {t}
               </span>
             ))}

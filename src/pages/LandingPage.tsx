@@ -872,16 +872,16 @@ export default function LandingPage() {
               <h2 className="text-3xl md:text-[3.2rem] font-bold mb-5 leading-[1.06]">
                 Arrêtez de courir<br />après la paperasse
               </h2>
-              <p className="text-primary-foreground/40 mb-10 max-w-md mx-auto text-[15px] leading-relaxed">
+              <p className="text-primary-foreground/45 mb-10 max-w-md mx-auto text-base leading-relaxed">
                 14 jours gratuits. Sans engagement, sans carte bancaire. Si après 14 jours vous revenez au tableur — c'est que ça n'était pas pour vous.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-[0_2px_8px_rgba(0,0,0,0.08),0_8px_32px_-4px_hsl(142_40%_45%/0.25)] active:scale-[0.97] transition-all text-sm font-semibold px-8 h-12 rounded-xl" asChild>
-                  <Link to="/dashboard">Essai gratuit 14 jours<ArrowRight className="ml-2 h-4 w-4" /></Link>
+                  <Link to="/dashboard">Commencer maintenant<ArrowRight className="ml-2 h-4 w-4" /></Link>
                 </Button>
-                <Button size="lg" variant="outline" className="border-primary-foreground/20 bg-primary-foreground/[0.06] text-primary-foreground hover:bg-primary-foreground/15 active:scale-[0.97] transition-all text-sm font-medium h-12 rounded-xl">
+                <a href="#" className="text-sm font-medium text-primary-foreground/50 hover:text-primary-foreground/80 transition-colors underline underline-offset-4 decoration-primary-foreground/20 hover:decoration-primary-foreground/40 flex items-center justify-center h-12">
                   Demander une démo
-                </Button>
+                </a>
               </div>
               <p className="mt-6 text-[12px] text-primary-foreground/25">Aucune carte bancaire requise · Données hébergées en France · Support réactif</p>
             </div>

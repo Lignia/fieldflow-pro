@@ -439,21 +439,21 @@ export default function LandingPage() {
                 </h1>
               </Reveal>
               <Reveal delay={120}>
-                <p className="mt-5 text-[15px] text-muted-foreground max-w-sm leading-relaxed">
-                  Devis envoyé le soir même. Planning techniciens synchronisé. Factures qui partent à l'heure. LIGNIA, c'est ça.
+                <p className="mt-5 text-base md:text-lg text-muted-foreground max-w-md leading-relaxed">
+                  LIGNIA gère vos devis, planning et factures. Vous, restez sur le chantier.
                 </p>
               </Reveal>
               <Reveal delay={180}>
-                <div className="mt-7 flex flex-col sm:flex-row items-start gap-3">
+                <div className="mt-7 flex items-center gap-5">
                   <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-[0_2px_8px_rgba(0,0,0,0.08),0_8px_32px_-4px_hsl(142_40%_45%/0.25)] active:scale-[0.97] transition-all text-sm font-semibold px-7 h-12 rounded-xl" asChild>
                     <Link to="/dashboard">
                       Essai gratuit 14 jours
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                   </Button>
-                  <Button size="lg" variant="outline" className="text-sm font-medium h-12 rounded-xl border-border/60 hover:bg-muted/40">
-                    Voir la démo
-                  </Button>
+                  <a href="#features" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors underline underline-offset-4 decoration-border hover:decoration-foreground/40">
+                    Voir la démo ↓
+                  </a>
                 </div>
               </Reveal>
               <Reveal delay={240}>

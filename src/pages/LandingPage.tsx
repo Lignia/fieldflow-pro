@@ -439,21 +439,21 @@ export default function LandingPage() {
                 </h1>
               </Reveal>
               <Reveal delay={120}>
-                <p className="mt-5 text-[15px] text-muted-foreground max-w-sm leading-relaxed">
-                  Devis envoyé le soir même. Planning techniciens synchronisé. Factures qui partent à l'heure. LIGNIA, c'est ça.
+                <p className="mt-5 text-base md:text-lg text-muted-foreground max-w-md leading-relaxed">
+                  LIGNIA gère vos devis, planning et factures. Vous, restez sur le chantier.
                 </p>
               </Reveal>
               <Reveal delay={180}>
-                <div className="mt-7 flex flex-col sm:flex-row items-start gap-3">
+                <div className="mt-7 flex items-center gap-5">
                   <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-[0_2px_8px_rgba(0,0,0,0.08),0_8px_32px_-4px_hsl(142_40%_45%/0.25)] active:scale-[0.97] transition-all text-sm font-semibold px-7 h-12 rounded-xl" asChild>
                     <Link to="/dashboard">
                       Essai gratuit 14 jours
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                   </Button>
-                  <Button size="lg" variant="outline" className="text-sm font-medium h-12 rounded-xl border-border/60 hover:bg-muted/40">
-                    Voir la démo
-                  </Button>
+                  <a href="#features" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors underline underline-offset-4 decoration-border hover:decoration-foreground/40">
+                    Voir la démo ↓
+                  </a>
                 </div>
               </Reveal>
               <Reveal delay={240}>
@@ -521,9 +521,9 @@ export default function LandingPage() {
               <Reveal>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-warning/60 mb-4">Le problème</p>
                 <h2 className="text-3xl md:text-[2.75rem] font-bold leading-[1.06] mb-5" style={{ letterSpacing: "-0.02em" }}>
-                  Votre savoir-faire mérite mieux que des post-it et des tableurs
+                  Votre savoir-faire mérite mieux que des post-it
                 </h2>
-                <p className="text-primary-foreground/35 text-base leading-relaxed mb-8">
+                <p className="text-primary-foreground/50 text-base md:text-lg leading-relaxed mb-8">
                   Vous êtes artisan, pas secrétaire. Pourtant vous passez vos soirées à relancer, recopier et chercher ce devis parti où déjà…
                 </p>
                 {/* Accent stat — large, punchy */}
@@ -556,7 +556,7 @@ export default function LandingPage() {
                           <span className="text-4xl font-bold font-mono text-warning/80 leading-none">{p.stat}</span>
                           {p.unit && <span className="text-xl font-bold text-warning/40 ml-0.5">{p.unit}</span>}
                         </div>
-                        <p className="text-[13px] text-primary-foreground/40 leading-relaxed">{p.desc}</p>
+                        <p className="text-sm text-primary-foreground/50 leading-relaxed">{p.desc}</p>
                       </div>
                     </div>
                   </Reveal>
@@ -568,7 +568,7 @@ export default function LandingPage() {
       </section>
 
       {/* ═══ TRANSITION — Accent band with value props ═══ */}
-      <section className="bg-accent text-accent-foreground py-5 relative overflow-hidden">
+      <section className="bg-accent text-accent-foreground py-6 relative overflow-hidden">
         <div className="mx-auto max-w-7xl px-6 sm:px-10">
           <div className="flex flex-wrap items-center justify-between gap-4 md:gap-8">
             {[
@@ -577,8 +577,8 @@ export default function LandingPage() {
               "Planning multi-technicien",
               "Relevé terrain 55 points",
             ].map((t) => (
-              <span key={t} className="text-[12px] font-semibold tracking-wide flex items-center gap-2">
-                <CheckCircle2 className="h-3.5 w-3.5" />
+              <span key={t} className="text-sm font-semibold tracking-wide flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4" />
                 {t}
               </span>
             ))}
@@ -633,8 +633,8 @@ export default function LandingPage() {
                   Fini le planning sur le frigo
                 </h3>
               </div>
-              <p className="text-muted-foreground text-[15px] leading-relaxed max-w-sm">
-                Chaque technicien voit sa semaine. Vous voyez tout le monde. Et quand un client appelle, vous savez qui est dispo dans l'heure.
+              <p className="text-muted-foreground text-base leading-relaxed max-w-sm">
+                Chaque technicien voit sa semaine. Vous voyez tout le monde. Un client appelle ? Vous savez qui est dispo dans l'heure.
               </p>
             </div>
           </Reveal>
@@ -706,17 +706,16 @@ export default function LandingPage() {
                 <h3 className="text-2xl md:text-[2.5rem] font-bold mb-5 leading-[1.06]">
                   Le client dit oui à 18h.<br />La facture part à 18h02.
                 </h3>
-                <p className="text-muted-foreground text-[15px] leading-relaxed mb-6">
-                  Créez vos devis depuis le catalogue, gérez la double TVA 5.5%/10%, envoyez pour signature. Quand c'est signé, la facture d'acompte se génère toute seule.
+                <p className="text-muted-foreground text-base leading-relaxed mb-6">
+                  Créez vos devis depuis le catalogue, gérez la double TVA 5.5%/10%, envoyez pour signature. La facture d'acompte se génère toute seule.
                 </p>
                 <div className="space-y-3">
                   {[
                     "Catalogue produits avec références fournisseur",
-                    "Numérotation DEV-YYYY-NNNN automatique",
-                    "Historique de versions (v1, v2, v3…)",
+                    "Double TVA 5.5% / 10% automatique",
                     "Signature électronique intégrée",
                   ].map((h) => (
-                    <div key={h} className="flex items-start gap-2.5 text-[13px]">
+                    <div key={h} className="flex items-start gap-2.5 text-sm">
                       <CheckCircle2 className="h-4 w-4 text-accent shrink-0 mt-0.5" />
                       <span className="font-medium leading-snug">{h}</span>
                     </div>
@@ -742,8 +741,8 @@ export default function LandingPage() {
                   <h2 className="text-3xl md:text-[2.75rem] font-bold leading-[1.06] mb-5">
                     Le relevé technique qui tient dans la poche
                   </h2>
-                  <p className="text-primary-foreground/40 text-[15px] leading-relaxed mb-8">
-                    55 points de contrôle en 8 sections guidées. Remplissez entre deux coups de marteau, même sans réseau. Quand vous rentrez, tout est déjà synchronisé.
+                  <p className="text-primary-foreground/55 text-base leading-relaxed mb-8">
+                    55 points de contrôle en 8 sections guidées. Remplissez entre deux coups de marteau, même sans réseau.
                   </p>
                   <div className="space-y-2.5">
                     {[
@@ -752,9 +751,9 @@ export default function LandingPage() {
                       { icon: Camera, label: "Photos directement dans le relevé" },
                       { icon: Shield, label: "Fonctionne hors connexion" },
                     ].map((item) => (
-                      <div key={item.label} className="flex items-center gap-3 rounded-xl border border-primary-foreground/[0.06] bg-primary-foreground/[0.02] px-4 py-3 hover:bg-primary-foreground/[0.05] transition-colors duration-300">
+                      <div key={item.label} className="flex items-center gap-3 rounded-xl border border-primary-foreground/[0.08] bg-primary-foreground/[0.03] px-4 py-3 hover:bg-primary-foreground/[0.06] transition-colors duration-300">
                         <item.icon className="h-4 w-4 text-accent shrink-0" />
-                        <span className="text-[13px] font-medium text-primary-foreground/65">{item.label}</span>
+                        <span className="text-sm font-medium text-primary-foreground/70">{item.label}</span>
                       </div>
                     ))}
                   </div>
@@ -845,9 +844,9 @@ export default function LandingPage() {
               {/* Stats — 4 cols, stacked */}
               <div className="lg:col-span-4 flex flex-col gap-4">
                 {[
-                  { value: "200+", label: "artisans équipés", sub: "chauffage, HVAC, plomberie" },
-                  { value: "4.8/5", label: "satisfaction client", sub: "sur 127 avis vérifiés" },
-                  { value: "15 min", label: "prise en main", sub: "sans formation préalable" },
+                  { value: "200+", label: "artisans équipés", sub: "depuis 2024 · chauffage, HVAC, plomberie" },
+                  { value: "4.8/5", label: "satisfaction client", sub: "sur 127 avis vérifiés · Trustpilot" },
+                  { value: "15 min", label: "prise en main", sub: "sans formation ni consultant" },
                 ].map((s) => (
                   <div key={s.label} className="flex-1 flex flex-col justify-center rounded-2xl border bg-card p-5 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
                     <span className="text-2xl font-bold font-mono text-accent leading-none mb-1">{s.value}</span>
@@ -873,16 +872,16 @@ export default function LandingPage() {
               <h2 className="text-3xl md:text-[3.2rem] font-bold mb-5 leading-[1.06]">
                 Arrêtez de courir<br />après la paperasse
               </h2>
-              <p className="text-primary-foreground/40 mb-10 max-w-md mx-auto text-[15px] leading-relaxed">
+              <p className="text-primary-foreground/45 mb-10 max-w-md mx-auto text-base leading-relaxed">
                 14 jours gratuits. Sans engagement, sans carte bancaire. Si après 14 jours vous revenez au tableur — c'est que ça n'était pas pour vous.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-[0_2px_8px_rgba(0,0,0,0.08),0_8px_32px_-4px_hsl(142_40%_45%/0.25)] active:scale-[0.97] transition-all text-sm font-semibold px-8 h-12 rounded-xl" asChild>
-                  <Link to="/dashboard">Essai gratuit 14 jours<ArrowRight className="ml-2 h-4 w-4" /></Link>
+                  <Link to="/dashboard">Commencer maintenant<ArrowRight className="ml-2 h-4 w-4" /></Link>
                 </Button>
-                <Button size="lg" variant="outline" className="border-primary-foreground/20 bg-primary-foreground/[0.06] text-primary-foreground hover:bg-primary-foreground/15 active:scale-[0.97] transition-all text-sm font-medium h-12 rounded-xl">
+                <a href="#" className="text-sm font-medium text-primary-foreground/50 hover:text-primary-foreground/80 transition-colors underline underline-offset-4 decoration-primary-foreground/20 hover:decoration-primary-foreground/40 flex items-center justify-center h-12">
                   Demander une démo
-                </Button>
+                </a>
               </div>
               <p className="mt-6 text-[12px] text-primary-foreground/25">Aucune carte bancaire requise · Données hébergées en France · Support réactif</p>
             </div>

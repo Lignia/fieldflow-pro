@@ -435,10 +435,9 @@ export default function LandingPage() {
             </Reveal>
           </div>
 
-          {/* BIG hero mockup — spans full width */}
+          {/* BIG hero mockup — overlaps into next section */}
           <Reveal delay={300}>
-            <div className="relative max-w-5xl mx-auto">
-              <div className="absolute -inset-10 bg-accent/[0.03] rounded-[2rem] blur-3xl" />
+            <div className="relative max-w-5xl mx-auto mb-[-80px] md:mb-[-120px]">
               <div className="relative">
                 <HeroMockup />
               </div>

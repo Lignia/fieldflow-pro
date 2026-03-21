@@ -233,7 +233,7 @@ export default function DesignSystem() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 mt-6">
             <BadgeGroup title="Type client">
               {(["particulier", "professionnel", "collectivite"] as const).map((t) => (
-                <CustomerBadge key={t} type={t} />
+                <CustomerBadge key={t} customerType={t} />
               ))}
             </BadgeGroup>
             <BadgeGroup title="Type devis">

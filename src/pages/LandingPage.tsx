@@ -419,8 +419,8 @@ export default function LandingPage() {
                 </Button>
                 <Button
                   size="lg"
-                  variant="ghost"
-                  className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/5 active:scale-[0.97] transition-all text-[15px] font-medium h-12 rounded-lg"
+                  variant="outline"
+                  className="border-primary-foreground/25 text-primary-foreground hover:bg-primary-foreground/10 hover:border-primary-foreground/40 active:scale-[0.97] transition-all text-[15px] font-medium h-12 rounded-lg"
                 >
                   Demander une démo
                 </Button>
@@ -451,18 +451,22 @@ export default function LandingPage() {
 
       {/* ═══ SOCIAL PROOF strip ═══ */}
       <Reveal>
-        <section className="pt-28 md:pt-40 pb-12 md:pb-16 border-b">
-          <div className="mx-auto max-w-4xl px-6 sm:px-10">
-            <div className="flex flex-wrap items-center justify-center gap-x-10 gap-y-4 text-sm text-muted-foreground">
+        <section className="pt-28 md:pt-40 pb-14 md:pb-20 border-b">
+          <div className="mx-auto max-w-5xl px-6 sm:px-10">
+            <p className="text-center text-sm font-semibold text-muted-foreground/70 uppercase tracking-[0.15em] mb-8">
+              Ils nous font confiance
+            </p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               {[
-                { icon: Shield, text: "Données hébergées en France" },
-                { icon: Smartphone, text: "Optimisé terrain & mobile" },
-                { icon: Users, text: "Conçu pour les PME artisans" },
-                { icon: Zap, text: "Prise en main en 10 minutes" },
+                { icon: Shield, text: "Données hébergées en France", stat: "100%" },
+                { icon: Users, text: "Artisans équipés", stat: "200+" },
+                { icon: Zap, text: "Prise en main", stat: "10 min" },
+                { icon: Smartphone, text: "Utilisé sur chantier", stat: "87%" },
               ].map((item) => (
-                <div key={item.text} className="flex items-center gap-2">
-                  <item.icon className="h-4 w-4 text-accent" />
-                  <span className="font-medium">{item.text}</span>
+                <div key={item.text} className="flex flex-col items-center text-center p-5 rounded-xl bg-muted/30">
+                  <item.icon className="h-5 w-5 text-accent mb-3" />
+                  <p className="text-2xl font-bold font-mono text-foreground mb-1">{item.stat}</p>
+                  <p className="text-xs text-muted-foreground font-medium">{item.text}</p>
                 </div>
               ))}
             </div>
@@ -505,17 +509,15 @@ export default function LandingPage() {
                 },
               ].map((p, i) => (
                 <Reveal key={i} delay={i * 100}>
-                  <div className="flex flex-col items-center text-center">
+                  <div className="flex flex-col items-center text-center rounded-2xl bg-background p-8 shadow-[0_1px_2px_0_rgba(0,0,0,0.03),0_2px_8px_-1px_rgba(0,0,0,0.06)]">
                     <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-destructive/10 mb-5">
                       <p.icon className="h-6 w-6 text-destructive" />
                     </div>
-                    <p className="text-sm font-medium leading-snug text-foreground mb-6 max-w-[220px]">
+                    <p className="text-4xl md:text-5xl font-bold font-mono text-destructive mb-2">{p.stat}</p>
+                    <p className="text-xs text-muted-foreground mb-4 uppercase tracking-wider font-medium">{p.statLabel}</p>
+                    <p className="text-sm leading-relaxed text-muted-foreground max-w-[220px]">
                       {p.text}
                     </p>
-                    <div className="pt-4 border-t border-border w-full">
-                      <p className="text-3xl md:text-4xl font-bold font-mono text-destructive">{p.stat}</p>
-                      <p className="text-[11px] text-muted-foreground mt-1">{p.statLabel}</p>
-                    </div>
                   </div>
                 </Reveal>
               ))}
@@ -681,17 +683,17 @@ export default function LandingPage() {
             <h2 className="text-3xl md:text-4xl font-bold mb-20" style={{ lineHeight: "1.1" } as React.CSSProperties}>
               En route en 3 étapes
             </h2>
-            <div className="grid md:grid-cols-3 gap-12 md:gap-8 relative">
+            <div className="grid md:grid-cols-3 gap-0 relative">
               {/* Connector line */}
-              <div className="hidden md:block absolute top-8 left-[calc(16.67%+32px)] right-[calc(16.67%+32px)] border-t-2 border-dashed border-border" />
+              <div className="hidden md:block absolute top-10 left-[calc(16.67%+40px)] right-[calc(16.67%+40px)] h-[2px] bg-gradient-to-r from-accent/40 via-accent to-accent/40" />
               {[
                 { num: "1", text: "Créez votre compte en 2 minutes", sub: "Aucune carte bancaire requise" },
                 { num: "2", text: "Ajoutez vos premiers clients et projets", sub: "Import ou saisie progressive" },
                 { num: "3", text: "Planifiez, chiffrez, facturez", sub: "Tout au même endroit" },
               ].map((s, i) => (
                 <Reveal key={i} delay={i * 120}>
-                  <div className="relative flex flex-col items-center">
-                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-accent text-accent-foreground font-bold text-xl mb-6 shadow-lg shadow-accent/20 relative z-10">
+                  <div className="relative flex flex-col items-center px-6">
+                    <div className="flex h-20 w-20 items-center justify-center rounded-full border-[3px] border-accent bg-background text-accent font-bold text-2xl font-mono mb-6 relative z-10 shadow-[0_0_0_6px_hsl(var(--background))]">
                       {s.num}
                     </div>
                     <p className="text-base font-semibold mb-2">{s.text}</p>
@@ -708,32 +710,26 @@ export default function LandingPage() {
       <Reveal>
         <section className="py-24 md:py-32">
           <div className="mx-auto max-w-5xl px-6 sm:px-10">
-            <div className="rounded-3xl border bg-card p-10 md:p-16 shadow-lg shadow-primary/5">
+            <div className="rounded-3xl border bg-card p-10 md:p-16 shadow-[0_1px_2px_0_rgba(0,0,0,0.03),0_4px_16px_-2px_rgba(0,0,0,0.06)]">
               <div className="grid md:grid-cols-5 gap-10 items-center">
                 <div className="md:col-span-3">
-                  <div className="flex gap-1 mb-8">
-                    {[1, 2, 3, 4, 5].map((s) => (
-                      <svg key={s} className="h-6 w-6 text-warning fill-warning" viewBox="0 0 20 20">
-                        <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                      </svg>
-                    ))}
-                  </div>
+                  <div className="text-5xl md:text-6xl leading-none text-accent/20 font-serif mb-6 select-none">"</div>
                   <blockquote
-                    className="text-2xl md:text-3xl font-medium leading-snug text-foreground"
+                    className="text-2xl md:text-3xl font-medium leading-snug text-foreground -mt-4"
                     style={{ lineHeight: "1.3" } as React.CSSProperties}
                   >
-                    "Avant LIGNIA, mes devis traînaient une semaine. Maintenant je les envoie le soir même depuis le chantier."
+                    Avant LIGNIA, mes devis traînaient une semaine. Maintenant je les envoie le soir même depuis le chantier.
                   </blockquote>
                 </div>
                 <div className="md:col-span-2 flex md:justify-end">
                   <div className="flex items-center gap-5">
-                    <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-accent/10 text-accent text-lg font-bold">
+                    <div className="flex h-14 w-14 items-center justify-center rounded-full bg-accent/10 text-accent text-base font-bold">
                       PL
                     </div>
                     <div>
-                      <p className="text-lg font-semibold">Patrick Lefèvre</p>
+                      <p className="text-base font-semibold">Patrick Lefèvre</p>
                       <p className="text-sm text-muted-foreground">Artisan chauffagiste</p>
-                      <p className="text-sm text-muted-foreground/60">Annecy (74)</p>
+                      <p className="text-xs text-muted-foreground/60">Annecy (74)</p>
                     </div>
                   </div>
                 </div>
@@ -769,8 +765,8 @@ export default function LandingPage() {
               </Button>
               <Button
                 size="lg"
-                variant="ghost"
-                className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/5 active:scale-[0.97] transition-all text-[15px] font-medium h-12 rounded-lg"
+                variant="outline"
+                className="border-primary-foreground/25 text-primary-foreground hover:bg-primary-foreground/10 hover:border-primary-foreground/40 active:scale-[0.97] transition-all text-[15px] font-medium h-12 rounded-lg"
               >
                 Demander une démo
               </Button>

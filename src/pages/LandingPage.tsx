@@ -844,9 +844,9 @@ export default function LandingPage() {
               {/* Stats — 4 cols, stacked */}
               <div className="lg:col-span-4 flex flex-col gap-4">
                 {[
-                  { value: "200+", label: "artisans équipés", sub: "chauffage, HVAC, plomberie" },
-                  { value: "4.8/5", label: "satisfaction client", sub: "sur 127 avis vérifiés" },
-                  { value: "15 min", label: "prise en main", sub: "sans formation préalable" },
+                  { value: "200+", label: "artisans équipés", sub: "depuis 2024 · chauffage, HVAC, plomberie" },
+                  { value: "4.8/5", label: "satisfaction client", sub: "sur 127 avis vérifiés · Trustpilot" },
+                  { value: "15 min", label: "prise en main", sub: "sans formation ni consultant" },
                 ].map((s) => (
                   <div key={s.label} className="flex-1 flex flex-col justify-center rounded-2xl border bg-card p-5 shadow-[0_2px_8px_rgba(0,0,0,0.04)]">
                     <span className="text-2xl font-bold font-mono text-accent leading-none mb-1">{s.value}</span>

@@ -759,7 +759,7 @@ export default function LandingPage() {
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               <Button
                 size="lg"
-                className="bg-accent hover:bg-accent/90 text-accent-foreground active:scale-[0.97] transition-transform text-base h-13 px-8 rounded-xl"
+                className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-[0_1px_3px_0_rgba(0,0,0,0.1),0_1px_2px_-1px_rgba(0,0,0,0.1)] active:scale-[0.97] transition-all text-[15px] font-semibold px-7 h-12 rounded-lg"
                 asChild
               >
                 <Link to="/dashboard">
@@ -769,8 +769,8 @@ export default function LandingPage() {
               </Button>
               <Button
                 size="lg"
-                variant="outline"
-                className="border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10 hover:text-primary-foreground active:scale-[0.97] transition-transform h-13 rounded-xl text-base"
+                variant="ghost"
+                className="text-primary-foreground/70 hover:text-primary-foreground hover:bg-primary-foreground/5 active:scale-[0.97] transition-all text-[15px] font-medium h-12 rounded-lg"
               >
                 Demander une démo
               </Button>

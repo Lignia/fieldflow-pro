@@ -14,6 +14,10 @@ import {
   Zap,
   Shield,
   Smartphone,
+  Star,
+  Briefcase,
+  Wrench,
+  Receipt,
 } from "lucide-react";
 import { useEffect, useRef } from "react";
 

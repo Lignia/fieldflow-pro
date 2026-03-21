@@ -96,6 +96,11 @@ export default {
           from: { opacity: "0" },
           to: { opacity: "1" },
         },
+        shake: {
+          "0%, 100%": { transform: "translateX(0) rotate(0)" },
+          "25%": { transform: "translateX(-2px) rotate(-2deg)" },
+          "75%": { transform: "translateX(2px) rotate(2deg)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",

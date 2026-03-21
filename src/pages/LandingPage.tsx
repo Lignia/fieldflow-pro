@@ -99,10 +99,10 @@ function HeroMockup() {
       <div className="p-5 space-y-4">
         <div className="grid grid-cols-4 gap-2.5">
           {[
-            { label: "CA mois", val: "12 847 €", color: "text-accent", trend: "+12%" },
-            { label: "Devis en cours", val: "7", color: "text-foreground" },
-            { label: "Interventions", val: "14", color: "text-foreground" },
-            { label: "Impayées", val: "3", color: "text-destructive" },
+            { label: "CA mois", val: "18 247 €", color: "text-accent", trend: "+14.3%", sub: "" },
+            { label: "Devis en attente", val: "5", color: "text-foreground", trend: "", sub: "dont 2 > 7j" },
+            { label: "Interventions S.12", val: "11", color: "text-foreground", trend: "", sub: "3 SAV · 8 pose" },
+            { label: "Impayées > 30j", val: "2", color: "text-destructive", trend: "", sub: "4 620 €" },
           ].map((k) => (
             <div key={k.label} className="rounded-xl border bg-background p-3">
               <p className="text-[9px] text-muted-foreground uppercase tracking-wider mb-1">{k.label}</p>
@@ -110,21 +110,28 @@ function HeroMockup() {
                 <p className={`text-base font-bold font-mono leading-none ${k.color}`}>{k.val}</p>
                 {k.trend && <span className="text-[9px] font-semibold text-accent leading-none mb-0.5">{k.trend}</span>}
               </div>
+              {k.sub && <p className="text-[8px] text-muted-foreground/60 mt-1">{k.sub}</p>}
             </div>
           ))}
         </div>
         <div className="grid grid-cols-3 gap-3">
           <div className="col-span-2 rounded-xl border bg-background p-3.5">
-            <p className="text-[10px] font-semibold mb-2.5">Projets en cours</p>
+            <div className="flex items-center justify-between mb-2.5">
+              <p className="text-[10px] font-semibold">Pipeline projets</p>
+              <span className="text-[8px] text-muted-foreground/50 font-mono">PRJ-2026</span>
+            </div>
             <div className="space-y-1.5">
               {[
-                { name: "Dupont — Poêle Invicta", badge: "VT planifiée", color: "bg-amber-100 text-amber-800" },
-                { name: "Martin — Insert Jøtul", badge: "Devis envoyé", color: "bg-orange-100 text-orange-800" },
-                { name: "Garcia — Chaudière bois", badge: "Installation", color: "bg-accent/15 text-accent" },
-                { name: "Bernard — Tubage inox", badge: "Facturation", color: "bg-primary/10 text-primary" },
+                { name: "Morel — Poêle Invicta Onsen", num: "PRJ-0047", badge: "VT planifiée", color: "bg-amber-100 text-amber-800" },
+                { name: "Durand — Insert Jøtul F520", num: "PRJ-0045", badge: "Devis envoyé", color: "bg-orange-100 text-orange-800" },
+                { name: "Fabre — Chaudière Fröling", num: "PRJ-0043", badge: "Pose en cours", color: "bg-accent/15 text-accent" },
+                { name: "Mercier — Tubage Ø180 inox", num: "PRJ-0041", badge: "MES planifiée", color: "bg-info/15 text-info" },
               ].map((p) => (
-                <div key={p.name} className="flex items-center justify-between rounded-lg border px-3 py-2 hover:bg-muted/30 transition-colors">
-                  <span className="text-[10px] font-medium truncate">{p.name}</span>
+                <div key={p.num} className="flex items-center justify-between rounded-lg border px-3 py-2 hover:bg-muted/30 transition-colors">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-[8px] font-mono text-muted-foreground/50 shrink-0">{p.num}</span>
+                    <span className="text-[10px] font-medium truncate">{p.name}</span>
+                  </div>
                   <span className={`text-[8px] font-semibold rounded-full px-2 py-0.5 whitespace-nowrap ${p.color}`}>{p.badge}</span>
                 </div>
               ))}
@@ -136,6 +143,9 @@ function HeroMockup() {
               {[40, 55, 35, 65, 50, 75, 60, 80, 70, 90, 65, 85].map((h, i) => (
                 <div key={i} className={`flex-1 rounded-sm ${i === 11 ? "bg-accent" : "bg-accent/20"}`} style={{ height: `${h}%` }} />
               ))}
+            </div>
+            <div className="flex justify-between mt-2 text-[7px] text-muted-foreground/40 font-mono">
+              <span>Avr</span><span>Oct</span><span>Mar</span>
             </div>
           </div>
         </div>
@@ -153,21 +163,36 @@ function PlanningMockup() {
         <div className="flex gap-2">
           <span className="text-[8px] rounded-full px-2 py-0.5 bg-primary/10 text-primary font-semibold">Installation</span>
           <span className="text-[8px] rounded-full px-2 py-0.5 bg-warning/15 text-warning font-semibold">SAV</span>
+          <span className="text-[8px] rounded-full px-2 py-0.5 bg-info/10 text-info font-semibold">Entretien</span>
         </div>
       </div>
       <div className="grid grid-cols-3 divide-x">
         {[
-          { day: "Lun 17", slots: [{ time: "08:00", label: "Dupont — Ramonage", type: "sav" }, { time: "14:00", label: "Garcia — Diagnostic", type: "sav" }] },
-          { day: "Mar 18", slots: [{ time: "09:00", label: "Martin — Pose insert", type: "install" }, { time: "15:30", label: "Moreau — SAV chaudière", type: "sav" }] },
-          { day: "Mer 19", slots: [{ time: "08:30", label: "Lefèvre — VT chaudière", type: "install" }] },
+          { day: "Lun 17", slots: [
+            { time: "08:00–10:00", label: "Morel — Ramonage", type: "sav", tech: "P. Lefèvre" },
+            { time: "14:00–16:30", label: "Fabre — Pose insert", type: "install", tech: "M. Roux" },
+          ] },
+          { day: "Mar 18", slots: [
+            { time: "09:00–12:00", label: "Durand — VT chaudière", type: "install", tech: "P. Lefèvre" },
+            { time: "14:30–16:00", label: "Garnier — Entretien annuel", type: "entretien", tech: "M. Roux" },
+          ] },
+          { day: "Mer 19", slots: [
+            { time: "08:30–11:30", label: "Mercier — MES poêle", type: "install", tech: "P. Lefèvre" },
+            { time: "15:00–16:30", label: "Bonnet — Diagnostic panne", type: "sav", tech: "M. Roux" },
+          ] },
         ].map((d) => (
           <div key={d.day} className="p-3">
             <p className="text-[9px] font-semibold text-muted-foreground mb-2 text-center">{d.day}</p>
             <div className="space-y-1.5">
               {d.slots.map((s) => (
-                <div key={s.time + s.label} className={`rounded-lg px-2 py-1.5 border-l-[3px] ${s.type === "install" ? "border-l-primary bg-primary/[0.04]" : "border-l-warning bg-warning/[0.04]"}`}>
+                <div key={s.time + s.label} className={`rounded-lg px-2 py-1.5 border-l-[3px] ${
+                  s.type === "install" ? "border-l-primary bg-primary/[0.04]" :
+                  s.type === "entretien" ? "border-l-info bg-info/[0.04]" :
+                  "border-l-warning bg-warning/[0.04]"
+                }`}>
                   <p className="text-[8px] font-mono text-muted-foreground">{s.time}</p>
                   <p className="text-[9px] font-medium mt-0.5 leading-snug">{s.label}</p>
+                  <p className="text-[7px] text-muted-foreground/50 mt-0.5">{s.tech}</p>
                 </div>
               ))}
             </div>
@@ -183,31 +208,53 @@ function QuoteMockup() {
   return (
     <div className="rounded-2xl border bg-card shadow-[0_24px_72px_-12px_rgba(0,0,0,0.12)] overflow-hidden">
       <div className="px-5 py-3 border-b bg-muted/30 flex items-center justify-between">
-        <div><span className="text-[11px] font-semibold">Devis DEV-2026-0042</span><span className="text-[9px] text-muted-foreground ml-2">v2</span></div>
+        <div>
+          <span className="text-[11px] font-semibold">Devis DEV-2026-0047</span>
+          <span className="text-[9px] text-muted-foreground ml-2">v2 · Estimatif</span>
+        </div>
         <span className="text-[8px] rounded-full px-2 py-0.5 bg-accent/15 text-accent font-semibold">Signé ✓</span>
       </div>
       <div className="p-4">
         <div className="flex items-center justify-between mb-3 pb-2.5 border-b border-dashed">
-          <div><p className="text-[9px] text-muted-foreground">Client</p><p className="text-[11px] font-semibold">M. & Mme Dupont</p></div>
-          <div className="text-right"><p className="text-[9px] text-muted-foreground">Date</p><p className="text-[11px] font-medium">15/03/2026</p></div>
+          <div>
+            <p className="text-[9px] text-muted-foreground">Client</p>
+            <p className="text-[11px] font-semibold">M. & Mme Morel</p>
+            <p className="text-[8px] text-muted-foreground/60">12 chemin des Érables · 74000 Annecy</p>
+          </div>
+          <div className="text-right">
+            <p className="text-[9px] text-muted-foreground">Validité</p>
+            <p className="text-[11px] font-medium">15/03 → 14/04/2026</p>
+            <p className="text-[8px] text-muted-foreground/60">Signé le 22/03</p>
+          </div>
         </div>
         <table className="w-full text-[9px] mb-3">
-          <thead><tr className="text-muted-foreground text-left border-b"><th className="pb-1.5 font-medium">Désignation</th><th className="pb-1.5 font-medium text-center w-10">Qté</th><th className="pb-1.5 font-medium text-right w-16">P.U. HT</th><th className="pb-1.5 font-medium text-right w-16">Total</th></tr></thead>
+          <thead><tr className="text-muted-foreground text-left border-b"><th className="pb-1.5 font-medium">Désignation</th><th className="pb-1.5 font-medium text-center w-10">Qté</th><th className="pb-1.5 font-medium text-right w-16">P.U. HT</th><th className="pb-1.5 font-medium text-right w-8">TVA</th><th className="pb-1.5 font-medium text-right w-16">Total HT</th></tr></thead>
           <tbody>
             {[
-              { desc: "Poêle à bois Invicta Onsen", qty: "1", pu: "2 890 €", total: "2 890 €" },
-              { desc: "Kit raccordement inox Ø150", qty: "1", pu: "485 €", total: "485 €" },
-              { desc: "Main d'œuvre installation", qty: "8h", pu: "80 €/h", total: "640 €" },
+              { desc: "Poêle à bois Invicta Onsen 8kW", ref: "INV-ONS-8", qty: "1", pu: "2 890 €", tva: "5.5%", total: "2 890,00 €" },
+              { desc: "Kit raccordement inox Ø150mm", ref: "KIT-RCC-150", qty: "1", pu: "485 €", tva: "10%", total: "485,00 €" },
+              { desc: "Plaque de sol verre trempé", ref: "ACC-PLS-80", qty: "1", pu: "189 €", tva: "10%", total: "189,00 €" },
+              { desc: "Main d'œuvre pose + MES", ref: "—", qty: "8h", pu: "78 €/h", tva: "10%", total: "624,00 €" },
             ].map((l) => (
-              <tr key={l.desc} className="border-b border-dashed"><td className="py-2 font-medium">{l.desc}</td><td className="py-2 text-center text-muted-foreground">{l.qty}</td><td className="py-2 text-right font-mono text-muted-foreground">{l.pu}</td><td className="py-2 text-right font-mono font-semibold">{l.total}</td></tr>
+              <tr key={l.desc} className="border-b border-dashed">
+                <td className="py-2">
+                  <span className="font-medium">{l.desc}</span>
+                  {l.ref !== "—" && <span className="text-[7px] text-muted-foreground/40 ml-1.5 font-mono">{l.ref}</span>}
+                </td>
+                <td className="py-2 text-center text-muted-foreground">{l.qty}</td>
+                <td className="py-2 text-right font-mono text-muted-foreground">{l.pu}</td>
+                <td className="py-2 text-right font-mono text-muted-foreground/50">{l.tva}</td>
+                <td className="py-2 text-right font-mono font-semibold">{l.total}</td>
+              </tr>
             ))}
           </tbody>
         </table>
         <div className="flex justify-end">
-          <div className="w-40 space-y-1">
-            <div className="flex justify-between text-[9px]"><span className="text-muted-foreground">Total HT</span><span className="font-mono font-medium">4 249 €</span></div>
-            <div className="flex justify-between text-[9px]"><span className="text-muted-foreground">TVA 10%</span><span className="font-mono font-medium">424,90 €</span></div>
-            <div className="flex justify-between text-[11px] font-bold pt-1 border-t"><span>Total TTC</span><span className="font-mono text-accent">4 673,90 €</span></div>
+          <div className="w-48 space-y-1">
+            <div className="flex justify-between text-[9px]"><span className="text-muted-foreground">Total HT</span><span className="font-mono font-medium">4 188,00 €</span></div>
+            <div className="flex justify-between text-[8px]"><span className="text-muted-foreground/60">TVA 5.5% (fourniture)</span><span className="font-mono text-muted-foreground/60">158,95 €</span></div>
+            <div className="flex justify-between text-[8px]"><span className="text-muted-foreground/60">TVA 10% (pose)</span><span className="font-mono text-muted-foreground/60">129,80 €</span></div>
+            <div className="flex justify-between text-[11px] font-bold pt-1 border-t"><span>Total TTC</span><span className="font-mono text-accent">4 476,75 €</span></div>
           </div>
         </div>
       </div>
@@ -219,20 +266,33 @@ function QuoteMockup() {
 function SurveyMockup() {
   return (
     <div className="rounded-2xl border bg-card shadow-[0_24px_72px_-12px_rgba(0,0,0,0.12)] overflow-hidden">
-      <div className="px-5 py-3 border-b bg-muted/30"><span className="text-[11px] font-semibold">Relevé technique — Dupont</span></div>
+      <div className="px-5 py-3 border-b bg-muted/30 flex items-center justify-between">
+        <span className="text-[11px] font-semibold">Relevé technique — Morel</span>
+        <span className="text-[8px] rounded-full px-2 py-0.5 bg-accent/15 text-accent font-semibold">v1 · Brouillon</span>
+      </div>
       <div className="p-4 space-y-3">
         <div>
           <div className="flex gap-0.5 mb-1.5">
-            {[1, 2, 3, 4, 5, 6, 7, 8].map((s) => (<div key={s} className={`h-1.5 flex-1 rounded-full ${s <= 5 ? "bg-accent" : "bg-border"}`} />))}
+            {["Projet", "Habitation", "Pièce", "Conduit", "Fumisterie", "Ventilation", "Photos", "Validation"].map((s, i) => (
+              <div key={s} className="flex-1 group relative">
+                <div className={`h-1.5 rounded-full ${i <= 4 ? "bg-accent" : "bg-border"}`} />
+                <span className="absolute -bottom-3.5 left-1/2 -translate-x-1/2 text-[6px] text-muted-foreground/40 whitespace-nowrap hidden group-hover:block">{s}</span>
+              </div>
+            ))}
           </div>
-          <div className="flex justify-between"><p className="text-[9px] text-muted-foreground font-medium">Section 5/8 — Pièce d'installation</p><p className="text-[9px] text-accent font-semibold">62%</p></div>
+          <div className="flex justify-between mt-1">
+            <p className="text-[9px] text-muted-foreground font-medium">Section 5/8 — Fumisterie</p>
+            <p className="text-[9px] text-accent font-semibold">62%</p>
+          </div>
         </div>
         <div className="space-y-2">
           {[
-            { label: "Surface pièce", value: "42 m²", filled: true },
-            { label: "Hauteur sous plafond", value: "2.50 m", filled: true },
-            { label: "Type de sol", value: "Carrelage", filled: true },
-            { label: "Arrivée d'air", value: "", filled: false },
+            { label: "Type de conduit", value: "Maçonné existant", filled: true },
+            { label: "Section intérieure", value: "200 × 200 mm", filled: true },
+            { label: "Hauteur tirage", value: "7.20 m", filled: true },
+            { label: "Tubage requis", value: "Oui — Ø150 inox", filled: true },
+            { label: "Distance sécurité", value: "", filled: false },
+            { label: "Dévoiement", value: "", filled: false },
           ].map((f) => (
             <div key={f.label} className={`flex items-center justify-between rounded-xl border px-3.5 py-2.5 ${f.filled ? "bg-background" : "bg-muted/30 border-dashed"}`}>
               <span className="text-[10px] text-muted-foreground">{f.label}</span>
@@ -241,7 +301,10 @@ function SurveyMockup() {
           ))}
         </div>
         <div className="flex gap-2 pt-1">
-          <div className="flex-1 h-8 rounded-lg bg-muted/50 border border-dashed flex items-center justify-center text-[9px] text-muted-foreground">+ Ajouter photo</div>
+          <div className="flex-1 h-8 rounded-lg bg-muted/50 border border-dashed flex items-center justify-center text-[9px] text-muted-foreground gap-1">
+            <Camera className="h-3 w-3" />
+            Ajouter photo conduit
+          </div>
           <div className="h-8 rounded-lg bg-accent text-accent-foreground px-3.5 flex items-center text-[9px] font-semibold">Section suivante →</div>
         </div>
       </div>

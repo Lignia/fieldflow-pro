@@ -1,6 +1,14 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
+  NavigationMenu,
+  NavigationMenuContent,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+  NavigationMenuTrigger,
+} from "@/components/ui/navigation-menu";
+import {
   Users,
   ClipboardCheck,
   FileText,
@@ -18,7 +26,12 @@ import {
   Briefcase,
   Wrench,
   Receipt,
+  BookOpen,
+  HelpCircle,
+  MessageSquare,
+  Video,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useEffect, useRef } from "react";
 
 /* ═══ Scroll reveal ═══ */
@@ -357,14 +370,98 @@ export default function LandingPage() {
             </div>
             <span className="text-lg font-bold tracking-tight text-foreground">LIGNIA</span>
           </Link>
-          <div className="hidden md:flex items-center gap-8 text-sm">
-            <a href="#features" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
-              Fonctionnalités
-            </a>
-            <a href="#how" className="text-muted-foreground hover:text-foreground transition-colors font-medium">
-              Comment ça marche
-            </a>
+
+          {/* Navigation with mega-menus */}
+          <div className="hidden md:flex items-center">
+            <NavigationMenu>
+              <NavigationMenuList>
+                {/* Produit mega-menu */}
+                <NavigationMenuItem>
+                  <NavigationMenuTrigger className="text-sm font-medium text-muted-foreground bg-transparent hover:bg-transparent hover:text-foreground data-[state=open]:text-foreground data-[state=open]:bg-transparent focus:bg-transparent">
+                    Produit
+                  </NavigationMenuTrigger>
+                  <NavigationMenuContent>
+                    <div className="w-[560px] p-6">
+                      <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">Fonctionnalités</p>
+                      <div className="grid grid-cols-2 gap-1">
+                        {[
+                          { icon: Briefcase, title: "Gestion clients", desc: "Fiches clients, historique et suivi complet" },
+                          { icon: ClipboardCheck, title: "Relevé technique", desc: "Formulaires terrain sur mobile et tablette" },
+                          { icon: Receipt, title: "Devis & facturation", desc: "Créez et envoyez vos documents en minutes" },
+                          { icon: CalendarDays, title: "Planning", desc: "Planifiez interventions et équipes" },
+                          { icon: BarChart3, title: "Tableau de bord", desc: "Suivez votre CA et vos KPIs en temps réel" },
+                          { icon: Wrench, title: "Demandes SAV", desc: "Gérez le service après-vente efficacement" },
+                        ].map((item) => (
+                          <NavigationMenuLink key={item.title} asChild>
+                            <a
+                              href="#features"
+                              className={cn(
+                                "flex items-start gap-3 rounded-lg p-3 transition-colors hover:bg-muted/60 group"
+                              )}
+                            >
+                              <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-md border bg-background shadow-sm group-hover:border-accent/30 transition-colors">
+                                <item.icon className="h-4 w-4 text-muted-foreground group-hover:text-accent transition-colors" />
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-foreground leading-tight">{item.title}</p>
+                                <p className="text-xs text-muted-foreground mt-0.5 leading-snug">{item.desc}</p>
+                              </div>
+                            </a>
+                          </NavigationMenuLink>
+                        ))}
+                      </div>
+                    </div>
+                  </NavigationMenuContent>
+                </NavigationMenuItem>
+
+                {/* Ressources mega-menu */}
+                <NavigationMenuItem>
+                  <NavigationMenuTrigger className="text-sm font-medium text-muted-foreground bg-transparent hover:bg-transparent hover:text-foreground data-[state=open]:text-foreground data-[state=open]:bg-transparent focus:bg-transparent">
+                    Ressources
+                  </NavigationMenuTrigger>
+                  <NavigationMenuContent>
+                    <div className="w-[420px] p-6">
+                      <div className="grid gap-1">
+                        {[
+                          { icon: BookOpen, title: "Guide de démarrage", desc: "Prenez en main LIGNIA en 15 minutes" },
+                          { icon: Video, title: "Tutoriels vidéo", desc: "Apprenez chaque fonctionnalité pas à pas" },
+                          { icon: HelpCircle, title: "Centre d'aide", desc: "FAQ et articles de support détaillés" },
+                          { icon: MessageSquare, title: "Contactez-nous", desc: "Notre équipe répond en moins de 2h" },
+                        ].map((item) => (
+                          <NavigationMenuLink key={item.title} asChild>
+                            <a
+                              href="#"
+                              className={cn(
+                                "flex items-start gap-3 rounded-lg p-3 transition-colors hover:bg-muted/60 group"
+                              )}
+                            >
+                              <div className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-md border bg-background shadow-sm group-hover:border-accent/30 transition-colors">
+                                <item.icon className="h-4 w-4 text-muted-foreground group-hover:text-accent transition-colors" />
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-foreground leading-tight">{item.title}</p>
+                                <p className="text-xs text-muted-foreground mt-0.5 leading-snug">{item.desc}</p>
+                              </div>
+                            </a>
+                          </NavigationMenuLink>
+                        ))}
+                      </div>
+                    </div>
+                  </NavigationMenuContent>
+                </NavigationMenuItem>
+
+                {/* Simple link */}
+                <NavigationMenuItem>
+                  <NavigationMenuLink asChild>
+                    <a href="#how" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-4 py-2">
+                      Tarifs
+                    </a>
+                  </NavigationMenuLink>
+                </NavigationMenuItem>
+              </NavigationMenuList>
+            </NavigationMenu>
           </div>
+
           <div className="flex items-center gap-2">
             <Button variant="ghost" size="sm" className="text-muted-foreground hover:text-foreground rounded-lg font-medium" asChild>
               <Link to="/dashboard">Connexion</Link>

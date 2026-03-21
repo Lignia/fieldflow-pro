@@ -77,6 +77,12 @@
     --accent: 142 40% 45%;
     --accent-foreground: 0 0% 100%;
 
+    --success: 152 44% 38%;
+    --success-foreground: 0 0% 100%;
+
+    --info: 210 50% 45%;
+    --info-foreground: 0 0% 100%;
+
     --destructive: 0 62% 40%;
     --destructive-foreground: 0 0% 100%;
 

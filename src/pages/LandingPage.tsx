@@ -730,7 +730,7 @@ export default function LandingPage() {
       </section>
 
       {/* ═══ TESTIMONIAL — integrated into the rhythm, not isolated ═══ */}
-      <section className="pb-8 pt-0">
+      <section className="pb-16 pt-4">
         <div className="mx-auto max-w-7xl px-6 sm:px-10">
           <Reveal>
             <div className="grid lg:grid-cols-12 gap-8 items-center">

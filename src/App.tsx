@@ -14,6 +14,7 @@ import Quotes from "./pages/Quotes";
 import Invoices from "./pages/Invoices";
 import ServiceRequests from "./pages/ServiceRequests";
 import NotFound from "./pages/NotFound";
+import IconShowcase from "./pages/IconShowcase";
 
 const queryClient = new QueryClient();
 

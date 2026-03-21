@@ -556,7 +556,7 @@ export default function LandingPage() {
                           <span className="text-4xl font-bold font-mono text-warning/80 leading-none">{p.stat}</span>
                           {p.unit && <span className="text-xl font-bold text-warning/40 ml-0.5">{p.unit}</span>}
                         </div>
-                        <p className="text-[13px] text-primary-foreground/40 leading-relaxed">{p.desc}</p>
+                        <p className="text-sm text-primary-foreground/50 leading-relaxed">{p.desc}</p>
                       </div>
                     </div>
                   </Reveal>

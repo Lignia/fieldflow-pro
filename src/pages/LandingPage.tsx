@@ -469,15 +469,15 @@ export default function LandingPage() {
 
       {/* ═══ PROBLEM — dark band ═══ */}
       <Reveal>
-        <section className="bg-primary text-primary-foreground py-24 md:py-32">
+        <section className="bg-muted/40 border-y py-24 md:py-32">
           <div className="mx-auto max-w-5xl px-6 sm:px-10 text-center">
             <h2
-              className="text-3xl md:text-4xl font-bold mb-5"
+              className="text-3xl md:text-4xl font-bold mb-5 text-foreground"
               style={{ lineHeight: "1.1" } as React.CSSProperties}
             >
               Vous jonglez entre carnets, tableurs<br className="hidden md:block" /> et relances oubliées ?
             </h2>
-            <p className="text-primary-foreground/50 text-base mb-16 max-w-lg mx-auto leading-relaxed">
+            <p className="text-muted-foreground text-base mb-16 max-w-lg mx-auto leading-relaxed">
               Chaque jour, des artisans perdent du temps et de l'argent à cause d'outils inadaptés.
             </p>
             <div className="grid md:grid-cols-3 gap-6 md:gap-10">
@@ -503,15 +503,15 @@ export default function LandingPage() {
               ].map((p, i) => (
                 <Reveal key={i} delay={i * 100}>
                   <div className="flex flex-col items-center text-center">
-                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-foreground/[0.07] mb-5">
-                      <p.icon className="h-6 w-6 text-primary-foreground/70" />
+                    <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-destructive/10 mb-5">
+                      <p.icon className="h-6 w-6 text-destructive" />
                     </div>
-                    <p className="text-sm font-medium leading-snug text-primary-foreground/80 mb-6 max-w-[220px]">
+                    <p className="text-sm font-medium leading-snug text-foreground mb-6 max-w-[220px]">
                       {p.text}
                     </p>
-                    <div className="pt-4 border-t border-primary-foreground/10 w-full">
-                      <p className="text-3xl md:text-4xl font-bold font-mono text-warning">{p.stat}</p>
-                      <p className="text-[11px] text-primary-foreground/40 mt-1">{p.statLabel}</p>
+                    <div className="pt-4 border-t border-border w-full">
+                      <p className="text-3xl md:text-4xl font-bold font-mono text-destructive">{p.stat}</p>
+                      <p className="text-[11px] text-muted-foreground mt-1">{p.statLabel}</p>
                     </div>
                   </div>
                 </Reveal>

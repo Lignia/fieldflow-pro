@@ -17,6 +17,7 @@ export default function OnboardingCompanyPage() {
   const [phone, setPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [siretError, setSiretError] = useState<string | null>(null);
+  const [companyNameError, setCompanyNameError] = useState<string | null>(null);
   const [siretChecking, setSiretChecking] = useState(false);
 
   const validateSiret = (value: string) => /^\d{14}$/.test(value);
@@ -56,6 +57,8 @@ export default function OnboardingCompanyPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSiretError(null);
+    setCompanyNameError(null);
 
     if (!validateSiret(siret)) {
       setSiretError("Le SIRET doit contenir exactement 14 chiffres");
@@ -69,32 +72,50 @@ export default function OnboardingCompanyPage() {
 
     setLoading(true);
 
-    const { error } = await supabase.functions.invoke("onboard_tenant", {
+    const { data, error } = await supabase.functions.invoke("provision-tenant", {
       body: {
         company_name: companyName,
         siret,
         phone: phone || undefined,
-        email: authUser.email,
       },
     });
 
     if (error) {
       setLoading(false);
-      const msg = error.message?.toLowerCase() ?? "";
-      if (msg.includes("siret") && (msg.includes("existe") || msg.includes("already") || msg.includes("duplicate"))) {
-        toast.error("Ce SIRET est déjà utilisé par un autre compte");
-      } else if (msg.includes("session") || msg.includes("auth")) {
-        toast.error("Session expirée, veuillez vous reconnecter");
-        navigate("/auth/login");
-      } else {
-        toast.error("Erreur lors de la création de votre entreprise");
-      }
+      toast.error("Erreur de communication avec le serveur");
       return;
     }
 
-    // OBLIGATOIRE : recharger le JWT pour qu'il contienne tenant_id
-    await supabase.auth.refreshSession();
+    // Handle error responses from the function
+    if (data?.error) {
+      setLoading(false);
+      switch (data.error) {
+        case "invalid_siret":
+          setSiretError(data.message || "SIRET invalide");
+          return;
+        case "invalid_company_name":
+          setCompanyNameError(data.message || "Raison sociale invalide");
+          return;
+        case "already_provisioned":
+          await supabase.auth.refreshSession();
+          navigate("/dashboard");
+          return;
+        case "unauthorized":
+          toast.error("Session expirée, veuillez vous reconnecter");
+          navigate("/auth/login");
+          return;
+        case "tenant_creation_failed":
+        case "user_creation_failed":
+          toast.error(data.message || "Erreur lors de la création de votre entreprise");
+          return;
+        default:
+          toast.error(data.message || "Erreur inattendue");
+          return;
+      }
+    }
 
+    // Success: provisioned
+    await supabase.auth.refreshSession();
     navigate("/dashboard");
   };
 
@@ -126,9 +147,13 @@ export default function OnboardingCompanyPage() {
             id="company"
             placeholder="Nom de votre entreprise"
             value={companyName}
-            onChange={(e) => setCompanyName(e.target.value)}
+            onChange={(e) => {
+              setCompanyName(e.target.value);
+              if (companyNameError) setCompanyNameError(null);
+            }}
             required
           />
+          {companyNameError && <p className="text-sm text-destructive">{companyNameError}</p>}
         </div>
         <div className="space-y-2">
           <Label htmlFor="phone">Téléphone (optionnel)</Label>

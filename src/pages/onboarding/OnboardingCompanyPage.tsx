@@ -65,58 +65,49 @@ export default function OnboardingCompanyPage() {
       return;
     }
 
-    if (!authUser) {
-      navigate("/auth/login");
-      return;
-    }
-
     setLoading(true);
 
-    const { data, error } = await supabase.functions.invoke("provision-tenant", {
-      body: {
-        company_name: companyName,
-        siret,
-        phone: phone || undefined,
-      },
-    });
+    try {
+      const { data, error } = await supabase.functions.invoke("provision-tenant", {
+        body: { company_name: companyName, siret, phone: phone || undefined },
+      });
 
-    if (error) {
-      setLoading(false);
-      toast.error("Erreur de communication avec le serveur");
-      return;
-    }
-
-    // Handle error responses from the function
-    if (data?.error) {
-      setLoading(false);
-      switch (data.error) {
-        case "invalid_siret":
-          setSiretError(data.message || "SIRET invalide");
-          return;
-        case "invalid_company_name":
-          setCompanyNameError(data.message || "Raison sociale invalide");
-          return;
-        case "already_provisioned":
-          await supabase.auth.refreshSession();
-          navigate("/dashboard");
-          return;
-        case "unauthorized":
-          toast.error("Session expirée, veuillez vous reconnecter");
-          navigate("/auth/login");
-          return;
-        case "tenant_creation_failed":
-        case "user_creation_failed":
-          toast.error(data.message || "Erreur lors de la création de votre entreprise");
-          return;
-        default:
-          toast.error(data.message || "Erreur inattendue");
-          return;
+      if (error) {
+        toast.error("Erreur de communication avec le serveur");
+        return;
       }
-    }
 
-    // Success: provisioned
-    await supabase.auth.refreshSession();
-    navigate("/dashboard");
+      if (data?.error) {
+        switch (data.error) {
+          case "invalid_siret":
+            setSiretError(data.message || "SIRET invalide");
+            break;
+          case "invalid_company_name":
+            setCompanyNameError(data.message || "Raison sociale invalide");
+            break;
+          case "already_provisioned":
+            await supabase.auth.refreshSession();
+            navigate("/dashboard");
+            break;
+          case "unauthorized":
+            toast.error("Session expirée, veuillez vous reconnecter");
+            navigate("/auth/login");
+            break;
+          default:
+            toast.error(data.message || "Erreur inattendue");
+        }
+        return;
+      }
+
+      // Succès
+      await supabase.auth.refreshSession();
+      navigate("/dashboard");
+
+    } catch (err) {
+      toast.error("Erreur inattendue, veuillez réessayer");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

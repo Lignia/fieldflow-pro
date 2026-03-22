@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { jwtDecode } from "jwt-decode";
 import type { User, Session } from "@supabase/supabase-js";
@@ -35,21 +35,25 @@ export function useCurrentUser(): UseCurrentUserReturn {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const processingRef = useRef(false);
 
-  const processSession = async (session: Session | null) => {
-    if (!session) {
-      setAuthUser(null);
-      setCoreUser(null);
-      setTenantId(null);
-      setUserRole(null);
-      setLoading(false);
-      return;
-    }
-
-    const user = session.user;
-    setAuthUser(user);
+  const processSession = useCallback(async (session: Session | null) => {
+    if (processingRef.current) return;
+    processingRef.current = true;
 
     try {
+      if (!session) {
+        setAuthUser(null);
+        setCoreUser(null);
+        setTenantId(null);
+        setUserRole(null);
+        setLoading(false);
+        return;
+      }
+
+      const user = session.user;
+      setAuthUser(user);
+
       const decoded = jwtDecode<JwtPayload>(session.access_token);
       const tid = decoded.tenant_id ?? null;
       const role = decoded.user_role ?? null;
@@ -79,25 +83,42 @@ export function useCurrentUser(): UseCurrentUserReturn {
     } catch (e: any) {
       setError(e.message ?? "Erreur de décodage de la session");
       setCoreUser(null);
+    } finally {
+      setLoading(false);
+      processingRef.current = false;
     }
-
-    setLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
-    // Set up listener BEFORE getSession
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+    let subscription: { unsubscribe: () => void } | null = null;
+
+    const setup = () => {
+      subscription?.unsubscribe();
+
+      const { data } = supabase.auth.onAuthStateChange((_event, session) => {
         processSession(session);
-      }
-    );
+      });
+      subscription = data.subscription;
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      processSession(session);
-    });
+      supabase.auth.getSession().then(({ data: { session } }) => {
+        processSession(session);
+      });
+    };
 
-    return () => subscription.unsubscribe();
-  }, []);
+    setup();
+
+    // Re-subscribe when client is reconfigured (ephemeral mode toggle)
+    const handleClientChanged = () => {
+      setLoading(true);
+      setup();
+    };
+    window.addEventListener("supabase-client-changed", handleClientChanged);
+
+    return () => {
+      subscription?.unsubscribe();
+      window.removeEventListener("supabase-client-changed", handleClientChanged);
+    };
+  }, [processSession]);
 
   return { authUser, coreUser, tenantId, userRole, loading, error };
 }

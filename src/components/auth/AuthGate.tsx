@@ -16,9 +16,13 @@ function isPublicRoute(pathname: string) {
   return PUBLIC_ROUTES.some((r) => pathname === r || pathname.startsWith(r + "/"));
 }
 
+const DEV_BYPASS = import.meta.env.VITE_DEV_BYPASS_AUTH === 'true';
+
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const { authUser, tenantId, loading } = useCurrentUser();
   const { pathname } = useLocation();
+
+  if (DEV_BYPASS) return <>{children}</>;
 
   if (loading) {
     return (

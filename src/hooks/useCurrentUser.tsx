@@ -28,7 +28,27 @@ interface UseCurrentUserReturn {
   error: string | null;
 }
 
+const DEV_BYPASS = import.meta.env.VITE_DEV_BYPASS_AUTH === 'true';
+
 export function useCurrentUser(): UseCurrentUserReturn {
+  if (DEV_BYPASS) {
+    return {
+      authUser: { id: 'dev-user-123', email: 'dev@lignia.fr' } as any,
+      coreUser: {
+        id: 'dev-core-user-123',
+        tenant_id: 'dev-tenant-123',
+        role: 'admin',
+        full_name: 'Patrick Lefèvre (DEV)',
+        email: 'dev@lignia.fr',
+        is_active: true,
+      } as any,
+      tenantId: 'dev-tenant-123',
+      userRole: 'admin',
+      loading: false,
+      error: null,
+    };
+  }
+
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [coreUser, setCoreUser] = useState<CoreUser | null>(null);
   const [tenantId, setTenantId] = useState<string | null>(null);

@@ -41,6 +41,10 @@ const tradeIcons = [
   { icon: IconFumisterie, name: "IconFumisterie", label: "Fumisterie" },
   { icon: IconPlaqueSol, name: "IconPlaqueSol", label: "Plaque de sol" },
   { icon: IconProtectionMurale, name: "IconProtectionMurale", label: "Protection murale" },
+  { icon: IconArriveeAir, name: "IconArriveeAir", label: "Arrivée d'air" },
+  { icon: IconDistributionAir, name: "IconDistributionAir", label: "Distribution air chaud" },
+  { icon: IconChapeauParePluie, name: "IconChapeauParePluie", label: "Chapeau pare-pluie" },
+  { icon: IconToitureSouche, name: "IconToitureSouche", label: "Toiture / Souche" },
 ];
 
 const lucideIcons = [

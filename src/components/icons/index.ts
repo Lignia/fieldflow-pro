@@ -8,4 +8,6 @@ export {
   IconInsert,
   IconConduit,
   IconFumisterie,
+  IconPoeleGranules,
+  IconPoeleBuches,
 } from "./trade-icons";

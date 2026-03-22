@@ -283,8 +283,8 @@ export default function OnboardingCompanyPage() {
         </div>
 
         {apeWarning && (
-          <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
-            <p className="text-sm text-amber-800">{apeWarning}</p>
+          <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+            <p className="text-sm text-destructive">{apeWarning}</p>
           </div>
         )}
 

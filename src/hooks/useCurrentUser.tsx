@@ -62,8 +62,9 @@ export function useCurrentUser(): UseCurrentUserReturn {
         return;
       }
 
-      const { data, error: fetchError } = await supabase
-        .from("core.users" as any)
+      const { data, error: fetchError } = await (supabase as any)
+        .schema("core")
+        .from("users")
         .select("*")
         .eq("auth_uid", user.id)
         .single();

@@ -9,6 +9,8 @@ import {
   IconInsert,
   IconConduit,
   IconFumisterie,
+  IconPoeleGranules,
+  IconPoeleBuches,
 } from "@/components/icons";
 import { Wrench, Flame, ThermometerSun, ShieldCheck, Copy, Check, Sparkles } from "lucide-react";
 import type { IconProps } from "@/components/icons/Icon";
@@ -18,12 +20,14 @@ import { cn } from "@/lib/utils";
 
 const tradeIcons = [
   { icon: IconPoele, name: "IconPoele", label: "Poêle" },
+  { icon: IconPoeleGranules, name: "IconPoeleGranules", label: "Poêle granulés" },
+  { icon: IconPoeleBuches, name: "IconPoeleBuches", label: "Poêle bûches" },
   { icon: IconCheminee, name: "IconCheminee", label: "Cheminée" },
-  { icon: IconTubage, name: "IconTubage", label: "Tubage" },
-  { icon: IconRamonage, name: "IconRamonage", label: "Ramonage" },
-  { icon: IconChaudiere, name: "IconChaudiere", label: "Chaudière" },
   { icon: IconInsert, name: "IconInsert", label: "Insert" },
+  { icon: IconChaudiere, name: "IconChaudiere", label: "Chaudière" },
+  { icon: IconTubage, name: "IconTubage", label: "Tubage" },
   { icon: IconConduit, name: "IconConduit", label: "Conduit" },
+  { icon: IconRamonage, name: "IconRamonage", label: "Ramonage" },
   { icon: IconFumisterie, name: "IconFumisterie", label: "Fumisterie" },
 ];
 

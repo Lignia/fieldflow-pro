@@ -8,112 +8,266 @@ const defaults = (size?: number): SVGProps<SVGSVGElement> => ({
   viewBox: "0 0 24 24",
   fill: "none",
   stroke: "currentColor",
-  strokeWidth: 2,
+  strokeWidth: 1.75,
   strokeLinecap: "round" as const,
   strokeLinejoin: "round" as const,
 });
 
-/** Poêle à bois / wood stove */
+/**
+ * Poêle à bois — corps trapézoïdal sur pieds, vitre avec flamme, conduit sortant par le haut
+ */
 export function IconPoele({ size, ...props }: IconSVGProps) {
   return (
     <svg {...defaults(size)} {...props}>
-      <rect x="5" y="10" width="14" height="10" rx="1.5" />
-      <path d="M8 10V8a4 4 0 0 1 8 0v2" />
-      <line x1="12" y1="14" x2="12" y2="17" />
-      <path d="M9 4c.5-1.5 1.5-2 3-2s2.5.5 3 2" opacity=".5" />
-      <line x1="8" y1="20" x2="8" y2="22" />
-      <line x1="16" y1="20" x2="16" y2="22" />
+      {/* Corps du poêle — forme légèrement trapézoïdale */}
+      <path d="M6 9h12v10a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V9z" />
+      {/* Dessus du poêle */}
+      <path d="M5.5 9h13" strokeWidth="2" />
+      {/* Pieds */}
+      <line x1="8" y1="20" x2="7" y2="22" />
+      <line x1="16" y1="20" x2="17" y2="22" />
+      {/* Vitre / porte */}
+      <rect x="9" y="11.5" width="6" height="5" rx="0.5" />
+      {/* Flamme dans la vitre */}
+      <path d="M12 15.5c0-1.2-1-2-1-2s1-.3 1.5.5c.3-.8-.5-1.5-.5-1.5s1.5.8 1.5 2c0 .8-.7 1.5-1.5 1.5s-1.5-.7-1.5-1.5" fill="currentColor" fillOpacity="0.15" strokeWidth="0" />
+      {/* Conduit sortant du haut */}
+      <path d="M12 9V5" />
+      <path d="M10.5 5h3" />
+      {/* Petite fumée */}
+      <path d="M11.5 4c-.3-.8 0-1.5.5-2 .5.5.8 1.2.5 2" opacity="0.4" strokeWidth="1.25" />
     </svg>
   );
 }
 
-/** Cheminée / fireplace */
+/**
+ * Cheminée — foyer ouvert maçonné avec manteau, âtre et flamme
+ */
 export function IconCheminee({ size, ...props }: IconSVGProps) {
   return (
     <svg {...defaults(size)} {...props}>
-      <path d="M3 22h18" />
-      <path d="M5 22V10l7-6 7 6v12" />
-      <rect x="8" y="14" width="8" height="8" rx="1" />
-      <path d="M10 18c0-1.5 2-3 2-3s2 1.5 2 3" />
+      {/* Manteau de cheminée */}
+      <path d="M3 22V12l3-4h12l3 4v10" />
+      {/* Tablette supérieure */}
+      <path d="M2 12h20" strokeWidth="2" />
+      {/* Ouverture du foyer — arche */}
+      <path d="M8 22v-6a4 4 0 0 1 8 0v6" />
+      {/* Flamme */}
+      <path d="M11 19c0-1.5 1-2.5 1-2.5s1 1 1 2.5" fill="currentColor" fillOpacity="0.15" strokeWidth="1.25" />
+      {/* Sol */}
+      <line x1="2" y1="22" x2="22" y2="22" strokeWidth="2" />
+      {/* Briques */}
+      <line x1="5" y1="14" x2="5" y2="16" opacity="0.3" strokeWidth="1" />
+      <line x1="19" y1="14" x2="19" y2="16" opacity="0.3" strokeWidth="1" />
     </svg>
   );
 }
 
-/** Tubage / flue lining */
+/**
+ * Tubage — tube inox dans un conduit maçonné, avec raccords visibles
+ */
 export function IconTubage({ size, ...props }: IconSVGProps) {
   return (
     <svg {...defaults(size)} {...props}>
-      <path d="M10 2h4v4h-4z" />
-      <path d="M10 6v4c0 2-2 3-2 6v6h8v-6c0-3-2-4-2-6V6" />
-      <line x1="8" y1="22" x2="16" y2="22" />
-      <line x1="11" y1="12" x2="13" y2="12" opacity=".5" />
-      <line x1="11" y1="15" x2="13" y2="15" opacity=".5" />
+      {/* Conduit maçonné extérieur */}
+      <path d="M7 2h10v20H7z" opacity="0.2" strokeWidth="1" />
+      {/* Tube inox intérieur */}
+      <rect x="9.5" y="3" width="5" height="18" rx="0.5" />
+      {/* Raccords / colliers */}
+      <line x1="9" y1="7" x2="15" y2="7" strokeWidth="2" />
+      <line x1="9" y1="13" x2="15" y2="13" strokeWidth="2" />
+      <line x1="9" y1="19" x2="15" y2="19" strokeWidth="2" />
+      {/* Chapeau pare-pluie en haut */}
+      <path d="M8 3h8" strokeWidth="2" />
+      <path d="M10 1.5h4" />
+      <path d="M12 1.5V0.5" strokeWidth="1.25" />
     </svg>
   );
 }
 
-/** Ramonage / chimney sweeping */
+/**
+ * Ramonage — hérisson (brosse ronde) + perche dans un conduit
+ */
 export function IconRamonage({ size, ...props }: IconSVGProps) {
   return (
     <svg {...defaults(size)} {...props}>
-      <path d="M9 2h6l1 3H8l1-3z" />
-      <rect x="8" y="5" width="8" height="4" rx="0.5" />
-      <line x1="12" y1="9" x2="12" y2="18" />
-      <circle cx="12" cy="20" r="2" />
-      <path d="M8 13h8" />
-      <path d="M7 16h10" opacity=".5" />
+      {/* Conduit */}
+      <path d="M8 2v20" opacity="0.25" />
+      <path d="M16 2v20" opacity="0.25" />
+      {/* Perche / canne */}
+      <line x1="12" y1="1" x2="12" y2="22" strokeWidth="1.5" />
+      {/* Hérisson — brosse ronde avec picots */}
+      <circle cx="12" cy="12" r="3.5" strokeWidth="1.75" />
+      {/* Picots du hérisson */}
+      <line x1="12" y1="8" x2="12" y2="7" strokeWidth="1.25" />
+      <line x1="12" y1="16" x2="12" y2="17" strokeWidth="1.25" />
+      <line x1="8" y1="12" x2="7" y2="12" strokeWidth="1.25" />
+      <line x1="16" y1="12" x2="17" y2="12" strokeWidth="1.25" />
+      <line x1="9.5" y1="9.5" x2="8.8" y2="8.8" strokeWidth="1.25" />
+      <line x1="14.5" y1="14.5" x2="15.2" y2="15.2" strokeWidth="1.25" />
+      <line x1="9.5" y1="14.5" x2="8.8" y2="15.2" strokeWidth="1.25" />
+      <line x1="14.5" y1="9.5" x2="15.2" y2="8.8" strokeWidth="1.25" />
+      {/* Suie / particules */}
+      <circle cx="6" cy="6" r="0.5" fill="currentColor" opacity="0.2" strokeWidth="0" />
+      <circle cx="17" cy="4" r="0.4" fill="currentColor" opacity="0.2" strokeWidth="0" />
     </svg>
   );
 }
 
-/** Chaudière / boiler */
+/**
+ * Chaudière bois — caisson rectangulaire haut, porte de chargement, tuyaux
+ */
 export function IconChaudiere({ size, ...props }: IconSVGProps) {
   return (
     <svg {...defaults(size)} {...props}>
-      <rect x="4" y="4" width="16" height="16" rx="2" />
-      <circle cx="12" cy="12" r="3" />
-      <path d="M12 9v-2" />
-      <path d="M12 17v2" />
-      <path d="M9 12H7" />
-      <path d="M17 12h-2" />
-      <path d="M4 8h16" opacity=".4" />
+      {/* Corps principal */}
+      <rect x="5" y="3" width="14" height="17" rx="1.5" />
+      {/* Porte de chargement */}
+      <rect x="7.5" y="6" width="9" height="6" rx="0.75" />
+      {/* Poignée porte */}
+      <line x1="14.5" y1="8" x2="14.5" y2="10" strokeWidth="2" />
+      {/* Panneau de contrôle / thermomètre */}
+      <circle cx="12" cy="16" r="1.5" />
+      <line x1="12" y1="15.5" x2="12" y2="14.5" strokeWidth="1.25" />
+      {/* Tuyaux eau chaude sortant du haut */}
+      <path d="M8 3V1" />
+      <path d="M16 3V1" />
+      {/* Pieds */}
+      <line x1="7" y1="20" x2="7" y2="22" strokeWidth="1.5" />
+      <line x1="17" y1="20" x2="17" y2="22" strokeWidth="1.5" />
     </svg>
   );
 }
 
-/** Insert / fireplace insert */
+/**
+ * Insert — cadre encastré dans un mur, vitre avec flamme
+ */
 export function IconInsert({ size, ...props }: IconSVGProps) {
   return (
     <svg {...defaults(size)} {...props}>
-      <rect x="3" y="6" width="18" height="14" rx="2" />
-      <rect x="6" y="9" width="12" height="8" rx="1" />
-      <path d="M10 13c0-1 2-2.5 2-2.5s2 1.5 2 2.5-1 2-2 2-2-1-2-2z" />
-      <line x1="3" y1="4" x2="21" y2="4" />
+      {/* Mur / encadrement */}
+      <rect x="2" y="4" width="20" height="16" rx="0.5" opacity="0.2" strokeWidth="1" />
+      {/* Cadre de l'insert */}
+      <rect x="4" y="6" width="16" height="12" rx="1" strokeWidth="2" />
+      {/* Vitre */}
+      <rect x="6" y="8" width="12" height="8" rx="0.5" />
+      {/* Flamme centrale */}
+      <path d="M12 14.5c0-1.8-1.5-3-1.5-3s1.5-.5 2 .8c.3-1-.5-2-.5-2s2 1 2 3c0 1.2-1 2-2 2s-2-.8-2-2" fill="currentColor" fillOpacity="0.12" strokeWidth="0" />
+      {/* Bûches */}
+      <line x1="8" y1="15" x2="11" y2="14.5" strokeWidth="1.25" opacity="0.5" />
+      <line x1="13" y1="14.5" x2="16" y2="15" strokeWidth="1.25" opacity="0.5" />
+      {/* Ventilation du haut */}
+      <line x1="8" y1="7" x2="10" y2="7" opacity="0.3" strokeWidth="1" />
+      <line x1="11" y1="7" x2="13" y2="7" opacity="0.3" strokeWidth="1" />
+      <line x1="14" y1="7" x2="16" y2="7" opacity="0.3" strokeWidth="1" />
     </svg>
   );
 }
 
-/** Conduit / duct */
+/**
+ * Conduit — tube double paroi vertical avec chapeau pare-pluie et colliers
+ */
 export function IconConduit({ size, ...props }: IconSVGProps) {
   return (
     <svg {...defaults(size)} {...props}>
-      <path d="M9 2v6c0 2 3 3 3 6v8" />
-      <path d="M15 2v6c0 2-3 3-3 6v8" />
-      <line x1="9" y1="2" x2="15" y2="2" />
-      <line x1="9" y1="22" x2="15" y2="22" />
+      {/* Tube extérieur double paroi */}
+      <path d="M8 5v17" />
+      <path d="M16 5v17" />
+      {/* Tube intérieur */}
+      <path d="M10 5v17" opacity="0.3" strokeWidth="1" />
+      <path d="M14 5v17" opacity="0.3" strokeWidth="1" />
+      {/* Chapeau pare-pluie */}
+      <path d="M6 5h12" strokeWidth="2" />
+      <path d="M7 5l5-3 5 3" />
+      {/* Colliers de fixation */}
+      <rect x="7" y="10" width="10" height="1.5" rx="0.5" fill="currentColor" fillOpacity="0.1" />
+      <rect x="7" y="16" width="10" height="1.5" rx="0.5" fill="currentColor" fillOpacity="0.1" />
+      {/* Base / sortie */}
+      <path d="M7 22h10" strokeWidth="2" />
     </svg>
   );
 }
 
-/** Fumisterie / flue work */
+/**
+ * Fumisterie — pièces de raccordement : coude + té de purge
+ */
 export function IconFumisterie({ size, ...props }: IconSVGProps) {
   return (
     <svg {...defaults(size)} {...props}>
-      <rect x="8" y="14" width="8" height="8" rx="1" />
-      <path d="M10 14V10a2 2 0 0 1 4 0v4" />
-      <path d="M8 22H6a1 1 0 0 1-1-1v-3h3" />
-      <path d="M16 22h2a1 1 0 0 0 1-1v-3h-3" />
-      <path d="M10 6c.5-2 1.5-3 2-4 .5 1 1.5 2 2 4" opacity=".5" />
+      {/* Tube vertical haut */}
+      <path d="M9 2h6v6H9z" />
+      {/* Coude 90° */}
+      <path d="M9 8c0 3 3 4 6 4" strokeWidth="1.75" />
+      <path d="M15 8c0 3-1 4-1 4" opacity="0.3" strokeWidth="1" />
+      {/* Tube horizontal */}
+      <path d="M15 10h6" strokeWidth="1.75" />
+      <path d="M15 14h6" strokeWidth="1.75" />
+      {/* Té de purge en bas */}
+      <path d="M4 16h8" strokeWidth="1.75" />
+      <path d="M4 20h8" strokeWidth="1.75" />
+      <path d="M4 16v4" />
+      <path d="M12 16v4" />
+      {/* Bouchon de purge */}
+      <path d="M8 20v2" strokeWidth="2" />
+      <circle cx="8" cy="22.5" r="0.75" fill="currentColor" strokeWidth="0" />
+      {/* Raccord / emboîtement */}
+      <line x1="9" y1="5" x2="15" y2="5" opacity="0.3" strokeWidth="1" />
+    </svg>
+  );
+}
+
+/**
+ * Poêle à granulés — variante avec trémie/réservoir visible
+ */
+export function IconPoeleGranules({ size, ...props }: IconSVGProps) {
+  return (
+    <svg {...defaults(size)} {...props}>
+      {/* Corps du poêle — plus haut et fin */}
+      <rect x="7" y="6" width="10" height="14" rx="1.5" />
+      {/* Trémie / réservoir granulés en haut */}
+      <path d="M8.5 6V4.5a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 .5.5V6" />
+      {/* Granulés dans la trémie */}
+      <circle cx="11" cy="5" r="0.4" fill="currentColor" opacity="0.3" strokeWidth="0" />
+      <circle cx="12.5" cy="4.8" r="0.4" fill="currentColor" opacity="0.3" strokeWidth="0" />
+      <circle cx="13.5" cy="5.2" r="0.4" fill="currentColor" opacity="0.3" strokeWidth="0" />
+      {/* Vitre */}
+      <rect x="9" y="9" width="6" height="5" rx="0.5" />
+      {/* Flamme */}
+      <path d="M12 12.5c0-1-0.8-1.5-0.8-1.5s0.8-.2 1 .4c.2-.6-.2-1-.2-1s1 .6 1 1.5c0 .6-.5 1-1 1s-1-.5-1-1" fill="currentColor" fillOpacity="0.15" strokeWidth="0" />
+      {/* Panneau de contrôle digital */}
+      <rect x="9.5" y="15.5" width="5" height="2" rx="0.5" opacity="0.4" />
+      {/* Conduit */}
+      <path d="M14 6V2.5" />
+      {/* Pieds */}
+      <line x1="9" y1="20" x2="8.5" y2="22" />
+      <line x1="15" y1="20" x2="15.5" y2="22" />
+    </svg>
+  );
+}
+
+/**
+ * Poêle à bûches — variante classique avec bûches visibles
+ */
+export function IconPoeleBuches({ size, ...props }: IconSVGProps) {
+  return (
+    <svg {...defaults(size)} {...props}>
+      {/* Corps arrondi */}
+      <path d="M6 8a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V8z" />
+      {/* Dessus */}
+      <path d="M5.5 8h13" strokeWidth="2" />
+      {/* Vitre grande */}
+      <rect x="8" y="10" width="8" height="6" rx="1" />
+      {/* Bûches dans le foyer */}
+      <line x1="9" y1="15" x2="12" y2="14" strokeWidth="1.5" opacity="0.4" />
+      <line x1="12" y1="14" x2="15" y2="15" strokeWidth="1.5" opacity="0.4" />
+      <line x1="10" y1="14.5" x2="14" y2="14.5" strokeWidth="1" opacity="0.25" />
+      {/* Flamme */}
+      <path d="M12 13c0-1-.7-1.5-.7-1.5s.7 0 1 .5c.2-.5-.3-1-.3-1s1 .5 1 1.5c0 .5-.5 1-1 1s-1-.5-1-1" fill="currentColor" fillOpacity="0.15" strokeWidth="0" />
+      {/* Conduit */}
+      <path d="M12 8V4" />
+      <path d="M10.5 4h3" />
+      {/* Pieds */}
+      <line x1="8" y1="20" x2="7.5" y2="22" />
+      <line x1="16" y1="20" x2="16.5" y2="22" />
     </svg>
   );
 }

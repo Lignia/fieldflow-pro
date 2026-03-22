@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { Link } from "react-router-dom";
+import { supabase, reconfigureAuth } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { AuthCard } from "@/components/auth/AuthCard";
 import { PasswordInput } from "@/components/auth/PasswordInput";
@@ -15,11 +15,13 @@ export default function LoginPage() {
   const [remember, setRemember] = useState(true);
   const [loading, setLoading] = useState(false);
   const [rateLimited, setRateLimited] = useState(false);
-  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+
+    // Reconfigure persistence BEFORE sign-in
+    reconfigureAuth(remember);
 
     const { error } = await supabase.auth.signInWithPassword({ email, password });
 
@@ -37,20 +39,18 @@ export default function LoginPage() {
       return;
     }
 
-    if (!remember) {
-      sessionStorage.setItem("lignia_remember_me", "ephemeral");
-    } else {
-      sessionStorage.removeItem("lignia_remember_me");
-    }
-
-    // AuthGate handles redirect
+    // AuthGate handles redirect after onAuthStateChange fires
   };
 
   if (rateLimited) {
     return (
       <AuthCard title="Trop de tentatives" description="Veuillez réessayer dans 15 minutes.">
         <div className="text-center">
-          <Link to="/auth/login" className="text-sm text-primary hover:underline" onClick={() => setRateLimited(false)}>
+          <Link
+            to="/auth/login"
+            className="text-sm text-primary hover:underline"
+            onClick={() => setRateLimited(false)}
+          >
             Retour à la connexion
           </Link>
         </div>
@@ -87,7 +87,10 @@ export default function LoginPage() {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label htmlFor="password">Mot de passe</Label>
-            <Link to="/auth/forgot-password" className="text-xs text-muted-foreground hover:text-primary">
+            <Link
+              to="/auth/forgot-password"
+              className="text-xs text-muted-foreground hover:text-primary"
+            >
               Mot de passe oublié ?
             </Link>
           </div>

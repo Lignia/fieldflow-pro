@@ -10,4 +10,8 @@ export {
   IconFumisterie,
   IconPoeleGranules,
   IconPoeleBuches,
+  IconFoyerFerme,
+  IconFoyerOuvert,
+  IconPlaqueSol,
+  IconProtectionMurale,
 } from "./trade-icons";

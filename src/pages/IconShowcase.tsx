@@ -11,6 +11,10 @@ import {
   IconFumisterie,
   IconPoeleGranules,
   IconPoeleBuches,
+  IconFoyerFerme,
+  IconFoyerOuvert,
+  IconPlaqueSol,
+  IconProtectionMurale,
 } from "@/components/icons";
 import { Wrench, Flame, ThermometerSun, ShieldCheck, Copy, Check, Sparkles } from "lucide-react";
 import type { IconProps } from "@/components/icons/Icon";
@@ -23,12 +27,16 @@ const tradeIcons = [
   { icon: IconPoeleGranules, name: "IconPoeleGranules", label: "Poêle granulés" },
   { icon: IconPoeleBuches, name: "IconPoeleBuches", label: "Poêle bûches" },
   { icon: IconCheminee, name: "IconCheminee", label: "Cheminée" },
+  { icon: IconFoyerFerme, name: "IconFoyerFerme", label: "Foyer fermé" },
+  { icon: IconFoyerOuvert, name: "IconFoyerOuvert", label: "Foyer ouvert" },
   { icon: IconInsert, name: "IconInsert", label: "Insert" },
   { icon: IconChaudiere, name: "IconChaudiere", label: "Chaudière" },
   { icon: IconTubage, name: "IconTubage", label: "Tubage" },
   { icon: IconConduit, name: "IconConduit", label: "Conduit" },
   { icon: IconRamonage, name: "IconRamonage", label: "Ramonage" },
   { icon: IconFumisterie, name: "IconFumisterie", label: "Fumisterie" },
+  { icon: IconPlaqueSol, name: "IconPlaqueSol", label: "Plaque de sol" },
+  { icon: IconProtectionMurale, name: "IconProtectionMurale", label: "Protection murale" },
 ];
 
 const lucideIcons = [

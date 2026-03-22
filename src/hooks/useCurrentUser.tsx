@@ -30,30 +30,28 @@ interface UseCurrentUserReturn {
 
 const DEV_BYPASS = import.meta.env.VITE_DEV_BYPASS_AUTH === 'true';
 
-export function useCurrentUser(): UseCurrentUserReturn {
-  if (DEV_BYPASS) {
-    return {
-      authUser: { id: 'dev-user-123', email: 'dev@lignia.fr' } as any,
-      coreUser: {
-        id: 'dev-core-user-123',
-        tenant_id: 'dev-tenant-123',
-        role: 'admin',
-        full_name: 'Patrick Lefèvre (DEV)',
-        email: 'dev@lignia.fr',
-        is_active: true,
-      } as any,
-      tenantId: 'dev-tenant-123',
-      userRole: 'admin',
-      loading: false,
-      error: null,
-    };
-  }
+const DEV_RETURN: UseCurrentUserReturn = {
+  authUser: { id: 'dev-user-123', email: 'dev@lignia.fr' } as any,
+  coreUser: {
+    id: 'dev-core-user-123',
+    tenant_id: 'dev-tenant-123',
+    role: 'admin',
+    full_name: 'Patrick Lefèvre (DEV)',
+    email: 'dev@lignia.fr',
+    is_active: true,
+  } as any,
+  tenantId: 'dev-tenant-123',
+  userRole: 'admin',
+  loading: false,
+  error: null,
+};
 
+export function useCurrentUser(): UseCurrentUserReturn {
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [coreUser, setCoreUser] = useState<CoreUser | null>(null);
   const [tenantId, setTenantId] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!DEV_BYPASS);
   const [error, setError] = useState<string | null>(null);
   const processingRef = useRef(false);
 
@@ -110,6 +108,8 @@ export function useCurrentUser(): UseCurrentUserReturn {
   }, []);
 
   useEffect(() => {
+    if (DEV_BYPASS) return;
+
     let subscription: { unsubscribe: () => void } | null = null;
 
     const setup = () => {
@@ -127,7 +127,6 @@ export function useCurrentUser(): UseCurrentUserReturn {
 
     setup();
 
-    // Re-subscribe when client is reconfigured (ephemeral mode toggle)
     const handleClientChanged = () => {
       setLoading(true);
       setup();
@@ -139,6 +138,8 @@ export function useCurrentUser(): UseCurrentUserReturn {
       window.removeEventListener("supabase-client-changed", handleClientChanged);
     };
   }, [processSession]);
+
+  if (DEV_BYPASS) return DEV_RETURN;
 
   return { authUser, coreUser, tenantId, userRole, loading, error };
 }

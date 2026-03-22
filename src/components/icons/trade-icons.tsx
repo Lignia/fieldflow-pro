@@ -271,3 +271,104 @@ export function IconPoeleBuches({ size, ...props }: IconSVGProps) {
     </svg>
   );
 }
+
+/**
+ * Foyer fermé — insert vitré encastré dans un cadre maçonné, flamme visible derrière la vitre
+ */
+export function IconFoyerFerme({ size, ...props }: IconSVGProps) {
+  return (
+    <svg {...defaults(size)} {...props}>
+      {/* Cadre maçonné */}
+      <rect x="3" y="5" width="18" height="15" rx="1" />
+      {/* Vitre / porte vitrée avec cadre épais */}
+      <rect x="5.5" y="7" width="13" height="11" rx="0.5" strokeWidth="2" />
+      {/* Reflet vitre */}
+      <line x1="7" y1="8" x2="8.5" y2="10" opacity="0.15" strokeWidth="1.25" />
+      {/* Flamme derrière la vitre */}
+      <path d="M12 15c0-2-1.5-3-1.5-3s1.5-.5 2 .8c.3-1-.5-2-.5-2s2 1.2 2 3c0 1.2-1 2-2 2s-2-.8-2-2" fill="currentColor" fillOpacity="0.12" strokeWidth="0" />
+      {/* Bûches */}
+      <line x1="8.5" y1="16.5" x2="11.5" y2="16" strokeWidth="1.25" opacity="0.4" />
+      <line x1="12.5" y1="16" x2="15.5" y2="16.5" strokeWidth="1.25" opacity="0.4" />
+      {/* Poignée */}
+      <line x1="17" y1="11.5" x2="17" y2="13.5" strokeWidth="2" />
+      {/* Tablette dessus */}
+      <path d="M2 5h20" strokeWidth="2" />
+    </svg>
+  );
+}
+
+/**
+ * Foyer ouvert — cheminée traditionnelle ouverte sans vitre, flamme libre
+ */
+export function IconFoyerOuvert({ size, ...props }: IconSVGProps) {
+  return (
+    <svg {...defaults(size)} {...props}>
+      {/* Manteau de cheminée */}
+      <path d="M4 20V10l2-3h12l2 3v10" />
+      {/* Tablette */}
+      <path d="M3 10h18" strokeWidth="2" />
+      {/* Ouverture large (pas de vitre) */}
+      <path d="M7 20v-7h10v7" />
+      {/* Grille / chenets */}
+      <line x1="8" y1="19" x2="16" y2="19" strokeWidth="1.25" opacity="0.3" />
+      <line x1="9" y1="19" x2="9" y2="17.5" strokeWidth="1.25" opacity="0.3" />
+      <line x1="15" y1="19" x2="15" y2="17.5" strokeWidth="1.25" opacity="0.3" />
+      {/* Bûches croisées */}
+      <line x1="9" y1="18" x2="13" y2="16.5" strokeWidth="1.5" opacity="0.35" />
+      <line x1="11" y1="16.5" x2="15" y2="18" strokeWidth="1.5" opacity="0.35" />
+      {/* Flamme libre — plus grande car foyer ouvert */}
+      <path d="M12 15.5c0-2.2-1.5-3.5-1.5-3.5s1.5-.3 2 1c.4-1.2-.3-2.2-.3-2.2s2.2 1.2 2.2 3.5c0 1.3-1.1 2.2-2.2 2.2s-2.2-1-2.2-2.2" fill="currentColor" fillOpacity="0.1" strokeWidth="0" />
+      {/* Sol */}
+      <line x1="2" y1="20" x2="22" y2="20" strokeWidth="2" />
+    </svg>
+  );
+}
+
+/**
+ * Plaque de sol — rectangle de protection au sol sous un appareil
+ */
+export function IconPlaqueSol({ size, ...props }: IconSVGProps) {
+  return (
+    <svg {...defaults(size)} {...props}>
+      {/* Plaque en perspective isométrique */}
+      <path d="M4 16l8 4 8-4-8-4z" strokeWidth="1.75" fill="currentColor" fillOpacity="0.06" />
+      {/* Bord épais de la plaque */}
+      <path d="M4 16v1.5l8 4v-1.5" opacity="0.3" strokeWidth="1.25" />
+      <path d="M20 16v1.5l-8 4v-1.5" opacity="0.3" strokeWidth="1.25" />
+      {/* Silhouette poêle posé dessus */}
+      <rect x="9" y="6" width="6" height="8" rx="1" opacity="0.25" strokeWidth="1.25" />
+      <path d="M12 6V3.5" opacity="0.25" strokeWidth="1.25" />
+      {/* Marqueur matériau (carré dans la plaque) */}
+      <path d="M10 15l2 1 2-1" opacity="0.3" strokeWidth="1" />
+      {/* Cotes / flèches de dimension */}
+      <line x1="3" y1="18" x2="3" y2="14" strokeWidth="1" opacity="0.2" />
+      <line x1="2.5" y1="14" x2="3.5" y2="14" strokeWidth="1" opacity="0.2" />
+      <line x1="2.5" y1="18" x2="3.5" y2="18" strokeWidth="1" opacity="0.2" />
+    </svg>
+  );
+}
+
+/**
+ * Protection murale — écran thermique fixé au mur derrière un poêle
+ */
+export function IconProtectionMurale({ size, ...props }: IconSVGProps) {
+  return (
+    <svg {...defaults(size)} {...props}>
+      {/* Mur en arrière-plan */}
+      <rect x="2" y="2" width="20" height="20" rx="0.5" opacity="0.1" strokeWidth="1" />
+      {/* Panneau de protection (écran thermique) */}
+      <rect x="5" y="4" width="14" height="14" rx="1" strokeWidth="1.75" />
+      {/* Texture / motif du panneau */}
+      <line x1="8" y1="4" x2="8" y2="18" opacity="0.1" strokeWidth="1" />
+      <line x1="12" y1="4" x2="12" y2="18" opacity="0.1" strokeWidth="1" />
+      <line x1="16" y1="4" x2="16" y2="18" opacity="0.1" strokeWidth="1" />
+      {/* Fixations / entretoises (écart avec le mur) */}
+      <circle cx="7" cy="6.5" r="0.75" fill="currentColor" fillOpacity="0.3" strokeWidth="0" />
+      <circle cx="17" cy="6.5" r="0.75" fill="currentColor" fillOpacity="0.3" strokeWidth="0" />
+      <circle cx="7" cy="15.5" r="0.75" fill="currentColor" fillOpacity="0.3" strokeWidth="0" />
+      <circle cx="17" cy="15.5" r="0.75" fill="currentColor" fillOpacity="0.3" strokeWidth="0" />
+      {/* Rayonnement thermique (ondes) */}
+      <path d="M5 21c1-1 2-1 3 0s2 1 3 0 2-1 3 0 2 1 3 0" opacity="0.25" strokeWidth="1.25" />
+    </svg>
+  );
+}

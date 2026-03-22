@@ -11,6 +11,10 @@ import {
   IconFumisterie,
   IconPoeleGranules,
   IconPoeleBuches,
+  IconFoyerFerme,
+  IconFoyerOuvert,
+  IconPlaqueSol,
+  IconProtectionMurale,
 } from "@/components/icons";
 import { Wrench, Flame, ThermometerSun, ShieldCheck, Copy, Check, Sparkles } from "lucide-react";
 import type { IconProps } from "@/components/icons/Icon";

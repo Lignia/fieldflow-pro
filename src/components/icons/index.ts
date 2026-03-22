@@ -14,4 +14,8 @@ export {
   IconFoyerOuvert,
   IconPlaqueSol,
   IconProtectionMurale,
+  IconArriveeAir,
+  IconDistributionAir,
+  IconChapeauParePluie,
+  IconToitureSouche,
 } from "./trade-icons";

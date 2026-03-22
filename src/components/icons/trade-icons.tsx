@@ -372,3 +372,125 @@ export function IconProtectionMurale({ size, ...props }: IconSVGProps) {
     </svg>
   );
 }
+
+/**
+ * Arrivée d'air frais — grille d'amenée d'air comburant traversant un mur
+ */
+export function IconArriveeAir({ size, ...props }: IconSVGProps) {
+  return (
+    <svg {...defaults(size)} {...props}>
+      {/* Mur en coupe */}
+      <rect x="9" y="2" width="6" height="20" rx="0.5" opacity="0.15" strokeWidth="1" />
+      {/* Conduit traversant le mur */}
+      <rect x="7" y="10" width="10" height="4" rx="0.5" />
+      {/* Grille extérieure (gauche) */}
+      <line x1="5" y1="10.5" x2="5" y2="13.5" strokeWidth="1.75" />
+      <line x1="4" y1="11" x2="4" y2="13" strokeWidth="1.25" opacity="0.5" />
+      <line x1="6" y1="11" x2="6" y2="13" strokeWidth="1.25" opacity="0.5" />
+      {/* Flèches d'air entrant */}
+      <path d="M1 12h3" strokeWidth="1.5" />
+      <path d="M2.5 10.5L4 12l-1.5 1.5" strokeWidth="1.25" />
+      {/* Grille intérieure (droite) */}
+      <line x1="19" y1="10.5" x2="19" y2="13.5" strokeWidth="1.75" />
+      <line x1="18" y1="11" x2="18" y2="13" strokeWidth="1.25" opacity="0.5" />
+      <line x1="20" y1="11" x2="20" y2="13" strokeWidth="1.25" opacity="0.5" />
+      {/* Flux d'air intérieur */}
+      <path d="M20.5 12h2" strokeWidth="1.25" opacity="0.4" />
+      <path d="M21.5 11L23 12l-1.5 1" strokeWidth="1" opacity="0.4" />
+    </svg>
+  );
+}
+
+/**
+ * Distribution d'air chaud — gaines + moteur + bouches de diffusion
+ */
+export function IconDistributionAir({ size, ...props }: IconSVGProps) {
+  return (
+    <svg {...defaults(size)} {...props}>
+      {/* Moteur / caisson central */}
+      <rect x="9" y="3" width="6" height="5" rx="1" />
+      {/* Ventilateur dans le caisson */}
+      <circle cx="12" cy="5.5" r="1.5" strokeWidth="1.25" />
+      <path d="M12 4l.5 1.5M12 4l-.5 1.5" strokeWidth="1" opacity="0.4" />
+      {/* Gaine gauche */}
+      <path d="M9 5.5H4a1 1 0 0 0-1 1V14" strokeWidth="1.75" />
+      {/* Gaine droite */}
+      <path d="M15 5.5h5a1 1 0 0 1 1 1V14" strokeWidth="1.75" />
+      {/* Gaine centre vers le bas */}
+      <path d="M12 8v6" strokeWidth="1.75" />
+      {/* Bouches de diffusion (3) */}
+      <rect x="1.5" y="14" width="3" height="2" rx="0.5" />
+      <rect x="10.5" y="14" width="3" height="2" rx="0.5" />
+      <rect x="19.5" y="14" width="3" height="2" rx="0.5" />
+      {/* Flux d'air chaud sortant des bouches */}
+      <path d="M3 17v2" opacity="0.3" strokeWidth="1.25" />
+      <path d="M12 17v2" opacity="0.3" strokeWidth="1.25" />
+      <path d="M21 17v2" opacity="0.3" strokeWidth="1.25" />
+      <path d="M2 18.5v1.5" opacity="0.15" strokeWidth="1" />
+      <path d="M4 18.5v1.5" opacity="0.15" strokeWidth="1" />
+      <path d="M11 18.5v1.5" opacity="0.15" strokeWidth="1" />
+      <path d="M13 18.5v1.5" opacity="0.15" strokeWidth="1" />
+      <path d="M20 18.5v1.5" opacity="0.15" strokeWidth="1" />
+      <path d="M22 18.5v1.5" opacity="0.15" strokeWidth="1" />
+    </svg>
+  );
+}
+
+/**
+ * Chapeau pare-pluie — coiffe de protection en haut d'un conduit de cheminée
+ */
+export function IconChapeauParePluie({ size, ...props }: IconSVGProps) {
+  return (
+    <svg {...defaults(size)} {...props}>
+      {/* Conduit / tube sortant */}
+      <path d="M9 22V12" strokeWidth="1.75" />
+      <path d="M15 22V12" strokeWidth="1.75" />
+      {/* Collerette / embase */}
+      <path d="M7.5 12h9" strokeWidth="2" />
+      {/* Tige centrale de fixation */}
+      <line x1="12" y1="12" x2="12" y2="7" strokeWidth="1.5" />
+      {/* Chapeau conique */}
+      <path d="M5 7l7-4 7 4" strokeWidth="1.75" />
+      {/* Dessous du chapeau */}
+      <path d="M5 7h14" strokeWidth="1.5" />
+      {/* Entretoises / pattes de fixation */}
+      <line x1="8" y1="7" x2="9" y2="12" opacity="0.3" strokeWidth="1" />
+      <line x1="16" y1="7" x2="15" y2="12" opacity="0.3" strokeWidth="1" />
+      {/* Gouttes de pluie déviées */}
+      <path d="M3 5l-.5 1.5" opacity="0.25" strokeWidth="1.25" />
+      <path d="M21 5l.5 1.5" opacity="0.25" strokeWidth="1.25" />
+      <path d="M4.5 8l-.5 1.5" opacity="0.2" strokeWidth="1" />
+      <path d="M19.5 8l.5 1.5" opacity="0.2" strokeWidth="1" />
+    </svg>
+  );
+}
+
+/**
+ * Toiture / Souche — sortie de toit avec souche maçonnée et solin
+ */
+export function IconToitureSouche({ size, ...props }: IconSVGProps) {
+  return (
+    <svg {...defaults(size)} {...props}>
+      {/* Pente du toit */}
+      <path d="M1 16l11-10 11 10" strokeWidth="1.75" />
+      {/* Couverture / tuiles */}
+      <path d="M1 16h22" strokeWidth="1.5" />
+      {/* Souche maçonnée dépassant du toit */}
+      <rect x="8" y="4" width="5" height="9" rx="0.5" />
+      {/* Briques de la souche */}
+      <line x1="8" y1="6.5" x2="13" y2="6.5" opacity="0.2" strokeWidth="1" />
+      <line x1="8" y1="9" x2="13" y2="9" opacity="0.2" strokeWidth="1" />
+      <line x1="10.5" y1="4" x2="10.5" y2="6.5" opacity="0.15" strokeWidth="1" />
+      <line x1="10.5" y1="6.5" x2="10.5" y2="9" opacity="0.15" strokeWidth="1" />
+      {/* Solin / abergement */}
+      <path d="M7 13l1-2.5h5l1 2.5" strokeWidth="1.5" opacity="0.5" />
+      {/* Couronnement de souche */}
+      <path d="M7.5 4h6" strokeWidth="2" />
+      {/* Mitre / sortie */}
+      <path d="M9.5 2.5h2" strokeWidth="1.25" />
+      <line x1="10.5" y1="2.5" x2="10.5" y2="4" strokeWidth="1.25" />
+      {/* Pente du toit côté bas */}
+      <path d="M3 18l9 4 9-4" opacity="0.15" strokeWidth="1" />
+    </svg>
+  );
+}

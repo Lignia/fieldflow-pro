@@ -56,6 +56,7 @@ interface UseDashboardKpisReturn {
   refetch: () => void;
 }
 
+const sb = supabase as any;
 
 
 export function useDashboardKpis(): UseDashboardKpisReturn {
@@ -80,43 +81,49 @@ export function useDashboardKpis(): UseDashboardKpisReturn {
       const [revenueRes, quotesRes, overdueQuotesRes, interventionsRes, overdueInvoicesRes, pipelineRes] =
         await Promise.all([
           // KPI 1: Revenue this month
-          (supabase as any)
-            .from("billing.invoices")
+          sb
+            .schema("billing")
+            .from("invoices")
             .select("total_ttc")
             .in("invoice_status", ["paid", "partial"])
             .gte("invoice_date", monthStart)
             .lte("invoice_date", today),
 
           // KPI 2: Pending quotes count
-          (supabase as any)
-            .from("billing.quotes")
+          sb
+            .schema("billing")
+            .from("quotes")
             .select("id, expiry_date")
             .in("quote_status", ["draft", "sent"]),
 
           // KPI 2b: Overdue quotes
-          (supabase as any)
-            .from("billing.quotes")
+          sb
+            .schema("billing")
+            .from("quotes")
             .select("id", { count: "exact", head: true })
             .in("quote_status", ["draft", "sent"])
             .lt("expiry_date", today),
 
           // KPI 3: Interventions this week
-          (supabase as any)
-            .from("operations.interventions")
+          sb
+            .schema("operations")
+            .from("interventions")
             .select("id, workstream")
             .gte("start_datetime", weekStart)
             .lte("start_datetime", weekEnd),
 
           // KPI 4: Overdue invoices > 30 days
-          (supabase as any)
-            .from("billing.invoices")
+          sb
+            .schema("billing")
+            .from("invoices")
             .select("id, total_ttc")
             .in("invoice_status", ["sent", "overdue", "partial"])
             .lt("due_date", thirtyDaysAgo),
 
           // Pipeline: active projects with customer name
-          (supabase as any)
-            .from("core.projects")
+          sb
+            .schema("core")
+            .from("projects")
             .select("id, project_number, status, modified_at, customer:customer_id(name)")
             .not("status", "in", "(closed,lost,cancelled)")
             .order("modified_at", { ascending: false })

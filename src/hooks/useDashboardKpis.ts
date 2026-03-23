@@ -58,7 +58,28 @@ interface UseDashboardKpisReturn {
 
 
 
+const DEV_BYPASS = import.meta.env.VITE_DEV_BYPASS_AUTH === 'true';
+
+const DEV_MOCK: UseDashboardKpisReturn = {
+  kpis: {
+    revenue: { value: 18247, label: "CA du mois" },
+    quotes: { count: 5, overdue: 2, label: "Devis en attente" },
+    interventions: { count: 11, installation: 8, service: 3, label: "Interventions S.13" },
+    overdue: { count: 2, amount: 4620, label: "Impayées > 30j" },
+  },
+  pipeline: [
+    { id: "1", project_number: "PRJ-0047", status: "vt_planned", modified_at: new Date().toISOString(), customer_name: "M. Morel" },
+    { id: "2", project_number: "PRJ-0045", status: "final_quote_sent", modified_at: new Date().toISOString(), customer_name: "Mme Durand" },
+    { id: "3", project_number: "PRJ-0043", status: "deposit_paid", modified_at: new Date().toISOString(), customer_name: "M. Fabre" },
+  ],
+  loading: false,
+  error: null,
+  refetch: () => {},
+};
+
 export function useDashboardKpis(): UseDashboardKpisReturn {
+  if (DEV_BYPASS) return DEV_MOCK;
+
   const [kpis, setKpis] = useState<DashboardKpis | null>(null);
   const [pipeline, setPipeline] = useState<PipelineProject[]>([]);
   const [loading, setLoading] = useState(true);

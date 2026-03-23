@@ -80,8 +80,7 @@ export function useDashboardKpis(): UseDashboardKpisReturn {
       const [revenueRes, quotesRes, overdueQuotesRes, interventionsRes, overdueInvoicesRes, pipelineRes] =
         await Promise.all([
           // KPI 1: Revenue this month
-          sb
-            .schema("billing")
+          billingDb
             .from("invoices")
             .select("total_ttc")
             .in("invoice_status", ["paid", "partial"])
@@ -89,39 +88,34 @@ export function useDashboardKpis(): UseDashboardKpisReturn {
             .lte("invoice_date", today),
 
           // KPI 2: Pending quotes count
-          sb
-            .schema("billing")
+          billingDb
             .from("quotes")
             .select("id, expiry_date")
             .in("quote_status", ["draft", "sent"]),
 
           // KPI 2b: Overdue quotes
-          sb
-            .schema("billing")
+          billingDb
             .from("quotes")
             .select("id", { count: "exact", head: true })
             .in("quote_status", ["draft", "sent"])
             .lt("expiry_date", today),
 
           // KPI 3: Interventions this week
-          sb
-            .schema("operations")
+          operationsDb
             .from("interventions")
             .select("id, workstream")
             .gte("start_datetime", weekStart)
             .lte("start_datetime", weekEnd),
 
           // KPI 4: Overdue invoices > 30 days
-          sb
-            .schema("billing")
+          billingDb
             .from("invoices")
             .select("id, total_ttc")
             .in("invoice_status", ["sent", "overdue", "partial"])
             .lt("due_date", thirtyDaysAgo),
 
           // Pipeline: active projects with customer name
-          sb
-            .schema("core")
+          coreDb
             .from("projects")
             .select("id, project_number, status, modified_at, customer:customer_id(name)")
             .not("status", "in", "(closed,lost,cancelled)")

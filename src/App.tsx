@@ -10,6 +10,7 @@ import { AppLayout } from "./components/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import Clients from "./pages/Clients";
 import Projects from "./pages/Projects";
+import ProjectDetail from "./pages/ProjectDetail";
 import Planning from "./pages/Planning";
 import Quotes from "./pages/Quotes";
 import Invoices from "./pages/Invoices";

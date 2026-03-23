@@ -56,6 +56,7 @@ interface UseDashboardKpisReturn {
   refetch: () => void;
 }
 
+const sb = supabase as any;
 
 
 export function useDashboardKpis(): UseDashboardKpisReturn {

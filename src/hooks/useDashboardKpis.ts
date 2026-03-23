@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { billingDb, operationsDb, coreDb } from "@/integrations/supabase/schema-clients";
 import {
   startOfMonth,
   startOfWeek,
@@ -8,7 +8,6 @@ import {
   subDays,
   formatISO,
 } from "date-fns";
-
 interface RevenueKpi {
   value: number;
   label: string;

@@ -56,7 +56,7 @@ interface UseDashboardKpisReturn {
   refetch: () => void;
 }
 
-const sb = supabase as any;
+
 
 export function useDashboardKpis(): UseDashboardKpisReturn {
   const [kpis, setKpis] = useState<DashboardKpis | null>(null);
@@ -80,49 +80,43 @@ export function useDashboardKpis(): UseDashboardKpisReturn {
       const [revenueRes, quotesRes, overdueQuotesRes, interventionsRes, overdueInvoicesRes, pipelineRes] =
         await Promise.all([
           // KPI 1: Revenue this month
-          sb
-            .schema("billing")
-            .from("invoices")
+          (supabase as any)
+            .from("billing.invoices")
             .select("total_ttc")
             .in("invoice_status", ["paid", "partial"])
             .gte("invoice_date", monthStart)
             .lte("invoice_date", today),
 
           // KPI 2: Pending quotes count
-          sb
-            .schema("billing")
-            .from("quotes")
+          (supabase as any)
+            .from("billing.quotes")
             .select("id, expiry_date")
             .in("quote_status", ["draft", "sent"]),
 
-          // KPI 2b: Overdue quotes (separate for clarity)
-          sb
-            .schema("billing")
-            .from("quotes")
+          // KPI 2b: Overdue quotes
+          (supabase as any)
+            .from("billing.quotes")
             .select("id", { count: "exact", head: true })
             .in("quote_status", ["draft", "sent"])
             .lt("expiry_date", today),
 
           // KPI 3: Interventions this week
-          sb
-            .schema("operations")
-            .from("interventions")
+          (supabase as any)
+            .from("operations.interventions")
             .select("id, workstream")
             .gte("start_datetime", weekStart)
             .lte("start_datetime", weekEnd),
 
           // KPI 4: Overdue invoices > 30 days
-          sb
-            .schema("billing")
-            .from("invoices")
+          (supabase as any)
+            .from("billing.invoices")
             .select("id, total_ttc")
             .in("invoice_status", ["sent", "overdue", "partial"])
             .lt("due_date", thirtyDaysAgo),
 
           // Pipeline: active projects with customer name
-          sb
-            .schema("core")
-            .from("projects")
+          (supabase as any)
+            .from("core.projects")
             .select("id, project_number, status, modified_at, customer:customer_id(name)")
             .not("status", "in", "(closed,lost,cancelled)")
             .order("modified_at", { ascending: false })

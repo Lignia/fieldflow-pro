@@ -1,7 +1,8 @@
+import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { formatDistanceToNow } from "date-fns";
+import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Search, FileText, RefreshCw, Plus } from "lucide-react";
+import { Search, FileText, RefreshCw, Plus, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -9,39 +10,74 @@ import {
   ALL_QUOTE_STATUSES,
   QUOTE_STATUS_LABELS,
   QUOTE_KIND_LABELS,
+  type QuoteStatus,
   type QuoteStatusFilter,
+  type Quote,
 } from "@/hooks/useQuotes";
-import { StatusBadge } from "@/components/StatusBadge";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+
+/* ── Helpers ── */
 
 function formatCurrency(amount: number): string {
   return Math.round(amount).toLocaleString("fr-FR") + " €";
 }
+
+function formatShortDate(date: string): string {
+  return format(new Date(date), "d MMM yyyy", { locale: fr });
+}
+
+const STATUS_COLORS: Record<QuoteStatus, string> = {
+  draft: "bg-muted text-muted-foreground",
+  sent: "bg-info/15 text-info",
+  signed: "bg-accent/15 text-accent",
+  lost: "bg-destructive/15 text-destructive",
+  expired: "bg-warning/15 text-warning",
+  canceled: "bg-muted text-muted-foreground",
+};
+
+const KIND_COLORS: Record<string, string> = {
+  estimate: "bg-info/15 text-info",
+  final: "bg-accent/15 text-accent",
+  service: "bg-warning/15 text-warning",
+};
 
 const FILTER_TABS: { key: QuoteStatusFilter; label: string }[] = [
   { key: "all", label: "Tous" },
   ...ALL_QUOTE_STATUSES.map((s) => ({ key: s as QuoteStatusFilter, label: QUOTE_STATUS_LABELS[s] })),
 ];
 
+/* ── Component ── */
+
 export default function Quotes() {
   const navigate = useNavigate();
-  const {
-    quotes,
-    loading,
-    error,
-    search,
-    setSearch,
-    statusFilter,
-    setStatusFilter,
-    refetch,
-  } = useQuotes();
+  const { quotes, loading, error, refetch } = useQuotes();
+  const [statusFilter, setStatusFilter] = useState<QuoteStatusFilter>("all");
+  const [search, setSearch] = useState("");
 
+  // Show error toast once
   if (error && !loading) {
     toast.error(error, { id: "quotes-error" });
   }
+
+  const filtered = useMemo(() => {
+    let list = quotes;
+    if (statusFilter !== "all") {
+      list = list.filter((q) => q.quote_status === statusFilter);
+    }
+    if (search.trim()) {
+      const s = search.trim().toLowerCase();
+      list = list.filter(
+        (q) =>
+          q.quote_number.toLowerCase().includes(s) ||
+          (q.customer?.name ?? "").toLowerCase().includes(s)
+      );
+    }
+    return list;
+  }, [quotes, statusFilter, search]);
 
   return (
     <div className="space-y-6">
@@ -52,9 +88,7 @@ export default function Quotes() {
             Devis
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {loading
-              ? "Chargement…"
-              : `${quotes.length} devis`}
+            {loading ? "Chargement…" : `${filtered.length} devis`}
           </p>
         </div>
         <div className="flex gap-2">
@@ -64,10 +98,17 @@ export default function Quotes() {
               Réessayer
             </Button>
           )}
-          <Button size="sm" onClick={() => navigate("/quotes/new")}>
-            <Plus className="h-3.5 w-3.5 mr-1" />
-            Nouveau devis
-          </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span tabIndex={0}>
+                <Button size="sm" disabled>
+                  <Plus className="h-3.5 w-3.5 mr-1" />
+                  Nouveau devis
+                </Button>
+              </span>
+            </TooltipTrigger>
+            <TooltipContent>Disponible depuis un projet</TooltipContent>
+          </Tooltip>
         </div>
       </div>
 
@@ -111,95 +152,103 @@ export default function Quotes() {
             </Card>
           ))}
         </div>
-      ) : quotes.length === 0 ? (
-        <Card className="p-12 text-center">
-          <FileText className="h-10 w-10 mx-auto mb-3 text-muted-foreground/30" />
-          {search.trim() ? (
-            <p className="text-sm text-muted-foreground">
-              Aucun devis ne correspond à « {search} »
-            </p>
-          ) : statusFilter !== "all" ? (
-            <p className="text-sm text-muted-foreground">
-              Aucun devis avec le statut « {QUOTE_STATUS_LABELS[statusFilter]} »
-            </p>
-          ) : (
-            <>
-              <p className="text-sm text-muted-foreground mb-1">
-                Aucun devis pour le moment
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Les devis seront créés depuis la fiche projet.
-              </p>
-            </>
-          )}
-        </Card>
+      ) : filtered.length === 0 ? (
+        <EmptyState search={search} statusFilter={statusFilter} />
       ) : (
         <div className="space-y-1.5">
-          {quotes.map((quote) => {
-            const isOverdue =
-              quote.quote_status === "sent" &&
-              new Date(quote.expiry_date) < new Date();
-
-            return (
-              <Card
-                key={quote.id}
-                className="p-4 cursor-pointer hover:border-accent/20 transition-colors"
-                onClick={() => navigate(`/quotes/${quote.id}`)}
-              >
-                <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
-                  {/* Quote number */}
-                  <span className="font-mono text-xs text-muted-foreground shrink-0">
-                    {quote.quote_number}
-                    {quote.version_number > 1 && (
-                      <span className="ml-1 text-muted-foreground/60">
-                        v{quote.version_number}
-                      </span>
-                    )}
-                  </span>
-
-                  {/* Customer */}
-                  <span className="text-sm font-medium flex-1 min-w-0 truncate">
-                    {quote.customer_name}
-                  </span>
-
-                  {/* Kind badge */}
-                  <StatusBadge status={quote.quote_kind} type="quote_kind" size="sm" />
-
-                  {/* Status badge */}
-                  <StatusBadge status={quote.quote_status} type="quote" size="sm" />
-
-                  {/* Overdue indicator */}
-                  {isOverdue && (
-                    <span className="text-xs font-medium text-destructive shrink-0">
-                      Expiré
-                    </span>
-                  )}
-
-                  {/* Amount */}
-                  <span className="font-mono text-sm font-semibold shrink-0">
-                    {formatCurrency(quote.total_ttc)}
-                  </span>
-
-                  {/* Project ref */}
-                  {quote.project_number && (
-                    <span className="hidden sm:inline text-xs text-muted-foreground shrink-0">
-                      {quote.project_number}
-                    </span>
-                  )}
-
-                  {/* Date */}
-                  <span className="text-xs text-muted-foreground shrink-0">
-                    {formatDistanceToNow(new Date(quote.modified_at), {
-                      addSuffix: true,
-                      locale: fr,
-                    })}
-                  </span>
-                </div>
-              </Card>
-            );
-          })}
+          {filtered.map((quote) => (
+            <QuoteRow key={quote.id} quote={quote} onClick={() => navigate(`/quotes/${quote.id}`)} />
+          ))}
         </div>
       )}
     </div>
+  );
+}
+
+/* ── Sub-components ── */
+
+function QuoteRow({ quote, onClick }: { quote: Quote; onClick: () => void }) {
+  const address = [quote.property?.address_line1, quote.property?.city]
+    .filter(Boolean)
+    .join(", ");
+
+  return (
+    <Card
+      className="p-4 cursor-pointer hover:border-accent/20 transition-colors"
+      onClick={onClick}
+    >
+      <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
+        {/* Quote number */}
+        <span className="font-mono text-xs text-muted-foreground shrink-0">
+          {quote.quote_number}
+          {quote.version_number > 1 && (
+            <span className="ml-1 opacity-60">v{quote.version_number}</span>
+          )}
+        </span>
+
+        {/* Customer */}
+        <span className="text-sm font-medium min-w-0 truncate">
+          {quote.customer?.name ?? "Client inconnu"}
+        </span>
+
+        {/* Address */}
+        {address && (
+          <span className="hidden lg:inline text-xs text-muted-foreground truncate max-w-[200px]">
+            {address}
+          </span>
+        )}
+
+        <span className="flex-1" />
+
+        {/* Kind badge */}
+        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap ${KIND_COLORS[quote.quote_kind] ?? ""}`}>
+          {QUOTE_KIND_LABELS[quote.quote_kind] ?? quote.quote_kind}
+        </span>
+
+        {/* Status badge */}
+        <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap ${STATUS_COLORS[quote.quote_status] ?? ""}`}>
+          {QUOTE_STATUS_LABELS[quote.quote_status] ?? quote.quote_status}
+        </span>
+
+        {/* Amount */}
+        <span className="font-mono text-sm font-semibold shrink-0">
+          {formatCurrency(quote.total_ttc)}
+        </span>
+
+        {/* Date */}
+        <span className="text-xs text-muted-foreground shrink-0">
+          {formatShortDate(quote.quote_date)}
+        </span>
+
+        {/* Chevron */}
+        <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />
+      </div>
+    </Card>
+  );
+}
+
+function EmptyState({ search, statusFilter }: { search: string; statusFilter: QuoteStatusFilter }) {
+  return (
+    <Card className="p-12 text-center">
+      <FileText className="h-10 w-10 mx-auto mb-3 text-muted-foreground/30" />
+      {search.trim() ? (
+        <p className="text-sm text-muted-foreground">
+          Aucun devis ne correspond à « {search} »
+        </p>
+      ) : statusFilter !== "all" ? (
+        <p className="text-sm text-muted-foreground">
+          Aucun devis avec le statut « {QUOTE_STATUS_LABELS[statusFilter]} »
+        </p>
+      ) : (
+        <>
+          <p className="text-sm text-muted-foreground mb-1">
+            Aucun devis pour l'instant.
+          </p>
+          <p className="text-xs text-muted-foreground">
+            Créez votre premier devis depuis un projet.
+          </p>
+        </>
+      )}
+    </Card>
   );
 }

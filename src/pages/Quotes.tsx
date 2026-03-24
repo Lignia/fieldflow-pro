@@ -1,7 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Search, FileText, RefreshCw } from "lucide-react";
+import { Search, FileText, RefreshCw, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import {

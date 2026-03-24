@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { billingDb } from "@/integrations/supabase/schema-clients";
+import { coreDb } from "@/integrations/supabase/schema-clients";
 
 export type UnitType = "u" | "m" | "m2" | "forfait" | "h";
 
@@ -11,6 +12,12 @@ export const UNIT_LABELS: Record<UnitType, string> = {
   h: "heure",
 };
 
+export interface QuoteLineProduct {
+  id: string;
+  name: string;
+  sku: string | null;
+}
+
 export interface QuoteLine {
   id: string;
   label: string;
@@ -20,6 +27,8 @@ export interface QuoteLine {
   vat_rate: number;
   total_line_ht: number;
   sort_order: number;
+  metadata: Record<string, unknown> | null;
+  product: QuoteLineProduct | null;
 }
 
 export interface QuoteDetailCustomer {
@@ -27,13 +36,28 @@ export interface QuoteDetailCustomer {
   name: string;
   email: string | null;
   phone: string | null;
-  customer_type: string;
+}
+
+export interface QuoteDetailProperty {
+  id: string;
+  address_line1: string | null;
+  address_line2: string | null;
+  city: string | null;
+  postal_code: string | null;
 }
 
 export interface QuoteDetailProject {
   id: string;
   project_number: string;
   status: string;
+}
+
+export interface QuoteActivity {
+  id: string;
+  activity_type: string;
+  payload: Record<string, unknown> | null;
+  occurred_at: string;
+  actor: { full_name: string | null } | null;
 }
 
 export interface QuoteDetailData {
@@ -49,15 +73,16 @@ export interface QuoteDetailData {
   total_ht: number;
   total_vat: number;
   total_ttc: number;
-  created_at: string;
-  modified_at: string;
+  project_id: string | null;
+  previous_quote_id: string | null;
   customer: QuoteDetailCustomer;
-  project: QuoteDetailProject | null;
-  lines: QuoteLine[];
+  property: QuoteDetailProperty | null;
 }
 
 interface UseQuoteDetailReturn {
   quote: QuoteDetailData | null;
+  lines: QuoteLine[];
+  activities: QuoteActivity[];
   loading: boolean;
   error: string | null;
   refetch: () => void;
@@ -65,119 +90,115 @@ interface UseQuoteDetailReturn {
 
 const DEV_BYPASS = import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
 
+const MOCK_LINES: QuoteLine[] = [
+  {
+    id: "line-1",
+    label: "Poêle Invicta Onsen 8kW",
+    qty: 1,
+    unit: "u",
+    unit_price_ht: 2890,
+    vat_rate: 5.5,
+    total_line_ht: 2890,
+    sort_order: 0,
+    metadata: null,
+    product: { id: "p1", name: "Poêle Invicta Onsen 8kW", sku: "INV-ONS-8K" },
+  },
+  {
+    id: "line-2",
+    label: "Kit raccordement inox Ø150",
+    qty: 1,
+    unit: "u",
+    unit_price_ht: 485,
+    vat_rate: 10,
+    total_line_ht: 485,
+    sort_order: 1,
+    metadata: null,
+    product: { id: "p2", name: "Kit raccordement inox Ø150", sku: "KIT-RAC-150" },
+  },
+  {
+    id: "line-3",
+    label: "Plaque de sol verre trempé",
+    qty: 1,
+    unit: "u",
+    unit_price_ht: 189,
+    vat_rate: 10,
+    total_line_ht: 189,
+    sort_order: 2,
+    metadata: null,
+    product: { id: "p3", name: "Plaque de sol verre trempé", sku: "PLQ-SOL-VT" },
+  },
+  {
+    id: "line-4",
+    label: "Main d'œuvre pose + mise en service",
+    qty: 8,
+    unit: "h",
+    unit_price_ht: 78,
+    vat_rate: 10,
+    total_line_ht: 624,
+    sort_order: 3,
+    metadata: null,
+    product: null,
+  },
+];
+
+const MOCK_ACTIVITIES: QuoteActivity[] = [
+  {
+    id: "act-1",
+    activity_type: "wf_quote_sent",
+    payload: null,
+    occurred_at: new Date(Date.now() - 2 * 86400000).toISOString(),
+    actor: { full_name: "Jean Dupont" },
+  },
+  {
+    id: "act-2",
+    activity_type: "wf_status_change",
+    payload: { from_status: "draft", to_status: "sent" },
+    occurred_at: new Date(Date.now() - 2 * 86400000).toISOString(),
+    actor: { full_name: "Jean Dupont" },
+  },
+  {
+    id: "act-3",
+    activity_type: "wf_status_change",
+    payload: { from_status: null, to_status: "draft" },
+    occurred_at: new Date(Date.now() - 5 * 86400000).toISOString(),
+    actor: { full_name: "Système" },
+  },
+];
+
 const MOCK_QUOTE: QuoteDetailData = {
-  id: "mock-q4",
-  quote_number: "DEV-2025-0009",
+  id: "mock-q1",
+  quote_number: "DEV-2026-0047",
   quote_kind: "final",
-  quote_status: "signed",
+  quote_status: "sent",
   version_number: 1,
-  quote_date: "2025-02-20",
-  expiry_date: "2025-03-22",
-  sent_at: "2025-02-21T10:00:00Z",
-  signed_at: "2025-03-01T14:30:00Z",
-  total_ht: 15800,
-  total_vat: 3160,
-  total_ttc: 18960,
-  created_at: new Date(Date.now() - 30 * 86400000).toISOString(),
-  modified_at: new Date(Date.now() - 10 * 86400000).toISOString(),
+  quote_date: "2026-03-15",
+  expiry_date: "2026-04-14",
+  sent_at: new Date(Date.now() - 2 * 86400000).toISOString(),
+  signed_at: null,
+  total_ht: 4188,
+  total_vat: 289,
+  total_ttc: 4477,
+  project_id: "mock-p1",
+  previous_quote_id: null,
   customer: {
     id: "mock-c1",
-    name: "M. Fabre",
-    email: "fabre@email.fr",
-    phone: "06 11 22 33 44",
-    customer_type: "particulier",
+    name: "M. & Mme Morel",
+    email: "morel@email.fr",
+    phone: "06 12 34 56 78",
   },
-  project: {
-    id: "mock-p5",
-    project_number: "PRJ-0043",
-    status: "deposit_paid",
+  property: {
+    id: "mock-prop1",
+    address_line1: "12 chemin des Érables",
+    address_line2: null,
+    city: "Annecy",
+    postal_code: "74000",
   },
-  lines: [
-    {
-      id: "line-1",
-      label: "Poêle à bois Stûv 30-compact",
-      qty: 1,
-      unit: "u",
-      unit_price_ht: 4200,
-      vat_rate: 5.5,
-      total_line_ht: 4200,
-      sort_order: 0,
-    },
-    {
-      id: "line-2",
-      label: "Conduit isolé inox Ø150 — 6m",
-      qty: 6,
-      unit: "m",
-      unit_price_ht: 185,
-      vat_rate: 5.5,
-      total_line_ht: 1110,
-      sort_order: 1,
-    },
-    {
-      id: "line-3",
-      label: "Plaque de propreté plafond inox",
-      qty: 2,
-      unit: "u",
-      unit_price_ht: 95,
-      vat_rate: 5.5,
-      total_line_ht: 190,
-      sort_order: 2,
-    },
-    {
-      id: "line-4",
-      label: "Sortie de toit inox Ø150",
-      qty: 1,
-      unit: "u",
-      unit_price_ht: 420,
-      vat_rate: 5.5,
-      total_line_ht: 420,
-      sort_order: 3,
-    },
-    {
-      id: "line-5",
-      label: "Pose et raccordement — forfait",
-      qty: 1,
-      unit: "forfait",
-      unit_price_ht: 2800,
-      vat_rate: 10,
-      total_line_ht: 2800,
-      sort_order: 4,
-    },
-    {
-      id: "line-6",
-      label: "Création de l'arrivée d'air",
-      qty: 1,
-      unit: "forfait",
-      unit_price_ht: 650,
-      vat_rate: 10,
-      total_line_ht: 650,
-      sort_order: 5,
-    },
-    {
-      id: "line-7",
-      label: "Protection murale — panneau vermiculite",
-      qty: 3,
-      unit: "m2",
-      unit_price_ht: 180,
-      vat_rate: 10,
-      total_line_ht: 540,
-      sort_order: 6,
-    },
-    {
-      id: "line-8",
-      label: "Mise en service et réglages",
-      qty: 2,
-      unit: "h",
-      unit_price_ht: 75,
-      vat_rate: 10,
-      total_line_ht: 150,
-      sort_order: 7,
-    },
-  ],
 };
 
 export function useQuoteDetail(quoteId: string | undefined): UseQuoteDetailReturn {
   const [quote, setQuote] = useState<QuoteDetailData | null>(DEV_BYPASS ? MOCK_QUOTE : null);
+  const [lines, setLines] = useState<QuoteLine[]>(DEV_BYPASS ? MOCK_LINES : []);
+  const [activities, setActivities] = useState<QuoteActivity[]>(DEV_BYPASS ? MOCK_ACTIVITIES : []);
   const [loading, setLoading] = useState(!DEV_BYPASS);
   const [error, setError] = useState<string | null>(null);
 
@@ -187,20 +208,35 @@ export function useQuoteDetail(quoteId: string | undefined): UseQuoteDetailRetur
     setError(null);
 
     try {
-      const [quoteRes, linesRes] = await Promise.all([
+      const [quoteRes, linesRes, activitiesRes] = await Promise.all([
         billingDb
           .from("quotes")
           .select(
-            "id, quote_number, quote_kind, quote_status, version_number, quote_date, expiry_date, sent_at, signed_at, total_ht, total_vat, total_ttc, created_at, modified_at, customer:customer_id(id, name, email, phone, customer_type), project:project_id(id, project_number, status)"
+            `id, quote_number, quote_kind, quote_status, quote_date, expiry_date,
+             sent_at, signed_at, version_number, previous_quote_id,
+             total_ht, total_vat, total_ttc, project_id,
+             customer:customer_id (id, name, email, phone),
+             property:property_id (id, address_line1, address_line2, city, postal_code)`
           )
           .eq("id", quoteId)
           .single(),
 
         billingDb
           .from("quote_lines")
-          .select("id, label, qty, unit, unit_price_ht, vat_rate, total_line_ht, sort_order")
+          .select(
+            `id, label, qty, unit, unit_price_ht, vat_rate, total_line_ht, sort_order, metadata,
+             product:product_id (id, name, sku)`
+          )
           .eq("quote_id", quoteId)
           .order("sort_order", { ascending: true }),
+
+        coreDb
+          .from("activities")
+          .select(`id, activity_type, payload, occurred_at, actor:actor_user_id (full_name)`)
+          .eq("scope_type", "quote")
+          .eq("scope_id", quoteId)
+          .order("occurred_at", { ascending: false })
+          .limit(10),
       ]);
 
       if (quoteRes.error) {
@@ -209,7 +245,6 @@ export function useQuoteDetail(quoteId: string | undefined): UseQuoteDetailRetur
       }
 
       const q = quoteRes.data as any;
-
       setQuote({
         id: q.id,
         quote_number: q.quote_number,
@@ -223,11 +258,14 @@ export function useQuoteDetail(quoteId: string | undefined): UseQuoteDetailRetur
         total_ht: Number(q.total_ht) || 0,
         total_vat: Number(q.total_vat) || 0,
         total_ttc: Number(q.total_ttc) || 0,
-        created_at: q.created_at,
-        modified_at: q.modified_at,
-        customer: q.customer ?? { id: "", name: "Client inconnu", email: null, phone: null, customer_type: "particulier" },
-        project: q.project ?? null,
-        lines: (linesRes.data ?? []).map((l: any) => ({
+        project_id: q.project_id,
+        previous_quote_id: q.previous_quote_id,
+        customer: q.customer ?? { id: "", name: "Client inconnu", email: null, phone: null },
+        property: q.property ?? null,
+      });
+
+      setLines(
+        (linesRes.data ?? []).map((l: any) => ({
           id: l.id,
           label: l.label,
           qty: Number(l.qty) || 0,
@@ -236,8 +274,20 @@ export function useQuoteDetail(quoteId: string | undefined): UseQuoteDetailRetur
           vat_rate: Number(l.vat_rate) || 0,
           total_line_ht: Number(l.total_line_ht) || 0,
           sort_order: l.sort_order,
-        })),
-      });
+          metadata: l.metadata,
+          product: l.product ?? null,
+        }))
+      );
+
+      setActivities(
+        (activitiesRes.data ?? []).map((a: any) => ({
+          id: a.id,
+          activity_type: a.activity_type,
+          payload: a.payload,
+          occurred_at: a.occurred_at,
+          actor: a.actor ?? null,
+        }))
+      );
     } catch (err: any) {
       setError(err.message ?? "Erreur inattendue");
     } finally {
@@ -249,5 +299,5 @@ export function useQuoteDetail(quoteId: string | undefined): UseQuoteDetailRetur
     if (!DEV_BYPASS) fetchQuote();
   }, [fetchQuote]);
 
-  return { quote, loading, error, refetch: fetchQuote };
+  return { quote, lines, activities, loading, error, refetch: fetchQuote };
 }

@@ -14,6 +14,7 @@ import ProjectDetail from "./pages/ProjectDetail";
 import Planning from "./pages/Planning";
 import Quotes from "./pages/Quotes";
 import CreateQuote from "./pages/CreateQuote";
+import QuoteCreate from "./pages/quotes/QuoteCreate";
 import QuoteDetail from "./pages/QuoteDetail";
 import Invoices from "./pages/Invoices";
 import ServiceRequests from "./pages/ServiceRequests";
@@ -52,6 +53,7 @@ const App = () => (
               <Route path="/planning" element={<Planning />} />
               <Route path="/quotes" element={<Quotes />} />
               <Route path="/quotes/new" element={<CreateQuote />} />
+              <Route path="/projects/:projectId/quotes/new" element={<QuoteCreate />} />
               <Route path="/quotes/:id" element={<QuoteDetail />} />
               <Route path="/invoices" element={<Invoices />} />
               <Route path="/service-requests" element={<ServiceRequests />} />

@@ -18,7 +18,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Tooltip, TooltipTrigger, TooltipContent } from "@/components/ui/tooltip";
+import { NewQuoteModal } from "@/components/quotes/NewQuoteModal";
 
 /* ── Helpers ── */
 
@@ -57,6 +57,7 @@ export default function Quotes() {
   const { quotes, loading, error, refetch } = useQuotes();
   const [statusFilter, setStatusFilter] = useState<QuoteStatusFilter>("all");
   const [search, setSearch] = useState("");
+  const [showNewQuote, setShowNewQuote] = useState(false);
 
   // Show error toast once
   if (error && !loading) {
@@ -81,6 +82,7 @@ export default function Quotes() {
 
   return (
     <div className="space-y-6">
+      <NewQuoteModal open={showNewQuote} onOpenChange={setShowNewQuote} />
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
@@ -98,17 +100,10 @@ export default function Quotes() {
               Réessayer
             </Button>
           )}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span tabIndex={0}>
-                <Button size="sm" disabled>
-                  <Plus className="h-3.5 w-3.5 mr-1" />
-                  Nouveau devis
-                </Button>
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>Disponible depuis un projet</TooltipContent>
-          </Tooltip>
+          <Button size="sm" onClick={() => setShowNewQuote(true)}>
+            <Plus className="h-3.5 w-3.5 mr-1" />
+            Nouveau devis
+          </Button>
         </div>
       </div>
 

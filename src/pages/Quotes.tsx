@@ -82,6 +82,7 @@ export default function Quotes() {
 
   return (
     <div className="space-y-6">
+      <NewQuoteModal open={showNewQuote} onOpenChange={setShowNewQuote} />
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>

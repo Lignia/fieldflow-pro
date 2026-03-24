@@ -57,6 +57,7 @@ export default function Quotes() {
   const { quotes, loading, error, refetch } = useQuotes();
   const [statusFilter, setStatusFilter] = useState<QuoteStatusFilter>("all");
   const [search, setSearch] = useState("");
+  const [showNewQuote, setShowNewQuote] = useState(false);
 
   // Show error toast once
   if (error && !loading) {

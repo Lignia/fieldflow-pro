@@ -57,12 +57,18 @@ export default function Quotes() {
               : `${quotes.length} devis`}
           </p>
         </div>
-        {error && (
-          <Button variant="outline" size="sm" onClick={refetch}>
-            <RefreshCw className="h-3.5 w-3.5 mr-1" />
-            Réessayer
+        <div className="flex gap-2">
+          {error && (
+            <Button variant="outline" size="sm" onClick={refetch}>
+              <RefreshCw className="h-3.5 w-3.5 mr-1" />
+              Réessayer
+            </Button>
+          )}
+          <Button size="sm" onClick={() => navigate("/quotes/new")}>
+            <Plus className="h-3.5 w-3.5 mr-1" />
+            Nouveau devis
           </Button>
-        )}
+        </div>
       </div>
 
       {/* Status filter tabs */}

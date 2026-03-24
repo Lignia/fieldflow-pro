@@ -53,6 +53,7 @@ const App = () => (
               <Route path="/planning" element={<Planning />} />
               <Route path="/quotes" element={<Quotes />} />
               <Route path="/quotes/new" element={<CreateQuote />} />
+              <Route path="/projects/:projectId/quotes/new" element={<QuoteCreate />} />
               <Route path="/quotes/:id" element={<QuoteDetail />} />
               <Route path="/invoices" element={<Invoices />} />
               <Route path="/service-requests" element={<ServiceRequests />} />

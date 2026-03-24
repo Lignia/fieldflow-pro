@@ -99,17 +99,10 @@ export default function Quotes() {
               Réessayer
             </Button>
           )}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <span tabIndex={0}>
-                <Button size="sm" disabled>
-                  <Plus className="h-3.5 w-3.5 mr-1" />
-                  Nouveau devis
-                </Button>
-              </span>
-            </TooltipTrigger>
-            <TooltipContent>Disponible depuis un projet</TooltipContent>
-          </Tooltip>
+          <Button size="sm" onClick={() => setShowNewQuote(true)}>
+            <Plus className="h-3.5 w-3.5 mr-1" />
+            Nouveau devis
+          </Button>
         </div>
       </div>
 

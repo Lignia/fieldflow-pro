@@ -25,6 +25,20 @@ export const QUOTE_KIND_LABELS: Record<QuoteKind, string> = {
 
 export type QuoteStatusFilter = QuoteStatus | "all";
 
+export interface QuoteCustomer {
+  id: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+}
+
+export interface QuoteProperty {
+  id: string;
+  address_line1: string | null;
+  city: string | null;
+  postal_code: string | null;
+}
+
 export interface Quote {
   id: string;
   quote_number: string;
@@ -34,21 +48,21 @@ export interface Quote {
   quote_date: string;
   expiry_date: string;
   total_ht: number;
+  total_vat: number;
   total_ttc: number;
-  customer_name: string;
-  project_number: string | null;
-  created_at: string;
-  modified_at: string;
+  sent_at: string | null;
+  signed_at: string | null;
+  project_id: string | null;
+  service_request_id: string | null;
+  installation_id: string | null;
+  customer: QuoteCustomer | null;
+  property: QuoteProperty | null;
 }
 
 interface UseQuotesReturn {
   quotes: Quote[];
   loading: boolean;
   error: string | null;
-  search: string;
-  setSearch: (q: string) => void;
-  statusFilter: QuoteStatusFilter;
-  setStatusFilter: (s: QuoteStatusFilter) => void;
   refetch: () => void;
 }
 
@@ -57,118 +71,67 @@ const DEV_BYPASS = import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
 const MOCK_QUOTES: Quote[] = [
   {
     id: "mock-q1",
-    quote_number: "DEV-2025-0012",
+    quote_number: "DEV-2026-0047",
     quote_kind: "estimate",
     quote_status: "draft",
     version_number: 1,
-    quote_date: "2025-03-18",
-    expiry_date: "2025-04-17",
-    total_ht: 8500,
-    total_ttc: 10200,
-    customer_name: "M. Morel",
-    project_number: "PRJ-0047",
-    created_at: new Date(Date.now() - 2 * 86400000).toISOString(),
-    modified_at: new Date(Date.now() - 1 * 86400000).toISOString(),
+    quote_date: "2026-03-18",
+    expiry_date: "2026-04-17",
+    total_ht: 3800,
+    total_vat: 676,
+    total_ttc: 4476,
+    sent_at: null,
+    signed_at: null,
+    project_id: "proj-1",
+    service_request_id: null,
+    installation_id: null,
+    customer: { id: "c1", name: "M. Morel", email: "morel@email.fr", phone: "06 12 34 56 78" },
+    property: { id: "p1", address_line1: "12 rue des Lilas", city: "Lyon", postal_code: "69003" },
   },
   {
     id: "mock-q2",
-    quote_number: "DEV-2025-0011",
+    quote_number: "DEV-2026-0045",
     quote_kind: "final",
     quote_status: "sent",
     version_number: 1,
-    quote_date: "2025-03-10",
-    expiry_date: "2025-04-09",
-    total_ht: 12400,
-    total_ttc: 14880,
-    customer_name: "Mme Durand",
-    project_number: "PRJ-0045",
-    created_at: new Date(Date.now() - 10 * 86400000).toISOString(),
-    modified_at: new Date(Date.now() - 3 * 86400000).toISOString(),
+    quote_date: "2026-03-10",
+    expiry_date: "2026-04-09",
+    total_ht: 5200,
+    total_vat: 936,
+    total_ttc: 6136,
+    sent_at: "2026-03-11T10:00:00Z",
+    signed_at: null,
+    project_id: "proj-2",
+    service_request_id: null,
+    installation_id: null,
+    customer: { id: "c2", name: "Mme Durand", email: "durand@email.fr", phone: "06 98 76 54 32" },
+    property: { id: "p2", address_line1: "8 avenue Foch", city: "Paris", postal_code: "75016" },
   },
   {
     id: "mock-q3",
-    quote_number: "DEV-2025-0010",
-    quote_kind: "estimate",
-    quote_status: "sent",
-    version_number: 2,
-    quote_date: "2025-03-05",
-    expiry_date: "2025-03-20",
-    total_ht: 6200,
-    total_ttc: 7440,
-    customer_name: "M. Bernard",
-    project_number: "PRJ-0044",
-    created_at: new Date(Date.now() - 18 * 86400000).toISOString(),
-    modified_at: new Date(Date.now() - 5 * 86400000).toISOString(),
-  },
-  {
-    id: "mock-q4",
-    quote_number: "DEV-2025-0009",
-    quote_kind: "final",
-    quote_status: "signed",
-    version_number: 1,
-    quote_date: "2025-02-20",
-    expiry_date: "2025-03-22",
-    total_ht: 15800,
-    total_ttc: 18960,
-    customer_name: "M. Fabre",
-    project_number: "PRJ-0043",
-    created_at: new Date(Date.now() - 30 * 86400000).toISOString(),
-    modified_at: new Date(Date.now() - 10 * 86400000).toISOString(),
-  },
-  {
-    id: "mock-q5",
-    quote_number: "DEV-2025-0008",
+    quote_number: "DEV-2026-0041",
     quote_kind: "service",
-    quote_status: "expired",
-    version_number: 1,
-    quote_date: "2025-01-15",
-    expiry_date: "2025-02-14",
-    total_ht: 950,
-    total_ttc: 1140,
-    customer_name: "Mme Petit",
-    project_number: null,
-    created_at: new Date(Date.now() - 65 * 86400000).toISOString(),
-    modified_at: new Date(Date.now() - 40 * 86400000).toISOString(),
-  },
-  {
-    id: "mock-q6",
-    quote_number: "DEV-2024-0042",
-    quote_kind: "estimate",
-    quote_status: "lost",
-    version_number: 1,
-    quote_date: "2024-12-10",
-    expiry_date: "2025-01-09",
-    total_ht: 9300,
-    total_ttc: 11160,
-    customer_name: "M. Garcia",
-    project_number: "PRJ-0040",
-    created_at: new Date(Date.now() - 100 * 86400000).toISOString(),
-    modified_at: new Date(Date.now() - 75 * 86400000).toISOString(),
+    quote_status: "signed",
+    version_number: 2,
+    quote_date: "2026-02-20",
+    expiry_date: "2026-03-22",
+    total_ht: 1800,
+    total_vat: 360,
+    total_ttc: 2160,
+    sent_at: "2026-02-21T09:00:00Z",
+    signed_at: "2026-02-25T14:30:00Z",
+    project_id: "proj-3",
+    service_request_id: null,
+    installation_id: null,
+    customer: { id: "c3", name: "M. Fabre", email: "fabre@email.fr", phone: "06 55 44 33 22" },
+    property: { id: "p3", address_line1: "24 chemin du Moulin", city: "Grenoble", postal_code: "38000" },
   },
 ];
-
-function filterMock(search: string, statusFilter: QuoteStatusFilter): Quote[] {
-  let list = MOCK_QUOTES;
-  if (statusFilter !== "all") {
-    list = list.filter((q) => q.quote_status === statusFilter);
-  }
-  if (search.trim()) {
-    const s = search.trim().toLowerCase();
-    list = list.filter(
-      (q) =>
-        q.customer_name.toLowerCase().includes(s) ||
-        q.quote_number.toLowerCase().includes(s)
-    );
-  }
-  return list;
-}
 
 export function useQuotes(): UseQuotesReturn {
   const [quotes, setQuotes] = useState<Quote[]>(DEV_BYPASS ? MOCK_QUOTES : []);
   const [loading, setLoading] = useState(!DEV_BYPASS);
   const [error, setError] = useState<string | null>(null);
-  const [search, setSearch] = useState("");
-  const [statusFilter, setStatusFilter] = useState<QuoteStatusFilter>("all");
 
   const fetchQuotes = useCallback(async () => {
     if (DEV_BYPASS) return;
@@ -176,19 +139,38 @@ export function useQuotes(): UseQuotesReturn {
     setError(null);
 
     try {
-      let query = billingDb
+      const { data, error: fetchError } = await billingDb
         .from("quotes")
-        .select(
-          "id, quote_number, quote_kind, quote_status, version_number, quote_date, expiry_date, total_ht, total_ttc, created_at, modified_at, customer:customer_id(name), project:project_id(project_number)"
-        )
-        .order("modified_at", { ascending: false })
-        .limit(200);
-
-      if (statusFilter !== "all") {
-        query = query.eq("quote_status", statusFilter);
-      }
-
-      const { data, error: fetchError } = await query;
+        .select(`
+          id,
+          quote_number,
+          quote_kind,
+          quote_status,
+          quote_date,
+          expiry_date,
+          total_ht,
+          total_vat,
+          total_ttc,
+          sent_at,
+          signed_at,
+          version_number,
+          project_id,
+          service_request_id,
+          installation_id,
+          customer:customer_id (
+            id,
+            name,
+            email,
+            phone
+          ),
+          property:property_id (
+            id,
+            address_line1,
+            city,
+            postal_code
+          )
+        `)
+        .order("created_at", { ascending: false });
 
       if (fetchError) {
         setError(fetchError.message);
@@ -200,44 +182,32 @@ export function useQuotes(): UseQuotesReturn {
         quote_number: q.quote_number,
         quote_kind: q.quote_kind,
         quote_status: q.quote_status,
-        version_number: q.version_number,
+        version_number: q.version_number ?? 1,
         quote_date: q.quote_date,
         expiry_date: q.expiry_date,
         total_ht: Number(q.total_ht) || 0,
+        total_vat: Number(q.total_vat) || 0,
         total_ttc: Number(q.total_ttc) || 0,
-        customer_name: q.customer?.name ?? "Client inconnu",
-        project_number: q.project?.project_number ?? null,
-        created_at: q.created_at,
-        modified_at: q.modified_at,
+        sent_at: q.sent_at ?? null,
+        signed_at: q.signed_at ?? null,
+        project_id: q.project_id ?? null,
+        service_request_id: q.service_request_id ?? null,
+        installation_id: q.installation_id ?? null,
+        customer: q.customer ?? null,
+        property: q.property ?? null,
       }));
 
-      if (search.trim()) {
-        const s = search.trim().toLowerCase();
-        setQuotes(
-          mapped.filter(
-            (q) =>
-              q.customer_name.toLowerCase().includes(s) ||
-              q.quote_number.toLowerCase().includes(s)
-          )
-        );
-      } else {
-        setQuotes(mapped);
-      }
+      setQuotes(mapped);
     } catch (err: any) {
       setError(err.message ?? "Erreur inattendue");
     } finally {
       setLoading(false);
     }
-  }, [search, statusFilter]);
+  }, []);
 
   useEffect(() => {
-    if (DEV_BYPASS) {
-      setQuotes(filterMock(search, statusFilter));
-      return;
-    }
-    const debounce = setTimeout(fetchQuotes, 300);
-    return () => clearTimeout(debounce);
-  }, [search, statusFilter, fetchQuotes]);
+    fetchQuotes();
+  }, [fetchQuotes]);
 
-  return { quotes, loading, error, search, setSearch, statusFilter, setStatusFilter, refetch: fetchQuotes };
+  return { quotes, loading, error, refetch: fetchQuotes };
 }

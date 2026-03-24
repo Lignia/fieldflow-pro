@@ -244,18 +244,20 @@ function LineRow({
 // ─── Main Page ──────────────────────────────────────────────────
 export default function QuoteCreate() {
   const { projectId } = useParams<{ projectId: string }>();
+  const [searchParams] = useSearchParams();
+  const quoteKind = searchParams.get("kind") || "estimate";
   const navigate = useNavigate();
   const { coreUser } = useCurrentUser();
   const { createQuote, addLine, updateLine, deleteLine, quote, lines, saving, error, setQuote } = useCreateQuote();
   const [initializing, setInitializing] = useState(true);
   const initRef = useRef(false);
 
-  // Initialize quote on mount
+  // Initialize quote on mount with kind from URL
   useEffect(() => {
     if (!projectId || initRef.current) return;
     initRef.current = true;
-    createQuote(projectId, "estimate").then(() => setInitializing(false));
-  }, [projectId, createQuote]);
+    createQuote(projectId, quoteKind).then(() => setInitializing(false));
+  }, [projectId, createQuote, quoteKind]);
 
   // ─── Handlers ─────────────────────────────────────────────────
   const handleCatalogSelect = (item: CatalogItem) => {

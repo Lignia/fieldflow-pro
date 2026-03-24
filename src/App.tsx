@@ -14,6 +14,7 @@ import ProjectDetail from "./pages/ProjectDetail";
 import Planning from "./pages/Planning";
 import Quotes from "./pages/Quotes";
 import CreateQuote from "./pages/CreateQuote";
+import QuoteCreate from "./pages/quotes/QuoteCreate";
 import QuoteDetail from "./pages/QuoteDetail";
 import Invoices from "./pages/Invoices";
 import ServiceRequests from "./pages/ServiceRequests";

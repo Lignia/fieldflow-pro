@@ -18,6 +18,7 @@ import QuoteCreate from "./pages/quotes/QuoteCreate";
 import QuoteDetail from "./pages/QuoteDetail";
 import Invoices from "./pages/Invoices";
 import ServiceRequests from "./pages/ServiceRequests";
+import Catalog from "./pages/Catalog";
 import NotFound from "./pages/NotFound";
 import IconShowcase from "./pages/IconShowcase";
 import DesignSystem from "./pages/DesignSystem";

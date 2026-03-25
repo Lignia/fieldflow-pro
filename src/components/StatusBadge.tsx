@@ -213,7 +213,7 @@ const STATUS_LABELS: Record<string, string> = {
 
   // ── billing.quote_kind (3) ────────────────────────────────────────────────
   estimate:                "Estimatif",
-  final:                   "Définitif",
+  final:                   "Final",
   service:                 "SAV",
 
   // ── billing.invoice_kind (4) ──────────────────────────────────────────────

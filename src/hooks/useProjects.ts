@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { coreDb } from "@/integrations/supabase/schema-clients";
 
-// Exact enum from core.project_status
 export type ProjectStatus =
   | "lead_new"
   | "lead_qualified"
@@ -21,57 +20,24 @@ export type ProjectStatus =
   | "lost"
   | "cancelled";
 
-export const ALL_PROJECT_STATUSES: ProjectStatus[] = [
-  "lead_new",
-  "lead_qualified",
-  "vt_planned",
-  "vt_done",
-  "tech_review_done",
-  "estimate_sent",
-  "final_quote_sent",
-  "signed",
-  "deposit_paid",
-  "supplier_ordered",
-  "material_received",
-  "installation_scheduled",
-  "mes_done",
-  "closed",
-  "on_hold",
-  "lost",
-  "cancelled",
-];
+export type StatusFilter = "active" | "archived";
 
-/** Logical groupings for filter tabs */
-export const STATUS_GROUPS = {
-  all: null as ProjectStatus[] | null,
-  leads: ["lead_new", "lead_qualified"] as ProjectStatus[],
-  commercial: [
-    "vt_planned",
-    "vt_done",
-    "tech_review_done",
-    "estimate_sent",
-    "final_quote_sent",
-  ] as ProjectStatus[],
-  signed: [
-    "signed",
-    "deposit_paid",
-    "supplier_ordered",
-    "material_received",
-    "installation_scheduled",
-    "mes_done",
-  ] as ProjectStatus[],
-  closed: ["closed", "lost", "cancelled", "on_hold"] as ProjectStatus[],
+export const STATUS_FILTER_LABELS: Record<StatusFilter, string> = {
+  active: "Actifs",
+  archived: "Archivés",
 };
 
-export type StatusGroup = keyof typeof STATUS_GROUPS;
+const ARCHIVED_STATUSES: ProjectStatus[] = ["lost", "cancelled", "on_hold"];
+const CLOSED_STATUSES: ProjectStatus[] = ["closed", ...ARCHIVED_STATUSES];
 
-export const STATUS_GROUP_LABELS: Record<StatusGroup, string> = {
-  all: "Tous",
-  leads: "Leads",
-  commercial: "Commercial",
-  signed: "En cours",
-  closed: "Terminés",
-};
+export const KANBAN_COLUMNS = [
+  { key: "leads", label: "Leads", statuses: ["lead_new", "lead_qualified"] as ProjectStatus[] },
+  { key: "vt", label: "Visite technique", statuses: ["vt_planned", "vt_done", "tech_review_done"] as ProjectStatus[] },
+  { key: "devis", label: "Devis", statuses: ["estimate_sent", "final_quote_sent"] as ProjectStatus[] },
+  { key: "signed", label: "Signé", statuses: ["signed", "deposit_paid"] as ProjectStatus[] },
+  { key: "en_cours", label: "En cours", statuses: ["supplier_ordered", "material_received", "installation_scheduled"] as ProjectStatus[] },
+  { key: "finalisation", label: "Finalisation", statuses: ["mes_done"] as ProjectStatus[] },
+] as const;
 
 export interface Project {
   id: string;
@@ -79,6 +45,7 @@ export interface Project {
   status: ProjectStatus;
   origin: string;
   customer_name: string;
+  city: string;
   created_at: string;
   modified_at: string;
 }
@@ -89,8 +56,8 @@ interface UseProjectsReturn {
   error: string | null;
   search: string;
   setSearch: (q: string) => void;
-  statusGroup: StatusGroup;
-  setStatusGroup: (g: StatusGroup) => void;
+  statusFilter: StatusFilter;
+  setStatusFilter: (f: StatusFilter) => void;
   refetch: () => void;
 }
 
@@ -103,6 +70,7 @@ const MOCK_PROJECTS: Project[] = [
     status: "vt_planned",
     origin: "web",
     customer_name: "M. Morel",
+    city: "Annecy",
     created_at: new Date(Date.now() - 3 * 86400000).toISOString(),
     modified_at: new Date(Date.now() - 1 * 86400000).toISOString(),
   },
@@ -112,6 +80,7 @@ const MOCK_PROJECTS: Project[] = [
     status: "lead_new",
     origin: "phone",
     customer_name: "Mme Lefèvre",
+    city: "Chambéry",
     created_at: new Date(Date.now() - 1 * 86400000).toISOString(),
     modified_at: new Date(Date.now() - 1 * 86400000).toISOString(),
   },
@@ -121,6 +90,7 @@ const MOCK_PROJECTS: Project[] = [
     status: "final_quote_sent",
     origin: "referral",
     customer_name: "Mme Durand",
+    city: "Aix-les-Bains",
     created_at: new Date(Date.now() - 14 * 86400000).toISOString(),
     modified_at: new Date(Date.now() - 2 * 86400000).toISOString(),
   },
@@ -130,6 +100,7 @@ const MOCK_PROJECTS: Project[] = [
     status: "signed",
     origin: "web",
     customer_name: "M. Bernard",
+    city: "Grenoble",
     created_at: new Date(Date.now() - 30 * 86400000).toISOString(),
     modified_at: new Date(Date.now() - 5 * 86400000).toISOString(),
   },
@@ -139,6 +110,7 @@ const MOCK_PROJECTS: Project[] = [
     status: "deposit_paid",
     origin: "manual",
     customer_name: "M. Fabre",
+    city: "Lyon",
     created_at: new Date(Date.now() - 45 * 86400000).toISOString(),
     modified_at: new Date(Date.now() - 3 * 86400000).toISOString(),
   },
@@ -148,6 +120,7 @@ const MOCK_PROJECTS: Project[] = [
     status: "installation_scheduled",
     origin: "showroom",
     customer_name: "Mme Petit",
+    city: "Albertville",
     created_at: new Date(Date.now() - 60 * 86400000).toISOString(),
     modified_at: new Date(Date.now() - 7 * 86400000).toISOString(),
   },
@@ -157,6 +130,7 @@ const MOCK_PROJECTS: Project[] = [
     status: "closed",
     origin: "referral",
     customer_name: "M. Roux",
+    city: "Annemasse",
     created_at: new Date(Date.now() - 90 * 86400000).toISOString(),
     modified_at: new Date(Date.now() - 15 * 86400000).toISOString(),
   },
@@ -166,34 +140,39 @@ const MOCK_PROJECTS: Project[] = [
     status: "lost",
     origin: "web",
     customer_name: "M. Garcia",
+    city: "Thonon",
     created_at: new Date(Date.now() - 50 * 86400000).toISOString(),
     modified_at: new Date(Date.now() - 20 * 86400000).toISOString(),
   },
 ];
 
-function filterMock(search: string, group: StatusGroup): Project[] {
+function filterMock(search: string, filter: StatusFilter): Project[] {
   let list = MOCK_PROJECTS;
-  const statuses = STATUS_GROUPS[group];
-  if (statuses) {
-    list = list.filter((p) => (statuses as string[]).includes(p.status));
+
+  if (filter === "active") {
+    list = list.filter((p) => !CLOSED_STATUSES.includes(p.status));
+  } else {
+    list = list.filter((p) => ARCHIVED_STATUSES.includes(p.status));
   }
+
   if (search.trim()) {
     const q = search.trim().toLowerCase();
     list = list.filter(
       (p) =>
         p.customer_name.toLowerCase().includes(q) ||
-        p.project_number.toLowerCase().includes(q)
+        p.project_number.toLowerCase().includes(q) ||
+        p.city.toLowerCase().includes(q)
     );
   }
   return list;
 }
 
 export function useProjects(): UseProjectsReturn {
-  const [projects, setProjects] = useState<Project[]>(DEV_BYPASS ? MOCK_PROJECTS : []);
+  const [projects, setProjects] = useState<Project[]>(DEV_BYPASS ? filterMock("", "active") : []);
   const [loading, setLoading] = useState(!DEV_BYPASS);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [statusGroup, setStatusGroup] = useState<StatusGroup>("all");
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>("active");
 
   const fetchProjects = useCallback(async () => {
     if (DEV_BYPASS) return;
@@ -203,14 +182,14 @@ export function useProjects(): UseProjectsReturn {
     try {
       let query = coreDb
         .from("projects")
-        .select("id, project_number, status, origin, modified_at, created_at, customer:customer_id(name)")
+        .select("id, project_number, status, origin, modified_at, created_at, customer:customer_id(name), property:property_id(city)")
         .order("modified_at", { ascending: false })
         .limit(200);
 
-      // Apply status filter
-      const statuses = STATUS_GROUPS[statusGroup];
-      if (statuses) {
-        query = query.in("status", statuses);
+      if (statusFilter === "active") {
+        query = query.not("status", "in", `(${CLOSED_STATUSES.join(",")})`);
+      } else {
+        query = query.in("status", ARCHIVED_STATUSES);
       }
 
       const { data, error: fetchError } = await query;
@@ -220,45 +199,44 @@ export function useProjects(): UseProjectsReturn {
         return;
       }
 
-      const mapped: Project[] = (data ?? []).map((p: any) => ({
+      let mapped: Project[] = (data ?? []).map((p: any) => ({
         id: p.id,
         project_number: p.project_number,
         status: p.status,
         origin: p.origin,
         customer_name: p.customer?.name ?? "Client inconnu",
+        city: p.property?.city ?? "—",
         created_at: p.created_at,
         modified_at: p.modified_at,
       }));
 
-      // Client-side search filter (name/project_number)
       if (search.trim()) {
         const q = search.trim().toLowerCase();
-        setProjects(
-          mapped.filter(
-            (p) =>
-              p.customer_name.toLowerCase().includes(q) ||
-              p.project_number.toLowerCase().includes(q)
-          )
+        mapped = mapped.filter(
+          (p) =>
+            p.customer_name.toLowerCase().includes(q) ||
+            p.project_number.toLowerCase().includes(q) ||
+            p.city.toLowerCase().includes(q)
         );
-      } else {
-        setProjects(mapped);
       }
+
+      setProjects(mapped);
     } catch (err: any) {
       setError(err.message ?? "Erreur inattendue");
     } finally {
       setLoading(false);
     }
-  }, [search, statusGroup]);
+  }, [search, statusFilter]);
 
   useEffect(() => {
     if (DEV_BYPASS) {
-      setProjects(filterMock(search, statusGroup));
+      setProjects(filterMock(search, statusFilter));
       return;
     }
 
     const debounce = setTimeout(fetchProjects, 300);
     return () => clearTimeout(debounce);
-  }, [search, statusGroup, fetchProjects]);
+  }, [search, statusFilter, fetchProjects]);
 
   return {
     projects,
@@ -266,8 +244,8 @@ export function useProjects(): UseProjectsReturn {
     error,
     search,
     setSearch,
-    statusGroup,
-    setStatusGroup,
+    statusFilter,
+    setStatusFilter,
     refetch: fetchProjects,
   };
 }

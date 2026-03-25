@@ -16,7 +16,7 @@ import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 import { useProjectDetail } from "@/hooks/useProjectDetail";
-import { ALL_PROJECT_STATUSES, type ProjectStatus } from "@/hooks/useProjects";
+import { type ProjectStatus } from "@/hooks/useProjects";
 import { StatusBadge } from "@/components/StatusBadge";
 import { CustomerBadge } from "@/components/CustomerBadge";
 import { Card } from "@/components/ui/card";

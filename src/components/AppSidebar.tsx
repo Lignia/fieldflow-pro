@@ -6,6 +6,7 @@ import {
   FileText,
   Receipt,
   Wrench,
+  Package,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useLocation } from "react-router-dom";
@@ -33,6 +34,7 @@ const businessNav = [
   { title: "Devis", url: "/quotes", icon: FileText },
   { title: "Factures", url: "/invoices", icon: Receipt },
   { title: "SAV", url: "/service-requests", icon: Wrench },
+  { title: "Catalogue", url: "/catalog", icon: Package },
 ];
 
 export function AppSidebar() {

@@ -32,8 +32,9 @@ const CLOSED_STATUSES: ProjectStatus[] = ["closed", ...ARCHIVED_STATUSES];
 
 export const KANBAN_COLUMNS = [
   { key: "leads", label: "Leads", statuses: ["lead_new", "lead_qualified"] as ProjectStatus[] },
+  { key: "devis_estimatif", label: "Devis estimatif", statuses: ["estimate_sent"] as ProjectStatus[] },
   { key: "vt", label: "Visite technique", statuses: ["vt_planned", "vt_done", "tech_review_done"] as ProjectStatus[] },
-  { key: "devis", label: "Devis", statuses: ["estimate_sent", "final_quote_sent"] as ProjectStatus[] },
+  { key: "devis_final", label: "Devis final", statuses: ["final_quote_sent"] as ProjectStatus[] },
   { key: "signed", label: "Signé", statuses: ["signed", "deposit_paid"] as ProjectStatus[] },
   { key: "en_cours", label: "En cours", statuses: ["supplier_ordered", "material_received", "installation_scheduled"] as ProjectStatus[] },
   { key: "finalisation", label: "Finalisation", statuses: ["mes_done"] as ProjectStatus[] },

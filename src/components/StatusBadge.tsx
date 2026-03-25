@@ -138,7 +138,7 @@ const STATUS_LABELS: Record<string, string> = {
   lead_qualified:          "Lead qualifié",
   vt_planned:              "VT planifiée",
   vt_done:                 "VT réalisée",
-  tech_review_done:        "Étude validée",
+  tech_review_done:        "Étude faite",
   estimate_sent:           "Estimatif envoyé",
   final_quote_sent:        "Devis envoyé",
   signed:                  "Signé",
@@ -213,7 +213,7 @@ const STATUS_LABELS: Record<string, string> = {
 
   // ── billing.quote_kind (3) ────────────────────────────────────────────────
   estimate:                "Estimatif",
-  final:                   "Définitif",
+  final:                   "Final",
   service:                 "SAV",
 
   // ── billing.invoice_kind (4) ──────────────────────────────────────────────

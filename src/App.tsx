@@ -27,6 +27,7 @@ import SignupPage from "./pages/auth/SignupPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 import OnboardingCompanyPage from "./pages/onboarding/OnboardingCompanyPage";
+import ProjectCreate from "./pages/projects/ProjectCreate";
 
 const queryClient = new QueryClient();
 
@@ -50,6 +51,7 @@ const App = () => (
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/clients" element={<Clients />} />
               <Route path="/projects" element={<Projects />} />
+              <Route path="/projects/new" element={<ProjectCreate />} />
               <Route path="/projects/:id" element={<ProjectDetail />} />
               <Route path="/planning" element={<Planning />} />
               <Route path="/quotes" element={<Quotes />} />

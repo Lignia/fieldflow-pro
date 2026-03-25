@@ -26,6 +26,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 type ViewMode = "kanban" | "list";
 
@@ -34,7 +39,7 @@ const FILTER_KEYS: StatusFilter[] = ["active", "archived"];
 /* ─── Kanban Card ─────────────────────────────────────────── */
 
 function KanbanCard({ project, onClick }: { project: Project; onClick: () => void }) {
-  return (
+  const card = (
     <Card
       className="p-3 cursor-pointer hover:border-accent/20 hover:shadow-md transition-all"
       onClick={onClick}
@@ -58,6 +63,19 @@ function KanbanCard({ project, onClick }: { project: Project; onClick: () => voi
       </div>
     </Card>
   );
+
+  if (project.status === "tech_review_done") {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>{card}</TooltipTrigger>
+        <TooltipContent>
+          <p>Relevé technique analysé — prêt pour le devis final</p>
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  return card;
 }
 
 /* ─── Kanban View ─────────────────────────────────────────── */

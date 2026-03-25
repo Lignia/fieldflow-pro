@@ -257,7 +257,7 @@ export default function ProjectDetail() {
             Devis ({quotes.length})
           </h2>
           <span className="flex-1" />
-          <Button size="sm" onClick={() => navigate(`/projects/${project.id}/quotes/new`)}>
+          <Button size="sm" onClick={() => navigate(`/projects/${project.id}/quotes/new?kind=estimate`)}>
             <Plus className="h-3.5 w-3.5 mr-1" />
             Nouveau devis
           </Button>

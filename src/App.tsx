@@ -9,6 +9,8 @@ import LandingPage from "./pages/LandingPage";
 import { AppLayout } from "./components/AppLayout";
 import Dashboard from "./pages/Dashboard";
 import Clients from "./pages/Clients";
+import ClientDetail from "./pages/clients/ClientDetail";
+import ClientCreate from "./pages/clients/ClientCreate";
 import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
 import Planning from "./pages/Planning";
@@ -52,13 +54,13 @@ const App = () => (
 
             {/* Protected routes */}
             <Route element={<AppLayout />}>
-              {/* Dashboard */}
               <Route path="/dashboard" element={<Dashboard />} />
 
               {/* Clients */}
               <Route path="/clients" element={<Clients />} />
-              <Route path="/clients/new" element={<PlaceholderPage title="Nouveau client" backTo="/clients" backLabel="Clients" />} />
-              <Route path="/clients/:id" element={<PlaceholderPage title="Fiche client" backTo="/clients" backLabel="Clients" />} />
+              <Route path="/clients/new" element={<ClientCreate />} />
+              <Route path="/clients/:id/edit" element={<PlaceholderPage title="Modifier le client" backTo="/clients" backLabel="Clients" />} />
+              <Route path="/clients/:id" element={<ClientDetail />} />
 
               {/* Projects */}
               <Route path="/projects" element={<Projects />} />

@@ -78,7 +78,7 @@ export default function ClientCreate() {
     setSaving(true);
 
     if (DEV_BYPASS) {
-      const mockId = `mock-${Date.now()}`;
+      const mockId = `mock-customer-${Date.now()}`;
       toast.success(`Client ${name} créé (mode DEV)`);
       if (redirectTo) {
         navigate(`${redirectTo}?customer=${mockId}`);

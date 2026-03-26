@@ -17,22 +17,22 @@ const tabs = [
 ];
 
 export function MobileBottomNav() {
-  const location = useLocation();
+  const { pathname } = useLocation();
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-card md:hidden">
       <div className="flex items-center justify-around">
         {tabs.map((tab) => {
-          const active = location.pathname === tab.path || location.pathname.startsWith(tab.path + "/");
+          const active =
+            pathname === tab.path ||
+            (tab.path !== "/dashboard" && pathname.startsWith(tab.path + "/"));
           return (
             <Link
               key={tab.path}
               to={tab.path}
               className={cn(
                 "flex flex-col items-center gap-0.5 py-2 px-3 text-xs min-h-[52px] justify-center transition-colors",
-                active
-                  ? "text-accent font-medium"
-                  : "text-muted-foreground"
+                active ? "text-accent font-medium" : "text-muted-foreground"
               )}
             >
               <tab.icon className="h-5 w-5" />

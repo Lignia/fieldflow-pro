@@ -5,7 +5,9 @@ import {
   CalendarDays,
   FileText,
   Receipt,
+  ClipboardList,
   Wrench,
+  Flame,
   Package,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
@@ -23,25 +25,52 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 
-const mainNav = [
-  { title: "Tableau de bord", url: "/dashboard", icon: LayoutDashboard },
-  { title: "Clients", url: "/clients", icon: Users },
-  { title: "Projets", url: "/projects", icon: FolderKanban },
-  { title: "Planning", url: "/planning", icon: CalendarDays },
-];
-
-const businessNav = [
-  { title: "Devis", url: "/quotes", icon: FileText },
-  { title: "Factures", url: "/invoices", icon: Receipt },
-  { title: "SAV", url: "/service-requests", icon: Wrench },
-  { title: "Catalogue", url: "/catalog", icon: Package },
+const navSections = [
+  {
+    label: "Principal",
+    items: [
+      { title: "Tableau de bord", url: "/dashboard", icon: LayoutDashboard },
+      { title: "Clients", url: "/clients", icon: Users },
+      { title: "Projets", url: "/projects", icon: FolderKanban },
+      { title: "Planning", url: "/planning", icon: CalendarDays },
+    ],
+  },
+  {
+    label: "Ventes",
+    items: [
+      { title: "Devis", url: "/quotes", icon: FileText },
+      { title: "Factures", url: "/invoices", icon: Receipt },
+    ],
+  },
+  {
+    label: "SAV",
+    items: [
+      { title: "Demandes", url: "/service-requests", icon: ClipboardList },
+      { title: "Interventions", url: "/interventions", icon: Wrench },
+    ],
+  },
+  {
+    label: "Parc",
+    items: [
+      { title: "Installations", url: "/installations", icon: Flame },
+    ],
+  },
+  {
+    label: "Outils",
+    items: [
+      { title: "Catalogue", url: "/catalog", icon: Package },
+    ],
+  },
 ];
 
 export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
-  const location = useLocation();
-  const isActive = (path: string) => location.pathname === path || location.pathname.startsWith(path + "/");
+  const { pathname } = useLocation();
+
+  const isActive = (route: string) =>
+    pathname === route ||
+    (route !== "/dashboard" && pathname.startsWith(route + "/"));
 
   return (
     <Sidebar collapsible="icon">
@@ -59,41 +88,29 @@ export function AppSidebar() {
       </SidebarHeader>
 
       <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {mainNav.map((item) => (
-                <SidebarMenuItem key={item.url}>
-                  <SidebarMenuButton asChild isActive={isActive(item.url)}>
-                    <NavLink to={item.url} className="hover:bg-sidebar-accent/50" activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium">
-                      <item.icon className="mr-2 h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel>Gestion</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {businessNav.map((item) => (
-                <SidebarMenuItem key={item.url}>
-                  <SidebarMenuButton asChild isActive={isActive(item.url)}>
-                    <NavLink to={item.url} className="hover:bg-sidebar-accent/50" activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium">
-                      <item.icon className="mr-2 h-4 w-4" />
-                      {!collapsed && <span>{item.title}</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+        {navSections.map((section) => (
+          <SidebarGroup key={section.label}>
+            <SidebarGroupLabel>{section.label}</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {section.items.map((item) => (
+                  <SidebarMenuItem key={item.url}>
+                    <SidebarMenuButton asChild isActive={isActive(item.url)}>
+                      <NavLink
+                        to={item.url}
+                        className="hover:bg-sidebar-accent/50"
+                        activeClassName="bg-sidebar-accent text-sidebar-accent-foreground font-medium"
+                      >
+                        <item.icon className="mr-2 h-4 w-4" />
+                        {!collapsed && <span>{item.title}</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
       </SidebarContent>
     </Sidebar>
   );

@@ -246,6 +246,11 @@ const STATUS_LABELS: Record<string, string> = {
 // on peut forcer un label/couleur spécifique via le prop `type`.
 
 const TYPE_LABEL_OVERRIDES: Partial<Record<StatusType, Record<string, string>>> = {
+  customer_status: {
+    active: "Actif",
+    prospect: "Prospect",
+    archived: "Archivé",
+  },
   installation: {
     draft: "Brouillon",
     planned: "Planifiée",

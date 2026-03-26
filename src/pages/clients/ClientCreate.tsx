@@ -78,8 +78,13 @@ export default function ClientCreate() {
     setSaving(true);
 
     if (DEV_BYPASS) {
+      const mockId = `mock-${Date.now()}`;
       toast.success(`Client ${name} créé (mode DEV)`);
-      navigate(redirectTo || `/clients/mock-${Date.now()}`);
+      if (redirectTo) {
+        navigate(`${redirectTo}?customer=${mockId}`);
+      } else {
+        navigate(`/clients/${mockId}`);
+      }
       return;
     }
 
@@ -114,7 +119,11 @@ export default function ClientCreate() {
       }
 
       toast.success(`Client ${name} créé`);
-      navigate(redirectTo || `/clients/${newCustomer.id}`);
+      if (redirectTo) {
+        navigate(`${redirectTo}?customer=${newCustomer.id}`);
+      } else {
+        navigate(`/clients/${newCustomer.id}`);
+      }
     } catch (err: any) {
       toast.error(err.message ?? "Erreur inattendue");
       setSaving(false);

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import { useCustomers } from "@/hooks/useCustomers";
 import { CustomerBadge } from "@/components/CustomerBadge";
+import { StatusBadge } from "@/components/StatusBadge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -23,20 +24,16 @@ const FILTER_TABS: { key: StatusFilter; label: string }[] = [
   { key: "archived", label: "Archivés" },
 ];
 
-const STATUS_BADGE: Record<string, { label: string; className: string }> = {
-  prospect: { label: "Prospect", className: "bg-muted text-muted-foreground" },
-  active: { label: "Actif", className: "bg-accent/15 text-accent" },
-  archived: { label: "Archivé", className: "bg-destructive/10 text-destructive" },
-};
-
 export default function Clients() {
   const navigate = useNavigate();
   const { customers, loading, error, search, setSearch, refetch } = useCustomers();
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
-  if (error && !loading) {
-    toast.error(error, { id: "clients-error" });
-  }
+  useEffect(() => {
+    if (error && !loading) {
+      toast.error(error, { id: "clients-error" });
+    }
+  }, [error, loading]);
 
   const filtered = useMemo(() => {
     if (statusFilter === "all") return customers;
@@ -127,9 +124,7 @@ export default function Clients() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filtered.map((c) => {
-                const badge = STATUS_BADGE[c.status] ?? { label: c.status, className: "bg-muted text-muted-foreground" };
-                return (
+              {filtered.map((c) => (
                   <TableRow
                     key={c.id}
                     className="cursor-pointer"
@@ -166,9 +161,7 @@ export default function Clients() {
                       )}
                     </TableCell>
                     <TableCell>
-                      <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${badge.className}`}>
-                        {badge.label}
-                      </span>
+                      <StatusBadge status={c.status} type="customer_status" size="sm" />
                     </TableCell>
                     <TableCell className="hidden sm:table-cell text-xs text-muted-foreground">
                       {formatDistanceToNow(new Date(c.modified_at), { addSuffix: true, locale: fr })}
@@ -194,8 +187,7 @@ export default function Clients() {
                       </DropdownMenu>
                     </TableCell>
                   </TableRow>
-                );
-              })}
+              ))}
             </TableBody>
           </Table>
         </div>

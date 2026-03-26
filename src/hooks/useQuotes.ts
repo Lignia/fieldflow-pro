@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { billingDb } from "@/integrations/supabase/schema-clients";
+import { MOCK_QUOTES as CENTRAL_MOCK_QUOTES } from "@/mocks/data";
 
 export type QuoteStatus = "draft" | "sent" | "signed" | "lost" | "expired" | "canceled";
 export type QuoteKind = "estimate" | "final" | "service";
@@ -68,65 +69,25 @@ interface UseQuotesReturn {
 
 const DEV_BYPASS = import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
 
-const MOCK_QUOTES: Quote[] = [
-  {
-    id: "mock-q1",
-    quote_number: "DEV-2026-0047",
-    quote_kind: "estimate",
-    quote_status: "draft",
-    version_number: 1,
-    quote_date: "2026-03-18",
-    expiry_date: "2026-04-17",
-    total_ht: 3800,
-    total_vat: 676,
-    total_ttc: 4476,
-    sent_at: null,
-    signed_at: null,
-    project_id: "proj-1",
-    service_request_id: null,
-    installation_id: null,
-    customer: { id: "c1", name: "M. Morel", email: "morel@email.fr", phone: "06 12 34 56 78" },
-    property: { id: "p1", address_line1: "12 rue des Lilas", city: "Lyon", postal_code: "69003" },
-  },
-  {
-    id: "mock-q2",
-    quote_number: "DEV-2026-0045",
-    quote_kind: "final",
-    quote_status: "sent",
-    version_number: 1,
-    quote_date: "2026-03-10",
-    expiry_date: "2026-04-09",
-    total_ht: 5200,
-    total_vat: 936,
-    total_ttc: 6136,
-    sent_at: "2026-03-11T10:00:00Z",
-    signed_at: null,
-    project_id: "proj-2",
-    service_request_id: null,
-    installation_id: null,
-    customer: { id: "c2", name: "Mme Durand", email: "durand@email.fr", phone: "06 98 76 54 32" },
-    property: { id: "p2", address_line1: "8 avenue Foch", city: "Paris", postal_code: "75016" },
-  },
-  {
-    id: "mock-q3",
-    quote_number: "DEV-2026-0041",
-    quote_kind: "service",
-    quote_status: "signed",
-    version_number: 2,
-    quote_date: "2026-02-20",
-    expiry_date: "2026-03-22",
-    total_ht: 1800,
-    total_vat: 360,
-    total_ttc: 2160,
-    sent_at: "2026-02-21T09:00:00Z",
-    signed_at: "2026-02-25T14:30:00Z",
-    project_id: "proj-3",
-    service_request_id: null,
-    installation_id: null,
-    customer: { id: "c3", name: "M. Fabre", email: "fabre@email.fr", phone: "06 55 44 33 22" },
-    property: { id: "p3", address_line1: "24 chemin du Moulin", city: "Grenoble", postal_code: "38000" },
-  },
-];
+const MOCK_QUOTES: Quote[] = CENTRAL_MOCK_QUOTES.map((q) => ({
+  id: q.id,
+  quote_number: q.quote_number,
+  quote_kind: q.quote_kind as QuoteKind,
+  quote_status: q.quote_status as QuoteStatus,
+  version_number: q.version_number,
+  quote_date: q.quote_date,
+  expiry_date: q.expiry_date,
+  total_ht: q.total_ht,
+  total_vat: q.total_vat,
+  total_ttc: q.total_ttc,
+  sent_at: q.sent_at,
+  signed_at: q.signed_at,
+  project_id: q.project_id,
+  service_request_id: q.service_request_id,
+  installation_id: q.installation_id,
+  customer: q.customer as QuoteCustomer,
+  property: q.property as QuoteProperty,
+}));
 
 export function useQuotes(): UseQuotesReturn {
   const [quotes, setQuotes] = useState<Quote[]>(DEV_BYPASS ? MOCK_QUOTES : []);

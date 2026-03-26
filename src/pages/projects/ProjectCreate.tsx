@@ -127,7 +127,7 @@ export default function ProjectCreate() {
 
     if (import.meta.env.VITE_DEV_BYPASS_AUTH === "true") {
       toast.success("Projet PRJ-0099 créé (mode DEV)");
-      navigate("/projects/mock-p1");
+      navigate("/projects/mock-project-1");
       return;
     }
 

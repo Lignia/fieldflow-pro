@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { billingDb, coreDb } from "@/integrations/supabase/schema-clients";
+import { MOCK_QUOTES } from "@/mocks/data";
 
 const DEV_BYPASS = import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
 
@@ -42,9 +43,10 @@ interface NewLineInput {
 }
 
 function mockQuote(projectId: string): QuoteSummary {
+  const ref = MOCK_QUOTES[0];
   return {
-    id: "quote-dev-1",
-    quote_number: "DEV-2026-0001",
+    id: `mock-quote-${Date.now()}`,
+    quote_number: `DEV-2026-${String(Math.floor(Math.random() * 9999)).padStart(4, "0")}`,
     quote_kind: "estimate",
     quote_status: "draft",
     quote_date: new Date().toISOString().split("T")[0],
@@ -52,8 +54,8 @@ function mockQuote(projectId: string): QuoteSummary {
     total_ht: 0,
     total_vat: 0,
     total_ttc: 0,
-    customer_id: "cust-1",
-    property_id: "prop-1",
+    customer_id: ref.customer_id,
+    property_id: ref.property_id,
     project_id: projectId,
   };
 }
@@ -98,7 +100,6 @@ export function useCreateQuote() {
     }
 
     try {
-      // 1. Get project context
       const { data: proj, error: projErr } = await coreDb
         .from("projects")
         .select("customer_id, property_id")
@@ -109,7 +110,6 @@ export function useCreateQuote() {
       const today = new Date();
       const expiry = new Date(today.getTime() + 30 * 86400000);
 
-      // 2. Insert quote
       const { data: newQuote, error: quoteErr } = await billingDb
         .from("quotes")
         .insert({
@@ -202,7 +202,6 @@ export function useCreateQuote() {
           merged.total_line_ht = merged.qty * merged.unit_price_ht;
           return merged;
         });
-        // Recalc totals
         const ht = updated.reduce((s, l) => s + l.total_line_ht, 0);
         const vat = updated.reduce((s, l) => s + l.total_line_ht * (l.vat_rate / 100), 0);
         setQuote((prev) => prev ? { ...prev, total_ht: ht, total_vat: vat, total_ttc: ht + vat } : prev);

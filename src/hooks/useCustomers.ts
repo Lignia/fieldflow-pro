@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { coreDb } from "@/integrations/supabase/schema-clients";
-import { supabase } from "@/integrations/supabase/client";
+import { MOCK_CUSTOMERS } from "@/mocks/data";
 
 export interface Customer {
   id: string;
@@ -36,71 +36,8 @@ interface UseCustomersReturn {
 
 const DEV_BYPASS = import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
 
-const MOCK_CUSTOMERS: Customer[] = [
-  {
-    id: "mock-1",
-    customer_type: "particulier",
-    name: "M. Jean Morel",
-    email: "jean.morel@email.fr",
-    phone: "06 12 34 56 78",
-    siret: null,
-    status: "prospect",
-    source_origin: "web",
-    created_at: new Date(Date.now() - 2 * 86400000).toISOString(),
-    modified_at: new Date(Date.now() - 86400000).toISOString(),
-  },
-  {
-    id: "mock-2",
-    customer_type: "professionnel",
-    name: "Durand & Fils SARL",
-    email: "contact@durand-fils.fr",
-    phone: "04 56 78 90 12",
-    siret: "12345678901234",
-    status: "active",
-    source_origin: "referral",
-    created_at: new Date(Date.now() - 30 * 86400000).toISOString(),
-    modified_at: new Date(Date.now() - 3 * 86400000).toISOString(),
-  },
-  {
-    id: "mock-3",
-    customer_type: "particulier",
-    name: "Mme Sophie Martin",
-    email: "sophie.martin@gmail.com",
-    phone: "07 98 76 54 32",
-    siret: null,
-    status: "active",
-    source_origin: "phone",
-    created_at: new Date(Date.now() - 60 * 86400000).toISOString(),
-    modified_at: new Date(Date.now() - 10 * 86400000).toISOString(),
-  },
-  {
-    id: "mock-4",
-    customer_type: "collectivite",
-    name: "Mairie de Chambéry",
-    email: "technique@chambery.fr",
-    phone: "04 79 00 00 00",
-    siret: "21730065100014",
-    status: "active",
-    source_origin: "manual",
-    created_at: new Date(Date.now() - 90 * 86400000).toISOString(),
-    modified_at: new Date(Date.now() - 5 * 86400000).toISOString(),
-  },
-  {
-    id: "mock-5",
-    customer_type: "particulier",
-    name: "M. Pierre Fabre",
-    email: null,
-    phone: "06 11 22 33 44",
-    siret: null,
-    status: "prospect",
-    source_origin: "showroom",
-    created_at: new Date(Date.now() - 1 * 86400000).toISOString(),
-    modified_at: new Date(Date.now() - 1 * 86400000).toISOString(),
-  },
-];
-
 export function useCustomers(): UseCustomersReturn {
-  const [customers, setCustomers] = useState<Customer[]>(DEV_BYPASS ? MOCK_CUSTOMERS : []);
+  const [customers, setCustomers] = useState<Customer[]>(DEV_BYPASS ? (MOCK_CUSTOMERS as Customer[]) : []);
   const [loading, setLoading] = useState(!DEV_BYPASS);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -140,16 +77,18 @@ export function useCustomers(): UseCustomersReturn {
 
   useEffect(() => {
     if (DEV_BYPASS) {
-      // Filter mock data locally
       if (search.trim()) {
-      const q = search.trim().toLowerCase();
-        setCustomers(MOCK_CUSTOMERS.filter((c) =>
-          c.name.toLowerCase().includes(q) ||
-          (c.email && c.email.toLowerCase().includes(q)) ||
-          (c.phone && c.phone.toLowerCase().includes(q))
-        ));
+        const q = search.trim().toLowerCase();
+        setCustomers(
+          (MOCK_CUSTOMERS as Customer[]).filter(
+            (c) =>
+              c.name.toLowerCase().includes(q) ||
+              (c.email && c.email.toLowerCase().includes(q)) ||
+              (c.phone && c.phone.toLowerCase().includes(q))
+          )
+        );
       } else {
-        setCustomers(MOCK_CUSTOMERS);
+        setCustomers(MOCK_CUSTOMERS as Customer[]);
       }
       return;
     }
@@ -162,7 +101,7 @@ export function useCustomers(): UseCustomersReturn {
     async (input: CreateCustomerInput): Promise<{ success: boolean; error?: string }> => {
       if (DEV_BYPASS) {
         const newCustomer: Customer = {
-          id: `mock-${Date.now()}`,
+          id: `mock-customer-${Date.now()}`,
           customer_type: input.customer_type,
           name: input.name,
           email: input.email ?? null,

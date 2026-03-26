@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { coreDb } from "@/integrations/supabase/schema-clients";
+import { MOCK_PROJECTS as CENTRAL_MOCK_PROJECTS } from "@/mocks/data";
 
 export type ProjectStatus =
   | "lead_new"
@@ -64,88 +65,16 @@ interface UseProjectsReturn {
 
 const DEV_BYPASS = import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
 
-const MOCK_PROJECTS: Project[] = [
-  {
-    id: "mock-p1",
-    project_number: "PRJ-0047",
-    status: "vt_planned",
-    origin: "web",
-    customer_name: "M. Morel",
-    city: "Annecy",
-    created_at: new Date(Date.now() - 3 * 86400000).toISOString(),
-    modified_at: new Date(Date.now() - 1 * 86400000).toISOString(),
-  },
-  {
-    id: "mock-p2",
-    project_number: "PRJ-0046",
-    status: "lead_new",
-    origin: "phone",
-    customer_name: "Mme Lefèvre",
-    city: "Chambéry",
-    created_at: new Date(Date.now() - 1 * 86400000).toISOString(),
-    modified_at: new Date(Date.now() - 1 * 86400000).toISOString(),
-  },
-  {
-    id: "mock-p3",
-    project_number: "PRJ-0045",
-    status: "final_quote_sent",
-    origin: "referral",
-    customer_name: "Mme Durand",
-    city: "Aix-les-Bains",
-    created_at: new Date(Date.now() - 14 * 86400000).toISOString(),
-    modified_at: new Date(Date.now() - 2 * 86400000).toISOString(),
-  },
-  {
-    id: "mock-p4",
-    project_number: "PRJ-0044",
-    status: "signed",
-    origin: "web",
-    customer_name: "M. Bernard",
-    city: "Grenoble",
-    created_at: new Date(Date.now() - 30 * 86400000).toISOString(),
-    modified_at: new Date(Date.now() - 5 * 86400000).toISOString(),
-  },
-  {
-    id: "mock-p5",
-    project_number: "PRJ-0043",
-    status: "deposit_paid",
-    origin: "manual",
-    customer_name: "M. Fabre",
-    city: "Lyon",
-    created_at: new Date(Date.now() - 45 * 86400000).toISOString(),
-    modified_at: new Date(Date.now() - 3 * 86400000).toISOString(),
-  },
-  {
-    id: "mock-p6",
-    project_number: "PRJ-0042",
-    status: "installation_scheduled",
-    origin: "showroom",
-    customer_name: "Mme Petit",
-    city: "Albertville",
-    created_at: new Date(Date.now() - 60 * 86400000).toISOString(),
-    modified_at: new Date(Date.now() - 7 * 86400000).toISOString(),
-  },
-  {
-    id: "mock-p7",
-    project_number: "PRJ-0041",
-    status: "closed",
-    origin: "referral",
-    customer_name: "M. Roux",
-    city: "Annemasse",
-    created_at: new Date(Date.now() - 90 * 86400000).toISOString(),
-    modified_at: new Date(Date.now() - 15 * 86400000).toISOString(),
-  },
-  {
-    id: "mock-p8",
-    project_number: "PRJ-0040",
-    status: "lost",
-    origin: "web",
-    customer_name: "M. Garcia",
-    city: "Thonon",
-    created_at: new Date(Date.now() - 50 * 86400000).toISOString(),
-    modified_at: new Date(Date.now() - 20 * 86400000).toISOString(),
-  },
-];
+const MOCK_PROJECTS: Project[] = CENTRAL_MOCK_PROJECTS.map((p) => ({
+  id: p.id,
+  project_number: p.project_number,
+  status: p.status as ProjectStatus,
+  origin: p.origin,
+  customer_name: p.customer.name,
+  city: p.property.city,
+  created_at: p.created_at,
+  modified_at: p.modified_at,
+}));
 
 function filterMock(search: string, filter: StatusFilter): Project[] {
   let list = MOCK_PROJECTS;

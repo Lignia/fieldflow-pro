@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { coreDb } from "@/integrations/supabase/schema-clients";
+import { MOCK_CUSTOMERS } from "@/mocks/data";
 
 export interface CustomerSearchResult {
   id: string;
@@ -9,11 +10,13 @@ export interface CustomerSearchResult {
   customer_type: "particulier" | "professionnel" | "collectivite";
 }
 
-const MOCK_CUSTOMERS: CustomerSearchResult[] = [
-  { id: "mock-c1", name: "M. Morel", email: "morel@email.fr", phone: "06 12 34 56 78", customer_type: "particulier" },
-  { id: "mock-c2", name: "Mme Durand", email: "durand@email.fr", phone: "06 98 76 54 32", customer_type: "particulier" },
-  { id: "mock-c3", name: "SCI Les Alpes", email: "contact@sci-alpes.fr", phone: "04 79 00 11 22", customer_type: "professionnel" },
-];
+const SEARCH_CUSTOMERS: CustomerSearchResult[] = MOCK_CUSTOMERS.map((c) => ({
+  id: c.id,
+  name: c.name,
+  email: c.email,
+  phone: c.phone,
+  customer_type: c.customer_type,
+}));
 
 export function useCustomerSearch(term: string) {
   const [results, setResults] = useState<CustomerSearchResult[]>([]);
@@ -33,7 +36,7 @@ export function useCustomerSearch(term: string) {
 
       if (import.meta.env.VITE_DEV_BYPASS_AUTH === "true") {
         const q = term.toLowerCase();
-        setResults(MOCK_CUSTOMERS.filter((c) => c.name.toLowerCase().includes(q) || c.email?.toLowerCase().includes(q)));
+        setResults(SEARCH_CUSTOMERS.filter((c) => c.name.toLowerCase().includes(q) || c.email?.toLowerCase().includes(q)));
         setLoading(false);
         return;
       }

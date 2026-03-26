@@ -31,13 +31,13 @@ interface UseCurrentUserReturn {
 const DEV_BYPASS = import.meta.env.VITE_DEV_BYPASS_AUTH === 'true';
 
 const DEV_RETURN: UseCurrentUserReturn = {
-  authUser: { id: 'dev-user-123', email: 'dev@lignia.fr' } as any,
+  authUser: { id: 'dev-user-123', email: 'patrick@chaleur-bois.fr' } as any,
   coreUser: {
     id: 'dev-core-user-123',
     tenant_id: 'dev-tenant-123',
     role: 'admin',
-    full_name: 'Patrick Lefèvre (DEV)',
-    email: 'dev@lignia.fr',
+    full_name: 'Patrick Lefèvre',
+    email: 'patrick@chaleur-bois.fr',
     is_active: true,
   } as any,
   tenantId: 'dev-tenant-123',

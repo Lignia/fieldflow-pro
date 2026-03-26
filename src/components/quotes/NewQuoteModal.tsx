@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Search, FileText, Wrench, ArrowLeft, ArrowRight, Loader2 } from "lucide-react";
 
 import { coreDb } from "@/integrations/supabase/schema-clients";
+import { MOCK_PROJECTS as CENTRAL_MOCK_PROJECTS } from "@/mocks/data";
 import {
   Dialog,
   DialogContent,
@@ -28,11 +29,13 @@ interface ProjectOption {
   city: string;
 }
 
-const MOCK_PROJECTS: ProjectOption[] = [
-  { id: "mock-p1", project_number: "PRJ-0047", status: "vt_planned", customer_name: "M. Morel", city: "Annecy" },
-  { id: "mock-p2", project_number: "PRJ-0046", status: "lead_new", customer_name: "Mme Lefèvre", city: "Lyon" },
-  { id: "mock-p3", project_number: "PRJ-0045", status: "vt_done", customer_name: "Mme Durand", city: "Grenoble" },
-];
+const MOCK_PROJECTS: ProjectOption[] = CENTRAL_MOCK_PROJECTS.map((p) => ({
+  id: p.id,
+  project_number: p.project_number,
+  status: p.status,
+  customer_name: p.customer.name,
+  city: p.property.city,
+}));
 
 const FINAL_STATUSES = ["vt_done", "tech_review_done", "estimate_sent", "final_quote_sent", "signed", "deposit_paid"];
 

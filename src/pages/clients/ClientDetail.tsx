@@ -84,8 +84,17 @@ export default function ClientDetail() {
     );
   }
 
+  const isArchived = customer.status === "archived";
+
   return (
     <div className="space-y-6 max-w-4xl">
+      {/* Archived banner */}
+      {isArchived && (
+        <div className="rounded-md border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          Ce client est archivé — les nouvelles actions sont désactivées.
+        </div>
+      )}
+
       {/* Header */}
       <div>
         <Button variant="ghost" size="sm" onClick={handleBack} className="mb-2 -ml-2">
@@ -95,10 +104,15 @@ export default function ClientDetail() {
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-2xl font-bold">{customer.name}</h1>
             <CustomerBadge customerType={customer.customer_type} />
-            <StatusBadge status={customer.status} />
+            <StatusBadge status={customer.status} type="customer_status" />
           </div>
           <div className="flex items-center gap-2">
-            <Button size="sm" onClick={() => navigate(`/projects/new?customer=${id}`)}>
+            <Button
+              size="sm"
+              onClick={() => navigate(`/projects/new?customer=${id}`)}
+              disabled={isArchived}
+              title={isArchived ? "Client archivé" : undefined}
+            >
               <Plus className="h-4 w-4 mr-1" /> Nouveau projet
             </Button>
             <DropdownMenu>
@@ -111,28 +125,38 @@ export default function ClientDetail() {
                 <DropdownMenuItem onClick={() => navigate(`/clients/${id}/edit`)}>
                   Modifier
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => navigate(`/service-requests/new?customer=${id}`)}>
+                <DropdownMenuItem
+                  onClick={() => navigate(`/service-requests/new?customer=${id}`)}
+                  disabled={isArchived}
+                >
                   Nouvelle demande SAV
                 </DropdownMenuItem>
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
-                      Archiver
-                    </DropdownMenuItem>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Archiver ce client ?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Le client sera marqué comme archivé. Cette action est réversible.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Annuler</AlertDialogCancel>
-                      <AlertDialogAction onClick={handleArchive}>Archiver</AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                {!isArchived && (
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="text-destructive">
+                        Archiver
+                      </DropdownMenuItem>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Archiver ce client ?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Le client sera marqué comme archivé. Cette action est réversible.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Annuler</AlertDialogCancel>
+                        <AlertDialogAction
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          onClick={handleArchive}
+                        >
+                          Archiver
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
+                )}
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -154,15 +178,25 @@ export default function ClientDetail() {
             <Card>
               <CardHeader><CardTitle className="text-base">Coordonnées</CardTitle></CardHeader>
               <CardContent className="space-y-3 text-sm">
-                {customer.email && (
+                {customer.email ? (
                   <a href={`mailto:${customer.email}`} className="flex items-center gap-2 text-muted-foreground hover:text-foreground">
                     <Mail className="h-4 w-4" /> {customer.email}
                   </a>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Mail className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-muted-foreground text-xs italic">Non renseigné</span>
+                  </div>
                 )}
-                {customer.phone && (
+                {customer.phone ? (
                   <a href={`tel:${customer.phone}`} className="flex items-center gap-2 text-muted-foreground hover:text-foreground">
                     <Phone className="h-4 w-4" /> {customer.phone}
                   </a>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-muted-foreground text-xs italic">Non renseigné</span>
+                  </div>
                 )}
                 {customer.siret && customer.customer_type !== "particulier" && (
                   <div className="flex items-center gap-2 text-muted-foreground">

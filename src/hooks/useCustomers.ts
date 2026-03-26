@@ -119,7 +119,8 @@ export function useCustomers(): UseCustomersReturn {
         .limit(200);
 
       if (search.trim()) {
-        query = query.ilike("name", `%${search.trim()}%`);
+        const term = search.trim();
+        query = query.or(`name.ilike.%${term}%,email.ilike.%${term}%,phone.ilike.%${term}%`);
       }
 
       const { data, error: fetchError } = await query;
@@ -141,8 +142,12 @@ export function useCustomers(): UseCustomersReturn {
     if (DEV_BYPASS) {
       // Filter mock data locally
       if (search.trim()) {
-        const q = search.trim().toLowerCase();
-        setCustomers(MOCK_CUSTOMERS.filter((c) => c.name.toLowerCase().includes(q)));
+      const q = search.trim().toLowerCase();
+        setCustomers(MOCK_CUSTOMERS.filter((c) =>
+          c.name.toLowerCase().includes(q) ||
+          (c.email && c.email.toLowerCase().includes(q)) ||
+          (c.phone && c.phone.toLowerCase().includes(q))
+        ));
       } else {
         setCustomers(MOCK_CUSTOMERS);
       }

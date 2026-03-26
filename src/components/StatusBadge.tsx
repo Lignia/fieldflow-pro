@@ -24,7 +24,8 @@ type StatusType =
   | "invoice"
   | "invoice_kind"
   | "payment"
-  | "payment_method";
+  | "payment_method"
+  | "customer_status";
 
 // ─── Couleurs par clé ────────────────────────────────────────────────────────
 // Groupement sémantique :
@@ -53,6 +54,11 @@ const STATUS_COLORS: Record<string, string> = {
   on_hold:                 "bg-warning/15 text-warning",
   lost:                    "bg-destructive/10 text-destructive",
   cancelled:               "bg-destructive/10 text-destructive", // alias FR (pages existantes)
+
+  // ── customer_status (3) ─────────────────────────────────────────────────
+  prospect:                "bg-muted text-muted-foreground",
+  // "active" → défini ci-dessous
+  archived:                "bg-destructive/10 text-destructive",
 
   // ── core.installation_status (5) ──────────────────────────────────────────
   // "draft" → traité en fallback par type
@@ -152,6 +158,11 @@ const STATUS_LABELS: Record<string, string> = {
   lost:                    "Perdu",
   cancelled:               "Annulé",
 
+  // ── customer_status (3) ─────────────────────────────────────────────────
+  prospect:                "Prospect",
+  // "active" → "Actif" (via type override)
+  archived:                "Archivé",
+
   // ── core.installation_status (5) ──────────────────────────────────────────
   // "draft" → label par défaut ci-dessous
   planned:                 "Planifié",
@@ -235,6 +246,11 @@ const STATUS_LABELS: Record<string, string> = {
 // on peut forcer un label/couleur spécifique via le prop `type`.
 
 const TYPE_LABEL_OVERRIDES: Partial<Record<StatusType, Record<string, string>>> = {
+  customer_status: {
+    active: "Actif",
+    prospect: "Prospect",
+    archived: "Archivé",
+  },
   installation: {
     draft: "Brouillon",
     planned: "Planifiée",

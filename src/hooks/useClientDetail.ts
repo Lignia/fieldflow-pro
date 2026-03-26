@@ -1,5 +1,12 @@
 import { useState, useEffect, useCallback } from "react";
 import { coreDb } from "@/integrations/supabase/schema-clients";
+import {
+  MOCK_CUSTOMERS,
+  findMockCustomer,
+  getMockPropertiesForCustomer,
+  getMockProjectsForCustomer,
+  getMockInstallationsForCustomer,
+} from "@/mocks/data";
 
 export interface ClientDetail {
   id: string;
@@ -53,85 +60,40 @@ interface UseClientDetailReturn {
 
 const DEV_BYPASS = import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
 
-const MOCK_CUSTOMER: ClientDetail = {
-  id: "mock-1",
-  customer_type: "particulier",
-  name: "M. Jean Morel",
-  email: "jean.morel@email.fr",
-  phone: "06 12 34 56 78",
-  siret: null,
-  status: "active",
-  source_origin: "phone",
-  created_at: new Date(Date.now() - 90 * 86400000).toISOString(),
-  modified_at: new Date(Date.now() - 2 * 86400000).toISOString(),
-  payload: {},
-};
-
-const MOCK_PROPERTIES: ClientProperty[] = [
-  {
-    id: "prop-1",
-    address_line1: "12 rue des Alpes",
-    address_line2: null,
-    city: "Chambéry",
-    postal_code: "73000",
-    property_type: "house",
-    created_at: new Date(Date.now() - 60 * 86400000).toISOString(),
-  },
-  {
-    id: "prop-2",
-    address_line1: "45 avenue du Mont-Blanc",
-    address_line2: "Bât. C",
-    city: "Annecy",
-    postal_code: "74000",
-    property_type: "apartment",
-    created_at: new Date(Date.now() - 30 * 86400000).toISOString(),
-  },
-];
-
-const MOCK_PROJECTS: ClientProject[] = [
-  {
-    id: "proj-1",
-    project_number: "PRJ-2026-0012",
-    status: "vt_planned",
-    created_at: new Date(Date.now() - 14 * 86400000).toISOString(),
-    modified_at: new Date(Date.now() - 2 * 86400000).toISOString(),
-  },
-  {
-    id: "proj-2",
-    project_number: "PRJ-2026-0008",
-    status: "signed",
-    created_at: new Date(Date.now() - 45 * 86400000).toISOString(),
-    modified_at: new Date(Date.now() - 10 * 86400000).toISOString(),
-  },
-];
-
-const MOCK_INSTALLATIONS: ClientInstallation[] = [
-  {
-    id: "inst-1",
-    appliance_label: "Poêle Jøtul F520",
-    installation_status: "active",
-    next_sweep_date: new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10),
-    created_at: new Date(Date.now() - 180 * 86400000).toISOString(),
-  },
-  {
-    id: "inst-2",
-    appliance_label: "Insert Stûv 16",
-    installation_status: "commissioned",
-    next_sweep_date: new Date(Date.now() - 15 * 86400000).toISOString().slice(0, 10),
-    created_at: new Date(Date.now() - 90 * 86400000).toISOString(),
-  },
-];
+function getMockReturn(customerId: string): UseClientDetailReturn {
+  const c = findMockCustomer(customerId) ?? MOCK_CUSTOMERS[0];
+  const cid = c.id;
+  return {
+    customer: { ...c, payload: c.payload ?? {} } as ClientDetail,
+    properties: getMockPropertiesForCustomer(cid) as ClientProperty[],
+    projects: getMockProjectsForCustomer(cid).map((p) => ({
+      id: p.id,
+      project_number: p.project_number,
+      status: p.status,
+      created_at: p.created_at,
+      modified_at: p.modified_at,
+    })),
+    installations: getMockInstallationsForCustomer(cid) as ClientInstallation[],
+    loading: false,
+    error: null,
+    refetch: () => {},
+  };
+}
 
 export function useClientDetail(customerId: string | undefined): UseClientDetailReturn {
-  const [customer, setCustomer] = useState<ClientDetail | null>(DEV_BYPASS ? MOCK_CUSTOMER : null);
-  const [properties, setProperties] = useState<ClientProperty[]>(DEV_BYPASS ? MOCK_PROPERTIES : []);
-  const [projects, setProjects] = useState<ClientProject[]>(DEV_BYPASS ? MOCK_PROJECTS : []);
-  const [installations, setInstallations] = useState<ClientInstallation[]>(DEV_BYPASS ? MOCK_INSTALLATIONS : []);
-  const [loading, setLoading] = useState(!DEV_BYPASS);
+  const isMock = DEV_BYPASS || (customerId?.startsWith("mock-") ?? false);
+
+  const mockReturn = isMock && customerId ? getMockReturn(customerId) : null;
+
+  const [customer, setCustomer] = useState<ClientDetail | null>(mockReturn?.customer ?? null);
+  const [properties, setProperties] = useState<ClientProperty[]>(mockReturn?.properties ?? []);
+  const [projects, setProjects] = useState<ClientProject[]>(mockReturn?.projects ?? []);
+  const [installations, setInstallations] = useState<ClientInstallation[]>(mockReturn?.installations ?? []);
+  const [loading, setLoading] = useState(!isMock);
   const [error, setError] = useState<string | null>(null);
 
   const fetchAll = useCallback(async () => {
-    if (DEV_BYPASS || !customerId) return;
+    if (isMock || !customerId) return;
     setLoading(true);
     setError(null);
 
@@ -172,11 +134,20 @@ export function useClientDetail(customerId: string | undefined): UseClientDetail
     } finally {
       setLoading(false);
     }
-  }, [customerId]);
+  }, [customerId, isMock]);
 
   useEffect(() => {
+    if (isMock && customerId) {
+      const m = getMockReturn(customerId);
+      setCustomer(m.customer);
+      setProperties(m.properties);
+      setProjects(m.projects);
+      setInstallations(m.installations);
+      setLoading(false);
+      return;
+    }
     fetchAll();
-  }, [fetchAll]);
+  }, [fetchAll, isMock, customerId]);
 
   return { customer, properties, projects, installations, loading, error, refetch: fetchAll };
 }

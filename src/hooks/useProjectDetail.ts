@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { coreDb, billingDb } from "@/integrations/supabase/schema-clients";
 import type { ProjectStatus } from "@/hooks/useProjects";
+import { findMockProject, getMockQuotesForProject, MOCK_PROJECTS } from "@/mocks/data";
 
 export interface ProjectCustomer {
   id: string;
@@ -64,71 +65,44 @@ interface UseProjectDetailReturn {
 
 const DEV_BYPASS = import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
 
-const MOCK_PROJECT: ProjectDetail = {
-  id: "mock-p5",
-  project_number: "PRJ-0043",
-  status: "deposit_paid",
-  origin: "manual",
-  cancellation_reason: null,
-  closed_at: null,
-  created_at: new Date(Date.now() - 45 * 86400000).toISOString(),
-  modified_at: new Date(Date.now() - 3 * 86400000).toISOString(),
-  customer: {
-    id: "mock-c1",
-    name: "M. Fabre",
-    email: "fabre@email.fr",
-    phone: "06 11 22 33 44",
-    customer_type: "particulier",
-  },
-  property: {
-    id: "mock-prop1",
-    label: "Résidence principale",
-    address_line1: "12 rue des Alpes",
-    address_line2: null,
-    postal_code: "73000",
-    city: "Chambéry",
-    property_type: "maison",
-  },
-  quotes: [
-    {
-      id: "mock-q-est",
-      quote_number: "DEV-2025-0010",
-      quote_kind: "estimate",
-      quote_status: "signed",
-      total_ttc: 7440,
-      quote_date: "2025-02-05",
-      expiry_date: "2025-03-07",
-    },
-    {
-      id: "mock-q-fin",
-      quote_number: "DEV-2025-0009",
-      quote_kind: "final",
-      quote_status: "signed",
-      total_ttc: 18960,
-      quote_date: "2025-02-20",
-      expiry_date: "2025-03-22",
-    },
-  ],
-  invoices: [
-    {
-      id: "mock-inv1",
-      invoice_number: "FAC-2025-0006",
-      invoice_kind: "deposit",
-      invoice_status: "paid",
-      total_ttc: 5688,
-      invoice_date: "2025-02-25",
-      due_date: "2025-03-27",
-    },
-  ],
-};
+function buildMockProjectDetail(projectId: string): ProjectDetail | null {
+  const p = findMockProject(projectId) ?? MOCK_PROJECTS[0];
+  if (!p) return null;
+  const quotes = getMockQuotesForProject(p.id).map((q) => ({
+    id: q.id,
+    quote_number: q.quote_number,
+    quote_kind: q.quote_kind,
+    quote_status: q.quote_status,
+    total_ttc: q.total_ttc,
+    quote_date: q.quote_date,
+    expiry_date: q.expiry_date,
+  }));
+  return {
+    id: p.id,
+    project_number: p.project_number,
+    status: p.status as ProjectStatus,
+    origin: p.origin,
+    cancellation_reason: p.cancellation_reason,
+    closed_at: p.closed_at,
+    created_at: p.created_at,
+    modified_at: p.modified_at,
+    customer: p.customer as ProjectCustomer,
+    property: p.property as ProjectProperty,
+    quotes,
+    invoices: [],
+  };
+}
 
 export function useProjectDetail(projectId: string | undefined): UseProjectDetailReturn {
-  const [project, setProject] = useState<ProjectDetail | null>(DEV_BYPASS ? MOCK_PROJECT : null);
-  const [loading, setLoading] = useState(!DEV_BYPASS);
+  const isMock = DEV_BYPASS || (projectId?.startsWith("mock-") ?? false);
+  const mockProject = isMock && projectId ? buildMockProjectDetail(projectId) : null;
+
+  const [project, setProject] = useState<ProjectDetail | null>(mockProject);
+  const [loading, setLoading] = useState(!isMock);
   const [error, setError] = useState<string | null>(null);
 
   const fetchProject = useCallback(async () => {
-    if (DEV_BYPASS || !projectId) return;
+    if (isMock || !projectId) return;
     setLoading(true);
     setError(null);
 
@@ -187,11 +161,16 @@ export function useProjectDetail(projectId: string | undefined): UseProjectDetai
     } finally {
       setLoading(false);
     }
-  }, [projectId]);
+  }, [projectId, isMock]);
 
   useEffect(() => {
-    if (!DEV_BYPASS) fetchProject();
-  }, [fetchProject]);
+    if (isMock && projectId) {
+      setProject(buildMockProjectDetail(projectId));
+      setLoading(false);
+      return;
+    }
+    if (!isMock) fetchProject();
+  }, [fetchProject, isMock, projectId]);
 
   return { project, loading, error, refetch: fetchProject };
 }

@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import Clients from "./pages/Clients";
 import ClientDetail from "./pages/clients/ClientDetail";
 import ClientCreate from "./pages/clients/ClientCreate";
+import ClientEdit from "./pages/clients/ClientEdit";
 import Projects from "./pages/Projects";
 import ProjectDetail from "./pages/ProjectDetail";
 import Planning from "./pages/Planning";
@@ -61,7 +62,7 @@ const App = () => (
               {/* Clients */}
               <Route path="/clients" element={<Clients />} />
               <Route path="/clients/new" element={<ClientCreate />} />
-              <Route path="/clients/:id/edit" element={<PlaceholderPage title="Modifier le client" backTo="/clients" backLabel="Clients" />} />
+              <Route path="/clients/:id/edit" element={<ClientEdit />} />
               <Route path="/clients/:id" element={<ClientDetail />} />
 
               {/* Projects */}

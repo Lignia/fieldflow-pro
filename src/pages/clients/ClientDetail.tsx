@@ -128,9 +128,8 @@ export default function ClientDetail() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem disabled>
+                <DropdownMenuItem onClick={() => navigate(`/clients/${id}/edit`)}>
                   Modifier
-                  <span className="ml-auto text-xs text-muted-foreground">Bientôt</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => navigate(`/service-requests/new?customer=${id}`)}

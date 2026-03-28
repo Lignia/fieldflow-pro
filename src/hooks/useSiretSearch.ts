@@ -38,8 +38,9 @@ export function useSiretSearch() {
     debounceRef.current = setTimeout(async () => {
       setLoading(true);
       try {
+        const cleanedQuery = query.replace(/\s/g, '');
         const params = new URLSearchParams({
-          q: query,
+          q: cleanedQuery,
           per_page: "8",
           etat_administratif: "A",
           minimal: "true",

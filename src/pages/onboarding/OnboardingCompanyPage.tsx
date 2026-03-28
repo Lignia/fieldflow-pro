@@ -75,15 +75,24 @@ export default function OnboardingCompanyPage() {
     setPhase("confirm");
   };
 
+  const cleanSiret = (siret: string) => siret.replace(/\s/g, '').replace(/\D/g, '');
+
   const handleProvision = async () => {
     if (!company) return;
+
+    const siret = cleanSiret(company.siret);
+    if (siret.length !== 14) {
+      toast.error("Le SIRET sélectionné semble incomplet. Veuillez réessayer ou le saisir manuellement.");
+      setPhase("search");
+      return;
+    }
 
     setLoading(true);
     try {
       const { data, error } = await supabase.functions.invoke("provision-tenant", {
         body: {
           company_name: company.nom_complet,
-          siret: company.siret,
+          siret,
           siren: company.siren,
           address_line: company.adresse,
           city: company.ville,

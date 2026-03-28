@@ -94,7 +94,7 @@ function formatCurrency(n: number) {
 
 // ─── Component ──────────────────────────────────────────────────
 export default function CreateQuote() {
-  const { tenantId } = useCurrentUser();
+  const { tenantId, loading: userLoading } = useCurrentUser();
   const navigate = useNavigate();
 
   // Form state
@@ -414,7 +414,7 @@ export default function CreateQuote() {
         <Button variant="outline" onClick={() => navigate("/quotes")}>
           Annuler
         </Button>
-        <Button onClick={handleSubmit} disabled={saving}>
+        <Button onClick={handleSubmit} disabled={userLoading || !tenantId || saving}>
           <Save className="h-4 w-4 mr-2" />
           {saving ? "Enregistrement…" : "Créer le devis"}
         </Button>

@@ -38,7 +38,7 @@ const PROPERTY_TYPE_ICONS: Record<Property["property_type"], React.ReactNode> = 
 };
 
 export default function ProjectCreate() {
-  const { tenantId } = useCurrentUser();
+  const { tenantId, loading: userLoading } = useCurrentUser();
   const navigate = useNavigate();
 
   // --- Customer search ---
@@ -340,7 +340,7 @@ export default function ProjectCreate() {
         <div className="flex justify-end pt-2 pb-8">
           <Button
             size="lg"
-            disabled={submitting}
+            disabled={userLoading || !tenantId || submitting}
             onClick={handleSubmit}
             className="min-w-[180px]"
           >

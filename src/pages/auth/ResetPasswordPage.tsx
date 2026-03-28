@@ -1,21 +1,34 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation, Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { PasswordInput } from "@/components/auth/PasswordInput";
 import { SubmitButton } from "@/components/auth/SubmitButton";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AlertTriangle } from "lucide-react";
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
   const [recoveryReady, setRecoveryReady] = useState(false);
+  const [invalidLink, setInvalidLink] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const hasToken =
+    location.hash.includes("access_token") ||
+    location.hash.includes("type=recovery");
 
   useEffect(() => {
+    if (!hasToken) {
+      setInvalidLink(true);
+      return;
+    }
+
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event) => {
         if (event === "PASSWORD_RECOVERY") {
@@ -24,7 +37,7 @@ export default function ResetPasswordPage() {
       }
     );
     return () => authListener.subscription.unsubscribe();
-  }, []);
+  }, [hasToken]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,6 +63,29 @@ export default function ResetPasswordPage() {
     toast.success("Mot de passe mis à jour");
     navigate("/dashboard");
   };
+
+  if (invalidLink) {
+    return (
+      <AuthLayout>
+        <Card>
+          <CardHeader className="text-center">
+            <div className="mx-auto w-12 h-12 rounded-full bg-warning/10 flex items-center justify-center mb-2">
+              <AlertTriangle className="h-6 w-6 text-warning" />
+            </div>
+            <CardTitle className="text-xl">Lien invalide ou expiré</CardTitle>
+            <CardDescription>
+              Ce lien de réinitialisation est invalide ou a expiré (valable 1 heure).
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex justify-center">
+            <Button asChild>
+              <Link to="/auth/forgot-password">Demander un nouveau lien</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </AuthLayout>
+    );
+  }
 
   return (
     <AuthLayout>

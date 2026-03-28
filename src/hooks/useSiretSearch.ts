@@ -1,5 +1,18 @@
 import { useState, useCallback, useRef } from "react";
 
+export interface Dirigeant {
+  nom: string;
+  prenoms: string;
+  qualite: string;
+  type_dirigeant: string;
+}
+
+export interface Complements {
+  est_rge?: boolean;
+  est_qualiopi?: boolean;
+  est_patrimoine_vivant?: boolean;
+}
+
 export interface CompanyResult {
   nom_complet: string;
   siret: string;
@@ -11,6 +24,8 @@ export interface CompanyResult {
   activite_principale: string;
   staff_range: string;
   company_created_at: string;
+  dirigeants?: Dirigeant[];
+  complements?: Complements;
 }
 
 const API_BASE = "https://recherche-entreprises.api.gouv.fr/search";
@@ -19,6 +34,23 @@ const API_BASE = "https://recherche-entreprises.api.gouv.fr/search";
 function isBatimentApe(ape: string): boolean {
   if (!ape) return false;
   return ape.startsWith("43") || ape.startsWith("41") || ape.startsWith("42");
+}
+
+function mapResult(r: any): CompanyResult {
+  return {
+    nom_complet: r.nom_complet || "",
+    siret: r.siege?.siret || "",
+    siren: r.siren || "",
+    adresse: r.siege?.adresse || "",
+    ville: r.siege?.libelle_commune || "",
+    code_postal: r.siege?.code_postal || "",
+    nature_juridique: r.nature_juridique || "",
+    activite_principale: r.activite_principale || "",
+    staff_range: r.tranche_effectif_salarie || "",
+    company_created_at: r.date_creation || "",
+    dirigeants: r.dirigeants || [],
+    complements: r.complements || {},
+  };
 }
 
 export function useSiretSearch() {
@@ -43,6 +75,7 @@ export function useSiretSearch() {
           per_page: "8",
           etat_administratif: "A",
           minimal: "true",
+          include: "siege,dirigeants,complements",
         });
         const res = await fetch(`${API_BASE}?${params}`, {
           headers: { "User-Agent": "LIGNIA-onboarding/1.0" },
@@ -50,18 +83,7 @@ export function useSiretSearch() {
         if (!res.ok) throw new Error();
         const data = await res.json();
 
-        const mapped: CompanyResult[] = (data.results || []).map((r: any) => ({
-          nom_complet: r.nom_complet || "",
-          siret: r.siege?.siret || "",
-          siren: r.siren || "",
-          adresse: r.siege?.adresse || "",
-          ville: r.siege?.libelle_commune || "",
-          code_postal: r.siege?.code_postal || "",
-          nature_juridique: r.nature_juridique || "",
-          activite_principale: r.activite_principale || "",
-          staff_range: r.tranche_effectif_salarie || "",
-          company_created_at: r.date_creation || "",
-        }));
+        const mapped: CompanyResult[] = (data.results || []).map(mapResult);
 
         // Sort: bâtiment APE codes first
         mapped.sort((a, b) => {
@@ -83,25 +105,16 @@ export function useSiretSearch() {
     if (!/^\d{14}$/.test(siret)) return null;
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}?q=${encodeURIComponent(siret)}&per_page=1`);
+      const res = await fetch(
+        `${API_BASE}?q=${encodeURIComponent(siret)}&per_page=1&include=siege,dirigeants,complements`,
+        { headers: { "User-Agent": "LIGNIA-onboarding/1.0" } }
+      );
       if (!res.ok) return null;
       const data = await res.json();
       const r = data.results?.[0];
       if (!r) return null;
 
-      const result: CompanyResult = {
-        nom_complet: r.nom_complet || "",
-        siret: r.siege?.siret || "",
-        siren: r.siren || "",
-        adresse: r.siege?.adresse || "",
-        ville: r.siege?.libelle_commune || "",
-        code_postal: r.siege?.code_postal || "",
-        nature_juridique: r.nature_juridique || "",
-        activite_principale: r.activite_principale || "",
-        staff_range: r.tranche_effectif_salarie || "",
-        company_created_at: r.date_creation || "",
-      };
-
+      const result = mapResult(r);
       checkApe(result.activite_principale);
       return result;
     } catch {

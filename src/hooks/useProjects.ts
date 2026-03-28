@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
 import { coreDb } from "@/integrations/supabase/schema-clients";
-import { MOCK_PROJECTS as CENTRAL_MOCK_PROJECTS } from "@/mocks/data";
 
 export type ProjectStatus =
   | "lead_new"
@@ -63,49 +62,14 @@ interface UseProjectsReturn {
   refetch: () => void;
 }
 
-const DEV_BYPASS = import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
-
-const MOCK_PROJECTS: Project[] = CENTRAL_MOCK_PROJECTS.map((p) => ({
-  id: p.id,
-  project_number: p.project_number,
-  status: p.status as ProjectStatus,
-  origin: p.origin,
-  customer_name: p.customer.name,
-  city: p.property.city,
-  created_at: p.created_at,
-  modified_at: p.modified_at,
-}));
-
-function filterMock(search: string, filter: StatusFilter): Project[] {
-  let list = MOCK_PROJECTS;
-
-  if (filter === "active") {
-    list = list.filter((p) => !CLOSED_STATUSES.includes(p.status));
-  } else {
-    list = list.filter((p) => ARCHIVED_STATUSES.includes(p.status));
-  }
-
-  if (search.trim()) {
-    const q = search.trim().toLowerCase();
-    list = list.filter(
-      (p) =>
-        p.customer_name.toLowerCase().includes(q) ||
-        p.project_number.toLowerCase().includes(q) ||
-        p.city.toLowerCase().includes(q)
-    );
-  }
-  return list;
-}
-
 export function useProjects(): UseProjectsReturn {
-  const [projects, setProjects] = useState<Project[]>(DEV_BYPASS ? filterMock("", "active") : []);
-  const [loading, setLoading] = useState(!DEV_BYPASS);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("active");
 
   const fetchProjects = useCallback(async () => {
-    if (DEV_BYPASS) return;
     setLoading(true);
     setError(null);
 
@@ -159,11 +123,6 @@ export function useProjects(): UseProjectsReturn {
   }, [search, statusFilter]);
 
   useEffect(() => {
-    if (DEV_BYPASS) {
-      setProjects(filterMock(search, statusFilter));
-      return;
-    }
-
     const debounce = setTimeout(fetchProjects, 300);
     return () => clearTimeout(debounce);
   }, [search, statusFilter, fetchProjects]);

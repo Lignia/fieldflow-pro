@@ -1,8 +1,5 @@
 import { useState, useCallback } from "react";
 import { billingDb, coreDb } from "@/integrations/supabase/schema-clients";
-import { MOCK_QUOTES } from "@/mocks/data";
-
-const DEV_BYPASS = import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
 
 export interface QuoteLine {
   id: string;
@@ -42,24 +39,6 @@ interface NewLineInput {
   sort_order: number;
 }
 
-function mockQuote(projectId: string): QuoteSummary {
-  const ref = MOCK_QUOTES[0];
-  return {
-    id: `mock-quote-${Date.now()}`,
-    quote_number: `DEV-2026-${String(Math.floor(Math.random() * 9999)).padStart(4, "0")}`,
-    quote_kind: "estimate",
-    quote_status: "draft",
-    quote_date: new Date().toISOString().split("T")[0],
-    expiry_date: new Date(Date.now() + 30 * 86400000).toISOString().split("T")[0],
-    total_ht: 0,
-    total_vat: 0,
-    total_ttc: 0,
-    customer_id: ref.customer_id,
-    property_id: ref.property_id,
-    project_id: projectId,
-  };
-}
-
 export function useCreateQuote() {
   const [quote, setQuote] = useState<QuoteSummary | null>(null);
   const [lines, setLines] = useState<QuoteLine[]>([]);
@@ -67,7 +46,6 @@ export function useCreateQuote() {
   const [error, setError] = useState<string | null>(null);
 
   const refetchQuote = useCallback(async (quoteId: string) => {
-    if (DEV_BYPASS) return;
     const { data } = await billingDb
       .from("quotes")
       .select("id, quote_number, quote_kind, quote_status, quote_date, expiry_date, total_ht, total_vat, total_ttc, customer_id, property_id, project_id")
@@ -77,7 +55,6 @@ export function useCreateQuote() {
   }, []);
 
   const refetchLines = useCallback(async (quoteId: string) => {
-    if (DEV_BYPASS) return;
     const { data } = await billingDb
       .from("quote_lines")
       .select("*")
@@ -89,15 +66,6 @@ export function useCreateQuote() {
   const createQuote = useCallback(async (projectId: string, quoteKind: string = "estimate") => {
     setError(null);
     setSaving(true);
-
-    if (DEV_BYPASS) {
-      const mock = mockQuote(projectId);
-      mock.quote_kind = quoteKind;
-      setQuote(mock);
-      setLines([]);
-      setSaving(false);
-      return mock;
-    }
 
     try {
       const { data: proj, error: projErr } = await coreDb
@@ -142,31 +110,6 @@ export function useCreateQuote() {
     setSaving(true);
     setError(null);
 
-    if (DEV_BYPASS) {
-      const mockLine: QuoteLine = {
-        id: crypto.randomUUID(),
-        quote_id: quoteId,
-        product_id: line.product_id || null,
-        label: line.label,
-        qty: line.qty,
-        unit: line.unit,
-        unit_price_ht: line.unit_price_ht,
-        vat_rate: line.vat_rate,
-        sort_order: line.sort_order,
-        total_line_ht: line.qty * line.unit_price_ht,
-      };
-      setLines((prev) => [...prev, mockLine]);
-      setQuote((prev) => {
-        if (!prev) return prev;
-        const allLines = [...lines, mockLine];
-        const ht = allLines.reduce((s, l) => s + l.total_line_ht, 0);
-        const vat = allLines.reduce((s, l) => s + l.total_line_ht * (l.vat_rate / 100), 0);
-        return { ...prev, total_ht: ht, total_vat: vat, total_ttc: ht + vat };
-      });
-      setSaving(false);
-      return mockLine;
-    }
-
     try {
       const { error: err } = await billingDb
         .from("quote_lines")
@@ -188,28 +131,11 @@ export function useCreateQuote() {
     } finally {
       setSaving(false);
     }
-  }, [lines, refetchQuote, refetchLines]);
+  }, [refetchQuote, refetchLines]);
 
   const updateLine = useCallback(async (lineId: string, quoteId: string, changes: Partial<QuoteLine>) => {
     setSaving(true);
     setError(null);
-
-    if (DEV_BYPASS) {
-      setLines((prev) => {
-        const updated = prev.map((l) => {
-          if (l.id !== lineId) return l;
-          const merged = { ...l, ...changes };
-          merged.total_line_ht = merged.qty * merged.unit_price_ht;
-          return merged;
-        });
-        const ht = updated.reduce((s, l) => s + l.total_line_ht, 0);
-        const vat = updated.reduce((s, l) => s + l.total_line_ht * (l.vat_rate / 100), 0);
-        setQuote((prev) => prev ? { ...prev, total_ht: ht, total_vat: vat, total_ttc: ht + vat } : prev);
-        return updated;
-      });
-      setSaving(false);
-      return;
-    }
 
     try {
       const { error: err } = await billingDb
@@ -228,18 +154,6 @@ export function useCreateQuote() {
   const deleteLine = useCallback(async (lineId: string, quoteId: string) => {
     setSaving(true);
     setError(null);
-
-    if (DEV_BYPASS) {
-      setLines((prev) => {
-        const updated = prev.filter((l) => l.id !== lineId);
-        const ht = updated.reduce((s, l) => s + l.total_line_ht, 0);
-        const vat = updated.reduce((s, l) => s + l.total_line_ht * (l.vat_rate / 100), 0);
-        setQuote((p) => p ? { ...p, total_ht: ht, total_vat: vat, total_ttc: ht + vat } : p);
-        return updated;
-      });
-      setSaving(false);
-      return;
-    }
 
     try {
       const { error: err } = await billingDb

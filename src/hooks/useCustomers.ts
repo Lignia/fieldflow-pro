@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
 import { coreDb } from "@/integrations/supabase/schema-clients";
-import { MOCK_CUSTOMERS } from "@/mocks/data";
 
 export interface Customer {
   id: string;
@@ -34,17 +33,14 @@ interface UseCustomersReturn {
   creating: boolean;
 }
 
-const DEV_BYPASS = import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
-
 export function useCustomers(): UseCustomersReturn {
-  const [customers, setCustomers] = useState<Customer[]>(DEV_BYPASS ? (MOCK_CUSTOMERS as Customer[]) : []);
-  const [loading, setLoading] = useState(!DEV_BYPASS);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [creating, setCreating] = useState(false);
 
   const fetchCustomers = useCallback(async () => {
-    if (DEV_BYPASS) return;
     setLoading(true);
     setError(null);
 
@@ -76,46 +72,12 @@ export function useCustomers(): UseCustomersReturn {
   }, [search]);
 
   useEffect(() => {
-    if (DEV_BYPASS) {
-      if (search.trim()) {
-        const q = search.trim().toLowerCase();
-        setCustomers(
-          (MOCK_CUSTOMERS as Customer[]).filter(
-            (c) =>
-              c.name.toLowerCase().includes(q) ||
-              (c.email && c.email.toLowerCase().includes(q)) ||
-              (c.phone && c.phone.toLowerCase().includes(q))
-          )
-        );
-      } else {
-        setCustomers(MOCK_CUSTOMERS as Customer[]);
-      }
-      return;
-    }
-
     const debounce = setTimeout(fetchCustomers, 300);
     return () => clearTimeout(debounce);
   }, [search, fetchCustomers]);
 
   const createCustomer = useCallback(
     async (input: CreateCustomerInput): Promise<{ success: boolean; error?: string }> => {
-      if (DEV_BYPASS) {
-        const newCustomer: Customer = {
-          id: `mock-customer-${Date.now()}`,
-          customer_type: input.customer_type,
-          name: input.name,
-          email: input.email ?? null,
-          phone: input.phone ?? null,
-          siret: input.siret ?? null,
-          status: "prospect",
-          source_origin: "manual",
-          created_at: new Date().toISOString(),
-          modified_at: new Date().toISOString(),
-        };
-        setCustomers((prev) => [newCustomer, ...prev]);
-        return { success: true };
-      }
-
       setCreating(true);
       try {
         const { error: insertError } = await coreDb.from("customers").insert({

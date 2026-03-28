@@ -8,7 +8,6 @@ import {
   subDays,
   formatISO,
 } from "date-fns";
-import { MOCK_DASHBOARD_KPIS, MOCK_PIPELINE } from "@/mocks/data";
 
 interface RevenueKpi {
   value: number;
@@ -57,19 +56,7 @@ interface UseDashboardKpisReturn {
   refetch: () => void;
 }
 
-const DEV_BYPASS = import.meta.env.VITE_DEV_BYPASS_AUTH === 'true';
-
-const DEV_MOCK: UseDashboardKpisReturn = {
-  kpis: MOCK_DASHBOARD_KPIS,
-  pipeline: MOCK_PIPELINE,
-  loading: false,
-  error: null,
-  refetch: () => {},
-};
-
 export function useDashboardKpis(): UseDashboardKpisReturn {
-  if (DEV_BYPASS) return DEV_MOCK;
-
   const [kpis, setKpis] = useState<DashboardKpis | null>(null);
   const [pipeline, setPipeline] = useState<PipelineProject[]>([]);
   const [loading, setLoading] = useState(true);

@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { coreDb, billingDb } from "@/integrations/supabase/schema-clients";
 import type { ProjectStatus } from "@/hooks/useProjects";
-import { findMockProject, getMockQuotesForProject, MOCK_PROJECTS } from "@/mocks/data";
 
 export interface ProjectCustomer {
   id: string;
@@ -63,46 +62,13 @@ interface UseProjectDetailReturn {
   refetch: () => void;
 }
 
-const DEV_BYPASS = import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
-
-function buildMockProjectDetail(projectId: string): ProjectDetail | null {
-  const p = findMockProject(projectId) ?? MOCK_PROJECTS[0];
-  if (!p) return null;
-  const quotes = getMockQuotesForProject(p.id).map((q) => ({
-    id: q.id,
-    quote_number: q.quote_number,
-    quote_kind: q.quote_kind,
-    quote_status: q.quote_status,
-    total_ttc: q.total_ttc,
-    quote_date: q.quote_date,
-    expiry_date: q.expiry_date,
-  }));
-  return {
-    id: p.id,
-    project_number: p.project_number,
-    status: p.status as ProjectStatus,
-    origin: p.origin,
-    cancellation_reason: p.cancellation_reason,
-    closed_at: p.closed_at,
-    created_at: p.created_at,
-    modified_at: p.modified_at,
-    customer: p.customer as ProjectCustomer,
-    property: p.property as ProjectProperty,
-    quotes,
-    invoices: [],
-  };
-}
-
 export function useProjectDetail(projectId: string | undefined): UseProjectDetailReturn {
-  const isMock = DEV_BYPASS || (projectId?.startsWith("mock-") ?? false);
-  const mockProject = isMock && projectId ? buildMockProjectDetail(projectId) : null;
-
-  const [project, setProject] = useState<ProjectDetail | null>(mockProject);
-  const [loading, setLoading] = useState(!isMock);
+  const [project, setProject] = useState<ProjectDetail | null>(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchProject = useCallback(async () => {
-    if (isMock || !projectId) return;
+    if (!projectId) return;
     setLoading(true);
     setError(null);
 
@@ -161,16 +127,11 @@ export function useProjectDetail(projectId: string | undefined): UseProjectDetai
     } finally {
       setLoading(false);
     }
-  }, [projectId, isMock]);
+  }, [projectId]);
 
   useEffect(() => {
-    if (isMock && projectId) {
-      setProject(buildMockProjectDetail(projectId));
-      setLoading(false);
-      return;
-    }
-    if (!isMock) fetchProject();
-  }, [fetchProject, isMock, projectId]);
+    fetchProject();
+  }, [fetchProject]);
 
   return { project, loading, error, refetch: fetchProject };
 }

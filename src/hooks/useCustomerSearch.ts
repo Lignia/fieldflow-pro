@@ -1,6 +1,5 @@
 import { useState, useEffect, useRef } from "react";
 import { coreDb } from "@/integrations/supabase/schema-clients";
-import { MOCK_CUSTOMERS } from "@/mocks/data";
 
 export interface CustomerSearchResult {
   id: string;
@@ -9,14 +8,6 @@ export interface CustomerSearchResult {
   phone: string | null;
   customer_type: "particulier" | "professionnel" | "collectivite";
 }
-
-const SEARCH_CUSTOMERS: CustomerSearchResult[] = MOCK_CUSTOMERS.map((c) => ({
-  id: c.id,
-  name: c.name,
-  email: c.email,
-  phone: c.phone,
-  customer_type: c.customer_type,
-}));
 
 export function useCustomerSearch(term: string) {
   const [results, setResults] = useState<CustomerSearchResult[]>([]);
@@ -33,13 +24,6 @@ export function useCustomerSearch(term: string) {
 
     timerRef.current = setTimeout(async () => {
       setLoading(true);
-
-      if (import.meta.env.VITE_DEV_BYPASS_AUTH === "true") {
-        const q = term.toLowerCase();
-        setResults(SEARCH_CUSTOMERS.filter((c) => c.name.toLowerCase().includes(q) || c.email?.toLowerCase().includes(q)));
-        setLoading(false);
-        return;
-      }
 
       try {
         const { data, error } = await (coreDb as any)

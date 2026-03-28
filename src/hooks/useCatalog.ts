@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { catalogDb } from "@/integrations/supabase/schema-clients";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 export interface Catalog {
   id: string;

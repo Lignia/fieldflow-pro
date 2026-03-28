@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { coreDb } from "@/integrations/supabase/schema-clients";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 export interface Customer {
   id: string;
@@ -34,6 +35,7 @@ interface UseCustomersReturn {
 }
 
 export function useCustomers(): UseCustomersReturn {
+  const { tenantId } = useCurrentUser();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -81,11 +83,15 @@ export function useCustomers(): UseCustomersReturn {
       setCreating(true);
       try {
         const { error: insertError } = await coreDb.from("customers").insert({
+          tenant_id: tenantId,
           name: input.name,
           customer_type: input.customer_type,
           email: input.email || null,
           phone: input.phone || null,
           siret: input.siret || null,
+          status: "prospect",
+          source_origin: "manual",
+          payload: {},
         });
 
         if (insertError) return { success: false, error: insertError.message };

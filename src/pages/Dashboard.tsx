@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { formatDistanceToNow, getISOWeek } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -32,6 +33,11 @@ export default function Dashboard() {
   const isoWeek = getISOWeek(new Date());
   const firstName = coreUser?.first_name ?? (coreUser as any)?.full_name?.split(" ")[0] ?? "";
 
+  useEffect(() => {
+    if (error && !loading) {
+      toast.error(error, { id: "dashboard-error" });
+    }
+  }, [error, loading]);
 
   const isEmpty =
     !loading &&

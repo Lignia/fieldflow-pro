@@ -10,14 +10,32 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { useSiretSearch, isBatimentApe, type CompanyResult } from "@/hooks/useSiretSearch";
-import { Search, Building2, MapPin, Hash, Scale, Star, ArrowLeft, ArrowRight, AlertTriangle } from "lucide-react";
+import { Search, Building2, MapPin, Hash, Scale, Star, ArrowLeft, ArrowRight, AlertTriangle, User, Award } from "lucide-react";
 
 type Phase = "search" | "confirm" | "error_provisioned";
+
+const LEGAL_FORMS: Record<string, string> = {
+  "1000": "Entrepreneur individuel",
+  "5499": "SARL",
+  "5710": "SAS",
+  "5720": "SASU",
+  "5308": "EURL",
+};
+
+const toTitleCase = (str: string) =>
+  str.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
+
+const formatSiret = (siret: string) => {
+  const clean = siret.replace(/\D/g, "");
+  if (clean.length !== 14) return siret || "Non disponible";
+  return clean.replace(/(\d{3})(\d{3})(\d{3})(\d{5})/, "$1 $2 $3 $4");
+};
 
 export default function OnboardingCompanyPage() {
   const navigate = useNavigate();
   const [phase, setPhase] = useState<Phase>("search");
   const [company, setCompany] = useState<CompanyResult | null>(null);
+  const [resolvedSiret, setResolvedSiret] = useState("");
   const [manualMode, setManualMode] = useState(false);
   const [manualSiret, setManualSiret] = useState("");
   const [manualName, setManualName] = useState("");
@@ -28,10 +46,38 @@ export default function OnboardingCompanyPage() {
   const { results, loading: searching, apeWarning, search, lookupSiret, checkApe, setResults } =
     useSiretSearch();
 
-  const selectCompany = (result: CompanyResult) => {
+  const cleanSiret = (siret: string) => siret.replace(/\s/g, "").replace(/\D/g, "");
+
+  const resolveSiret = async (comp: CompanyResult): Promise<string> => {
+    let raw = comp.siret ?? "";
+    let cleaned = cleanSiret(raw);
+
+    if (cleaned.length !== 14 && comp.siren) {
+      try {
+        const res = await fetch(
+          `https://recherche-entreprises.api.gouv.fr/search` +
+            `?q=${encodeURIComponent(comp.siren)}` +
+            `&per_page=1&etat_administratif=A` +
+            `&minimal=true&include=siege`,
+          { headers: { "User-Agent": "LIGNIA-onboarding/1.0" } }
+        );
+        const data = await res.json();
+        const fallback = data.results?.[0]?.siege?.siret;
+        if (fallback) cleaned = cleanSiret(fallback);
+      } catch (e) {
+        console.error("Erreur récupération SIRET via SIREN", e);
+      }
+    }
+
+    return cleaned;
+  };
+
+  const selectCompany = async (result: CompanyResult) => {
     setCompany(result);
     checkApe(result.activite_principale);
     setResults([]);
+    const siret = await resolveSiret(result);
+    setResolvedSiret(siret);
     setPhase("confirm");
   };
 
@@ -41,8 +87,7 @@ export default function OnboardingCompanyPage() {
     if (result) {
       selectCompany(result);
     } else {
-      // Build manual company with user-provided data
-      setCompany({
+      const manualCompany: CompanyResult = {
         nom_complet: manualName,
         siret: manualSiret,
         siren: manualSiret.slice(0, 9),
@@ -53,14 +98,16 @@ export default function OnboardingCompanyPage() {
         activite_principale: "",
         staff_range: "",
         company_created_at: "",
-      });
+      };
+      setCompany(manualCompany);
+      setResolvedSiret(manualSiret);
       setPhase("confirm");
     }
   };
 
   const handleManualSubmit = () => {
     if (!manualName.trim() || !/^\d{14}$/.test(manualSiret) || !manualPostal.trim() || !manualCity.trim()) return;
-    setCompany({
+    const manualCompany: CompanyResult = {
       nom_complet: manualName.trim(),
       siret: manualSiret,
       siren: manualSiret.slice(0, 9),
@@ -71,18 +118,18 @@ export default function OnboardingCompanyPage() {
       activite_principale: "",
       staff_range: "",
       company_created_at: "",
-    });
+    };
+    setCompany(manualCompany);
+    setResolvedSiret(manualSiret);
     setPhase("confirm");
   };
-
-  const cleanSiret = (siret: string) => siret.replace(/\s/g, '').replace(/\D/g, '');
 
   const handleProvision = async () => {
     if (!company) return;
 
-    const siret = cleanSiret(company.siret);
+    const siret = resolvedSiret;
     if (siret.length !== 14) {
-      toast.error("Le SIRET sélectionné semble incomplet. Veuillez réessayer ou le saisir manuellement.");
+      toast.error("SIRET introuvable pour cette entreprise. Veuillez le saisir manuellement.");
       setPhase("search");
       return;
     }
@@ -95,8 +142,8 @@ export default function OnboardingCompanyPage() {
       const tempFullName =
         user?.user_metadata?.full_name
         ?? user?.user_metadata?.name
-        ?? user?.email?.split('@')[0]
-        ?? 'Utilisateur';
+        ?? user?.email?.split("@")[0]
+        ?? "Utilisateur";
 
       const { data, error } = await supabase.functions.invoke("provision-tenant", {
         body: JSON.stringify({
@@ -112,7 +159,7 @@ export default function OnboardingCompanyPage() {
           company_created_at: company.company_created_at,
           full_name: tempFullName,
         }),
-        headers: { 'Content-Type': 'application/json' },
+        headers: { "Content-Type": "application/json" },
       });
 
       if (error) {
@@ -181,6 +228,22 @@ export default function OnboardingCompanyPage() {
 
   // ─── Confirmation ───
   if (phase === "confirm" && company) {
+    const dirigeant = company.dirigeants?.find(
+      (d) => d.type_dirigeant === "personne physique"
+    );
+    const legalLabel = LEGAL_FORMS[company.nature_juridique] || company.nature_juridique;
+    const certifications: { label: string; title?: string; variant: "default" | "secondary"; prominent?: boolean }[] = [];
+
+    if (company.complements?.est_rge) {
+      certifications.push({ label: "✓ Certifié RGE", title: "Reconnu Garant de l'Environnement", variant: "default", prominent: true });
+    }
+    if (company.complements?.est_qualiopi) {
+      certifications.push({ label: "✓ Qualiopi", variant: "default" });
+    }
+    if (company.complements?.est_patrimoine_vivant) {
+      certifications.push({ label: "Entreprise du Patrimoine Vivant", variant: "secondary" });
+    }
+
     return (
       <OnboardingLayout currentStep={1}>
         <Card>
@@ -194,7 +257,7 @@ export default function OnboardingCompanyPage() {
                 <div>
                   <p className="text-xs text-muted-foreground">SIRET</p>
                   <p className="text-sm font-mono">
-                    {company.siret.replace(/(\d{3})(\d{3})(\d{3})(\d{5})/, "$1 $2 $3 $4")}
+                    {formatSiret(resolvedSiret)}
                   </p>
                 </div>
               </div>
@@ -211,6 +274,19 @@ export default function OnboardingCompanyPage() {
                 </div>
               )}
 
+              {dirigeant && (
+                <div className="flex items-start gap-3">
+                  <User className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Dirigeant</p>
+                    <p className="text-sm">
+                      {toTitleCase(dirigeant.prenoms)} {toTitleCase(dirigeant.nom)}
+                      {dirigeant.qualite && ` — ${dirigeant.qualite}`}
+                    </p>
+                  </div>
+                </div>
+              )}
+
               {company.activite_principale && (
                 <div className="flex items-start gap-3">
                   <Building2 className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
@@ -221,12 +297,33 @@ export default function OnboardingCompanyPage() {
                 </div>
               )}
 
-              {company.nature_juridique && (
+              {legalLabel && (
                 <div className="flex items-start gap-3">
                   <Scale className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
                   <div>
                     <p className="text-xs text-muted-foreground">Forme juridique</p>
-                    <p className="text-sm">{company.nature_juridique}</p>
+                    <p className="text-sm">{legalLabel}</p>
+                  </div>
+                </div>
+              )}
+
+              {certifications.length > 0 && (
+                <div className="flex items-start gap-3">
+                  <Award className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
+                  <div>
+                    <p className="text-xs text-muted-foreground">Certifications</p>
+                    <div className="flex flex-wrap gap-1.5 mt-1">
+                      {certifications.map((cert, i) => (
+                        <Badge
+                          key={i}
+                          variant={cert.variant}
+                          title={cert.title}
+                          className={cert.prominent ? "text-xs px-2.5 py-1" : "text-xs"}
+                        >
+                          {cert.label}
+                        </Badge>
+                      ))}
+                    </div>
                   </div>
                 </div>
               )}
@@ -245,6 +342,7 @@ export default function OnboardingCompanyPage() {
                 onClick={() => {
                   setPhase("search");
                   setCompany(null);
+                  setResolvedSiret("");
                 }}
                 className="flex-1"
               >

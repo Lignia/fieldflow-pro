@@ -88,8 +88,7 @@ export function AuthGate({ children }: { children: React.ReactNode }) {
 
   // Authenticated but no tenant_id in JWT
   if (!tenantId) {
-    if (isOnboarding && pathname.startsWith("/onboarding/company")) return <>{children}</>;
-    if (isOnboarding) return <Navigate to="/onboarding/company" replace />;
+    if (isOnboarding) return <>{children}</>;
     if (isAuthRoute) return <Navigate to="/onboarding/company" replace />;
     if (isPublic) return <>{children}</>;
     return <Navigate to="/onboarding/company" replace />;

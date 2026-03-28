@@ -89,8 +89,17 @@ export default function OnboardingCompanyPage() {
 
     setLoading(true);
     try {
+      // Resolve full_name with cascade fallback
+      const { data: sessionData } = await supabase.auth.getSession();
+      const user = sessionData.session?.user;
+      const tempFullName =
+        user?.user_metadata?.full_name
+        ?? user?.user_metadata?.name
+        ?? user?.email?.split('@')[0]
+        ?? 'Utilisateur';
+
       const { data, error } = await supabase.functions.invoke("provision-tenant", {
-        body: {
+        body: JSON.stringify({
           company_name: company.nom_complet,
           siret,
           siren: company.siren,
@@ -101,7 +110,9 @@ export default function OnboardingCompanyPage() {
           legal_form: company.nature_juridique,
           staff_range: company.staff_range,
           company_created_at: company.company_created_at,
-        },
+          full_name: tempFullName,
+        }),
+        headers: { 'Content-Type': 'application/json' },
       });
 
       if (error) {

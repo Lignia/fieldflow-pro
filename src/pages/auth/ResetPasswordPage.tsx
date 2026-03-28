@@ -2,10 +2,11 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { AuthCard } from "@/components/auth/AuthCard";
+import { AuthLayout } from "@/components/auth/AuthLayout";
 import { PasswordInput } from "@/components/auth/PasswordInput";
 import { SubmitButton } from "@/components/auth/SubmitButton";
 import { Label } from "@/components/ui/label";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function ResetPasswordPage() {
   const [password, setPassword] = useState("");
@@ -47,36 +48,44 @@ export default function ResetPasswordPage() {
     }
 
     toast.success("Mot de passe mis à jour");
-    navigate("/auth/login");
+    navigate("/dashboard");
   };
 
   return (
-    <AuthCard title="Nouveau mot de passe" description="Choisissez un nouveau mot de passe pour votre compte">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="password">Nouveau mot de passe</Label>
-          <PasswordInput
-            id="password"
-            placeholder="8 caractères minimum"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            autoComplete="new-password"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="confirm">Confirmer le mot de passe</Label>
-          <PasswordInput
-            id="confirm"
-            placeholder="Confirmez votre mot de passe"
-            value={confirm}
-            onChange={(e) => setConfirm(e.target.value)}
-            required
-            autoComplete="new-password"
-          />
-        </div>
-        <SubmitButton loading={loading}>Mettre à jour</SubmitButton>
-      </form>
-    </AuthCard>
+    <AuthLayout>
+      <Card>
+        <CardHeader className="text-center">
+          <CardTitle className="text-xl">Nouveau mot de passe</CardTitle>
+          <CardDescription>Choisissez un nouveau mot de passe pour votre compte</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="password">Nouveau mot de passe</Label>
+              <PasswordInput
+                id="password"
+                placeholder="8 caractères minimum"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                autoComplete="new-password"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="confirm">Confirmer le mot de passe</Label>
+              <PasswordInput
+                id="confirm"
+                placeholder="Confirmez votre mot de passe"
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                required
+                autoComplete="new-password"
+              />
+            </div>
+            <SubmitButton loading={loading}>Mettre à jour</SubmitButton>
+          </form>
+        </CardContent>
+      </Card>
+    </AuthLayout>
   );
 }

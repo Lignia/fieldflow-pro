@@ -391,16 +391,12 @@ export default function OnboardingCompanyPage() {
                 </Button>
                 <Button
                   type="button"
-                  onClick={
-                    manualSiret.length === 14 && !manualName.trim()
-                      ? handleManualLookup
-                      : handleManualSubmit
-                  }
+                  onClick={manualName.trim() ? handleManualSubmit : handleManualLookup}
                   disabled={
                     manualSiret.length !== 14 ||
-                    (!manualName.trim() && !searching) === false
-                      ? manualSiret.length !== 14
-                      : true
+                    (manualName.trim()
+                      ? !manualPostal.trim() || !manualCity.trim()
+                      : searching)
                   }
                   className="flex-1"
                 >

@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
-const DEV_BYPASS = import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
+
 
 type CustomerType = "particulier" | "professionnel" | "collectivite";
 
@@ -76,17 +76,6 @@ export default function ClientCreate() {
   const handleSubmit = async () => {
     if (!validate()) return;
     setSaving(true);
-
-    if (DEV_BYPASS) {
-      const mockId = `mock-customer-${Date.now()}`;
-      toast.success(`Client ${name} créé (mode DEV)`);
-      if (redirectTo) {
-        navigate(`${redirectTo}?customer=${mockId}`);
-      } else {
-        navigate(`/clients/${mockId}`);
-      }
-      return;
-    }
 
     try {
       const { data: newCustomer, error: insertErr } = await coreDb.from("customers").insert({

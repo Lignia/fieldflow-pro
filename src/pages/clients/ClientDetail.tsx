@@ -22,7 +22,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
-const DEV_BYPASS = import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
+
 
 const ORIGIN_LABELS: Record<string, string> = {
   manual: "Manuel", phone: "Téléphone", web_form: "Formulaire web",
@@ -52,10 +52,6 @@ export default function ClientDetail() {
   };
 
   const handleArchive = async () => {
-    if (DEV_BYPASS) {
-      toast.success("Client archivé (mode DEV)");
-      return;
-    }
     if (!id) return;
     const { error: err } = await coreDb.from("customers").update({ status: "archived" }).eq("id", id);
     if (err) { toast.error("Erreur : " + err.message); return; }
@@ -354,14 +350,6 @@ function AddAddressSheet({ customerId, onSuccess }: { customerId: string; onSucc
       return;
     }
     setSaving(true);
-    if (DEV_BYPASS) {
-      toast.success("Adresse ajoutée (mode DEV)");
-      setOpen(false);
-      setForm({ address_line1: "", address_line2: "", postal_code: "", city: "", property_type: "house" });
-      onSuccess();
-      setSaving(false);
-      return;
-    }
     const { error } = await coreDb.from("properties").insert({
       customer_id: customerId,
       address_line1: form.address_line1.trim(),

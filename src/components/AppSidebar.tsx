@@ -9,9 +9,10 @@ import {
   Wrench,
   Flame,
   Package,
+  LogOut,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import {
   Sidebar,
   SidebarContent,
@@ -22,8 +23,16 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarHeader,
+  SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { UserAvatar } from "@/components/navigation/UserAvatar";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { supabase } from "@/integrations/supabase/client";
+import { toTitleCase } from "@/lib/format";
 
 const navSections = [
   {
@@ -67,10 +76,19 @@ export function AppSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
   const { pathname } = useLocation();
+  const navigate = useNavigate();
+  const { coreUser } = useCurrentUser();
+
+  const displayName = toTitleCase(coreUser?.full_name ?? "Utilisateur");
 
   const isActive = (route: string) =>
     pathname === route ||
     (route !== "/dashboard" && pathname.startsWith(route + "/"));
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate("/auth/login");
+  };
 
   return (
     <Sidebar collapsible="icon">
@@ -112,6 +130,53 @@ export function AppSidebar() {
           </SidebarGroup>
         ))}
       </SidebarContent>
+
+      <SidebarFooter className="p-3">
+        <Separator className="mb-3" />
+        <div className="flex items-center gap-3 px-1">
+          <UserAvatar name={displayName} />
+          {!collapsed && (
+            <div className="flex-1 min-w-0">
+              {coreUser ? (
+                <>
+                  <p className="text-sm font-medium text-sidebar-foreground truncate">
+                    {displayName}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {coreUser.email}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <Skeleton className="h-4 w-24 mb-1" />
+                  <Skeleton className="h-3 w-32" />
+                </>
+              )}
+            </div>
+          )}
+        </div>
+        {!collapsed && (
+          <Button
+            variant="ghost"
+            className="w-full justify-start mt-2 text-muted-foreground hover:text-foreground"
+            onClick={handleSignOut}
+          >
+            <LogOut className="h-4 w-4 mr-2" />
+            Se déconnecter
+          </Button>
+        )}
+        {collapsed && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="w-full mt-2 text-muted-foreground hover:text-foreground"
+            onClick={handleSignOut}
+            title="Se déconnecter"
+          >
+            <LogOut className="h-4 w-4" />
+          </Button>
+        )}
+      </SidebarFooter>
     </Sidebar>
   );
 }

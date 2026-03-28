@@ -77,16 +77,6 @@ export default function ProjectCreate() {
     if (!selectedCustomer || !newAddr.address_line1 || !newAddr.postal_code || !newAddr.city) return;
     setCreatingAddr(true);
 
-    if (import.meta.env.VITE_DEV_BYPASS_AUTH === "true") {
-      const fakeId = `mock-new-${Date.now()}`;
-      toast.success("Adresse ajoutée (mode DEV)");
-      setSelectedPropertyId(fakeId);
-      setShowNewAddress(false);
-      setNewAddr({ address_line1: "", address_line2: "", postal_code: "", city: "", property_type: "house" });
-      setCreatingAddr(false);
-      return;
-    }
-
     try {
       const { data, error } = await (coreDb as any)
         .from("properties")
@@ -124,12 +114,6 @@ export default function ProjectCreate() {
     if (Object.keys(newErrors).length > 0) return;
 
     setSubmitting(true);
-
-    if (import.meta.env.VITE_DEV_BYPASS_AUTH === "true") {
-      toast.success("Projet PRJ-0099 créé (mode DEV)");
-      navigate("/projects/mock-project-1");
-      return;
-    }
 
     try {
       const { data, error } = await (coreDb as any)

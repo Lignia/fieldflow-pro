@@ -1,13 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { billingDb } from "@/integrations/supabase/schema-clients";
-import { coreDb } from "@/integrations/supabase/schema-clients";
-import {
-  findMockQuote,
-  getMockLinesForQuote,
-  MOCK_ACTIVITIES,
-  MOCK_QUOTES,
-  MOCK_QUOTE_LINES,
-} from "@/mocks/data";
+import { billingDb, coreDb } from "@/integrations/supabase/schema-clients";
 
 export type UnitType = "u" | "m" | "m2" | "forfait" | "h";
 
@@ -95,46 +87,15 @@ interface UseQuoteDetailReturn {
   refetch: () => void;
 }
 
-const DEV_BYPASS = import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
-
-function buildMockQuoteDetail(quoteId: string): { quote: QuoteDetailData; lines: QuoteLine[]; activities: QuoteActivity[] } {
-  const q = findMockQuote(quoteId) ?? MOCK_QUOTES[0];
-  return {
-    quote: {
-      id: q.id,
-      quote_number: q.quote_number,
-      quote_kind: q.quote_kind,
-      quote_status: q.quote_status,
-      version_number: q.version_number,
-      quote_date: q.quote_date,
-      expiry_date: q.expiry_date,
-      sent_at: q.sent_at,
-      signed_at: q.signed_at,
-      total_ht: q.total_ht,
-      total_vat: q.total_vat,
-      total_ttc: q.total_ttc,
-      project_id: q.project_id,
-      previous_quote_id: q.previous_quote_id,
-      customer: q.customer as QuoteDetailCustomer,
-      property: q.property as QuoteDetailProperty,
-    },
-    lines: getMockLinesForQuote(q.id) as QuoteLine[],
-    activities: MOCK_ACTIVITIES as QuoteActivity[],
-  };
-}
-
 export function useQuoteDetail(quoteId: string | undefined): UseQuoteDetailReturn {
-  const isMock = DEV_BYPASS || (quoteId?.startsWith("mock-") ?? false);
-  const mockData = isMock && quoteId ? buildMockQuoteDetail(quoteId) : null;
-
-  const [quote, setQuote] = useState<QuoteDetailData | null>(mockData?.quote ?? null);
-  const [lines, setLines] = useState<QuoteLine[]>(mockData?.lines ?? []);
-  const [activities, setActivities] = useState<QuoteActivity[]>(mockData?.activities ?? []);
-  const [loading, setLoading] = useState(!isMock);
+  const [quote, setQuote] = useState<QuoteDetailData | null>(null);
+  const [lines, setLines] = useState<QuoteLine[]>([]);
+  const [activities, setActivities] = useState<QuoteActivity[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchQuote = useCallback(async () => {
-    if (isMock || !quoteId) return;
+    if (!quoteId) return;
     setLoading(true);
     setError(null);
 
@@ -224,19 +185,11 @@ export function useQuoteDetail(quoteId: string | undefined): UseQuoteDetailRetur
     } finally {
       setLoading(false);
     }
-  }, [quoteId, isMock]);
+  }, [quoteId]);
 
   useEffect(() => {
-    if (isMock && quoteId) {
-      const m = buildMockQuoteDetail(quoteId);
-      setQuote(m.quote);
-      setLines(m.lines);
-      setActivities(m.activities);
-      setLoading(false);
-      return;
-    }
-    if (!isMock) fetchQuote();
-  }, [fetchQuote, isMock, quoteId]);
+    fetchQuote();
+  }, [fetchQuote]);
 
   return { quote, lines, activities, loading, error, refetch: fetchQuote };
 }

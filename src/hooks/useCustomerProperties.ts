@@ -1,6 +1,5 @@
 import { useState, useEffect } from "react";
 import { coreDb } from "@/integrations/supabase/schema-clients";
-import { getMockPropertiesForCustomer } from "@/mocks/data";
 
 export interface Property {
   id: string;
@@ -19,12 +18,6 @@ export function useCustomerProperties(customerId: string | null) {
     if (!customerId) { setProperties([]); return; }
 
     setLoading(true);
-
-    if (import.meta.env.VITE_DEV_BYPASS_AUTH === "true") {
-      setProperties(getMockPropertiesForCustomer(customerId) as Property[]);
-      setLoading(false);
-      return;
-    }
 
     try {
       const { data, error } = await (coreDb as any)

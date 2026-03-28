@@ -1,12 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
 import { coreDb } from "@/integrations/supabase/schema-clients";
-import {
-  MOCK_CUSTOMERS,
-  findMockCustomer,
-  getMockPropertiesForCustomer,
-  getMockProjectsForCustomer,
-  getMockInstallationsForCustomer,
-} from "@/mocks/data";
 
 export interface ClientDetail {
   id: string;
@@ -58,42 +51,16 @@ interface UseClientDetailReturn {
   refetch: () => void;
 }
 
-const DEV_BYPASS = import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
-
-function getMockReturn(customerId: string): UseClientDetailReturn {
-  const c = findMockCustomer(customerId) ?? MOCK_CUSTOMERS[0];
-  const cid = c.id;
-  return {
-    customer: { ...c, payload: c.payload ?? {} } as ClientDetail,
-    properties: getMockPropertiesForCustomer(cid) as ClientProperty[],
-    projects: getMockProjectsForCustomer(cid).map((p) => ({
-      id: p.id,
-      project_number: p.project_number,
-      status: p.status,
-      created_at: p.created_at,
-      modified_at: p.modified_at,
-    })),
-    installations: getMockInstallationsForCustomer(cid) as ClientInstallation[],
-    loading: false,
-    error: null,
-    refetch: () => {},
-  };
-}
-
 export function useClientDetail(customerId: string | undefined): UseClientDetailReturn {
-  const isMock = DEV_BYPASS || (customerId?.startsWith("mock-") ?? false);
-
-  const mockReturn = isMock && customerId ? getMockReturn(customerId) : null;
-
-  const [customer, setCustomer] = useState<ClientDetail | null>(mockReturn?.customer ?? null);
-  const [properties, setProperties] = useState<ClientProperty[]>(mockReturn?.properties ?? []);
-  const [projects, setProjects] = useState<ClientProject[]>(mockReturn?.projects ?? []);
-  const [installations, setInstallations] = useState<ClientInstallation[]>(mockReturn?.installations ?? []);
-  const [loading, setLoading] = useState(!isMock);
+  const [customer, setCustomer] = useState<ClientDetail | null>(null);
+  const [properties, setProperties] = useState<ClientProperty[]>([]);
+  const [projects, setProjects] = useState<ClientProject[]>([]);
+  const [installations, setInstallations] = useState<ClientInstallation[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchAll = useCallback(async () => {
-    if (isMock || !customerId) return;
+    if (!customerId) return;
     setLoading(true);
     setError(null);
 
@@ -134,20 +101,11 @@ export function useClientDetail(customerId: string | undefined): UseClientDetail
     } finally {
       setLoading(false);
     }
-  }, [customerId, isMock]);
+  }, [customerId]);
 
   useEffect(() => {
-    if (isMock && customerId) {
-      const m = getMockReturn(customerId);
-      setCustomer(m.customer);
-      setProperties(m.properties);
-      setProjects(m.projects);
-      setInstallations(m.installations);
-      setLoading(false);
-      return;
-    }
     fetchAll();
-  }, [fetchAll, isMock, customerId]);
+  }, [fetchAll]);
 
   return { customer, properties, projects, installations, loading, error, refetch: fetchAll };
 }

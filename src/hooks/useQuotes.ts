@@ -1,6 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
 import { billingDb } from "@/integrations/supabase/schema-clients";
-import { MOCK_QUOTES as CENTRAL_MOCK_QUOTES } from "@/mocks/data";
 
 export type QuoteStatus = "draft" | "sent" | "signed" | "lost" | "expired" | "canceled";
 export type QuoteKind = "estimate" | "final" | "service";
@@ -67,35 +66,12 @@ interface UseQuotesReturn {
   refetch: () => void;
 }
 
-const DEV_BYPASS = import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
-
-const MOCK_QUOTES: Quote[] = CENTRAL_MOCK_QUOTES.map((q) => ({
-  id: q.id,
-  quote_number: q.quote_number,
-  quote_kind: q.quote_kind as QuoteKind,
-  quote_status: q.quote_status as QuoteStatus,
-  version_number: q.version_number,
-  quote_date: q.quote_date,
-  expiry_date: q.expiry_date,
-  total_ht: q.total_ht,
-  total_vat: q.total_vat,
-  total_ttc: q.total_ttc,
-  sent_at: q.sent_at,
-  signed_at: q.signed_at,
-  project_id: q.project_id,
-  service_request_id: q.service_request_id,
-  installation_id: q.installation_id,
-  customer: q.customer as QuoteCustomer,
-  property: q.property as QuoteProperty,
-}));
-
 export function useQuotes(): UseQuotesReturn {
-  const [quotes, setQuotes] = useState<Quote[]>(DEV_BYPASS ? MOCK_QUOTES : []);
-  const [loading, setLoading] = useState(!DEV_BYPASS);
+  const [quotes, setQuotes] = useState<Quote[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchQuotes = useCallback(async () => {
-    if (DEV_BYPASS) return;
     setLoading(true);
     setError(null);
 

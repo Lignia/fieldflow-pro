@@ -28,30 +28,12 @@ interface UseCurrentUserReturn {
   error: string | null;
 }
 
-const DEV_BYPASS = import.meta.env.VITE_DEV_BYPASS_AUTH === 'true';
-
-const DEV_RETURN: UseCurrentUserReturn = {
-  authUser: { id: 'dev-user-123', email: 'patrick@chaleur-bois.fr' } as any,
-  coreUser: {
-    id: 'dev-core-user-123',
-    tenant_id: 'dev-tenant-123',
-    role: 'admin',
-    full_name: 'Patrick Lefèvre',
-    email: 'patrick@chaleur-bois.fr',
-    is_active: true,
-  } as any,
-  tenantId: 'dev-tenant-123',
-  userRole: 'admin',
-  loading: false,
-  error: null,
-};
-
 export function useCurrentUser(): UseCurrentUserReturn {
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [coreUser, setCoreUser] = useState<CoreUser | null>(null);
   const [tenantId, setTenantId] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [loading, setLoading] = useState(!DEV_BYPASS);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const processingRef = useRef(false);
 
@@ -108,8 +90,6 @@ export function useCurrentUser(): UseCurrentUserReturn {
   }, []);
 
   useEffect(() => {
-    if (DEV_BYPASS) return;
-
     let subscription: { unsubscribe: () => void } | null = null;
 
     const setup = () => {
@@ -138,8 +118,6 @@ export function useCurrentUser(): UseCurrentUserReturn {
       window.removeEventListener("supabase-client-changed", handleClientChanged);
     };
   }, [processSession]);
-
-  if (DEV_BYPASS) return DEV_RETURN;
 
   return { authUser, coreUser, tenantId, userRole, loading, error };
 }

@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useLocation, useSearchParams } from "react-router-dom";
-import { ArrowLeft, User, Building2, Landmark } from "lucide-react";
+import { ArrowLeft, User, Building2, Landmark, ChevronDown } from "lucide-react";
 import { toast } from "sonner";
 
 import { coreDb } from "@/integrations/supabase/schema-clients";
@@ -9,8 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
-import { toTitleCase } from "@/lib/format";
 
 type CustomerType = "particulier" | "professionnel" | "collectivite";
 
@@ -21,7 +21,6 @@ const TYPE_OPTIONS: { value: CustomerType; label: string; icon: typeof User; des
 ];
 
 const ORIGINS: { value: string; label: string }[] = [
-  { value: "manual", label: "Manuel" },
   { value: "phone", label: "Téléphone" },
   { value: "web_form", label: "Formulaire web" },
   { value: "showroom", label: "Showroom" },
@@ -38,13 +37,21 @@ export default function ClientCreate() {
   const redirectTo = searchParams.get("redirect");
 
   const [customerType, setCustomerType] = useState<CustomerType>("particulier");
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [siret, setSiret] = useState("");
-  const [origin, setOrigin] = useState("manual");
 
-  // Optional address
+  // Particulier fields
+  const [civility, setCivility] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+
+  // Pro / collectivite
+  const [raisonSociale, setRaisonSociale] = useState("");
+
+  const [phone, setPhone] = useState("");
+  const [email, setEmail] = useState("");
+  const [siret, setSiret] = useState("");
+  const [origin, setOrigin] = useState("");
+
+  // Address
   const [addrLine1, setAddrLine1] = useState("");
   const [addrPostal, setAddrPostal] = useState("");
   const [addrCity, setAddrCity] = useState("");
@@ -52,6 +59,25 @@ export default function ClientCreate() {
 
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [moreOpen, setMoreOpen] = useState(false);
+
+  // Reset all fields on mount
+  useEffect(() => {
+    setCivility("");
+    setFirstName("");
+    setLastName("");
+    setRaisonSociale("");
+    setPhone("");
+    setEmail("");
+    setSiret("");
+    setOrigin("");
+    setAddrLine1("");
+    setAddrPostal("");
+    setAddrCity("");
+    setAddrType("house");
+  }, []);
+
+  const isParticulier = customerType === "particulier";
 
   const handleBack = () => {
     if (location.key !== "default") navigate(-1);
@@ -60,10 +86,15 @@ export default function ClientCreate() {
 
   const validate = (): boolean => {
     const e: Record<string, string> = {};
-    if (!name.trim()) e.name = "Le nom est obligatoire.";
+    if (isParticulier) {
+      if (!firstName.trim()) e.firstName = "Le prénom est obligatoire.";
+      if (!lastName.trim()) e.lastName = "Le nom est obligatoire.";
+    } else {
+      if (!raisonSociale.trim()) e.raisonSociale = "La raison sociale est obligatoire.";
+    }
+    if (!phone.trim()) e.phone = "Le téléphone est obligatoire.";
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = "Format email invalide.";
-    if (!origin) e.origin = "L'origine est obligatoire.";
-    // If partial address, require all fields
+
     const hasAddr = addrLine1.trim() || addrPostal.trim() || addrCity.trim();
     if (hasAddr) {
       if (!addrLine1.trim()) e.addrLine1 = "Adresse obligatoire.";
@@ -79,16 +110,35 @@ export default function ClientCreate() {
     setSaving(true);
 
     try {
+      let nameValue: string;
+      let payload: Record<string, unknown>;
+
+      if (isParticulier) {
+        const upperLast = lastName.trim().toUpperCase();
+        const trimFirst = firstName.trim();
+        const civ = civility || "";
+        nameValue = [civ, trimFirst, upperLast].filter(Boolean).join(" ");
+        payload = {
+          civility: civ,
+          first_name: trimFirst,
+          last_name: upperLast,
+          display_name: nameValue,
+        };
+      } else {
+        nameValue = raisonSociale.trim();
+        payload = { raison_sociale: nameValue };
+      }
+
       const { data: newCustomer, error: insertErr } = await coreDb.from("customers").insert({
         tenant_id: tenantId,
         customer_type: customerType,
-        name: toTitleCase(name.trim()),
+        name: nameValue,
         email: email.trim() || null,
         phone: phone.trim() || null,
         siret: siret.trim() || null,
         status: "prospect",
-        source_origin: origin,
-        payload: {},
+        source_origin: origin || "manual",
+        payload,
       }).select("id").single();
 
       if (insertErr || !newCustomer) {
@@ -97,7 +147,6 @@ export default function ClientCreate() {
         return;
       }
 
-      // Create property if address provided
       const hasAddr = addrLine1.trim() && addrPostal.trim() && addrCity.trim();
       if (hasAddr) {
         await coreDb.from("properties").insert({
@@ -110,7 +159,7 @@ export default function ClientCreate() {
         });
       }
 
-      toast.success(`Client ${name} créé`);
+      toast.success(`Client ${nameValue} créé`);
       if (redirectTo) {
         navigate(`${redirectTo}?customer=${newCustomer.id}`);
       } else {
@@ -123,7 +172,7 @@ export default function ClientCreate() {
   };
 
   return (
-    <div className="max-w-[640px] mx-auto space-y-6">
+    <div className="max-w-[640px] mx-auto space-y-6 pb-24">
       {/* Header */}
       <div>
         <Button variant="ghost" size="sm" onClick={handleBack} className="mb-2 -ml-2">
@@ -158,91 +207,144 @@ export default function ClientCreate() {
         </div>
       </div>
 
-      {/* Coordonnées */}
+      {/* Identity + Phone */}
       <Card>
         <CardContent className="pt-6 space-y-4">
           <h2 className="text-sm font-semibold">Coordonnées</h2>
-          <div>
-            <label className="text-sm font-medium">
-              {customerType === "particulier" ? "Nom complet" : "Raison sociale"} *
-            </label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex : M. Jean Morel" />
-            {errors.name && <p className="text-xs text-destructive mt-1">{errors.name}</p>}
-          </div>
-          <div className="grid grid-cols-2 gap-4">
+
+          {isParticulier ? (
+            <>
+              <div className="grid grid-cols-[100px_1fr_1fr] gap-3">
+                <div>
+                  <label className="text-sm font-medium">Civilité</label>
+                  <Select value={civility} onValueChange={setCivility}>
+                    <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="M.">M.</SelectItem>
+                      <SelectItem value="Mme">Mme</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Prénom *</label>
+                  <Input
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="Jean"
+                  />
+                  {errors.firstName && <p className="text-xs text-destructive mt-1">{errors.firstName}</p>}
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Nom *</label>
+                  <Input
+                    value={lastName.toUpperCase()}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="MOREL"
+                    className="uppercase"
+                  />
+                  {errors.lastName && <p className="text-xs text-destructive mt-1">{errors.lastName}</p>}
+                </div>
+              </div>
+            </>
+          ) : (
             <div>
-              <label className="text-sm font-medium">Email</label>
-              <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@exemple.fr" />
-              {errors.email && <p className="text-xs text-destructive mt-1">{errors.email}</p>}
-            </div>
-            <div>
-              <label className="text-sm font-medium">Téléphone</label>
-              <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="06 12 34 56 78" />
-            </div>
-          </div>
-          {customerType !== "particulier" && (
-            <div>
-              <label className="text-sm font-medium">SIRET</label>
-              <Input value={siret} onChange={(e) => setSiret(e.target.value)} placeholder="14 chiffres" maxLength={14} className="font-mono" />
+              <label className="text-sm font-medium">Raison sociale *</label>
+              <Input
+                value={raisonSociale}
+                onChange={(e) => setRaisonSociale(e.target.value)}
+                placeholder="Ex : Ambiance Chaleur"
+              />
+              {errors.raisonSociale && <p className="text-xs text-destructive mt-1">{errors.raisonSociale}</p>}
             </div>
           )}
-        </CardContent>
-      </Card>
 
-      {/* Origine */}
-      <Card>
-        <CardContent className="pt-6 space-y-4">
-          <h2 className="text-sm font-semibold">Origine du contact</h2>
-          <Select value={origin} onValueChange={setOrigin}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {ORIGINS.map((o) => (
-                <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {errors.origin && <p className="text-xs text-destructive mt-1">{errors.origin}</p>}
-        </CardContent>
-      </Card>
-
-      {/* Adresse optionnelle */}
-      <Card>
-        <CardContent className="pt-6 space-y-4">
-          <h2 className="text-sm font-semibold">Adresse principale <span className="text-muted-foreground font-normal">(optionnel)</span></h2>
           <div>
-            <label className="text-sm font-medium">Adresse</label>
-            <Input value={addrLine1} onChange={(e) => setAddrLine1(e.target.value)} placeholder="12 rue des Lilas" />
-            {errors.addrLine1 && <p className="text-xs text-destructive mt-1">{errors.addrLine1}</p>}
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-sm font-medium">Code postal</label>
-              <Input value={addrPostal} onChange={(e) => setAddrPostal(e.target.value)} placeholder="73000" />
-              {errors.addrPostal && <p className="text-xs text-destructive mt-1">{errors.addrPostal}</p>}
-            </div>
-            <div>
-              <label className="text-sm font-medium">Ville</label>
-              <Input value={addrCity} onChange={(e) => setAddrCity(e.target.value)} placeholder="Chambéry" />
-              {errors.addrCity && <p className="text-xs text-destructive mt-1">{errors.addrCity}</p>}
-            </div>
-          </div>
-          <div>
-            <label className="text-sm font-medium">Type</label>
-            <Select value={addrType} onValueChange={setAddrType}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="house">Maison</SelectItem>
-                <SelectItem value="apartment">Appartement</SelectItem>
-                <SelectItem value="commercial">Local commercial</SelectItem>
-                <SelectItem value="other">Autre</SelectItem>
-              </SelectContent>
-            </Select>
+            <label className="text-sm font-medium">Téléphone *</label>
+            <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="06 12 34 56 78" />
+            {errors.phone && <p className="text-xs text-destructive mt-1">{errors.phone}</p>}
           </div>
         </CardContent>
       </Card>
 
-      {/* Actions */}
-      <div className="flex justify-end gap-3 pb-8">
+      {/* Collapsible extra fields */}
+      <Collapsible open={moreOpen} onOpenChange={setMoreOpen}>
+        <CollapsibleTrigger asChild>
+          <Button variant="ghost" size="sm" className="w-full justify-between text-muted-foreground">
+            + Informations complémentaires
+            <ChevronDown className={cn("h-4 w-4 transition-transform", moreOpen && "rotate-180")} />
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent className="space-y-4 mt-2">
+          {/* Email */}
+          <Card>
+            <CardContent className="pt-6 space-y-4">
+              <div>
+                <label className="text-sm font-medium">Email</label>
+                <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@exemple.fr" />
+                {errors.email && <p className="text-xs text-destructive mt-1">{errors.email}</p>}
+              </div>
+
+              {!isParticulier && (
+                <div>
+                  <label className="text-sm font-medium">SIRET</label>
+                  <Input value={siret} onChange={(e) => setSiret(e.target.value)} placeholder="14 chiffres" maxLength={14} className="font-mono" />
+                </div>
+              )}
+
+              <div>
+                <label className="text-sm font-medium">Origine du contact</label>
+                <Select value={origin} onValueChange={setOrigin}>
+                  <SelectTrigger><SelectValue placeholder="Comment vous a-t-il connu ?" /></SelectTrigger>
+                  <SelectContent>
+                    {ORIGINS.map((o) => (
+                      <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Address */}
+          <Card>
+            <CardContent className="pt-6 space-y-4">
+              <h2 className="text-sm font-semibold">Adresse principale <span className="text-muted-foreground font-normal">(optionnel)</span></h2>
+              <div>
+                <label className="text-sm font-medium">Adresse</label>
+                <Input value={addrLine1} onChange={(e) => setAddrLine1(e.target.value)} placeholder="12 rue des Lilas" />
+                {errors.addrLine1 && <p className="text-xs text-destructive mt-1">{errors.addrLine1}</p>}
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-sm font-medium">Code postal</label>
+                  <Input value={addrPostal} onChange={(e) => setAddrPostal(e.target.value)} placeholder="73000" />
+                  {errors.addrPostal && <p className="text-xs text-destructive mt-1">{errors.addrPostal}</p>}
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Ville</label>
+                  <Input value={addrCity} onChange={(e) => setAddrCity(e.target.value)} placeholder="Chambéry" />
+                  {errors.addrCity && <p className="text-xs text-destructive mt-1">{errors.addrCity}</p>}
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium">Type</label>
+                <Select value={addrType} onValueChange={setAddrType}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="house">Maison</SelectItem>
+                    <SelectItem value="apartment">Appartement</SelectItem>
+                    <SelectItem value="commercial">Local commercial</SelectItem>
+                    <SelectItem value="other">Autre</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+        </CollapsibleContent>
+      </Collapsible>
+
+      {/* Sticky actions */}
+      <div className="sticky bottom-0 bg-background border-t py-4 flex justify-end gap-3 -mx-4 px-4">
         <Button variant="outline" onClick={handleBack}>Annuler</Button>
         <Button onClick={handleSubmit} disabled={userLoading || !tenantId || saving}>
           {saving ? "Création…" : "Créer le client"}

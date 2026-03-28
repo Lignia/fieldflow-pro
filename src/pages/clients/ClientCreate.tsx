@@ -83,7 +83,7 @@ export default function ClientCreate() {
       const { data: newCustomer, error: insertErr } = await coreDb.from("customers").insert({
         tenant_id: tenantId,
         customer_type: customerType,
-        name: name.trim(),
+        name: toTitleCase(name.trim()),
         email: email.trim() || null,
         phone: phone.trim() || null,
         siret: siret.trim() || null,

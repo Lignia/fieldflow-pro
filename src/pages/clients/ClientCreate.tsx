@@ -32,6 +32,7 @@ const ORIGINS: { value: string; label: string }[] = [
 ];
 
 export default function ClientCreate() {
+  const { tenantId } = useCurrentUser();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();

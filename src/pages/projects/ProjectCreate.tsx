@@ -38,6 +38,7 @@ const PROPERTY_TYPE_ICONS: Record<Property["property_type"], React.ReactNode> = 
 };
 
 export default function ProjectCreate() {
+  const { tenantId } = useCurrentUser();
   const navigate = useNavigate();
 
   // --- Customer search ---

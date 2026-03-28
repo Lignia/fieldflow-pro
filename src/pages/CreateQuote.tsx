@@ -94,6 +94,7 @@ function formatCurrency(n: number) {
 
 // ─── Component ──────────────────────────────────────────────────
 export default function CreateQuote() {
+  const { tenantId } = useCurrentUser();
   const navigate = useNavigate();
 
   // Form state

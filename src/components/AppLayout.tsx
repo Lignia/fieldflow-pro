@@ -21,7 +21,7 @@ import {
 export function AppLayout() {
   const navigate = useNavigate();
   const { coreUser } = useCurrentUser();
-  const displayName = toTitleCase(coreUser?.full_name ?? "Utilisateur");
+  const displayName = toTitleCase((coreUser?.full_name as string) ?? "Utilisateur");
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();

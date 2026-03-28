@@ -3,9 +3,31 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { MobileFAB } from "@/components/navigation/MobileFAB";
 import { AppBreadcrumb } from "@/components/navigation/AppBreadcrumb";
-import { Outlet } from "react-router-dom";
+import { UserAvatar } from "@/components/navigation/UserAvatar";
+import { Outlet, useNavigate } from "react-router-dom";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { supabase } from "@/integrations/supabase/client";
+import { toTitleCase } from "@/lib/format";
+import { LogOut } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function AppLayout() {
+  const navigate = useNavigate();
+  const { coreUser } = useCurrentUser();
+  const displayName = toTitleCase((coreUser?.full_name as string) ?? "Utilisateur");
+
+  const handleSignOut = async () => {
+    await supabase.auth.signOut();
+    navigate("/auth/login");
+  };
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full">
@@ -30,6 +52,30 @@ export function AppLayout() {
             </div>
             <div className="hidden md:flex">
               <AppBreadcrumb />
+            </div>
+
+            {/* Mobile user menu — right side */}
+            <div className="md:hidden ml-auto">
+              <DropdownMenu>
+                <DropdownMenuTrigger className="focus:outline-none">
+                  <UserAvatar name={displayName} size="sm" />
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel className="font-normal">
+                    <p className="text-sm font-medium">{displayName}</p>
+                    {coreUser?.email && (
+                      <p className="text-xs text-muted-foreground truncate">
+                        {coreUser.email}
+                      </p>
+                    )}
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleSignOut}>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Se déconnecter
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </header>
 

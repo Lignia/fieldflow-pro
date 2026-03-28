@@ -29,6 +29,7 @@ import SignupPage from "./pages/auth/SignupPage";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
 import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 import OnboardingCompanyPage from "./pages/onboarding/OnboardingCompanyPage";
+import OnboardingProfilePage from "./pages/onboarding/OnboardingProfilePage";
 import ProjectCreate from "./pages/projects/ProjectCreate";
 import { PlaceholderPage } from "./components/ui/PlaceholderPage";
 
@@ -51,6 +52,7 @@ const App = () => (
             <Route path="/auth/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
             <Route path="/onboarding/company" element={<OnboardingCompanyPage />} />
+            <Route path="/onboarding/profile" element={<OnboardingProfilePage />} />
 
             {/* Protected routes */}
             <Route element={<AppLayout />}>

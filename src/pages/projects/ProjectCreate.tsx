@@ -4,6 +4,7 @@ import { ArrowLeft, Search, X, Plus, Home, Building2, Store, MapPin, Check } fro
 import { toast } from "sonner";
 
 import { coreDb } from "@/integrations/supabase/schema-clients";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useCustomerSearch, type CustomerSearchResult } from "@/hooks/useCustomerSearch";
 import { useCustomerProperties, type Property } from "@/hooks/useCustomerProperties";
 import { CustomerBadge } from "@/components/CustomerBadge";
@@ -37,6 +38,7 @@ const PROPERTY_TYPE_ICONS: Record<Property["property_type"], React.ReactNode> = 
 };
 
 export default function ProjectCreate() {
+  const { tenantId } = useCurrentUser();
   const navigate = useNavigate();
 
   // --- Customer search ---
@@ -81,6 +83,7 @@ export default function ProjectCreate() {
       const { data, error } = await (coreDb as any)
         .from("properties")
         .insert({
+          tenant_id: tenantId,
           customer_id: selectedCustomer.id,
           address_line1: newAddr.address_line1,
           address_line2: newAddr.address_line2 || null,
@@ -119,6 +122,7 @@ export default function ProjectCreate() {
       const { data, error } = await (coreDb as any)
         .from("projects")
         .insert({
+          tenant_id: tenantId,
           customer_id: selectedCustomer!.id,
           property_id: selectedPropertyId,
           status: "lead_new",

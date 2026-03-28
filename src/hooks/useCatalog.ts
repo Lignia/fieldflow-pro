@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { catalogDb } from "@/integrations/supabase/schema-clients";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 export interface Catalog {
   id: string;
@@ -33,6 +34,7 @@ export interface NewItem {
 }
 
 export function useCatalog() {
+  const { tenantId } = useCurrentUser();
   const [catalogs, setCatalogs] = useState<Catalog[]>([]);
   const [items, setItems] = useState<CatalogItem[]>([]);
   const [selectedCatalogId, setSelectedCatalogId] = useState<string | null>(null);
@@ -93,7 +95,7 @@ export function useCatalog() {
   const createCatalog = async (name: string, catalogType: string) => {
     const { data, error: err } = await catalogDb
       .from("catalogs")
-      .insert({ name, catalog_type: catalogType, is_active: true })
+      .insert({ tenant_id: tenantId, name, catalog_type: catalogType, is_active: true })
       .select("id, name, catalog_type, is_active, tenant_id")
       .single();
     if (err) throw err;
@@ -105,6 +107,7 @@ export function useCatalog() {
     const { data, error: err } = await catalogDb
       .from("catalog_items")
       .insert({
+        tenant_id: tenantId,
         catalog_id: catalogId,
         name: item.name,
         sku: item.sku || null,

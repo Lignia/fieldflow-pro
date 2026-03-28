@@ -1,5 +1,6 @@
 import { useState, useCallback } from "react";
 import { billingDb, coreDb } from "@/integrations/supabase/schema-clients";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
 export interface QuoteLine {
   id: string;
@@ -40,6 +41,7 @@ interface NewLineInput {
 }
 
 export function useCreateQuote() {
+  const { tenantId } = useCurrentUser();
   const [quote, setQuote] = useState<QuoteSummary | null>(null);
   const [lines, setLines] = useState<QuoteLine[]>([]);
   const [saving, setSaving] = useState(false);
@@ -81,6 +83,7 @@ export function useCreateQuote() {
       const { data: newQuote, error: quoteErr } = await billingDb
         .from("quotes")
         .insert({
+          tenant_id: tenantId,
           project_id: projectId,
           customer_id: proj.customer_id,
           property_id: proj.property_id,
@@ -114,6 +117,7 @@ export function useCreateQuote() {
       const { error: err } = await billingDb
         .from("quote_lines")
         .insert({
+          tenant_id: tenantId,
           quote_id: quoteId,
           product_id: line.product_id || null,
           label: line.label,

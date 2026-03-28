@@ -10,6 +10,7 @@ import { toast } from "sonner";
 
 import { useClientDetail, ClientProperty } from "@/hooks/useClientDetail";
 import { coreDb } from "@/integrations/supabase/schema-clients";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { StatusBadge } from "@/components/StatusBadge";
 import { CustomerBadge } from "@/components/CustomerBadge";
 import { Button } from "@/components/ui/button";
@@ -340,6 +341,7 @@ export default function ClientDetail() {
 /* ─── Add Address Sheet ─── */
 
 function AddAddressSheet({ customerId, onSuccess }: { customerId: string; onSuccess: () => void }) {
+  const { tenantId } = useCurrentUser();
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ address_line1: "", address_line2: "", postal_code: "", city: "", property_type: "house" });
@@ -351,6 +353,7 @@ function AddAddressSheet({ customerId, onSuccess }: { customerId: string; onSucc
     }
     setSaving(true);
     const { error } = await coreDb.from("properties").insert({
+      tenant_id: tenantId,
       customer_id: customerId,
       address_line1: form.address_line1.trim(),
       address_line2: form.address_line2.trim() || null,

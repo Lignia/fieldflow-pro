@@ -4,6 +4,7 @@ import { ArrowLeft, User, Building2, Landmark } from "lucide-react";
 import { toast } from "sonner";
 
 import { coreDb } from "@/integrations/supabase/schema-clients";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -31,6 +32,7 @@ const ORIGINS: { value: string; label: string }[] = [
 ];
 
 export default function ClientCreate() {
+  const { tenantId } = useCurrentUser();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -79,6 +81,7 @@ export default function ClientCreate() {
 
     try {
       const { data: newCustomer, error: insertErr } = await coreDb.from("customers").insert({
+        tenant_id: tenantId,
         customer_type: customerType,
         name: name.trim(),
         email: email.trim() || null,
@@ -99,6 +102,7 @@ export default function ClientCreate() {
       const hasAddr = addrLine1.trim() && addrPostal.trim() && addrCity.trim();
       if (hasAddr) {
         await coreDb.from("properties").insert({
+          tenant_id: tenantId,
           customer_id: newCustomer.id,
           address_line1: addrLine1.trim(),
           postal_code: addrPostal.trim(),

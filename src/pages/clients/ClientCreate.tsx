@@ -32,7 +32,7 @@ const ORIGINS: { value: string; label: string }[] = [
 ];
 
 export default function ClientCreate() {
-  const { tenantId } = useCurrentUser();
+  const { tenantId, loading: userLoading } = useCurrentUser();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
@@ -245,7 +245,7 @@ export default function ClientCreate() {
       {/* Actions */}
       <div className="flex justify-end gap-3 pb-8">
         <Button variant="outline" onClick={handleBack}>Annuler</Button>
-        <Button onClick={handleSubmit} disabled={saving}>
+        <Button onClick={handleSubmit} disabled={userLoading || !tenantId || saving}>
           {saving ? "Création…" : "Créer le client"}
         </Button>
       </div>

@@ -102,14 +102,8 @@ export function useQuoteDetail(quoteId: string | undefined): UseQuoteDetailRetur
     try {
       const [quoteRes, linesRes, activitiesRes] = await Promise.all([
         billingDb
-          .from("quotes")
-          .select(
-            `id, quote_number, quote_kind, quote_status, quote_date, expiry_date,
-             sent_at, signed_at, version_number, previous_quote_id,
-             total_ht, total_vat, total_ttc, project_id,
-             customer:customer_id (id, name, email, phone),
-             property:property_id (id, address_line1, address_line2, city, postal_code)`
-          )
+          .from("v_quotes_with_customer")
+          .select("*")
           .eq("id", quoteId)
           .single(),
 
@@ -152,8 +146,8 @@ export function useQuoteDetail(quoteId: string | undefined): UseQuoteDetailRetur
         total_ttc: Number(q.total_ttc) || 0,
         project_id: q.project_id,
         previous_quote_id: q.previous_quote_id,
-        customer: q.customer ?? { id: "", name: "Client inconnu", email: null, phone: null },
-        property: q.property ?? null,
+        customer: { id: q.customer_id ?? "", name: q.customer_name ?? "Client inconnu", email: q.customer_email ?? null, phone: q.customer_phone ?? null },
+        property: q.property_id ? { id: q.property_id, address_line1: q.address_line1 ?? null, address_line2: q.address_line2 ?? null, city: q.city ?? null, postal_code: q.postal_code ?? null } : null,
       });
 
       setLines(

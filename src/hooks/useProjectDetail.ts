@@ -75,10 +75,8 @@ export function useProjectDetail(projectId: string | undefined): UseProjectDetai
     try {
       const [projectRes, quotesRes, invoicesRes] = await Promise.all([
         coreDb
-          .from("projects")
-          .select(
-            "id, project_number, status, origin, cancellation_reason, closed_at, created_at, modified_at, customer:customer_id(id, name, email, phone, customer_type), property:property_id(id, label, address_line1, address_line2, postal_code, city, property_type)"
-          )
+          .from("v_projects_with_customer")
+          .select("*")
           .eq("id", projectId)
           .single(),
 
@@ -111,8 +109,22 @@ export function useProjectDetail(projectId: string | undefined): UseProjectDetai
         closed_at: p.closed_at,
         created_at: p.created_at,
         modified_at: p.modified_at,
-        customer: p.customer ?? { id: "", name: "Client inconnu", email: null, phone: null, customer_type: "particulier" },
-        property: p.property ?? { id: "", label: null, address_line1: "—", address_line2: null, postal_code: "", city: "—", property_type: null },
+        customer: {
+          id: p.customer_id ?? "",
+          name: p.customer_name ?? "Client inconnu",
+          email: p.customer_email ?? null,
+          phone: p.customer_phone ?? null,
+          customer_type: p.customer_type ?? "particulier",
+        },
+        property: {
+          id: p.property_id ?? "",
+          label: p.property_label ?? null,
+          address_line1: p.address_line1 ?? "—",
+          address_line2: p.address_line2 ?? null,
+          postal_code: p.postal_code ?? "",
+          city: p.city ?? "—",
+          property_type: p.property_type ?? null,
+        },
         quotes: (quotesRes.data ?? []).map((q: any) => ({
           ...q,
           total_ttc: Number(q.total_ttc) || 0,

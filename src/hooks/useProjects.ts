@@ -75,8 +75,8 @@ export function useProjects(): UseProjectsReturn {
 
     try {
       let query = coreDb
-        .from("projects")
-        .select("id, project_number, status, origin, modified_at, created_at, customer:customer_id(name), property:property_id(city)")
+        .from("v_projects_with_customer")
+        .select("id, project_number, status, origin, modified_at, created_at, customer_name, city")
         .order("modified_at", { ascending: false })
         .limit(200);
 
@@ -98,8 +98,8 @@ export function useProjects(): UseProjectsReturn {
         project_number: p.project_number,
         status: p.status,
         origin: p.origin,
-        customer_name: p.customer?.name ?? "Client inconnu",
-        city: p.property?.city ?? "—",
+        customer_name: p.customer_name ?? "Client inconnu",
+        city: p.city ?? "—",
         created_at: p.created_at,
         modified_at: p.modified_at,
       }));

@@ -77,36 +77,8 @@ export function useQuotes(): UseQuotesReturn {
 
     try {
       const { data, error: fetchError } = await billingDb
-        .from("quotes")
-        .select(`
-          id,
-          quote_number,
-          quote_kind,
-          quote_status,
-          quote_date,
-          expiry_date,
-          total_ht,
-          total_vat,
-          total_ttc,
-          sent_at,
-          signed_at,
-          version_number,
-          project_id,
-          service_request_id,
-          installation_id,
-          customer:customer_id (
-            id,
-            name,
-            email,
-            phone
-          ),
-          property:property_id (
-            id,
-            address_line1,
-            city,
-            postal_code
-          )
-        `)
+        .from("v_quotes_with_customer")
+        .select("*")
         .order("created_at", { ascending: false });
 
       if (fetchError) {
@@ -130,8 +102,8 @@ export function useQuotes(): UseQuotesReturn {
         project_id: q.project_id ?? null,
         service_request_id: q.service_request_id ?? null,
         installation_id: q.installation_id ?? null,
-        customer: q.customer ?? null,
-        property: q.property ?? null,
+        customer: q.customer_name ? { id: q.customer_id ?? "", name: q.customer_name, email: q.customer_email ?? null, phone: q.customer_phone ?? null } : null,
+        property: q.property_id ? { id: q.property_id, address_line1: q.address_line1 ?? null, city: q.city ?? null, postal_code: q.postal_code ?? null } : null,
       }));
 
       setQuotes(mapped);

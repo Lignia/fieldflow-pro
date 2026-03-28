@@ -108,8 +108,8 @@ export function useDashboardKpis(): UseDashboardKpisReturn {
             .lt("due_date", thirtyDaysAgo),
 
           coreDb
-            .from("projects")
-            .select("id, project_number, status, modified_at, customer:customer_id(name)")
+            .from("v_projects_with_customer")
+            .select("id, project_number, status, modified_at, customer_name, city")
             .not("status", "in", "(closed,lost,cancelled)")
             .order("modified_at", { ascending: false })
             .limit(10),
@@ -175,7 +175,7 @@ export function useDashboardKpis(): UseDashboardKpisReturn {
           project_number: p.project_number,
           status: p.status,
           modified_at: p.modified_at,
-          customer_name: p.customer?.name ?? "Client inconnu",
+          customer_name: p.customer_name ?? "Client inconnu",
         })
       );
       setPipeline(pipelineProjects);

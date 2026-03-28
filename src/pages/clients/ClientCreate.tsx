@@ -10,8 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-
-
+import { toTitleCase } from "@/lib/format";
 
 type CustomerType = "particulier" | "professionnel" | "collectivite";
 

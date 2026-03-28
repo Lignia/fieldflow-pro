@@ -1,10 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate, useLocation, useSearchParams } from "react-router-dom";
 import { formatDistanceToNow, format, isPast, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
   ArrowLeft, Plus, MoreHorizontal, Mail, Phone, Hash,
-  MapPin, FolderKanban, Flame, Calendar, Building2, Home, Store
+  MapPin, FolderKanban, Flame, Calendar, Building2, Home, Store, FileText
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -46,6 +46,15 @@ export default function ClientDetail() {
   const activeTab = searchParams.get("tab") ?? "infos";
 
   const { customer, properties, projects, installations, loading, error, refetch } = useClientDetail(id);
+
+  // Keep breadcrumb in sync with customer name
+  useEffect(() => {
+    const label = loading ? "..." : (customer?.name ?? "Client introuvable");
+    window.history.replaceState(
+      { ...window.history.state, breadcrumb: label },
+      ""
+    );
+  }, [loading, customer?.name]);
 
   const handleBack = () => {
     if (location.key !== "default") navigate(-1);
@@ -119,8 +128,9 @@ export default function ClientDetail() {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => navigate(`/clients/${id}/edit`)}>
+                <DropdownMenuItem disabled>
                   Modifier
+                  <span className="ml-auto text-xs text-muted-foreground">Bientôt</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => navigate(`/service-requests/new?customer=${id}`)}
@@ -327,11 +337,11 @@ export default function ClientDetail() {
 
         {/* ── Documents ── */}
         <TabsContent value="documents" className="mt-4">
-          <Card className="p-8 text-center">
-            <p className="text-sm text-muted-foreground">
-              Les documents seront disponibles après génération des PDFs.
-            </p>
-          </Card>
+          <div className="text-center py-12 text-muted-foreground">
+            <FileText className="h-8 w-8 mx-auto mb-3 opacity-40" />
+            <p className="text-sm">Les documents générés apparaîtront ici.</p>
+            <p className="text-xs mt-1 opacity-70">Devis et factures PDF après génération.</p>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

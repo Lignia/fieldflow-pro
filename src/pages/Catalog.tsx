@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
 import { useCatalog, CatalogItem, NewItem } from "@/hooks/useCatalog";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +40,8 @@ export default function Catalog() {
     setSelectedCatalogId, loading, itemsLoading,
     createCatalog, createItem, updateItem, toggleItem,
   } = useCatalog();
+
+  const { tenantId, loading: userLoading } = useCurrentUser();
 
   const [search, setSearch] = useState("");
   const [itemModalOpen, setItemModalOpen] = useState(false);
@@ -127,7 +130,7 @@ export default function Catalog() {
         <div className="lg:col-span-4 xl:col-span-3 space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Mes catalogues</h2>
-            <Button size="sm" variant="outline" onClick={() => setCatalogModalOpen(true)}>
+            <Button size="sm" variant="outline" onClick={() => setCatalogModalOpen(true)} disabled={userLoading || !tenantId}>
               <Plus className="h-4 w-4 mr-1" /> Nouveau
             </Button>
           </div>
@@ -137,7 +140,7 @@ export default function Catalog() {
               <CardContent className="py-8 text-center">
                 <BookOpen className="h-10 w-10 mx-auto text-muted-foreground/40 mb-3" />
                 <p className="text-sm text-muted-foreground">Aucun catalogue</p>
-                <Button size="sm" variant="outline" className="mt-3" onClick={() => setCatalogModalOpen(true)}>
+                <Button size="sm" variant="outline" className="mt-3" onClick={() => setCatalogModalOpen(true)} disabled={userLoading || !tenantId}>
                   Créer un catalogue
                 </Button>
               </CardContent>

@@ -35,8 +35,9 @@ export interface ClientProject {
 
 export interface ClientInstallation {
   id: string;
-  appliance_label: string;
   installation_status: string;
+  device_type: string | null;
+  brand: string | null;
   next_sweep_date: string | null;
   created_at: string;
 }
@@ -83,8 +84,8 @@ export function useClientDetail(customerId: string | undefined): UseClientDetail
           .order("modified_at", { ascending: false })
           .limit(10),
         coreDb
-          .from("installations")
-          .select("id, appliance_label, installation_status, next_sweep_date, created_at")
+          .from("v_installations_with_customer")
+          .select("id, installation_status, device_type, brand, next_sweep_date, created_at")
           .eq("customer_id", customerId)
           .order("created_at", { ascending: false }),
       ]);

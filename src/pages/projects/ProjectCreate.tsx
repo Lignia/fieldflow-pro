@@ -19,14 +19,19 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 
-const ORIGINS = [
-  { value: "manual", label: "Manuel" },
-  { value: "phone", label: "Téléphone" },
-  { value: "web_form", label: "Site web" },
-  { value: "showroom", label: "Showroom" },
-  { value: "fair", label: "Salon / Foire" },
-  { value: "referral", label: "Recommandation" },
-  { value: "partner", label: "Partenaire" },
+const PROJECT_TYPES = [
+  { value: "installation_neuve", label: "Installation neuve" },
+  { value: "remplacement", label: "Remplacement d'appareil" },
+  { value: "renovation", label: "Rénovation / modification" },
+  { value: "entretien", label: "Entretien / ramonage" },
+  { value: "depannage", label: "Dépannage" },
+] as const;
+
+const HORIZONS = [
+  { value: "immediate", label: "Immédiat (< 1 mois)" },
+  { value: "lt_3months", label: "Court terme (1-3 mois)" },
+  { value: "3to6months", label: "Moyen terme (3-6 mois)" },
+  { value: "gt_6months", label: "Long terme (> 6 mois)" },
 ] as const;
 
 const PROPERTY_TYPE_LABELS: Record<Property["property_type"], string> = {
@@ -54,12 +59,13 @@ export default function ProjectCreate() {
   const [creatingAddr, setCreatingAddr] = useState(false);
 
   // --- Project info ---
-  const [origin, setOrigin] = useState("");
+  const [projectType, setProjectType] = useState("");
+  const [horizon, setHorizon] = useState("");
   const [notes, setNotes] = useState("");
 
   // --- Submission ---
   const [submitting, setSubmitting] = useState(false);
-  const [errors, setErrors] = useState<{ customer?: string; property?: string; origin?: string }>({});
+  const [errors, setErrors] = useState<{ customer?: string; property?: string; projectType?: string }>({});
 
   const selectCustomer = (c: CustomerSearchResult) => {
     setSelectedCustomer(c);
@@ -112,7 +118,7 @@ export default function ProjectCreate() {
     const newErrors: typeof errors = {};
     if (!selectedCustomer) newErrors.customer = "Veuillez sélectionner un client.";
     if (!selectedPropertyId) newErrors.property = "Veuillez sélectionner une adresse.";
-    if (!origin) newErrors.origin = "Veuillez sélectionner l'origine du contact.";
+    if (!projectType) newErrors.projectType = "Veuillez sélectionner le type de projet.";
     setErrors(newErrors);
     if (Object.keys(newErrors).length > 0) return;
 
@@ -127,8 +133,11 @@ export default function ProjectCreate() {
           property_id: selectedPropertyId,
           status: "lead_new",
           workstream: "project_installation",
-          origin,
-          payload: { notes: notes || "" },
+          payload: {
+            project_type: projectType,
+            ...(horizon ? { horizon } : {}),
+            notes: notes || "",
+          },
         })
         .select("id, project_number")
         .single();
@@ -313,16 +322,28 @@ export default function ProjectCreate() {
           <Label className="text-base font-semibold">Informations projet</Label>
 
           <div className="space-y-1.5">
-            <Label className="text-sm">Origine du contact</Label>
-            <Select value={origin} onValueChange={setOrigin}>
-              <SelectTrigger><SelectValue placeholder="Sélectionner l'origine…" /></SelectTrigger>
+            <Label className="text-sm">Type de projet *</Label>
+            <Select value={projectType} onValueChange={setProjectType}>
+              <SelectTrigger><SelectValue placeholder="Sélectionner le type…" /></SelectTrigger>
               <SelectContent>
-                {ORIGINS.map((o) => (
-                  <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>
+                {PROJECT_TYPES.map((t) => (
+                  <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
-            {errors.origin && <p className="text-sm text-destructive">{errors.origin}</p>}
+            {errors.projectType && <p className="text-sm text-destructive">{errors.projectType}</p>}
+          </div>
+
+          <div className="space-y-1.5">
+            <Label className="text-sm">Horizon projet</Label>
+            <Select value={horizon} onValueChange={setHorizon}>
+              <SelectTrigger><SelectValue placeholder="Sélectionner l'horizon…" /></SelectTrigger>
+              <SelectContent>
+                {HORIZONS.map((h) => (
+                  <SelectItem key={h.value} value={h.value}>{h.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-1.5">

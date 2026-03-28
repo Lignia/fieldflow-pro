@@ -307,7 +307,7 @@ export default function ClientDetail() {
                     <div className="flex items-center justify-between flex-wrap gap-2">
                       <div className="flex items-center gap-3">
                         <Flame className="h-4 w-4 text-muted-foreground" />
-                        <span className="font-medium text-sm">{inst.appliance_label}</span>
+                        <span className="font-medium text-sm">{[inst.brand, inst.device_type].filter(Boolean).join(" — ") || "Installation"}</span>
                         <StatusBadge status={inst.installation_status} type="installation" size="sm" />
                       </div>
                       <div className="text-xs text-muted-foreground flex items-center gap-2">

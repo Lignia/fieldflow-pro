@@ -99,6 +99,7 @@ export default function ProjectCreate() {
           id: data.id,
           name,
           email: data.email ?? "",
+          phone: "",
           customer_type: data.customer_type,
         });
         toast.success("Client rattaché automatiquement.");

@@ -56,6 +56,9 @@ const App = () => (
             <Route path="/onboarding/company" element={<OnboardingCompanyPage />} />
             <Route path="/onboarding/profile" element={<OnboardingProfilePage />} />
 
+            {/* Full-screen quote editor (outside AppLayout) */}
+            <Route path="/projects/:projectId/quotes/editor" element={<QuoteEditor />} />
+
             {/* Protected routes */}
             <Route element={<AppLayout />}>
               <Route path="/dashboard" element={<Dashboard />} />

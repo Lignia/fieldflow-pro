@@ -75,6 +75,7 @@ export function useCreateQuote() {
         .select("customer_id, property_id")
         .eq("id", projectId)
         .single();
+      console.log('PROJ:', { data: proj, error: projErr });
       if (projErr) throw projErr;
 
       const today = new Date();
@@ -96,6 +97,7 @@ export function useCreateQuote() {
         .select("id, quote_number, quote_kind, quote_status, quote_date, expiry_date, total_ht, total_vat, total_ttc, customer_id, property_id, project_id")
         .single();
 
+      console.log('QUOTE:', { data: newQuote, error: quoteErr });
       if (quoteErr) throw quoteErr;
       const q = newQuote as QuoteSummary;
       setQuote(q);
@@ -128,6 +130,7 @@ export function useCreateQuote() {
           sort_order: line.sort_order,
           metadata: {},
         });
+      console.log('LINE:', { error: err });
       if (err) throw err;
       await Promise.all([refetchQuote(quoteId), refetchLines(quoteId)]);
     } catch (err: any) {

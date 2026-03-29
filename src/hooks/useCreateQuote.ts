@@ -75,27 +75,24 @@ export function useCreateQuote() {
         .select("customer_id, property_id")
         .eq("id", projectId)
         .single();
-      console.log('PROJ:', { data: proj, error: projErr });
       if (projErr) throw projErr;
 
       const today = new Date();
       const expiry = new Date(today.getTime() + 30 * 86400000);
 
-      // --- DEBUG 403 START ---
-      const { data: { session } } = await (await import("@/integrations/supabase/client")).supabase.auth.getSession();
-      const jwtPayload = session?.access_token
-        ? JSON.parse(atob(session.access_token.split('.')[1]))
-        : null;
-      console.log('DEBUG_JWT:', {
-        jwtTenantId: jwtPayload?.tenant_id,
-        hookTenantId: tenantId,
-        match: jwtPayload?.tenant_id === tenantId,
-        userRole: jwtPayload?.user_role,
-        sub: jwtPayload?.sub,
-      });
+      // Resolve tenant_id: prefer hook value, fallback to JWT claim
+      let resolvedTenantId = tenantId;
+      if (!resolvedTenantId) {
+        const { data: { session } } = await (await import("@/integrations/supabase/client")).supabase.auth.getSession();
+        if (session?.access_token) {
+          const jwtPayload = JSON.parse(atob(session.access_token.split('.')[1]));
+          resolvedTenantId = jwtPayload?.tenant_id ?? null;
+        }
+      }
+      if (!resolvedTenantId) throw new Error("Impossible de déterminer le tenant. Veuillez vous reconnecter.");
 
       const insertPayload = {
-        tenant_id: tenantId,
+        tenant_id: resolvedTenantId,
         project_id: projectId,
         customer_id: proj.customer_id,
         property_id: proj.property_id,

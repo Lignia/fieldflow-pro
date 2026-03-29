@@ -233,16 +233,18 @@ export default function ClientDetail() {
                 ) : (
                   <div className="space-y-3">
                     {properties.map((p) => {
+                      const isBilling = p.label === "billing";
                       const pt = PROPERTY_TYPE_LABELS[p.property_type ?? "other"] ?? PROPERTY_TYPE_LABELS.other;
-                      const Icon = pt.icon;
+                      const Icon = isBilling ? FileText : pt.icon;
                       return (
                         <div key={p.id} className="flex items-start gap-3 text-sm">
                           <Icon className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
                           <div>
+                            {isBilling && <span className="text-xs font-medium text-muted-foreground">Facturation</span>}
                             <p>{p.address_line1}</p>
                             {p.address_line2 && <p className="text-muted-foreground">{p.address_line2}</p>}
                             <p className="text-muted-foreground">{p.postal_code} {p.city}</p>
-                            <span className="text-xs text-muted-foreground">{pt.label}</span>
+                            {!isBilling && <span className="text-xs text-muted-foreground">{pt.label}</span>}
                           </div>
                         </div>
                       );

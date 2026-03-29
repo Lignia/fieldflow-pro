@@ -18,6 +18,7 @@ import Planning from "./pages/Planning";
 import Quotes from "./pages/Quotes";
 import CreateQuote from "./pages/CreateQuote";
 import QuoteCreate from "./pages/quotes/QuoteCreate";
+import QuoteEditor from "./pages/quotes/QuoteEditor";
 import QuoteDetail from "./pages/QuoteDetail";
 import Invoices from "./pages/Invoices";
 import ServiceRequests from "./pages/ServiceRequests";
@@ -55,6 +56,9 @@ const App = () => (
             <Route path="/onboarding/company" element={<OnboardingCompanyPage />} />
             <Route path="/onboarding/profile" element={<OnboardingProfilePage />} />
 
+            {/* Full-screen quote editor (outside AppLayout) */}
+            <Route path="/projects/:projectId/quotes/editor" element={<QuoteEditor />} />
+
             {/* Protected routes */}
             <Route element={<AppLayout />}>
               <Route path="/dashboard" element={<Dashboard />} />
@@ -69,7 +73,7 @@ const App = () => (
               <Route path="/projects" element={<Projects />} />
               <Route path="/projects/new" element={<ProjectCreate />} />
               <Route path="/projects/:id" element={<ProjectDetail />} />
-              <Route path="/projects/:projectId/quotes/new" element={<QuoteCreate />} />
+              <Route path="/projects/:projectId/quotes/new" element={<QuoteEditor />} />
 
               {/* Technical surveys */}
               <Route path="/technical-surveys/new" element={<PlaceholderPage title="Nouveau relevé technique" backTo="/projects" backLabel="Projets" />} />

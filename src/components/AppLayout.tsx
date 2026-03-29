@@ -3,6 +3,7 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { MobileBottomNav } from "@/components/MobileBottomNav";
 import { MobileFAB } from "@/components/navigation/MobileFAB";
 import { AppBreadcrumb } from "@/components/navigation/AppBreadcrumb";
+import { SearchGlobal } from "@/components/SearchGlobal";
 import { UserAvatar } from "@/components/navigation/UserAvatar";
 import { Outlet, useNavigate } from "react-router-dom";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
@@ -54,8 +55,9 @@ export function AppLayout() {
               <AppBreadcrumb />
             </div>
 
-            {/* Mobile user menu — right side */}
-            <div className="md:hidden ml-auto">
+            {/* Mobile search + user menu — right side */}
+            <div className="md:hidden ml-auto flex items-center gap-1">
+              <SearchGlobal variant="mobile" />
               <DropdownMenu>
                 <DropdownMenuTrigger className="focus:outline-none">
                   <UserAvatar name={displayName} size="sm" />

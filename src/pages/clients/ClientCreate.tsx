@@ -52,18 +52,18 @@ export default function ClientCreate() {
   const [siret, setSiret] = useState("");
   const [origin, setOrigin] = useState("");
 
-  // Billing address (stored on customer)
-  const [billingLine1, setBillingLine1] = useState("");
-  const [billingPostal, setBillingPostal] = useState("");
-  const [billingCity, setBillingCity] = useState("");
-
-  // Intervention address (stored in properties)
-  const [diffAddr, setDiffAddr] = useState(false);
+  // Intervention address (primary — stored in properties)
   const [intLine1, setIntLine1] = useState("");
   const [intPostal, setIntPostal] = useState("");
   const [intCity, setIntCity] = useState("");
   const [intType, setIntType] = useState("house");
   const [intOccupant, setIntOccupant] = useState("");
+
+  // Billing address (secondary — stored on customer, only if different)
+  const [diffBilling, setDiffBilling] = useState(false);
+  const [billingLine1, setBillingLine1] = useState("");
+  const [billingPostal, setBillingPostal] = useState("");
+  const [billingCity, setBillingCity] = useState("");
 
   // Launch project immediately
   const [launchProject, setLaunchProject] = useState(false);
@@ -82,15 +82,15 @@ export default function ClientCreate() {
     setEmail("");
     setSiret("");
     setOrigin("");
-    setBillingLine1("");
-    setBillingPostal("");
-    setBillingCity("");
-    setDiffAddr(false);
     setIntLine1("");
     setIntPostal("");
     setIntCity("");
     setIntType("house");
     setIntOccupant("");
+    setDiffBilling(false);
+    setBillingLine1("");
+    setBillingPostal("");
+    setBillingCity("");
     setLaunchProject(false);
   }, []);
 
@@ -115,21 +115,21 @@ export default function ClientCreate() {
     if (!phone.trim()) e.phone = "Le téléphone est obligatoire.";
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = "Format email invalide.";
 
-    // Validate billing address if partially filled
-    const hasBilling = billingLine1.trim() || billingPostal.trim() || billingCity.trim();
-    if (hasBilling) {
-      if (!billingLine1.trim()) e.billingLine1 = "Adresse obligatoire.";
-      if (!billingPostal.trim()) e.billingPostal = "Code postal obligatoire.";
-      if (!billingCity.trim()) e.billingCity = "Ville obligatoire.";
+    // Validate intervention address if partially filled
+    const hasInt = intLine1.trim() || intPostal.trim() || intCity.trim();
+    if (hasInt) {
+      if (!intLine1.trim()) e.intLine1 = "Adresse obligatoire.";
+      if (!intPostal.trim()) e.intPostal = "Code postal obligatoire.";
+      if (!intCity.trim()) e.intCity = "Ville obligatoire.";
     }
 
-    // Validate intervention address if toggle is on and partially filled
-    if (diffAddr) {
-      const hasInt = intLine1.trim() || intPostal.trim() || intCity.trim();
-      if (hasInt) {
-        if (!intLine1.trim()) e.intLine1 = "Adresse obligatoire.";
-        if (!intPostal.trim()) e.intPostal = "Code postal obligatoire.";
-        if (!intCity.trim()) e.intCity = "Ville obligatoire.";
+    // Validate billing address if switch on and partially filled
+    if (diffBilling) {
+      const hasBilling = billingLine1.trim() || billingPostal.trim() || billingCity.trim();
+      if (hasBilling) {
+        if (!billingLine1.trim()) e.billingLine1 = "Adresse obligatoire.";
+        if (!billingPostal.trim()) e.billingPostal = "Code postal obligatoire.";
+        if (!billingCity.trim()) e.billingCity = "Ville obligatoire.";
       }
     }
 
@@ -161,11 +161,16 @@ export default function ClientCreate() {
         insertPayload.company_name = companyName.trim();
       }
 
-      // Billing address stored on customer columns
-      if (billingLine1.trim()) {
+      // Billing address on customer: if diffBilling use billing fields, else use intervention fields
+      if (diffBilling && billingLine1.trim()) {
         insertPayload.address_line1 = billingLine1.trim();
         insertPayload.postal_code = billingPostal.trim();
         insertPayload.city = billingCity.trim();
+      } else if (!diffBilling && intLine1.trim()) {
+        // Same address for both — store intervention addr as billing too
+        insertPayload.address_line1 = intLine1.trim();
+        insertPayload.postal_code = intPostal.trim();
+        insertPayload.city = intCity.trim();
       }
 
       const { data: newCustomer, error: insertErr } = await coreDb
@@ -181,23 +186,19 @@ export default function ClientCreate() {
         return;
       }
 
-      // Create property from the correct address source
+      // Create property from intervention address (always)
       let newPropertyId: string | null = null;
 
-      const propAddr = diffAddr
-        ? { line1: intLine1.trim(), postal: intPostal.trim(), city: intCity.trim() }
-        : { line1: billingLine1.trim(), postal: billingPostal.trim(), city: billingCity.trim() };
-
-      if (propAddr.line1 && propAddr.postal && propAddr.city) {
+      if (intLine1.trim() && intPostal.trim() && intCity.trim()) {
         const propPayload: Record<string, unknown> = {
           tenant_id: tenantId,
           customer_id: newCustomer.id,
-          address_line1: propAddr.line1,
-          postal_code: propAddr.postal,
-          city: propAddr.city,
-          property_type: diffAddr ? intType : "house",
+          address_line1: intLine1.trim(),
+          postal_code: intPostal.trim(),
+          city: intCity.trim(),
+          property_type: intType,
         };
-        if (diffAddr && intOccupant.trim()) {
+        if (intOccupant.trim()) {
           propPayload.payload = { occupant_name: intOccupant.trim() };
         }
         const { data: newProp } = await coreDb
@@ -220,10 +221,8 @@ export default function ClientCreate() {
       const displayName = (newCustomer as any).name ?? "Client";
       toast.success(`Client ${displayName} créé`);
 
-      if (launchProject) {
-        const params = new URLSearchParams({ customer_id: newCustomer.id });
-        if (newPropertyId) params.set("property_id", newPropertyId);
-        navigate(`/projects/new?${params.toString()}`);
+      if (launchProject && newPropertyId) {
+        navigate(`/projects/new?customer=${newCustomer.id}&property=${newPropertyId}`);
       } else if (redirectTo) {
         navigate(`${redirectTo}?customer=${newCustomer.id}`);
       } else {
@@ -369,99 +368,106 @@ export default function ClientCreate() {
             </CardContent>
           </Card>
 
-          {/* Billing Address */}
+          {/* Intervention Address (primary) */}
           <Card>
             <CardContent className="pt-6 space-y-4">
               <h2 className="text-sm font-semibold">
-                Adresse de facturation
+                Lieu d'intervention
                 <span className="text-muted-foreground font-normal ml-1">(optionnel)</span>
               </h2>
               <div className="flex items-start gap-2 rounded-md bg-muted/50 p-3">
                 <Info className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
                 <p className="text-xs text-muted-foreground">
-                  L'adresse de facturation figurera sur les documents légaux.
                   L'adresse d'intervention servira au planning et aux certificats.
+                  L'adresse de facturation figurera sur les documents légaux.
                 </p>
               </div>
               <div>
                 <label className="text-sm font-medium">Adresse</label>
-                <Input value={billingLine1} onChange={(e) => setBillingLine1(e.target.value)} placeholder="12 rue des Lilas" />
-                {errors.billingLine1 && <p className="text-xs text-destructive mt-1">{errors.billingLine1}</p>}
+                <Input value={intLine1} onChange={(e) => setIntLine1(e.target.value)} placeholder="8 impasse du Chêne" />
+                {errors.intLine1 && <p className="text-xs text-destructive mt-1">{errors.intLine1}</p>}
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-sm font-medium">Code postal</label>
-                  <Input value={billingPostal} onChange={(e) => setBillingPostal(e.target.value)} placeholder="73000" />
-                  {errors.billingPostal && <p className="text-xs text-destructive mt-1">{errors.billingPostal}</p>}
+                  <Input value={intPostal} onChange={(e) => setIntPostal(e.target.value)} placeholder="73000" />
+                  {errors.intPostal && <p className="text-xs text-destructive mt-1">{errors.intPostal}</p>}
                 </div>
                 <div>
                   <label className="text-sm font-medium">Ville</label>
-                  <Input value={billingCity} onChange={(e) => setBillingCity(e.target.value)} placeholder="Chambéry" />
-                  {errors.billingCity && <p className="text-xs text-destructive mt-1">{errors.billingCity}</p>}
+                  <Input value={intCity} onChange={(e) => setIntCity(e.target.value)} placeholder="Chambéry" />
+                  {errors.intCity && <p className="text-xs text-destructive mt-1">{errors.intCity}</p>}
                 </div>
               </div>
+              <div>
+                <label className="text-sm font-medium">Type de bien</label>
+                <Select value={intType} onValueChange={setIntType}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="house">Maison</SelectItem>
+                    <SelectItem value="apartment">Appartement</SelectItem>
+                    <SelectItem value="commercial">Local commercial</SelectItem>
+                    <SelectItem value="other">Autre</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <label className="text-sm font-medium">Nom de l'occupant / Locataire</label>
+                  <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                </div>
+                <Input
+                  value={intOccupant}
+                  onChange={(e) => setIntOccupant(e.target.value)}
+                  placeholder="Ex : M. Dupont (locataire)"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Utile pour le SAV et les certificats de ramonage.
+                </p>
+              </div>
 
-              {/* Toggle: different intervention address */}
+              {/* Toggle: different billing address */}
               <div className="flex items-center justify-between pt-2 border-t">
-                <label htmlFor="diff-addr" className="text-sm font-medium cursor-pointer">
-                  L'adresse d'intervention est différente
+                <label htmlFor="diff-billing" className="text-sm font-medium cursor-pointer">
+                  L'adresse de facturation est différente
                 </label>
                 <Switch
-                  id="diff-addr"
-                  checked={diffAddr}
-                  onCheckedChange={setDiffAddr}
+                  id="diff-billing"
+                  checked={diffBilling}
+                  onCheckedChange={(checked) => {
+                    setDiffBilling(checked);
+                    if (!checked) {
+                      setBillingLine1("");
+                      setBillingPostal("");
+                      setBillingCity("");
+                    }
+                  }}
                 />
               </div>
             </CardContent>
           </Card>
 
-          {/* Intervention Address (conditional) */}
-          {diffAddr && (
+          {/* Billing Address (conditional) */}
+          {diffBilling && (
             <Card>
               <CardContent className="pt-6 space-y-4">
-                <h2 className="text-sm font-semibold">Lieu d'intervention</h2>
+                <h2 className="text-sm font-semibold">Adresse de facturation</h2>
                 <div>
                   <label className="text-sm font-medium">Adresse</label>
-                  <Input value={intLine1} onChange={(e) => setIntLine1(e.target.value)} placeholder="8 impasse du Chêne" />
-                  {errors.intLine1 && <p className="text-xs text-destructive mt-1">{errors.intLine1}</p>}
+                  <Input value={billingLine1} onChange={(e) => setBillingLine1(e.target.value)} placeholder="12 rue des Lilas" />
+                  {errors.billingLine1 && <p className="text-xs text-destructive mt-1">{errors.billingLine1}</p>}
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-sm font-medium">Code postal</label>
-                    <Input value={intPostal} onChange={(e) => setIntPostal(e.target.value)} placeholder="73000" />
-                    {errors.intPostal && <p className="text-xs text-destructive mt-1">{errors.intPostal}</p>}
+                    <Input value={billingPostal} onChange={(e) => setBillingPostal(e.target.value)} placeholder="73000" />
+                    {errors.billingPostal && <p className="text-xs text-destructive mt-1">{errors.billingPostal}</p>}
                   </div>
                   <div>
                     <label className="text-sm font-medium">Ville</label>
-                    <Input value={intCity} onChange={(e) => setIntCity(e.target.value)} placeholder="Chambéry" />
-                    {errors.intCity && <p className="text-xs text-destructive mt-1">{errors.intCity}</p>}
+                    <Input value={billingCity} onChange={(e) => setBillingCity(e.target.value)} placeholder="Chambéry" />
+                    {errors.billingCity && <p className="text-xs text-destructive mt-1">{errors.billingCity}</p>}
                   </div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Type de bien</label>
-                  <Select value={intType} onValueChange={setIntType}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="house">Maison</SelectItem>
-                      <SelectItem value="apartment">Appartement</SelectItem>
-                      <SelectItem value="commercial">Local commercial</SelectItem>
-                      <SelectItem value="other">Autre</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <label className="text-sm font-medium">Nom de l'occupant / Locataire</label>
-                    <Info className="h-3.5 w-3.5 text-muted-foreground" />
-                  </div>
-                  <Input
-                    value={intOccupant}
-                    onChange={(e) => setIntOccupant(e.target.value)}
-                    placeholder="Ex : M. Dupont (locataire)"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Utile pour le SAV et les certificats de ramonage.
-                  </p>
                 </div>
               </CardContent>
             </Card>

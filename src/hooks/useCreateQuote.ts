@@ -81,23 +81,40 @@ export function useCreateQuote() {
       const today = new Date();
       const expiry = new Date(today.getTime() + 30 * 86400000);
 
+      // --- DEBUG 403 START ---
+      const { data: { session } } = await (await import("@/integrations/supabase/client")).supabase.auth.getSession();
+      const jwtPayload = session?.access_token
+        ? JSON.parse(atob(session.access_token.split('.')[1]))
+        : null;
+      console.log('DEBUG_JWT:', {
+        jwtTenantId: jwtPayload?.tenant_id,
+        hookTenantId: tenantId,
+        match: jwtPayload?.tenant_id === tenantId,
+        userRole: jwtPayload?.user_role,
+        sub: jwtPayload?.sub,
+      });
+
+      const insertPayload = {
+        tenant_id: tenantId,
+        project_id: projectId,
+        customer_id: proj.customer_id,
+        property_id: proj.property_id,
+        quote_kind: quoteKind,
+        quote_status: "draft",
+        quote_date: today.toISOString().split("T")[0],
+        expiry_date: expiry.toISOString().split("T")[0],
+        version_number: 1,
+      };
+      console.log('QUOTES_INSERT_PAYLOAD:', insertPayload);
+      // --- DEBUG 403 END ---
+
       const { data: newQuote, error: quoteErr } = await billingDb
         .from("quotes")
-        .insert({
-          tenant_id: tenantId,
-          project_id: projectId,
-          customer_id: proj.customer_id,
-          property_id: proj.property_id,
-          quote_kind: quoteKind,
-          quote_status: "draft",
-          quote_date: today.toISOString().split("T")[0],
-          expiry_date: expiry.toISOString().split("T")[0],
-          version_number: 1,
-        })
+        .insert(insertPayload)
         .select("id, quote_number, quote_kind, quote_status, quote_date, expiry_date, total_ht, total_vat, total_ttc, customer_id, property_id, project_id")
         .single();
 
-      console.log('QUOTE:', { data: newQuote, error: quoteErr });
+      console.log('QUOTES_INSERT_RESULT:', { data: newQuote, error: quoteErr, errorDetails: quoteErr ? JSON.stringify(quoteErr) : null });
       if (quoteErr) throw quoteErr;
       const q = newQuote as QuoteSummary;
       setQuote(q);

@@ -52,18 +52,18 @@ export default function ClientCreate() {
   const [siret, setSiret] = useState("");
   const [origin, setOrigin] = useState("");
 
-  // Billing address (stored on customer)
-  const [billingLine1, setBillingLine1] = useState("");
-  const [billingPostal, setBillingPostal] = useState("");
-  const [billingCity, setBillingCity] = useState("");
-
-  // Intervention address (stored in properties)
-  const [diffAddr, setDiffAddr] = useState(false);
+  // Intervention address (primary — stored in properties)
   const [intLine1, setIntLine1] = useState("");
   const [intPostal, setIntPostal] = useState("");
   const [intCity, setIntCity] = useState("");
   const [intType, setIntType] = useState("house");
   const [intOccupant, setIntOccupant] = useState("");
+
+  // Billing address (secondary — stored on customer, only if different)
+  const [diffBilling, setDiffBilling] = useState(false);
+  const [billingLine1, setBillingLine1] = useState("");
+  const [billingPostal, setBillingPostal] = useState("");
+  const [billingCity, setBillingCity] = useState("");
 
   // Launch project immediately
   const [launchProject, setLaunchProject] = useState(false);
@@ -82,15 +82,15 @@ export default function ClientCreate() {
     setEmail("");
     setSiret("");
     setOrigin("");
-    setBillingLine1("");
-    setBillingPostal("");
-    setBillingCity("");
-    setDiffAddr(false);
     setIntLine1("");
     setIntPostal("");
     setIntCity("");
     setIntType("house");
     setIntOccupant("");
+    setDiffBilling(false);
+    setBillingLine1("");
+    setBillingPostal("");
+    setBillingCity("");
     setLaunchProject(false);
   }, []);
 

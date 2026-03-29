@@ -10,6 +10,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 
 type CustomerType = "particulier" | "professionnel" | "collectivite";
@@ -26,7 +27,6 @@ const ORIGINS: { value: string; label: string }[] = [
   { value: "showroom", label: "Showroom" },
   { value: "fair", label: "Salon / Foire" },
   { value: "referral", label: "Recommandation" },
-  { value: "partner", label: "Partenaire" },
 ];
 
 export default function ClientCreate() {
@@ -44,7 +44,7 @@ export default function ClientCreate() {
   const [lastName, setLastName] = useState("");
 
   // Pro / collectivite
-  const [raisonSociale, setRaisonSociale] = useState("");
+  const [companyName, setCompanyName] = useState("");
 
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -57,6 +57,9 @@ export default function ClientCreate() {
   const [addrCity, setAddrCity] = useState("");
   const [addrType, setAddrType] = useState("house");
 
+  // Launch project immediately
+  const [launchProject, setLaunchProject] = useState(false);
+
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [moreOpen, setMoreOpen] = useState(false);
@@ -66,7 +69,7 @@ export default function ClientCreate() {
     setCivility("");
     setFirstName("");
     setLastName("");
-    setRaisonSociale("");
+    setCompanyName("");
     setPhone("");
     setEmail("");
     setSiret("");
@@ -75,9 +78,13 @@ export default function ClientCreate() {
     setAddrPostal("");
     setAddrCity("");
     setAddrType("house");
+    setLaunchProject(false);
   }, []);
 
   const isParticulier = customerType === "particulier";
+
+  const toInitcap = (s: string) =>
+    s.toLowerCase().replace(/\b\w/g, (c) => c.toUpperCase());
 
   const handleBack = () => {
     if (location.key !== "default") navigate(-1);
@@ -90,7 +97,7 @@ export default function ClientCreate() {
       if (!firstName.trim()) e.firstName = "Le prénom est obligatoire.";
       if (!lastName.trim()) e.lastName = "Le nom est obligatoire.";
     } else {
-      if (!raisonSociale.trim()) e.raisonSociale = "La raison sociale est obligatoire.";
+      if (!companyName.trim()) e.companyName = "La raison sociale est obligatoire.";
     }
     if (!phone.trim()) e.phone = "Le téléphone est obligatoire.";
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = "Format email invalide.";
@@ -110,36 +117,31 @@ export default function ClientCreate() {
     setSaving(true);
 
     try {
-      let nameValue: string;
-      let payload: Record<string, unknown>;
-
-      if (isParticulier) {
-        const upperLast = lastName.trim().toUpperCase();
-        const trimFirst = firstName.trim();
-        const civ = civility || "";
-        nameValue = [civ, trimFirst, upperLast].filter(Boolean).join(" ");
-        payload = {
-          civility: civ,
-          first_name: trimFirst,
-          last_name: upperLast,
-          display_name: nameValue,
-        };
-      } else {
-        nameValue = raisonSociale.trim();
-        payload = { raison_sociale: nameValue };
-      }
-
-      const { data: newCustomer, error: insertErr } = await coreDb.from("customers").insert({
+      const insertPayload: Record<string, unknown> = {
         tenant_id: tenantId,
         customer_type: customerType,
-        name: nameValue,
         email: email.trim() || null,
         phone: phone.trim() || null,
         siret: siret.trim() || null,
         status: "prospect",
         source_origin: origin || "manual",
-        payload,
-      }).select("id").single();
+      };
+
+      if (isParticulier) {
+        insertPayload.civility = civility || null;
+        insertPayload.first_name = toInitcap(firstName.trim());
+        insertPayload.last_name = lastName.trim().toUpperCase();
+      } else {
+        insertPayload.company_name = companyName.trim();
+      }
+
+      // Do NOT send `name` — handled by SQL trigger
+
+      const { data: newCustomer, error: insertErr } = await coreDb
+        .from("customers")
+        .insert(insertPayload)
+        .select("id, name")
+        .single();
 
       if (insertErr || !newCustomer) {
         toast.error("Erreur : " + (insertErr?.message ?? "Création impossible"));
@@ -159,8 +161,12 @@ export default function ClientCreate() {
         });
       }
 
-      toast.success(`Client ${nameValue} créé`);
-      if (redirectTo) {
+      const displayName = (newCustomer as any).name ?? "Client";
+      toast.success(`Client ${displayName} créé`);
+
+      if (launchProject) {
+        navigate(`/projects/new?customer=${newCustomer.id}`);
+      } else if (redirectTo) {
         navigate(`${redirectTo}?customer=${newCustomer.id}`);
       } else {
         navigate(`/clients/${newCustomer.id}`);
@@ -213,48 +219,46 @@ export default function ClientCreate() {
           <h2 className="text-sm font-semibold">Coordonnées</h2>
 
           {isParticulier ? (
-            <>
-              <div className="grid grid-cols-[100px_1fr_1fr] gap-3">
-                <div>
-                  <label className="text-sm font-medium">Civilité</label>
-                  <Select value={civility} onValueChange={setCivility}>
-                    <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="M.">M.</SelectItem>
-                      <SelectItem value="Mme">Mme</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Prénom *</label>
-                  <Input
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    placeholder="Jean"
-                  />
-                  {errors.firstName && <p className="text-xs text-destructive mt-1">{errors.firstName}</p>}
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Nom *</label>
-                  <Input
-                    value={lastName.toUpperCase()}
-                    onChange={(e) => setLastName(e.target.value)}
-                    placeholder="MOREL"
-                    className="uppercase"
-                  />
-                  {errors.lastName && <p className="text-xs text-destructive mt-1">{errors.lastName}</p>}
-                </div>
+            <div className="grid grid-cols-[100px_1fr_1fr] gap-3">
+              <div>
+                <label className="text-sm font-medium">Civilité</label>
+                <Select value={civility} onValueChange={setCivility}>
+                  <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="M.">M.</SelectItem>
+                    <SelectItem value="Mme">Mme</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            </>
+              <div>
+                <label className="text-sm font-medium">Prénom *</label>
+                <Input
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  placeholder="Jean"
+                />
+                {errors.firstName && <p className="text-xs text-destructive mt-1">{errors.firstName}</p>}
+              </div>
+              <div>
+                <label className="text-sm font-medium">Nom *</label>
+                <Input
+                  value={lastName.toUpperCase()}
+                  onChange={(e) => setLastName(e.target.value)}
+                  placeholder="MOREL"
+                  className="uppercase"
+                />
+                {errors.lastName && <p className="text-xs text-destructive mt-1">{errors.lastName}</p>}
+              </div>
+            </div>
           ) : (
             <div>
               <label className="text-sm font-medium">Raison sociale *</label>
               <Input
-                value={raisonSociale}
-                onChange={(e) => setRaisonSociale(e.target.value)}
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
                 placeholder="Ex : Ambiance Chaleur"
               />
-              {errors.raisonSociale && <p className="text-xs text-destructive mt-1">{errors.raisonSociale}</p>}
+              {errors.companyName && <p className="text-xs text-destructive mt-1">{errors.companyName}</p>}
             </div>
           )}
 
@@ -266,24 +270,25 @@ export default function ClientCreate() {
         </CardContent>
       </Card>
 
-      {/* Collapsible extra fields */}
+      {/* Collapsible: Préparer le dossier */}
       <Collapsible open={moreOpen} onOpenChange={setMoreOpen}>
         <CollapsibleTrigger asChild>
           <Button variant="ghost" size="sm" className="w-full justify-between text-muted-foreground">
-            + Informations complémentaires
+            + Préparer le dossier
             <ChevronDown className={cn("h-4 w-4 transition-transform", moreOpen && "rotate-180")} />
           </Button>
         </CollapsibleTrigger>
         <CollapsibleContent className="space-y-4 mt-2">
-          {/* Email */}
           <Card>
             <CardContent className="pt-6 space-y-4">
+              {/* Email */}
               <div>
                 <label className="text-sm font-medium">Email</label>
                 <Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="email@exemple.fr" />
                 {errors.email && <p className="text-xs text-destructive mt-1">{errors.email}</p>}
               </div>
 
+              {/* SIRET for pros */}
               {!isParticulier && (
                 <div>
                   <label className="text-sm font-medium">SIRET</label>
@@ -291,6 +296,7 @@ export default function ClientCreate() {
                 </div>
               )}
 
+              {/* Origine du contact */}
               <div>
                 <label className="text-sm font-medium">Origine du contact</label>
                 <Select value={origin} onValueChange={setOrigin}>
@@ -340,6 +346,18 @@ export default function ClientCreate() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Launch project checkbox */}
+          <div className="flex items-center gap-2 px-1">
+            <Checkbox
+              id="launch-project"
+              checked={launchProject}
+              onCheckedChange={(checked) => setLaunchProject(checked === true)}
+            />
+            <label htmlFor="launch-project" className="text-sm font-medium cursor-pointer">
+              Lancer un projet immédiatement
+            </label>
+          </div>
         </CollapsibleContent>
       </Collapsible>
 

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { billingDb } from "@/integrations/supabase/schema-clients";
+import { billingDb, coreDb } from "@/integrations/supabase/schema-clients";
 
 export type QuoteStatus = "draft" | "sent" | "signed" | "lost" | "expired" | "canceled";
 export type QuoteKind = "estimate" | "final" | "service";

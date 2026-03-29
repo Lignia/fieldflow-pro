@@ -113,7 +113,9 @@ export default function QuoteDetail() {
   const { coreUser } = useCurrentUser();
   const { quote, lines, activities, loading, error, refetch } = useQuoteDetail(id);
   const [showDelete, setShowDelete] = useState(false);
+  const [showSignConfirm, setShowSignConfirm] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
+  const { signQuote, signing } = useSignQuote();
 
   if (error && !loading) {
     toast.error(error, { id: "quote-detail-error" });
@@ -283,16 +285,17 @@ export default function QuoteDetail() {
               <>
                 <Button
                   size="sm"
-                  disabled={transitioning}
-                  onClick={() => transitionStatus("signed")}
+                  variant="success"
+                  disabled={transitioning || signing}
+                  onClick={() => setShowSignConfirm(true)}
                 >
                   <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
-                  Marquer signé
+                  Marquer comme signé
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
-                  disabled={transitioning}
+                  disabled={transitioning || signing}
                   onClick={() => transitionStatus("lost")}
                 >
                   <XCircle className="h-3.5 w-3.5 mr-1" />

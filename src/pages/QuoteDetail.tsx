@@ -24,6 +24,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { billingDb } from "@/integrations/supabase/schema-clients";
 import { useQuoteDetail, UNIT_LABELS, type QuoteActivity } from "@/hooks/useQuoteDetail";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { useSignQuote } from "@/hooks/useSignQuote";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";

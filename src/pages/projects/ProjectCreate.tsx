@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Search, X, Plus, Home, Building2, Store, MapPin, Check } from "lucide-react";
 import { toast } from "sonner";
 
@@ -45,10 +45,15 @@ const PROPERTY_TYPE_ICONS: Record<Property["property_type"], React.ReactNode> = 
 export default function ProjectCreate() {
   const { tenantId, loading: userLoading } = useCurrentUser();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  const urlCustomerId = searchParams.get("customer_id");
+  const urlPropertyId = searchParams.get("property_id");
 
   // --- Customer search ---
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedCustomer, setSelectedCustomer] = useState<CustomerSearchResult | null>(null);
+  const [isLoadingClient, setIsLoadingClient] = useState(false);
   const { results: customerResults, loading: searchLoading } = useCustomerSearch(searchTerm);
 
   // --- Properties ---
@@ -66,6 +71,57 @@ export default function ProjectCreate() {
   // --- Submission ---
   const [submitting, setSubmitting] = useState(false);
   const [errors, setErrors] = useState<{ customer?: string; property?: string; projectType?: string }>({});
+
+  // --- Pre-fill from URL params ---
+  useEffect(() => {
+    if (!urlCustomerId) return;
+    setIsLoadingClient(true);
+
+    (async () => {
+      try {
+        const { data, error } = await (coreDb as any)
+          .from("customers")
+          .select("id, first_name, last_name, company_name, civility, customer_type, email")
+          .eq("id", urlCustomerId)
+          .maybeSingle();
+
+        if (error || !data) {
+          toast.error("Client introuvable");
+          setIsLoadingClient(false);
+          return;
+        }
+
+        const name = data.customer_type === "particulier"
+          ? [data.civility, data.first_name, data.last_name].filter(Boolean).join(" ")
+          : data.company_name || "Client";
+
+        setSelectedCustomer({
+          id: data.id,
+          name,
+          email: data.email ?? "",
+          phone: "",
+          customer_type: data.customer_type,
+        });
+        toast.success("Client rattaché automatiquement.");
+      } catch {
+        toast.error("Erreur lors du chargement du client");
+      } finally {
+        setIsLoadingClient(false);
+      }
+    })();
+  }, [urlCustomerId]);
+
+  // Pre-select property from URL after properties load
+  useEffect(() => {
+    if (urlPropertyId && properties.length > 0 && !selectedPropertyId) {
+      const match = properties.find((p) => p.id === urlPropertyId);
+      if (match) {
+        setSelectedPropertyId(match.id);
+      }
+    }
+  }, [urlPropertyId, properties, selectedPropertyId]);
+
+  const isCustomerLocked = !!urlCustomerId && !!selectedCustomer;
 
   const selectCustomer = (c: CustomerSearchResult) => {
     setSelectedCustomer(c);
@@ -157,8 +213,20 @@ export default function ProjectCreate() {
       <div className="mx-auto max-w-[680px] px-4 py-8 space-y-8">
         {/* Header */}
         <div className="space-y-1">
-          <Button variant="ghost" size="sm" className="gap-1.5 -ml-2 text-muted-foreground" onClick={() => navigate("/projects")}>
-            <ArrowLeft className="h-4 w-4" /> Projets
+          <Button
+            variant="ghost"
+            size="sm"
+            className="gap-1.5 -ml-2 text-muted-foreground"
+            onClick={() => {
+              if (urlCustomerId) {
+                navigate(`/clients/${urlCustomerId}`);
+              } else {
+                navigate("/projects");
+              }
+            }}
+          >
+            <ArrowLeft className="h-4 w-4" />
+            {urlCustomerId ? "Retour à la fiche client" : "Annuler"}
           </Button>
           <h1 className="text-2xl font-bold tracking-tight text-foreground">Nouveau projet</h1>
         </div>
@@ -167,7 +235,17 @@ export default function ProjectCreate() {
         <section className="space-y-3">
           <Label className="text-base font-semibold">Client</Label>
 
-          {selectedCustomer ? (
+          {isLoadingClient ? (
+            <Card>
+              <CardContent className="flex items-center gap-3 p-4">
+                <Skeleton className="h-9 w-9 rounded-full" />
+                <div className="space-y-1.5 flex-1">
+                  <Skeleton className="h-4 w-2/3" />
+                  <Skeleton className="h-3 w-1/3" />
+                </div>
+              </CardContent>
+            </Card>
+          ) : selectedCustomer ? (
             <Card className="border-accent/30 bg-accent/5">
               <CardContent className="flex items-center justify-between p-4">
                 <div className="flex items-center gap-3">
@@ -180,9 +258,11 @@ export default function ProjectCreate() {
                   </div>
                   <CustomerBadge customerType={selectedCustomer.customer_type} />
                 </div>
-                <Button variant="ghost" size="icon" onClick={clearCustomer} className="text-muted-foreground hover:text-destructive">
-                  <X className="h-4 w-4" />
-                </Button>
+                {!isCustomerLocked && (
+                  <Button variant="ghost" size="icon" onClick={clearCustomer} className="text-muted-foreground hover:text-destructive">
+                    <X className="h-4 w-4" />
+                  </Button>
+                )}
               </CardContent>
             </Card>
           ) : (

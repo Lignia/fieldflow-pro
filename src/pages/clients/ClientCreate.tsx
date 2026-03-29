@@ -438,7 +438,10 @@ export default function ClientCreate() {
                   </Select>
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Nom de l'occupant / Locataire</label>
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <label className="text-sm font-medium">Nom de l'occupant / Locataire</label>
+                    <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                  </div>
                   <Input
                     value={intOccupant}
                     onChange={(e) => setIntOccupant(e.target.value)}

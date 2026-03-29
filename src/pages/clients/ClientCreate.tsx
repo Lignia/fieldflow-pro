@@ -181,37 +181,49 @@ export default function ClientCreate() {
         return;
       }
 
-      // Intervention address → properties table
-      if (diffAddr && intLine1.trim() && intPostal.trim() && intCity.trim()) {
+      // Create property from the correct address source
+      let newPropertyId: string | null = null;
+
+      const propAddr = diffAddr
+        ? { line1: intLine1.trim(), postal: intPostal.trim(), city: intCity.trim() }
+        : { line1: billingLine1.trim(), postal: billingPostal.trim(), city: billingCity.trim() };
+
+      if (propAddr.line1 && propAddr.postal && propAddr.city) {
         const propPayload: Record<string, unknown> = {
           tenant_id: tenantId,
           customer_id: newCustomer.id,
-          address_line1: intLine1.trim(),
-          postal_code: intPostal.trim(),
-          city: intCity.trim(),
-          property_type: intType,
+          address_line1: propAddr.line1,
+          postal_code: propAddr.postal,
+          city: propAddr.city,
+          property_type: diffAddr ? intType : "house",
         };
-        if (intOccupant.trim()) {
+        if (diffAddr && intOccupant.trim()) {
           propPayload.payload = { occupant_name: intOccupant.trim() };
         }
-        await coreDb.from("properties").insert(propPayload);
-      } else if (!diffAddr && billingLine1.trim()) {
-        // Same address for both — also create a property for intervention
-        await coreDb.from("properties").insert({
-          tenant_id: tenantId,
-          customer_id: newCustomer.id,
-          address_line1: billingLine1.trim(),
-          postal_code: billingPostal.trim(),
-          city: billingCity.trim(),
-          property_type: "house",
-        });
+        const { data: newProp } = await coreDb
+          .from("properties")
+          .insert(propPayload)
+          .select("id")
+          .single();
+        if (newProp) newPropertyId = newProp.id;
       }
+
+      // Log activity on timeline
+      await coreDb.from("activities").insert({
+        tenant_id: tenantId,
+        scope_type: "customer",
+        scope_id: newCustomer.id,
+        activity_type: "creation",
+        payload: { message: "Fiche client créée initialement", source: "App" },
+      });
 
       const displayName = (newCustomer as any).name ?? "Client";
       toast.success(`Client ${displayName} créé`);
 
       if (launchProject) {
-        navigate(`/projects/new?customer=${newCustomer.id}`);
+        const params = new URLSearchParams({ customer_id: newCustomer.id });
+        if (newPropertyId) params.set("property_id", newPropertyId);
+        navigate(`/projects/new?${params.toString()}`);
       } else if (redirectTo) {
         navigate(`${redirectTo}?customer=${newCustomer.id}`);
       } else {

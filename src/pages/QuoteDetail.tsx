@@ -218,6 +218,46 @@ export default function QuoteDetail() {
         </AlertDialogContent>
       </AlertDialog>
 
+      {/* Sign confirmation */}
+      <AlertDialog open={showSignConfirm} onOpenChange={setShowSignConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Confirmer la signature</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-3">
+                <p>Le client a signé ce devis.</p>
+                <p>Cette action va créer automatiquement :</p>
+                <ul className="list-disc pl-5 space-y-1 text-sm">
+                  <li>une facture d'acompte (30%)</li>
+                  <li>une installation à compléter</li>
+                </ul>
+                <p>Le client sera converti en client actif.</p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={signing}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={signing}
+              className="bg-accent text-accent-foreground hover:bg-accent/90"
+              onClick={async (e) => {
+                e.preventDefault();
+                const result = await signQuote(quote!.id);
+                if (result) {
+                  toast.success(`Devis signé — facture d'acompte ${result.invoice_number} créée`);
+                  setShowSignConfirm(false);
+                  refetch();
+                } else {
+                  toast.error("Erreur lors de la signature");
+                }
+              }}
+            >
+              {signing ? "Signature en cours…" : "Confirmer la signature"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* ── Header ── */}
       <div>
         <Button variant="ghost" size="sm" className="mb-4 -ml-2" onClick={() => navigate("/quotes")}>

@@ -248,14 +248,14 @@ function Dropdown({
               key={c.id}
               className={cn(
                 "flex items-center gap-2.5 px-3 py-2 cursor-pointer text-sm hover:bg-accent/50 transition-colors",
-                activeIdx === i && "bg-accent text-accent-foreground"
+                activeIdx === i && "bg-accent"
               )}
               onMouseDown={() => onSelect(c.id)}
               onMouseEnter={() => {}}
             >
               <UserAvatar name={displayName(c)} size="sm" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{displayName(c)}</p>
+                <p className="text-sm font-medium truncate text-popover-foreground">{displayName(c)}</p>
                 {c.phone && <p className="text-xs text-muted-foreground truncate">{c.phone}</p>}
               </div>
               <Badge variant={c.status === "active" ? "default" : "outline"} className="text-[10px] shrink-0">

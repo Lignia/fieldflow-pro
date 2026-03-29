@@ -67,7 +67,7 @@ export default function ClientCreate() {
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // Reset all fields on mount
+  // Reset all fields on mount + pre-fill from ?q
   useEffect(() => {
     setCivility("M.");
     setFirstName("");
@@ -88,7 +88,23 @@ export default function ClientCreate() {
     setBillingCity("");
     setLaunchProject(false);
     setStatusType("prospect");
-  }, []);
+
+    // Pre-fill from search query param
+    const params = new URLSearchParams(location.search);
+    const q = params.get("q") ?? "";
+    if (q.trim()) {
+      const mots = q.trim().split(/\s+/).filter(Boolean);
+      if (mots.length === 1) {
+        setFirstName(mots[0]);
+      } else if (mots.length === 2) {
+        setFirstName(mots[0]);
+        setLastName(mots[1].toUpperCase());
+      } else if (mots.length >= 3) {
+        setFirstName(mots[0]);
+        setLastName(mots.slice(1).join(" ").toUpperCase());
+      }
+    }
+  }, [location.search]);
 
   const isParticulier = customerType === "particulier";
 

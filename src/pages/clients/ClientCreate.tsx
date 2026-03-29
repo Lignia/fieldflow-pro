@@ -368,99 +368,106 @@ export default function ClientCreate() {
             </CardContent>
           </Card>
 
-          {/* Billing Address */}
+          {/* Intervention Address (primary) */}
           <Card>
             <CardContent className="pt-6 space-y-4">
               <h2 className="text-sm font-semibold">
-                Adresse de facturation
+                Lieu d'intervention
                 <span className="text-muted-foreground font-normal ml-1">(optionnel)</span>
               </h2>
               <div className="flex items-start gap-2 rounded-md bg-muted/50 p-3">
                 <Info className="h-4 w-4 text-muted-foreground mt-0.5 shrink-0" />
                 <p className="text-xs text-muted-foreground">
-                  L'adresse de facturation figurera sur les documents légaux.
                   L'adresse d'intervention servira au planning et aux certificats.
+                  L'adresse de facturation figurera sur les documents légaux.
                 </p>
               </div>
               <div>
                 <label className="text-sm font-medium">Adresse</label>
-                <Input value={billingLine1} onChange={(e) => setBillingLine1(e.target.value)} placeholder="12 rue des Lilas" />
-                {errors.billingLine1 && <p className="text-xs text-destructive mt-1">{errors.billingLine1}</p>}
+                <Input value={intLine1} onChange={(e) => setIntLine1(e.target.value)} placeholder="8 impasse du Chêne" />
+                {errors.intLine1 && <p className="text-xs text-destructive mt-1">{errors.intLine1}</p>}
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="text-sm font-medium">Code postal</label>
-                  <Input value={billingPostal} onChange={(e) => setBillingPostal(e.target.value)} placeholder="73000" />
-                  {errors.billingPostal && <p className="text-xs text-destructive mt-1">{errors.billingPostal}</p>}
+                  <Input value={intPostal} onChange={(e) => setIntPostal(e.target.value)} placeholder="73000" />
+                  {errors.intPostal && <p className="text-xs text-destructive mt-1">{errors.intPostal}</p>}
                 </div>
                 <div>
                   <label className="text-sm font-medium">Ville</label>
-                  <Input value={billingCity} onChange={(e) => setBillingCity(e.target.value)} placeholder="Chambéry" />
-                  {errors.billingCity && <p className="text-xs text-destructive mt-1">{errors.billingCity}</p>}
+                  <Input value={intCity} onChange={(e) => setIntCity(e.target.value)} placeholder="Chambéry" />
+                  {errors.intCity && <p className="text-xs text-destructive mt-1">{errors.intCity}</p>}
                 </div>
               </div>
+              <div>
+                <label className="text-sm font-medium">Type de bien</label>
+                <Select value={intType} onValueChange={setIntType}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="house">Maison</SelectItem>
+                    <SelectItem value="apartment">Appartement</SelectItem>
+                    <SelectItem value="commercial">Local commercial</SelectItem>
+                    <SelectItem value="other">Autre</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <div className="flex items-center gap-1.5 mb-1">
+                  <label className="text-sm font-medium">Nom de l'occupant / Locataire</label>
+                  <Info className="h-3.5 w-3.5 text-muted-foreground" />
+                </div>
+                <Input
+                  value={intOccupant}
+                  onChange={(e) => setIntOccupant(e.target.value)}
+                  placeholder="Ex : M. Dupont (locataire)"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Utile pour le SAV et les certificats de ramonage.
+                </p>
+              </div>
 
-              {/* Toggle: different intervention address */}
+              {/* Toggle: different billing address */}
               <div className="flex items-center justify-between pt-2 border-t">
-                <label htmlFor="diff-addr" className="text-sm font-medium cursor-pointer">
-                  L'adresse d'intervention est différente
+                <label htmlFor="diff-billing" className="text-sm font-medium cursor-pointer">
+                  L'adresse de facturation est différente
                 </label>
                 <Switch
-                  id="diff-addr"
-                  checked={diffAddr}
-                  onCheckedChange={setDiffAddr}
+                  id="diff-billing"
+                  checked={diffBilling}
+                  onCheckedChange={(checked) => {
+                    setDiffBilling(checked);
+                    if (!checked) {
+                      setBillingLine1("");
+                      setBillingPostal("");
+                      setBillingCity("");
+                    }
+                  }}
                 />
               </div>
             </CardContent>
           </Card>
 
-          {/* Intervention Address (conditional) */}
-          {diffAddr && (
+          {/* Billing Address (conditional) */}
+          {diffBilling && (
             <Card>
               <CardContent className="pt-6 space-y-4">
-                <h2 className="text-sm font-semibold">Lieu d'intervention</h2>
+                <h2 className="text-sm font-semibold">Adresse de facturation</h2>
                 <div>
                   <label className="text-sm font-medium">Adresse</label>
-                  <Input value={intLine1} onChange={(e) => setIntLine1(e.target.value)} placeholder="8 impasse du Chêne" />
-                  {errors.intLine1 && <p className="text-xs text-destructive mt-1">{errors.intLine1}</p>}
+                  <Input value={billingLine1} onChange={(e) => setBillingLine1(e.target.value)} placeholder="12 rue des Lilas" />
+                  {errors.billingLine1 && <p className="text-xs text-destructive mt-1">{errors.billingLine1}</p>}
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-sm font-medium">Code postal</label>
-                    <Input value={intPostal} onChange={(e) => setIntPostal(e.target.value)} placeholder="73000" />
-                    {errors.intPostal && <p className="text-xs text-destructive mt-1">{errors.intPostal}</p>}
+                    <Input value={billingPostal} onChange={(e) => setBillingPostal(e.target.value)} placeholder="73000" />
+                    {errors.billingPostal && <p className="text-xs text-destructive mt-1">{errors.billingPostal}</p>}
                   </div>
                   <div>
                     <label className="text-sm font-medium">Ville</label>
-                    <Input value={intCity} onChange={(e) => setIntCity(e.target.value)} placeholder="Chambéry" />
-                    {errors.intCity && <p className="text-xs text-destructive mt-1">{errors.intCity}</p>}
+                    <Input value={billingCity} onChange={(e) => setBillingCity(e.target.value)} placeholder="Chambéry" />
+                    {errors.billingCity && <p className="text-xs text-destructive mt-1">{errors.billingCity}</p>}
                   </div>
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Type de bien</label>
-                  <Select value={intType} onValueChange={setIntType}>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="house">Maison</SelectItem>
-                      <SelectItem value="apartment">Appartement</SelectItem>
-                      <SelectItem value="commercial">Local commercial</SelectItem>
-                      <SelectItem value="other">Autre</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <div className="flex items-center gap-1.5 mb-1">
-                    <label className="text-sm font-medium">Nom de l'occupant / Locataire</label>
-                    <Info className="h-3.5 w-3.5 text-muted-foreground" />
-                  </div>
-                  <Input
-                    value={intOccupant}
-                    onChange={(e) => setIntOccupant(e.target.value)}
-                    placeholder="Ex : M. Dupont (locataire)"
-                  />
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Utile pour le SAV et les certificats de ramonage.
-                  </p>
                 </div>
               </CardContent>
             </Card>

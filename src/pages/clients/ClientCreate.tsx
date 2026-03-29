@@ -472,23 +472,25 @@ export default function ClientCreate() {
       </Card>
 
       {/* Next action radio */}
-      <div className="space-y-2 px-1">
-        <Label className="text-sm font-medium text-foreground">Après la création</Label>
-        <RadioGroup value={nextAction} onValueChange={(v) => setNextAction(v as 'none' | 'project' | 'sav')}>
-          <div className="flex items-center gap-2">
-            <RadioGroupItem value="none" id="action-none" />
-            <Label htmlFor="action-none" className="font-normal cursor-pointer">Créer la fiche uniquement</Label>
-          </div>
-          <div className="flex items-center gap-2">
-            <RadioGroupItem value="project" id="action-project" />
-            <Label htmlFor="action-project" className="font-normal cursor-pointer">Ouvrir un projet d'installation</Label>
-          </div>
-          <div className="flex items-center gap-2">
-            <RadioGroupItem value="sav" id="action-sav" />
-            <Label htmlFor="action-sav" className="font-normal cursor-pointer">Ouvrir une demande SAV</Label>
-          </div>
-        </RadioGroup>
-      </div>
+      <Card>
+        <CardContent className="pt-5 space-y-3">
+          <h2 className="text-sm font-semibold">Action après création</h2>
+          <RadioGroup value={nextAction} onValueChange={(v) => setNextAction(v as 'none' | 'project' | 'sav')}>
+            <div className="flex items-center gap-2">
+              <RadioGroupItem value="none" id="action-none" />
+              <Label htmlFor="action-none" className="font-normal cursor-pointer">Créer la fiche uniquement</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <RadioGroupItem value="project" id="action-project" />
+              <Label htmlFor="action-project" className="font-normal cursor-pointer">Ouvrir un projet d'installation</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <RadioGroupItem value="sav" id="action-sav" />
+              <Label htmlFor="action-sav" className="font-normal cursor-pointer">Ouvrir une demande SAV</Label>
+            </div>
+          </RadioGroup>
+        </CardContent>
+      </Card>
 
       {/* Sticky actions */}
       <div className="sticky bottom-0 bg-background border-t border-border py-3 flex justify-end gap-3 -mx-4 px-4">

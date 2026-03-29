@@ -115,7 +115,7 @@ export default function QuoteDetail() {
   const [showDelete, setShowDelete] = useState(false);
   const [showSignConfirm, setShowSignConfirm] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
-  const { signQuote, signing } = useSignQuote();
+  const { signQuote, signing, error: signError } = useSignQuote();
 
   if (error && !loading) {
     toast.error(error, { id: "quote-detail-error" });
@@ -248,7 +248,7 @@ export default function QuoteDetail() {
                   setShowSignConfirm(false);
                   refetch();
                 } else {
-                  toast.error("Erreur lors de la signature");
+                  toast.error(signError ?? "Erreur lors de la signature");
                 }
               }}
             >

@@ -135,7 +135,8 @@ export default function ClientCreate() {
         insertPayload.company_name = companyName.trim();
       }
 
-      // Do NOT send `name` — handled by SQL trigger
+      // name is NOT NULL but populated by SQL trigger — send placeholder
+      insertPayload.name = "TEMP";
 
       const { data: newCustomer, error: insertErr } = await coreDb
         .from("customers")
@@ -144,7 +145,8 @@ export default function ClientCreate() {
         .single();
 
       if (insertErr || !newCustomer) {
-        toast.error("Erreur : " + (insertErr?.message ?? "Création impossible"));
+        const detail = (insertErr as any)?.details ? ` — ${(insertErr as any).details}` : "";
+        toast.error(`Erreur : ${insertErr?.message ?? "Création impossible"}${detail}`);
         setSaving(false);
         return;
       }

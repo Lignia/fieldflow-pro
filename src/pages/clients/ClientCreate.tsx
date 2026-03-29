@@ -9,7 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
@@ -61,8 +62,8 @@ export default function ClientCreate() {
   const [billingPostal, setBillingPostal] = useState("");
   const [billingCity, setBillingCity] = useState("");
 
-  // Launch project immediately
-  const [launchProject, setLaunchProject] = useState(false);
+  // Next action after creation
+  const [nextAction, setNextAction] = useState<'none' | 'project' | 'sav'>('none');
 
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -86,7 +87,7 @@ export default function ClientCreate() {
     setBillingLine1("");
     setBillingPostal("");
     setBillingCity("");
-    setLaunchProject(false);
+    setNextAction('none');
     setStatusType("prospect");
 
     // Pre-fill from search query param
@@ -225,8 +226,16 @@ export default function ClientCreate() {
       const displayName = (newCustomer as any).name ?? "Client";
       toast.success(`Client ${displayName} créé`);
 
-      if (launchProject && newPropertyId) {
-        navigate(`/projects/new?customer=${newCustomer.id}&property=${newPropertyId}`);
+      if (nextAction === 'project') {
+        if (!newPropertyId) {
+          toast.info("Client créé. Vous pourrez ajouter l'adresse d'intervention depuis le projet.");
+        }
+        navigate(`/projects/new?customer_id=${newCustomer.id}${newPropertyId ? `&property_id=${newPropertyId}` : ''}`);
+      } else if (nextAction === 'sav') {
+        if (!newPropertyId) {
+          toast.info("Client créé. Vous pourrez ajouter l'adresse d'intervention depuis la demande.");
+        }
+        navigate(`/service-requests/new?customer_id=${newCustomer.id}`);
       } else if (redirectTo) {
         navigate(`${redirectTo}?customer=${newCustomer.id}`);
       } else {
@@ -462,23 +471,30 @@ export default function ClientCreate() {
         </CardContent>
       </Card>
 
-      {/* Launch project checkbox */}
-      <div className="flex items-center gap-2 px-1">
-        <Checkbox
-          id="launch-project"
-          checked={launchProject}
-          onCheckedChange={(checked) => setLaunchProject(checked === true)}
-        />
-        <label htmlFor="launch-project" className="text-sm font-medium cursor-pointer">
-          Lancer un projet immédiatement
-        </label>
+      {/* Next action radio */}
+      <div className="space-y-2 px-1">
+        <Label className="text-sm font-medium text-foreground">Après la création</Label>
+        <RadioGroup value={nextAction} onValueChange={(v) => setNextAction(v as 'none' | 'project' | 'sav')}>
+          <div className="flex items-center gap-2">
+            <RadioGroupItem value="none" id="action-none" />
+            <Label htmlFor="action-none" className="font-normal cursor-pointer">Créer la fiche uniquement</Label>
+          </div>
+          <div className="flex items-center gap-2">
+            <RadioGroupItem value="project" id="action-project" />
+            <Label htmlFor="action-project" className="font-normal cursor-pointer">Ouvrir un projet d'installation</Label>
+          </div>
+          <div className="flex items-center gap-2">
+            <RadioGroupItem value="sav" id="action-sav" />
+            <Label htmlFor="action-sav" className="font-normal cursor-pointer">Ouvrir une demande SAV</Label>
+          </div>
+        </RadioGroup>
       </div>
 
       {/* Sticky actions */}
       <div className="sticky bottom-0 bg-background border-t border-border py-3 flex justify-end gap-3 -mx-4 px-4">
         <Button variant="outline" size="sm" onClick={handleBack}>Annuler</Button>
         <Button size="sm" onClick={handleSubmit} disabled={userLoading || !tenantId || saving}>
-          {saving ? "Création…" : "Créer le client"}
+          {saving ? "Création…" : nextAction === 'none' ? "Créer le client" : "Créer et continuer →"}
         </Button>
       </div>
     </div>

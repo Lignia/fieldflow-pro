@@ -73,7 +73,7 @@ const App = () => (
               <Route path="/projects" element={<Projects />} />
               <Route path="/projects/new" element={<ProjectCreate />} />
               <Route path="/projects/:id" element={<ProjectDetail />} />
-              <Route path="/projects/:projectId/quotes/new" element={<QuoteCreate />} />
+              <Route path="/projects/:projectId/quotes/new" element={<QuoteEditor />} />
 
               {/* Technical surveys */}
               <Route path="/technical-surveys/new" element={<PlaceholderPage title="Nouveau relevé technique" backTo="/projects" backLabel="Projets" />} />

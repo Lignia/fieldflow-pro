@@ -17,6 +17,7 @@ export interface ClientDetail {
 
 export interface ClientProperty {
   id: string;
+  label: string | null;
   address_line1: string;
   address_line2: string | null;
   city: string;
@@ -74,7 +75,7 @@ export function useClientDetail(customerId: string | undefined): UseClientDetail
           .maybeSingle(),
         coreDb
           .from("properties")
-          .select("id, address_line1, address_line2, city, postal_code, property_type, created_at")
+          .select("id, label, address_line1, address_line2, city, postal_code, property_type, created_at")
           .eq("customer_id", customerId)
           .order("created_at", { ascending: false }),
         coreDb

@@ -204,7 +204,7 @@ export default function ClientCreate() {
         await coreDb.from("properties").insert({
           tenant_id: tenantId,
           customer_id: newCustomer.id,
-          label: "Adresse de facturation",
+          label: "billing",
           address_line1: billingLine1.trim(),
           postal_code: billingPostal.trim(),
           city: billingCity.trim(),

@@ -75,27 +75,24 @@ export function useCreateQuote() {
         .select("customer_id, property_id")
         .eq("id", projectId)
         .single();
-      console.log('PROJ:', { data: proj, error: projErr });
       if (projErr) throw projErr;
 
       const today = new Date();
       const expiry = new Date(today.getTime() + 30 * 86400000);
 
-      // --- DEBUG 403 START ---
-      const { data: { session } } = await (await import("@/integrations/supabase/client")).supabase.auth.getSession();
-      const jwtPayload = session?.access_token
-        ? JSON.parse(atob(session.access_token.split('.')[1]))
-        : null;
-      console.log('DEBUG_JWT:', {
-        jwtTenantId: jwtPayload?.tenant_id,
-        hookTenantId: tenantId,
-        match: jwtPayload?.tenant_id === tenantId,
-        userRole: jwtPayload?.user_role,
-        sub: jwtPayload?.sub,
-      });
+      // Resolve tenant_id: prefer hook value, fallback to JWT claim
+      let resolvedTenantId = tenantId;
+      if (!resolvedTenantId) {
+        const { data: { session } } = await (await import("@/integrations/supabase/client")).supabase.auth.getSession();
+        if (session?.access_token) {
+          const jwtPayload = JSON.parse(atob(session.access_token.split('.')[1]));
+          resolvedTenantId = jwtPayload?.tenant_id ?? null;
+        }
+      }
+      if (!resolvedTenantId) throw new Error("Impossible de déterminer le tenant. Veuillez vous reconnecter.");
 
       const insertPayload = {
-        tenant_id: tenantId,
+        tenant_id: resolvedTenantId,
         project_id: projectId,
         customer_id: proj.customer_id,
         property_id: proj.property_id,
@@ -105,8 +102,6 @@ export function useCreateQuote() {
         expiry_date: expiry.toISOString().split("T")[0],
         version_number: 1,
       };
-      console.log('QUOTES_INSERT_PAYLOAD:', insertPayload);
-      // --- DEBUG 403 END ---
 
       const { data: newQuote, error: quoteErr } = await billingDb
         .from("quotes")
@@ -114,7 +109,6 @@ export function useCreateQuote() {
         .select("id, quote_number, quote_kind, quote_status, quote_date, expiry_date, total_ht, total_vat, total_ttc, customer_id, property_id, project_id")
         .single();
 
-      console.log('QUOTES_INSERT_RESULT:', { data: newQuote, error: quoteErr, errorDetails: quoteErr ? JSON.stringify(quoteErr) : null });
       if (quoteErr) throw quoteErr;
       const q = newQuote as QuoteSummary;
       setQuote(q);
@@ -126,17 +120,26 @@ export function useCreateQuote() {
     } finally {
       setSaving(false);
     }
-  }, []);
+  }, [tenantId]);
 
   const addLine = useCallback(async (quoteId: string, line: NewLineInput) => {
     setSaving(true);
     setError(null);
 
     try {
+      // Resolve tenant_id with JWT fallback
+      let resolvedTid = tenantId;
+      if (!resolvedTid) {
+        const { data: { session } } = await (await import("@/integrations/supabase/client")).supabase.auth.getSession();
+        if (session?.access_token) {
+          resolvedTid = JSON.parse(atob(session.access_token.split('.')[1]))?.tenant_id ?? null;
+        }
+      }
+
       const { error: err } = await billingDb
         .from("quote_lines")
         .insert({
-          tenant_id: tenantId,
+          tenant_id: resolvedTid,
           quote_id: quoteId,
           product_id: line.product_id || null,
           label: line.label,
@@ -147,7 +150,6 @@ export function useCreateQuote() {
           sort_order: line.sort_order,
           metadata: {},
         });
-      console.log('LINE:', { error: err });
       if (err) throw err;
       await Promise.all([refetchQuote(quoteId), refetchLines(quoteId)]);
     } catch (err: any) {

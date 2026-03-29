@@ -71,7 +71,7 @@ export function useCreateQuote() {
 
     try {
       const { data: proj, error: projErr } = await coreDb
-        .from("projects")
+        .from("v_projects_with_customer")
         .select("customer_id, property_id")
         .eq("id", projectId)
         .single();

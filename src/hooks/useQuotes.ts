@@ -76,7 +76,7 @@ export function useQuotes(): UseQuotesReturn {
     setError(null);
 
     try {
-      const { data, error: fetchError } = await billingDb
+      const { data, error: fetchError } = await coreDb
         .from("v_quotes_with_customer")
         .select("*")
         .order("created_at", { ascending: false });

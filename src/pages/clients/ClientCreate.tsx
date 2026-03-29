@@ -221,10 +221,8 @@ export default function ClientCreate() {
       const displayName = (newCustomer as any).name ?? "Client";
       toast.success(`Client ${displayName} créé`);
 
-      if (launchProject) {
-        const params = new URLSearchParams({ customer_id: newCustomer.id });
-        if (newPropertyId) params.set("property_id", newPropertyId);
-        navigate(`/projects/new?${params.toString()}`);
+      if (launchProject && newPropertyId) {
+        navigate(`/projects/new?customer=${newCustomer.id}&property=${newPropertyId}`);
       } else if (redirectTo) {
         navigate(`${redirectTo}?customer=${newCustomer.id}`);
       } else {

@@ -132,40 +132,23 @@ export default function ClientCreate() {
     setSaving(true);
 
     try {
-      // Build customer payload — do NOT send `name`, trigger handles it
-      const insertPayload: Record<string, unknown> = {
-        tenant_id: tenantId,
-        customer_type: customerType,
-        email: email.trim() || null,
-        phone: phone.trim() || null,
-        siret: siret.trim() || null,
-        status: statusType,
-        source_origin: origin || "manual",
-      };
-
-      if (isParticulier) {
-        insertPayload.civility = civility || null;
-        insertPayload.first_name = toInitcap(firstName.trim());
-        insertPayload.last_name = lastName.trim().toUpperCase();
-      } else {
-        insertPayload.company_name = companyName.trim();
-      }
-
-      // Billing address on customer: if diffBilling use billing fields, else use intervention fields
-      if (diffBilling && billingLine1.trim()) {
-        insertPayload.address_line1 = billingLine1.trim();
-        insertPayload.postal_code = billingPostal.trim();
-        insertPayload.city = billingCity.trim();
-      } else {
-        // Same address for both — store intervention addr as billing too
-        insertPayload.address_line1 = intLine1.trim();
-        insertPayload.postal_code = intPostal.trim();
-        insertPayload.city = intCity.trim();
-      }
-
+      // 1. INSERT customer — NO address columns
       const { data: newCustomer, error: insertErr } = await coreDb
         .from("customers")
-        .insert(insertPayload)
+        .insert({
+          tenant_id: tenantId,
+          customer_type: customerType,
+          status: statusType,
+          civility: isParticulier ? civility || null : null,
+          first_name: isParticulier ? toInitcap(firstName.trim()) : null,
+          last_name: isParticulier ? lastName.trim().toUpperCase() : null,
+          company_name: !isParticulier ? companyName.trim() : null,
+          siret: siret?.replace(/\s/g, "") || null,
+          email: email.trim() || null,
+          phone: phone.trim() || null,
+          source_origin: origin || "manual",
+          payload: {},
+        })
         .select("id, name")
         .single();
 
@@ -176,28 +159,45 @@ export default function ClientCreate() {
         return;
       }
 
-      // Create property from intervention address
+      // 2. INSERT intervention address → core.properties
       let newPropertyId: string | null = null;
 
-      const propPayload: Record<string, unknown> = {
-        tenant_id: tenantId,
-        customer_id: newCustomer.id,
-        address_line1: intLine1.trim(),
-        postal_code: intPostal.trim(),
-        city: intCity.trim(),
-        property_type: intType,
-      };
-      if (intOccupant.trim()) {
-        propPayload.payload = { occupant_name: intOccupant.trim() };
+      if (intLine1.trim() && intPostal.trim() && intCity.trim()) {
+        const { data: newProp } = await coreDb
+          .from("properties")
+          .insert({
+            tenant_id: tenantId,
+            customer_id: newCustomer.id,
+            address_line1: intLine1.trim(),
+            postal_code: intPostal.trim(),
+            city: intCity.trim(),
+            country: "FR",
+            property_type: intType || null,
+            payload: intOccupant.trim()
+              ? { occupant_name: intOccupant.trim() }
+              : {},
+          })
+          .select("id")
+          .single();
+        if (newProp) newPropertyId = newProp.id;
       }
-      const { data: newProp } = await coreDb
-        .from("properties")
-        .insert(propPayload)
-        .select("id")
-        .single();
-      if (newProp) newPropertyId = newProp.id;
 
-      // Log activity on timeline
+      // 3. INSERT billing address → core.properties (only if different)
+      if (diffBilling && billingLine1.trim() && billingPostal.trim() && billingCity.trim()) {
+        await coreDb.from("properties").insert({
+          tenant_id: tenantId,
+          customer_id: newCustomer.id,
+          label: "Adresse de facturation",
+          address_line1: billingLine1.trim(),
+          postal_code: billingPostal.trim(),
+          city: billingCity.trim(),
+          country: "FR",
+          property_type: null,
+          payload: {},
+        });
+      }
+
+      // 4. Log activity
       await coreDb.from("activities").insert({
         tenant_id: tenantId,
         scope_type: "customer",

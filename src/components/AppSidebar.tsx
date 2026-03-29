@@ -12,6 +12,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
+import { SearchGlobal } from "@/components/SearchGlobal";
 import { useLocation, useNavigate } from "react-router-dom";
 import {
   Sidebar,
@@ -104,6 +105,8 @@ export function AppSidebar() {
           )}
         </NavLink>
       </SidebarHeader>
+
+      <SearchGlobal variant="sidebar" />
 
       <SidebarContent>
         {navSections.map((section) => (

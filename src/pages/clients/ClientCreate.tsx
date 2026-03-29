@@ -115,21 +115,21 @@ export default function ClientCreate() {
     if (!phone.trim()) e.phone = "Le téléphone est obligatoire.";
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) e.email = "Format email invalide.";
 
-    // Validate billing address if partially filled
-    const hasBilling = billingLine1.trim() || billingPostal.trim() || billingCity.trim();
-    if (hasBilling) {
-      if (!billingLine1.trim()) e.billingLine1 = "Adresse obligatoire.";
-      if (!billingPostal.trim()) e.billingPostal = "Code postal obligatoire.";
-      if (!billingCity.trim()) e.billingCity = "Ville obligatoire.";
+    // Validate intervention address if partially filled
+    const hasInt = intLine1.trim() || intPostal.trim() || intCity.trim();
+    if (hasInt) {
+      if (!intLine1.trim()) e.intLine1 = "Adresse obligatoire.";
+      if (!intPostal.trim()) e.intPostal = "Code postal obligatoire.";
+      if (!intCity.trim()) e.intCity = "Ville obligatoire.";
     }
 
-    // Validate intervention address if toggle is on and partially filled
-    if (diffAddr) {
-      const hasInt = intLine1.trim() || intPostal.trim() || intCity.trim();
-      if (hasInt) {
-        if (!intLine1.trim()) e.intLine1 = "Adresse obligatoire.";
-        if (!intPostal.trim()) e.intPostal = "Code postal obligatoire.";
-        if (!intCity.trim()) e.intCity = "Ville obligatoire.";
+    // Validate billing address if switch on and partially filled
+    if (diffBilling) {
+      const hasBilling = billingLine1.trim() || billingPostal.trim() || billingCity.trim();
+      if (hasBilling) {
+        if (!billingLine1.trim()) e.billingLine1 = "Adresse obligatoire.";
+        if (!billingPostal.trim()) e.billingPostal = "Code postal obligatoire.";
+        if (!billingCity.trim()) e.billingCity = "Ville obligatoire.";
       }
     }
 
@@ -161,11 +161,16 @@ export default function ClientCreate() {
         insertPayload.company_name = companyName.trim();
       }
 
-      // Billing address stored on customer columns
-      if (billingLine1.trim()) {
+      // Billing address on customer: if diffBilling use billing fields, else use intervention fields
+      if (diffBilling && billingLine1.trim()) {
         insertPayload.address_line1 = billingLine1.trim();
         insertPayload.postal_code = billingPostal.trim();
         insertPayload.city = billingCity.trim();
+      } else if (!diffBilling && intLine1.trim()) {
+        // Same address for both — store intervention addr as billing too
+        insertPayload.address_line1 = intLine1.trim();
+        insertPayload.postal_code = intPostal.trim();
+        insertPayload.city = intCity.trim();
       }
 
       const { data: newCustomer, error: insertErr } = await coreDb
@@ -181,23 +186,19 @@ export default function ClientCreate() {
         return;
       }
 
-      // Create property from the correct address source
+      // Create property from intervention address (always)
       let newPropertyId: string | null = null;
 
-      const propAddr = diffAddr
-        ? { line1: intLine1.trim(), postal: intPostal.trim(), city: intCity.trim() }
-        : { line1: billingLine1.trim(), postal: billingPostal.trim(), city: billingCity.trim() };
-
-      if (propAddr.line1 && propAddr.postal && propAddr.city) {
+      if (intLine1.trim() && intPostal.trim() && intCity.trim()) {
         const propPayload: Record<string, unknown> = {
           tenant_id: tenantId,
           customer_id: newCustomer.id,
-          address_line1: propAddr.line1,
-          postal_code: propAddr.postal,
-          city: propAddr.city,
-          property_type: diffAddr ? intType : "house",
+          address_line1: intLine1.trim(),
+          postal_code: intPostal.trim(),
+          city: intCity.trim(),
+          property_type: intType,
         };
-        if (diffAddr && intOccupant.trim()) {
+        if (intOccupant.trim()) {
           propPayload.payload = { occupant_name: intOccupant.trim() };
         }
         const { data: newProp } = await coreDb

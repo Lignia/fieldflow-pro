@@ -188,7 +188,6 @@ export default function ProjectCreate() {
           customer_id: selectedCustomer!.id,
           property_id: selectedPropertyId,
           status: "lead_new",
-          workstream: "project_installation",
           payload: {
             project_type: projectType,
             ...(horizon ? { horizon } : {}),

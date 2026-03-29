@@ -86,8 +86,8 @@ export function NewQuoteModal({ open, onOpenChange }: NewQuoteModalProps) {
     setLoading(true);
     try {
       let query = coreDb
-        .from("projects")
-        .select("id, project_number, status, customer:customer_id(name), property:property_id(city)")
+        .from("v_projects_with_customer")
+        .select("id, project_number, customer_name, status, modified_at, city")
         .not("status", "in", "(closed,lost,cancelled)")
         .order("modified_at", { ascending: false })
         .limit(8);
@@ -108,8 +108,8 @@ export function NewQuoteModal({ open, onOpenChange }: NewQuoteModalProps) {
           id: p.id,
           project_number: p.project_number,
           status: p.status,
-          customer_name: p.customer?.name ?? "Client inconnu",
-          city: p.property?.city ?? "",
+          customer_name: p.customer_name ?? "Client inconnu",
+          city: p.city ?? "",
         }))
       );
     } catch {

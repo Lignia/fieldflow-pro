@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { billingDb } from "@/integrations/supabase/schema-clients";
+import { billingDb, coreDb } from "@/integrations/supabase/schema-clients";
 
 export type QuoteStatus = "draft" | "sent" | "signed" | "lost" | "expired" | "canceled";
 export type QuoteKind = "estimate" | "final" | "service";
@@ -76,7 +76,7 @@ export function useQuotes(): UseQuotesReturn {
     setError(null);
 
     try {
-      const { data, error: fetchError } = await billingDb
+      const { data, error: fetchError } = await coreDb
         .from("v_quotes_with_customer")
         .select("*")
         .order("created_at", { ascending: false });

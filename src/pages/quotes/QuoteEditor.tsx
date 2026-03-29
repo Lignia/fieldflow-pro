@@ -71,6 +71,7 @@ type EditorRow = EditorSection | EditorItem | EditorText;
 interface ProjectInfo {
   id: string;
   project_number: string;
+  customer_id: string | null;
   customer_name: string;
   customer_email: string | null;
   customer_phone: string | null;
@@ -264,6 +265,7 @@ export default function QuoteEditor() {
       if (DEV_BYPASS) {
         setProjectInfo({
           id: projectId, project_number: "PRJ-DEV-001",
+          customer_id: "dev-customer-id",
           customer_name: "Client test", customer_email: "test@test.fr",
           customer_phone: "06 00 00 00 00", customer_type: "individual",
           address_line1: "12 rue du Test", city: "Paris", postal_code: "75001",
@@ -275,6 +277,7 @@ export default function QuoteEditor() {
         setProjectInfo({
           id: data.id,
           project_number: data.project_number || "",
+          customer_id: data.customer_id || null,
           customer_name: data.customer_name || "",
           customer_email: data.customer_email || null,
           customer_phone: data.customer_phone || null,
@@ -373,14 +376,27 @@ export default function QuoteEditor() {
   // ─── Save ─────────────────────────────────────────────────────
   const handleSave = useCallback(async (finalize = false) => {
     if (!quote || !tenantId) return;
+
+    // Bug 5 — guard: at least one item line
+    const hasItems = rows.some((r) => r._type === "item");
+    if (!hasItems) {
+      toast.error("Ajoutez au moins une ligne avant d'enregistrer");
+      return;
+    }
+
     setSavingAll(true);
 
     try {
-      // Update quote dates/kind
+      // Update quote dates/kind — visit_date & start_date go into payload (bug 6)
       await billingDb.from("quotes").update({
         quote_kind: quote.quote_kind,
         quote_date: quoteDate,
         expiry_date: expiryDate,
+        payload: {
+          ...(quote as any).payload,
+          visit_date: visitDate || null,
+          start_date: startDate || null,
+        },
       }).eq("id", quote.id);
 
       // Delete existing sections & lines for this quote
@@ -393,8 +409,8 @@ export default function QuoteEditor() {
 
       if (sectionRows.length > 0) {
         const { data: insertedSections } = await billingDb.from("quote_sections").insert(
-          sectionRows.map((s, i) => ({
-            tenant_id: tenantId, quote_id: quote.id, label: s.label, sort_order: i,
+          sectionRows.map((s) => ({
+            tenant_id: tenantId, quote_id: quote.id, label: s.label, sort_order: s.sort_order,
           }))
         ).select("id");
 
@@ -405,10 +421,27 @@ export default function QuoteEditor() {
         }
       }
 
+      // Bug 3 — global sort_order counter across all row types
+      // Re-assign sort_order globally based on display order
+      let globalOrder = 0;
+      const reorderedRows = rows.map((r) => ({ ...r, sort_order: globalOrder++ }));
+
+      // Update section sort_orders in the map
+      const reorderedSections = reorderedRows.filter((r): r is EditorSection => r._type === "section");
+      // Re-map section keys (sections were already inserted with old sort_order, but we used the row-level one)
+      // Actually we need to update the inserted sections' sort_order — but since we just inserted them above,
+      // let's just make sure we used the right sort_order. The insert already happened, so let's update:
+      for (const s of reorderedSections) {
+        const dbId = sectionIdMap[s._key];
+        if (dbId) {
+          await billingDb.from("quote_sections").update({ sort_order: s.sort_order }).eq("id", dbId);
+        }
+      }
+
       // Figure out which section each line belongs to
       let currentSectionKey: string | null = null;
       const lineRows: (EditorItem | EditorText)[] = [];
-      for (const row of rows) {
+      for (const row of reorderedRows) {
         if (row._type === "section") { currentSectionKey = row._key; }
         else { lineRows.push({ ...row, section_id: currentSectionKey ? sectionIdMap[currentSectionKey] || null : null } as any); }
       }
@@ -416,7 +449,7 @@ export default function QuoteEditor() {
       // Insert lines
       if (lineRows.length > 0) {
         const { error: lineErr } = await billingDb.from("quote_lines").insert(
-          lineRows.map((l, i) => ({
+          lineRows.map((l) => ({
             tenant_id: tenantId,
             quote_id: quote.id,
             section_id: (l as any).section_id || null,
@@ -427,7 +460,7 @@ export default function QuoteEditor() {
             unit: l._type === "item" ? (l as EditorItem).unit : "u",
             unit_price_ht: l._type === "item" ? (l as EditorItem).unit_price_ht : 0,
             vat_rate: l._type === "item" ? (l as EditorItem).vat_rate : 0,
-            sort_order: i,
+            sort_order: l.sort_order,
             metadata: {},
           }))
         );
@@ -442,17 +475,20 @@ export default function QuoteEditor() {
             p_quote_id: quote.id, p_new_status: "sent", p_actor_id: coreUser?.id,
           });
           if (rpcErr) throw rpcErr;
-
-          // Convert prospect to active if needed
-          if (projectInfo?.customer_type === "prospect") {
-            // The customer conversion would ideally be handled by the RPC
-            toast.success("Devis finalisé — client converti");
-          } else {
-            toast.success("Devis finalisé et envoyé");
-          }
-        } else {
-          toast.success("Devis finalisé (mode dev)");
         }
+
+        // Bug 4 — Convert prospect → active
+        if (projectInfo?.customer_id) {
+          await coreDb
+            .from("customers")
+            .update({ status: "active" })
+            .eq("id", projectInfo.customer_id)
+            .eq("status", "prospect");
+          toast.success("Devis finalisé — client converti");
+        } else {
+          toast.success("Devis finalisé et envoyé");
+        }
+
         navigate(`/projects/${projectId}`);
       } else {
         toast.success("Devis enregistré");
@@ -462,7 +498,7 @@ export default function QuoteEditor() {
     } finally {
       setSavingAll(false);
     }
-  }, [quote, tenantId, quoteDate, expiryDate, rows, coreUser, projectInfo, navigate, projectId]);
+  }, [quote, tenantId, quoteDate, expiryDate, visitDate, startDate, rows, coreUser, projectInfo, navigate, projectId]);
 
   // ─── Item numbering ───────────────────────────────────────────
   let itemCounter = 0;
@@ -596,7 +632,7 @@ export default function QuoteEditor() {
           </div>
 
           {/* ─── CANVAS ─────────────────────────────────────────── */}
-          <Card className="overflow-hidden">
+          <Card className="overflow-x-auto overflow-hidden">
             {/* Column headers */}
             <div className="hidden md:grid md:grid-cols-[32px_1fr_72px_88px_100px_80px_96px_36px] gap-1.5 px-3 py-2 bg-muted/30 border-b border-border text-xs font-medium text-muted-foreground">
               <span className="text-center">N°</span>

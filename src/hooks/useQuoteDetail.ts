@@ -26,8 +26,8 @@ export interface QuoteLine {
   vat_rate: number;
   total_line_ht: number;
   sort_order: number;
+  product_id: string | null;
   metadata: Record<string, unknown> | null;
-  product: QuoteLineProduct | null;
 }
 
 export interface QuoteDetailCustomer {
@@ -56,7 +56,7 @@ export interface QuoteActivity {
   activity_type: string;
   payload: Record<string, unknown> | null;
   occurred_at: string;
-  actor: { full_name: string | null } | null;
+  actor_user_id: string | null;
 }
 
 export interface QuoteDetailData {
@@ -109,16 +109,13 @@ export function useQuoteDetail(quoteId: string | undefined): UseQuoteDetailRetur
 
         billingDb
           .from("quote_lines")
-          .select(
-            `id, label, qty, unit, unit_price_ht, vat_rate, total_line_ht, sort_order, metadata,
-             product:product_id (id, name, sku)`
-          )
+          .select("id, label, qty, unit, unit_price_ht, vat_rate, total_line_ht, sort_order, product_id, metadata")
           .eq("quote_id", quoteId)
           .order("sort_order", { ascending: true }),
 
         coreDb
           .from("activities")
-          .select(`id, activity_type, payload, occurred_at, actor:actor_user_id (full_name)`)
+          .select("id, activity_type, payload, occurred_at, actor_user_id")
           .eq("scope_type", "quote")
           .eq("scope_id", quoteId)
           .order("occurred_at", { ascending: false })
@@ -161,7 +158,7 @@ export function useQuoteDetail(quoteId: string | undefined): UseQuoteDetailRetur
           total_line_ht: Number(l.total_line_ht) || 0,
           sort_order: l.sort_order,
           metadata: l.metadata,
-          product: l.product ?? null,
+          product_id: l.product_id ?? null,
         }))
       );
 
@@ -171,7 +168,7 @@ export function useQuoteDetail(quoteId: string | undefined): UseQuoteDetailRetur
           activity_type: a.activity_type,
           payload: a.payload,
           occurred_at: a.occurred_at,
-          actor: a.actor ?? null,
+          actor_user_id: a.actor_user_id ?? null,
         }))
       );
     } catch (err: any) {

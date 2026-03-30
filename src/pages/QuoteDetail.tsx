@@ -20,7 +20,6 @@ import {
   History,
 } from "lucide-react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { billingDb } from "@/integrations/supabase/schema-clients";
 import { useQuoteDetail, UNIT_LABELS, type QuoteActivity } from "@/hooks/useQuoteDetail";
 import { useCurrentUser } from "@/hooks/useCurrentUser";

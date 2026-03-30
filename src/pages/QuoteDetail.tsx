@@ -323,15 +323,22 @@ export default function QuoteDetail() {
 
             {quote.quote_status === "sent" && (
               <>
-                <Button
-                  size="sm"
-                  variant="success"
-                  disabled={transitioning || signing}
-                  onClick={() => setShowSignConfirm(true)}
-                >
-                  <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
-                  Marquer comme signé
-                </Button>
+                {quote.quote_kind === "final" && (
+                  <Button
+                    size="sm"
+                    variant="success"
+                    disabled={transitioning || signing}
+                    onClick={() => setShowSignConfirm(true)}
+                  >
+                    <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                    Marquer comme signé
+                  </Button>
+                )}
+                {quote.quote_kind === "estimate" && (
+                  <span className="inline-flex items-center rounded-md bg-info/10 text-info px-3 py-1.5 text-xs font-medium">
+                    Devis estimatif — non signable. Créez un devis final pour signer.
+                  </span>
+                )}
                 <Button
                   variant="outline"
                   size="sm"

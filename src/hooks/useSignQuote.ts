@@ -25,25 +25,29 @@ export function useSignQuote(): UseSignQuoteReturn {
     setError(null);
 
     try {
-      // 1. Get JWT sub
+      // 1. Decode JWT for sub + tenant_id
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("Session expirée — veuillez vous reconnecter.");
+      const jwt = session?.access_token
+        ? JSON.parse(atob(session.access_token.split('.')[1]))
+        : null;
+      const sub = jwt?.sub ?? null;
+      const tenantId = jwt?.tenant_id ?? null;
 
-      const sub = session.user.id;
+      if (!sub || !tenantId) throw new Error("Session expirée. Reconnectez-vous.");
 
       // 2. Resolve core.users.id from auth_uid
-      const { data: coreUser, error: userErr } = await coreDb
+      const { data: coreUser } = await coreDb
         .from("users")
         .select("id")
         .eq("auth_uid", sub)
         .maybeSingle();
 
-      if (userErr) throw new Error(userErr.message);
-      if (!coreUser) throw new Error("Utilisateur introuvable dans core.users.");
+      if (!coreUser?.id) throw new Error("Utilisateur introuvable. Reconnectez-vous.");
 
-      // 3. Call RPC
+      // 3. Call RPC with explicit p_tenant_id
       const { data, error: rpcErr } = await billingDb.rpc("sign_quote_and_initialize", {
         p_quote_id: quoteId,
+        p_tenant_id: tenantId,
         p_actor_id: coreUser.id,
         p_deposit_pct: 0.30,
       });

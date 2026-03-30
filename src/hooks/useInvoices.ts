@@ -60,7 +60,7 @@ export function useInvoices(statusFilter: StatusFilter = "all", search = "") {
       } else if (statusFilter === "final") {
         query = query.eq("invoice_kind", "final");
       } else if (statusFilter === "overdue") {
-        query = query.eq("invoice_status", "overdue");
+        query = query.in("invoice_status", ["draft", "sent", "partial", "overdue"]);
       }
 
       // Text search (ilike OR across key columns)

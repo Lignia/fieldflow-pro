@@ -129,6 +129,7 @@ export default function QuoteDetail() {
         p_quote_id: quote.id,
         p_new_status: newStatus,
         p_actor_id: coreUser.id,
+        p_reason: newStatus === "sent" ? "Devis envoyé au client" : undefined,
       });
       if (rpcErr) throw rpcErr;
       toast.success(

@@ -158,7 +158,7 @@ export function useQuoteDetail(quoteId: string | undefined): UseQuoteDetailRetur
           total_line_ht: Number(l.total_line_ht) || 0,
           sort_order: l.sort_order,
           metadata: l.metadata,
-          product: l.product ?? null,
+          product_id: l.product_id ?? null,
         }))
       );
 
@@ -168,7 +168,7 @@ export function useQuoteDetail(quoteId: string | undefined): UseQuoteDetailRetur
           activity_type: a.activity_type,
           payload: a.payload,
           occurred_at: a.occurred_at,
-          actor: a.actor ?? null,
+          actor_user_id: a.actor_user_id ?? null,
         }))
       );
     } catch (err: any) {

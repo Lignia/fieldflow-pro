@@ -109,16 +109,13 @@ export function useQuoteDetail(quoteId: string | undefined): UseQuoteDetailRetur
 
         billingDb
           .from("quote_lines")
-          .select(
-            `id, label, qty, unit, unit_price_ht, vat_rate, total_line_ht, sort_order, metadata,
-             product:product_id (id, name, sku)`
-          )
+          .select("id, label, qty, unit, unit_price_ht, vat_rate, total_line_ht, sort_order, product_id, metadata")
           .eq("quote_id", quoteId)
           .order("sort_order", { ascending: true }),
 
         coreDb
           .from("activities")
-          .select(`id, activity_type, payload, occurred_at, actor:actor_user_id (full_name)`)
+          .select("id, activity_type, payload, occurred_at, actor_user_id")
           .eq("scope_type", "quote")
           .eq("scope_id", quoteId)
           .order("occurred_at", { ascending: false })

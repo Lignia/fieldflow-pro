@@ -126,7 +126,7 @@ export default function QuoteDetail() {
     if (!quote || !coreUser) return;
     setTransitioning(true);
     try {
-      const { error: rpcErr } = await (supabase as any).rpc("billing_transition_quote_status", {
+      const { error: rpcErr } = await billingDb.rpc("transition_quote_status", {
         p_quote_id: quote.id,
         p_new_status: newStatus,
         p_actor_id: coreUser.id,
@@ -480,11 +480,6 @@ export default function QuoteDetail() {
                       <TableCell>
                         <div>
                           <p className="font-medium text-sm">{line.label}</p>
-                          {line.product?.sku && (
-                            <p className="text-xs text-muted-foreground font-mono mt-0.5">
-                              {line.product.sku}
-                            </p>
-                          )}
                         </div>
                       </TableCell>
                       <TableCell className="text-right font-mono text-sm">
@@ -560,8 +555,6 @@ export default function QuoteDetail() {
                     <p className="text-sm">{activityLabel(activity)}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">
                       {fmtDateFull(activity.occurred_at)}
-                      {" · "}
-                      {activity.actor?.full_name ?? "Système"}
                     </p>
                   </div>
                 </div>

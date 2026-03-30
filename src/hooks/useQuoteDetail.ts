@@ -26,8 +26,8 @@ export interface QuoteLine {
   vat_rate: number;
   total_line_ht: number;
   sort_order: number;
+  product_id: string | null;
   metadata: Record<string, unknown> | null;
-  product: QuoteLineProduct | null;
 }
 
 export interface QuoteDetailCustomer {
@@ -56,7 +56,7 @@ export interface QuoteActivity {
   activity_type: string;
   payload: Record<string, unknown> | null;
   occurred_at: string;
-  actor: { full_name: string | null } | null;
+  actor_user_id: string | null;
 }
 
 export interface QuoteDetailData {

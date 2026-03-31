@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
-import { billingDb } from "@/integrations/supabase/schema-clients";
+import { billingDb, coreDb } from "@/integrations/supabase/schema-clients";
 import { useCreateQuote, type QuoteLine } from "@/hooks/useCreateQuote";
 import { useCatalogSearch, suggestedVat, type CatalogItem } from "@/hooks/useCatalogSearch";
 import { useCurrentUser } from "@/hooks/useCurrentUser";

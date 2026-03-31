@@ -67,8 +67,7 @@ export function useCurrentUser(): UseCurrentUserReturn {
         return;
       }
 
-      const { data, error: fetchError } = await (supabase as any)
-        .schema("core")
+      const { data, error: fetchError } = await coreDb
         .from("users")
         .select("*")
         .eq("auth_uid", user.id)

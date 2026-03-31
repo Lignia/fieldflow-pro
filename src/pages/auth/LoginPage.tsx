@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { supabase, reconfigureAuth } from "@/integrations/supabase/client";
+import { supabase, setPersistSession } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { AuthLayout } from "@/components/auth/AuthLayout";
 import { PasswordInput } from "@/components/auth/PasswordInput";

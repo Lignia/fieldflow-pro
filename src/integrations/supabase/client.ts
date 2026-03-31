@@ -4,44 +4,54 @@ import type { Database } from './types';
 const SUPABASE_URL = "https://hejxvqghsyaauwzkfikg.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhlanh2cWdoc3lhYXV3emtmaWtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxOTU5MzUsImV4cCI6MjA4OTc3MTkzNX0.J8p-2ldZjLBXBPzXPhASa8DRoKHdZswAY7mjPBekZUI";
 
-function isEphemeral() {
+/* ------------------------------------------------------------------ */
+/*  Dynamic storage: switches between localStorage and sessionStorage */
+/*  based on a persist flag, WITHOUT recreating the Supabase client.  */
+/* ------------------------------------------------------------------ */
+
+let _persist = (() => {
   try {
-    return sessionStorage.getItem('lignia_ephemeral') === '1';
+    return sessionStorage.getItem('lignia_ephemeral') !== '1';
   } catch {
-    return false;
+    return true;
   }
+})();
+
+function target(): Storage {
+  return _persist ? localStorage : sessionStorage;
 }
 
-function createSupabaseClient(persist: boolean) {
-  return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-    auth: {
-      storage: persist ? localStorage : sessionStorage,
-      persistSession: true,
-      autoRefreshToken: true,
-    },
-  });
-}
+const dynamicStorage: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> = {
+  getItem: (key: string) => target().getItem(key),
+  setItem: (key: string, value: string) => target().setItem(key, value),
+  removeItem: (key: string) => target().removeItem(key),
+};
 
-// Initial client: use sessionStorage if ephemeral flag is set (survives refresh, dies on tab close)
-export let supabase = createSupabaseClient(!isEphemeral());
+/* Single Supabase instance — never recreated */
+export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+  auth: {
+    storage: dynamicStorage,
+    persistSession: true,
+    autoRefreshToken: true,
+  },
+});
 
 /**
- * Reconfigure the Supabase client for persist/ephemeral mode.
- * Call BEFORE signInWithPassword.
- * - persist=true  → localStorage (survives tab close)
+ * Switch session persistence mode.
+ * Call BEFORE signInWithPassword or after signOut.
+ * - persist=true  → localStorage (survives tab close) — default
  * - persist=false → sessionStorage (dies on tab close)
  */
-export function reconfigureAuth(persist: boolean) {
+export function setPersistSession(persist: boolean) {
+  _persist = persist;
+
   if (!persist) {
     sessionStorage.setItem('lignia_ephemeral', '1');
-    // Clear any leftover persistent session
+    // Clear any leftover persistent tokens
     Object.keys(localStorage)
       .filter((k) => k.startsWith('sb-'))
       .forEach((k) => localStorage.removeItem(k));
   } else {
     sessionStorage.removeItem('lignia_ephemeral');
   }
-
-  supabase = createSupabaseClient(persist);
-  window.dispatchEvent(new Event('supabase-client-changed'));
 }

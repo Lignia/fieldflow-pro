@@ -88,6 +88,7 @@ export function AppSidebar() {
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
+    setPersistSession(true);
     navigate("/auth/login");
   };
 

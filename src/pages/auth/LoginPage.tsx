@@ -21,7 +21,7 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
 
-    reconfigureAuth(remember);
+    setPersistSession(remember);
 
     const { error } = await supabase.auth.signInWithPassword({ email, password });
 

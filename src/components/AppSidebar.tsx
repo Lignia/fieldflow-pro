@@ -32,7 +32,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { UserAvatar } from "@/components/navigation/UserAvatar";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, setPersistSession } from "@/integrations/supabase/client";
 import { toTitleCase } from "@/lib/format";
 
 const navSections = [

@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { coreDb } from "@/integrations/supabase/schema-clients";
 import { jwtDecode } from "jwt-decode";
 import type { User, Session } from "@supabase/supabase-js";
 
@@ -66,8 +67,7 @@ export function useCurrentUser(): UseCurrentUserReturn {
         return;
       }
 
-      const { data, error: fetchError } = await (supabase as any)
-        .schema("core")
+      const { data, error: fetchError } = await coreDb
         .from("users")
         .select("*")
         .eq("auth_uid", user.id)

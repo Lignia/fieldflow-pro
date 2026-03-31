@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
-import { billingDb } from "@/integrations/supabase/schema-clients";
+import { billingDb, coreDb } from "@/integrations/supabase/schema-clients";
 import { useCreateQuote, type QuoteLine } from "@/hooks/useCreateQuote";
 import { useCatalogSearch, suggestedVat, type CatalogItem } from "@/hooks/useCatalogSearch";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
@@ -317,10 +317,13 @@ export default function QuoteCreate() {
     }
     try {
       const { supabase } = await import("@/integrations/supabase/client");
-      const { error } = await (supabase as any).rpc("billing_transition_quote_status", {
-        p_quote_id: quote.id,
-        p_new_status: "sent",
-        p_actor_id: coreUser.id,
+      const { data: session } = await supabase.auth.getSession();
+      const sub = session?.session?.user?.id;
+      if (!sub) throw new Error("Session expirée");
+      const { data: actor } = await coreDb.from("users").select("id").eq("auth_uid", sub).maybeSingle();
+      if (!actor?.id) throw new Error("Utilisateur introuvable");
+      const { error } = await billingDb.rpc("transition_quote_status", {
+        p_quote_id: quote.id, p_new_status: "sent", p_actor_id: actor.id, p_reason: "Devis envoyé au client",
       });
       if (error) throw error;
       toast.success("Devis envoyé");

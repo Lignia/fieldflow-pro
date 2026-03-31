@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { coreDb } from "@/integrations/supabase/schema-clients";
 import { jwtDecode } from "jwt-decode";
 import type { User, Session } from "@supabase/supabase-js";
 

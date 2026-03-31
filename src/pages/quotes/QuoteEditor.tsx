@@ -470,9 +470,13 @@ export default function QuoteEditor() {
       if (finalize) {
         // Transition to sent
         if (!DEV_BYPASS) {
-          const { supabase } = await import("@/integrations/supabase/client");
-          const { error: rpcErr } = await (supabase as any).rpc("billing_transition_quote_status", {
-            p_quote_id: quote.id, p_new_status: "sent", p_actor_id: coreUser?.id,
+          const { data: session } = await (await import("@/integrations/supabase/client")).supabase.auth.getSession();
+          const sub = session?.session?.user?.id;
+          if (!sub) throw new Error("Session expirée");
+          const { data: actor } = await coreDb.from("users").select("id").eq("auth_uid", sub).maybeSingle();
+          if (!actor?.id) throw new Error("Utilisateur introuvable");
+          const { error: rpcErr } = await billingDb.rpc("transition_quote_status", {
+            p_quote_id: quote.id, p_new_status: "sent", p_actor_id: actor.id, p_reason: "Devis envoyé au client",
           });
           if (rpcErr) throw rpcErr;
         }

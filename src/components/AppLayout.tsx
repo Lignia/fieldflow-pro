@@ -7,7 +7,7 @@ import { SearchGlobal } from "@/components/SearchGlobal";
 import { UserAvatar } from "@/components/navigation/UserAvatar";
 import { Outlet, useNavigate } from "react-router-dom";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase, setPersistSession } from "@/integrations/supabase/client";
 import { toTitleCase } from "@/lib/format";
 import { LogOut } from "lucide-react";
 import {

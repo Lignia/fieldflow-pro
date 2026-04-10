@@ -323,8 +323,8 @@ export default function Quotes() {
 function QuoteTableRow({ quote, onDelete }: { quote: Quote; onDelete: () => void }) {
   const navigate = useNavigate();
   const { quote_kind: kind, quote_status: status } = quote;
-  const customerDisplay = [quote.customer_first_name, quote.customer_last_name].filter(Boolean).join(" ") || quote.customer_name;
-  const city = quote.city ?? quote.property_city;
+  const customerDisplay = quote.customer_name;
+  const city = quote.city;
   const subLine = [city, quote.quote_kind === "service" ? "SAV" : quote.project_number].filter(Boolean).join(" · ");
 
   return (

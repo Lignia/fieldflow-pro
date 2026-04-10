@@ -4,7 +4,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
   Search, FileText, RefreshCw, Plus, ChevronRight,
-  Send, FilePlus, PenLine, Receipt,
+  Send, FilePlus, PenLine, Receipt, AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -21,7 +21,16 @@ import {
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
+import {
+  Tooltip, TooltipContent, TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { NewQuoteModal } from "@/components/quotes/NewQuoteModal";
 
 /* ── Helpers ── */
@@ -34,75 +43,54 @@ function formatShortDate(date: string): string {
   return format(new Date(date), "d MMM yyyy", { locale: fr });
 }
 
-/* ── Filter config ── */
-
-const KIND_TABS: { key: QuoteKindFilter; label: string }[] = [
-  { key: "all", label: "Tous" },
-  { key: "estimate", label: "Estimatifs" },
-  { key: "final", label: "Définitifs" },
-  { key: "service", label: "SAV" },
-];
-
-const STATUS_TABS: { key: QuoteStatusFilter; label: string }[] = [
-  { key: "all", label: "Tous" },
-  { key: "draft", label: "À envoyer" },
-  { key: "sent", label: "Envoyés" },
-  { key: "signed", label: "Signés" },
-  { key: "lost", label: "Perdus" },
-  { key: "incomplete", label: "Brouillons incomplets" },
-];
-
-/* ── Badge colors ── */
-
-const STATUS_COLORS: Record<QuoteStatus, string> = {
-  draft: "bg-muted text-muted-foreground",
-  sent: "bg-info/15 text-info",
-  signed: "bg-accent/15 text-accent",
-  lost: "bg-destructive/15 text-destructive",
-  expired: "bg-warning/15 text-warning",
-  canceled: "bg-muted text-muted-foreground",
-};
-
-const KIND_COLORS: Record<QuoteKind, string> = {
-  estimate: "bg-info/10 text-info",
-  final: "bg-accent/10 text-accent",
-  service: "bg-warning/10 text-warning",
-};
-
-/* ── Incomplete draft detection ── */
-
 function isIncompleteDraft(q: Quote): boolean {
   return q.quote_status === "draft" && q.total_ht === 0;
 }
+
+/* ── Badge variant mapping ── */
+
+type BadgeVariant = "default" | "secondary" | "destructive" | "outline" | "success" | "warning" | "info";
+
+const STATUS_BADGE_VARIANT: Record<QuoteStatus, BadgeVariant> = {
+  draft: "secondary",
+  sent: "default",
+  signed: "success",
+  lost: "outline",
+  expired: "destructive",
+  canceled: "outline",
+};
 
 /* ── Component ── */
 
 export default function Quotes() {
   const navigate = useNavigate();
   const { quotes, loading, error, refetch } = useQuotes();
-  const [kindFilter, setKindFilter] = useState<QuoteKindFilter>("all");
   const [statusFilter, setStatusFilter] = useState<QuoteStatusFilter>("all");
+  const [kindFilter, setKindFilter] = useState<QuoteKindFilter>("all");
   const [search, setSearch] = useState("");
   const [showNewQuote, setShowNewQuote] = useState(false);
+  const [showIncompleteOnly, setShowIncompleteOnly] = useState(false);
 
   if (error && !loading) {
     toast.error(error, { id: "quotes-error" });
   }
 
+  const incompleteCount = useMemo(
+    () => quotes.filter(isIncompleteDraft).length,
+    [quotes]
+  );
+
   const filtered = useMemo(() => {
     let list = quotes;
 
-    // Hide incomplete drafts unless explicitly filtered
-    if (statusFilter === "incomplete") {
+    if (showIncompleteOnly) {
       list = list.filter(isIncompleteDraft);
     } else {
-      list = list.filter((q) => !isIncompleteDraft(q));
-
-      if (kindFilter !== "all") {
-        list = list.filter((q) => q.quote_kind === kindFilter);
-      }
       if (statusFilter !== "all") {
         list = list.filter((q) => q.quote_status === statusFilter);
+      }
+      if (kindFilter !== "all") {
+        list = list.filter((q) => q.quote_kind === kindFilter);
       }
     }
 
@@ -115,7 +103,7 @@ export default function Quotes() {
       );
     }
     return list;
-  }, [quotes, kindFilter, statusFilter, search]);
+  }, [quotes, statusFilter, kindFilter, search, showIncompleteOnly]);
 
   return (
     <div className="space-y-5">
@@ -145,34 +133,58 @@ export default function Quotes() {
         </div>
       </div>
 
-      {/* Kind filter */}
-      <div className="flex gap-1 overflow-x-auto pb-0.5">
-        {KIND_TABS.map((tab) => (
-          <Button
-            key={tab.key}
-            variant={kindFilter === tab.key ? "default" : "ghost"}
-            size="sm"
-            className="shrink-0 text-xs"
-            onClick={() => setKindFilter(tab.key)}
-          >
-            {tab.label}
-          </Button>
-        ))}
-      </div>
+      {/* Incomplete drafts alert */}
+      {!loading && incompleteCount > 0 && (
+        <Alert
+          variant="destructive"
+          className="cursor-pointer"
+          onClick={() => setShowIncompleteOnly((v) => !v)}
+        >
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>
+            {incompleteCount} brouillon{incompleteCount > 1 ? "s" : ""} incomplet{incompleteCount > 1 ? "s" : ""}
+          </AlertTitle>
+          <AlertDescription>
+            {showIncompleteOnly
+              ? "Cliquer pour revenir à la liste complète"
+              : "Cliquer pour afficher uniquement ces devis"}
+          </AlertDescription>
+        </Alert>
+      )}
 
-      {/* Status filter */}
-      <div className="flex gap-1 overflow-x-auto pb-0.5">
-        {STATUS_TABS.map((tab) => (
-          <Button
-            key={tab.key}
-            variant={statusFilter === tab.key ? "secondary" : "ghost"}
-            size="xs"
-            className="shrink-0 text-xs"
-            onClick={() => setStatusFilter(tab.key)}
-          >
-            {tab.label}
-          </Button>
-        ))}
+      {/* Filters row: Tabs (status) + Select (type) */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <Tabs
+          value={showIncompleteOnly ? "__incomplete" : statusFilter}
+          onValueChange={(val) => {
+            setShowIncompleteOnly(false);
+            setStatusFilter(val as QuoteStatusFilter);
+          }}
+          className="flex-1 min-w-0"
+        >
+          <TabsList>
+            <TabsTrigger value="all">Tous</TabsTrigger>
+            <TabsTrigger value="draft">À envoyer</TabsTrigger>
+            <TabsTrigger value="sent">Envoyés</TabsTrigger>
+            <TabsTrigger value="signed">Signés</TabsTrigger>
+            <TabsTrigger value="lost">Perdus</TabsTrigger>
+          </TabsList>
+        </Tabs>
+
+        <Select
+          value={kindFilter}
+          onValueChange={(val) => setKindFilter(val as QuoteKindFilter)}
+        >
+          <SelectTrigger className="w-[160px] h-9 text-xs">
+            <SelectValue placeholder="Tous les types" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tous les types</SelectItem>
+            <SelectItem value="estimate">Estimatifs</SelectItem>
+            <SelectItem value="final">Définitifs</SelectItem>
+            <SelectItem value="service">SAV</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Search */}
@@ -201,7 +213,12 @@ export default function Quotes() {
           ))}
         </div>
       ) : filtered.length === 0 ? (
-        <EmptyState search={search} statusFilter={statusFilter} kindFilter={kindFilter} />
+        <EmptyState
+          search={search}
+          statusFilter={statusFilter}
+          kindFilter={kindFilter}
+          showIncompleteOnly={showIncompleteOnly}
+        />
       ) : (
         <div className="space-y-1.5">
           {filtered.map((quote) => (
@@ -218,27 +235,39 @@ export default function Quotes() {
 function QuoteRow({ quote }: { quote: Quote }) {
   const navigate = useNavigate();
   const address = [quote.address_line1, quote.city].filter(Boolean).join(", ");
+  const incomplete = isIncompleteDraft(quote);
 
   return (
-    <Card className="p-4 hover:border-primary/20 transition-colors">
+    <Card
+      className="p-4 hover:border-primary/20 transition-colors cursor-pointer group"
+      onClick={() => navigate(`/quotes/${quote.id}`)}
+    >
       <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
-        {/* Quote number → link to detail */}
-        <Link
-          to={`/quotes/${quote.id}`}
-          className="font-mono text-xs text-primary hover:underline shrink-0"
-          onClick={(e) => e.stopPropagation()}
-        >
+        {/* Quote number */}
+        <span className="font-mono text-xs text-primary shrink-0">
           {quote.quote_number}
-        </Link>
+        </span>
 
-        {/* Combined badge: kind · status */}
-        <CombinedBadge kind={quote.quote_kind} status={quote.quote_status} />
+        {/* Status badge (primary) */}
+        <StatusBadge status={quote.quote_status} />
 
-        {/* Customer → link */}
+        {/* Incomplete badge */}
+        {incomplete && (
+          <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
+            Incomplet
+          </Badge>
+        )}
+
+        {/* Type badge (secondary, discreet) */}
+        <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-muted-foreground">
+          {QUOTE_KIND_LABELS[quote.quote_kind] ?? quote.quote_kind}
+        </Badge>
+
+        {/* Customer */}
         {quote.customer_name && quote.customer_id ? (
           <Link
             to={`/clients/${quote.customer_id}`}
-            className="text-sm font-medium min-w-0 truncate hover:text-primary hover:underline"
+            className="text-sm font-medium min-w-0 truncate opacity-80 group-hover:opacity-100 hover:text-primary hover:underline"
             onClick={(e) => e.stopPropagation()}
           >
             {quote.customer_name}
@@ -273,27 +302,18 @@ function QuoteRow({ quote }: { quote: Quote }) {
         <QuickAction quote={quote} />
 
         {/* Chevron */}
-        <Link to={`/quotes/${quote.id}`} className="shrink-0" tabIndex={-1}>
-          <ChevronRight className="h-4 w-4 text-muted-foreground/40" />
-        </Link>
+        <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />
       </div>
     </Card>
   );
 }
 
-/* ── Combined Badge ── */
+/* ── Status Badge ── */
 
-function CombinedBadge({ kind, status }: { kind: QuoteKind; status: QuoteStatus }) {
-  const kindLabel = QUOTE_KIND_LABELS[kind] ?? kind;
-  const statusLabel = QUOTE_STATUS_LABELS[status] ?? status;
-  // Use status color as the dominant one
-  const colorClass = STATUS_COLORS[status] ?? "bg-muted text-muted-foreground";
-
-  return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap shrink-0 ${colorClass}`}>
-      {kindLabel} · {statusLabel}
-    </span>
-  );
+function StatusBadge({ status }: { status: QuoteStatus }) {
+  const label = QUOTE_STATUS_LABELS[status] ?? status;
+  const variant = STATUS_BADGE_VARIANT[status] ?? "secondary";
+  return <Badge variant={variant}>{label}</Badge>;
 }
 
 /* ── Context Link (project or SAV) ── */
@@ -314,7 +334,7 @@ function ContextLink({ quote }: { quote: Quote }) {
     return (
       <Link
         to={`/projects/${quote.project_id}`}
-        className="hidden md:inline text-xs font-mono text-muted-foreground hover:text-primary hover:underline shrink-0"
+        className="hidden md:inline text-xs font-mono text-muted-foreground opacity-80 group-hover:opacity-100 hover:text-primary hover:underline shrink-0"
         onClick={(e) => e.stopPropagation()}
       >
         {quote.project_number ?? "Projet"}
@@ -330,76 +350,96 @@ function QuickAction({ quote }: { quote: Quote }) {
   const navigate = useNavigate();
   const { quote_kind: kind, quote_status: status } = quote;
 
-  // estimate + draft → Envoyer
   if (kind === "estimate" && status === "draft") {
     return (
-      <Button
-        variant="ghost" size="xs"
-        className="text-xs shrink-0"
-        onClick={(e) => { e.stopPropagation(); navigate(`/quotes/${quote.id}`); }}
-      >
-        <Send className="h-3 w-3 mr-1" />
-        Envoyer
-      </Button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost" size="xs"
+            className="text-xs shrink-0"
+            onClick={(e) => { e.stopPropagation(); navigate(`/quotes/${quote.id}`); }}
+          >
+            <Send className="h-3 w-3 mr-1" />
+            Envoyer
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Envoyer le devis estimatif au client</TooltipContent>
+      </Tooltip>
     );
   }
 
-  // estimate + sent → Créer devis final
   if (kind === "estimate" && status === "sent" && quote.project_id) {
     return (
-      <Button
-        variant="ghost" size="xs"
-        className="text-xs shrink-0"
-        onClick={(e) => {
-          e.stopPropagation();
-          navigate(`/projects/${quote.project_id}/quotes/new?kind=final`);
-        }}
-      >
-        <FilePlus className="h-3 w-3 mr-1" />
-        Devis final
-      </Button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost" size="xs"
+            className="text-xs shrink-0"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/projects/${quote.project_id}/quotes/new?kind=final`);
+            }}
+          >
+            <FilePlus className="h-3 w-3 mr-1" />
+            Devis final
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Créer le devis définitif à partir de cet estimatif</TooltipContent>
+      </Tooltip>
     );
   }
 
-  // final + draft → Envoyer
-  if (kind === "final" && status === "draft") {
+  if ((kind === "final" || kind === "service") && status === "draft") {
     return (
-      <Button
-        variant="ghost" size="xs"
-        className="text-xs shrink-0"
-        onClick={(e) => { e.stopPropagation(); navigate(`/quotes/${quote.id}`); }}
-      >
-        <Send className="h-3 w-3 mr-1" />
-        Envoyer
-      </Button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost" size="xs"
+            className="text-xs shrink-0"
+            onClick={(e) => { e.stopPropagation(); navigate(`/quotes/${quote.id}`); }}
+          >
+            <Send className="h-3 w-3 mr-1" />
+            Envoyer
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Envoyer le devis au client</TooltipContent>
+      </Tooltip>
     );
   }
 
-  // final + sent → Signer
   if (kind === "final" && status === "sent") {
     return (
-      <Button
-        variant="ghost" size="xs"
-        className="text-xs text-accent shrink-0"
-        onClick={(e) => { e.stopPropagation(); navigate(`/quotes/${quote.id}`); }}
-      >
-        <PenLine className="h-3 w-3 mr-1" />
-        Signer
-      </Button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost" size="xs"
+            className="text-xs text-accent shrink-0"
+            onClick={(e) => { e.stopPropagation(); navigate(`/quotes/${quote.id}`); }}
+          >
+            <PenLine className="h-3 w-3 mr-1" />
+            Signer
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Marquer le devis comme signé par le client</TooltipContent>
+      </Tooltip>
     );
   }
 
-  // signed → Voir facture
   if (status === "signed") {
     return (
-      <Button
-        variant="ghost" size="xs"
-        className="text-xs shrink-0"
-        onClick={(e) => { e.stopPropagation(); navigate(`/quotes/${quote.id}`); }}
-      >
-        <Receipt className="h-3 w-3 mr-1" />
-        Facture
-      </Button>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost" size="xs"
+            className="text-xs shrink-0"
+            onClick={(e) => { e.stopPropagation(); navigate(`/quotes/${quote.id}`); }}
+          >
+            <Receipt className="h-3 w-3 mr-1" />
+            Facture
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Voir la facture d'acompte liée</TooltipContent>
+      </Tooltip>
     );
   }
 
@@ -412,10 +452,12 @@ function EmptyState({
   search,
   statusFilter,
   kindFilter,
+  showIncompleteOnly,
 }: {
   search: string;
   statusFilter: QuoteStatusFilter;
   kindFilter: QuoteKindFilter;
+  showIncompleteOnly: boolean;
 }) {
   return (
     <Card className="p-12 text-center">
@@ -424,7 +466,7 @@ function EmptyState({
         <p className="text-sm text-muted-foreground">
           Aucun devis ne correspond à « {search} »
         </p>
-      ) : statusFilter === "incomplete" ? (
+      ) : showIncompleteOnly ? (
         <p className="text-sm text-muted-foreground">
           Aucun brouillon incomplet
         </p>

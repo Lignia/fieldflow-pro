@@ -530,6 +530,165 @@ function QuoteTableRow({ quote, onDelete, refetch, coreUserId }: QuoteTableRowPr
   );
 }
 
+/* ── Next Action Button ── */
+
+function NextActionButton({
+  quote,
+  sending,
+  onSend,
+  onViewInvoice,
+}: {
+  quote: Quote;
+  sending: boolean;
+  onSend: (e: React.MouseEvent) => void;
+  onViewInvoice: (e: React.MouseEvent) => void;
+}) {
+  const navigate = useNavigate();
+  const { quote_kind: kind, quote_status: status } = quote;
+  const incomplete = isIncompleteDraft(quote);
+
+  // Incomplete draft → "Compléter"
+  if (incomplete) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs h-7"
+            onClick={(e) => { e.stopPropagation(); navigate(`/quotes/${quote.id}`); }}
+          >
+            <PenLine className="h-3 w-3 mr-1" />
+            Compléter
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Ouvrir et compléter ce brouillon</TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  // Draft with content → "Envoyer"
+  if (status === "draft" && quote.total_ht > 0) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs h-7"
+            disabled={sending}
+            onClick={onSend}
+          >
+            {sending ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Send className="h-3 w-3 mr-1" />}
+            {kind === "final" ? "Envoyer pour signature" : "Envoyer"}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Passer le devis en statut « envoyé »</TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  // Estimate sent → "Créer le définitif"
+  if (kind === "estimate" && status === "sent" && quote.project_id) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs h-7"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/projects/${quote.project_id}/quotes/new?kind=final&from_quote_id=${quote.id}`);
+            }}
+          >
+            <FilePlus className="h-3 w-3 mr-1" />
+            Créer le définitif
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Créer un devis final à partir de cet estimatif</TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  // Final sent → "Obtenir la signature"
+  if (kind === "final" && status === "sent") {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs h-7"
+            onClick={(e) => { e.stopPropagation(); navigate(`/quotes/${quote.id}`); }}
+          >
+            <PenLine className="h-3 w-3 mr-1" />
+            Obtenir la signature
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Ouvrir la fiche pour signer le devis</TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  // Service sent → "Suivre la réponse"
+  if (kind === "service" && status === "sent") {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs h-7"
+            onClick={(e) => { e.stopPropagation(); navigate(`/quotes/${quote.id}`); }}
+          >
+            <ExternalLink className="h-3 w-3 mr-1" />
+            Suivre la réponse
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Ouvrir la fiche pour suivre la réponse du client</TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  // Signed → "Voir la facture"
+  if (status === "signed") {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs h-7"
+            onClick={onViewInvoice}
+          >
+            <Receipt className="h-3 w-3 mr-1" />
+            Voir la facture
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Ouvrir la facture d'acompte liée</TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  // Lost / expired / canceled → "Archiver" (disabled)
+  if (status === "lost" || status === "expired" || status === "canceled") {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button variant="ghost" size="sm" className="text-xs h-7" disabled>
+            <Archive className="h-3 w-3 mr-1" />
+            Archiver
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Disponible prochainement</TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  return <span className="text-xs text-muted-foreground">—</span>;
+}
+
 /* ── Empty State ── */
 
 function EmptyState({

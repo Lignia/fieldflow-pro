@@ -23,7 +23,7 @@ export const QUOTE_KIND_LABELS: Record<QuoteKind, string> = {
   service: "SAV",
 };
 
-export type QuoteStatusFilter = QuoteStatus | "all" | "incomplete";
+export type QuoteStatusFilter = QuoteStatus | "all";
 export type QuoteKindFilter = QuoteKind | "all";
 
 export interface Quote {
@@ -59,6 +59,28 @@ const SELECTED_COLUMNS = [
   "project_id", "service_request_id",
 ].join(", ");
 
+/**
+ * Fetches project_numbers for a list of project IDs.
+ * Isolated to allow easy replacement once project_number is added
+ * directly to v_quotes_with_customer.
+ */
+async function fetchProjectNumbers(projectIds: string[]): Promise<Record<string, string>> {
+  if (projectIds.length === 0) return {};
+
+  const { data } = await coreDb
+    .from("v_projects_with_customer")
+    .select("id, project_number")
+    .in("id", projectIds);
+
+  const map: Record<string, string> = {};
+  if (data) {
+    for (const p of data) {
+      map[p.id] = p.project_number;
+    }
+  }
+  return map;
+}
+
 export function useQuotes(): UseQuotesReturn {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [loading, setLoading] = useState(true);
@@ -81,23 +103,11 @@ export function useQuotes(): UseQuotesReturn {
 
       const rows = data ?? [];
 
-      // Collect unique project_ids to fetch project_numbers
       const projectIds = [...new Set(
         rows.map((q: any) => q.project_id).filter(Boolean)
       )] as string[];
 
-      let projectMap: Record<string, string> = {};
-      if (projectIds.length > 0) {
-        const { data: projData } = await coreDb
-          .from("v_projects_with_customer")
-          .select("id, project_number")
-          .in("id", projectIds);
-        if (projData) {
-          for (const p of projData) {
-            projectMap[p.id] = p.project_number;
-          }
-        }
-      }
+      const projectMap = await fetchProjectNumbers(projectIds);
 
       const mapped: Quote[] = rows.map((q: any) => ({
         id: q.id,

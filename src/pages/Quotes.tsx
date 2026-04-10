@@ -1,11 +1,11 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
   Search, FileText, RefreshCw, Plus, AlertTriangle,
   MoreHorizontal, Eye, Send, FilePlus, PenLine, Receipt,
-  Trash2, Copy, FolderOpen,
+  Trash2, Copy, FolderOpen, Archive, ExternalLink, Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -39,6 +39,9 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { NewQuoteModal } from "@/components/quotes/NewQuoteModal";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { billingDb } from "@/integrations/supabase/schema-clients";
 
 /* ── Helpers ── */
 
@@ -105,6 +108,7 @@ function nextActionText(q: Quote): string {
 /* ── Component ── */
 
 export default function Quotes() {
+  const { coreUser } = useCurrentUser();
   const navigate = useNavigate();
   const { quotes, loading, error, refetch } = useQuotes();
   const [statusFilter, setStatusFilter] = useState<QuoteStatusFilter>("all");
@@ -289,6 +293,8 @@ export default function Quotes() {
                   key={quote.id}
                   quote={quote}
                   onDelete={() => setDeleteTarget(quote)}
+                  refetch={refetch}
+                  coreUserId={coreUser?.id ?? null}
                 />
               ))}
             </TableBody>
@@ -320,12 +326,62 @@ export default function Quotes() {
 
 /* ── Table Row ── */
 
-function QuoteTableRow({ quote, onDelete }: { quote: Quote; onDelete: () => void }) {
+interface QuoteTableRowProps {
+  quote: Quote;
+  onDelete: () => void;
+  refetch: () => void;
+  coreUserId: string | null;
+}
+
+function QuoteTableRow({ quote, onDelete, refetch, coreUserId }: QuoteTableRowProps) {
   const navigate = useNavigate();
+  const [sending, setSending] = useState(false);
   const { quote_kind: kind, quote_status: status } = quote;
   const customerDisplay = quote.customer_name;
   const city = quote.city;
   const subLine = [city, quote.quote_kind === "service" ? "SAV" : quote.project_number].filter(Boolean).join(" · ");
+
+  const handleSend = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!coreUserId) {
+      toast.error("Utilisateur non identifié");
+      return;
+    }
+    setSending(true);
+    try {
+      const { error } = await billingDb.rpc("transition_quote_status", {
+        p_quote_id: quote.id,
+        p_new_status: "sent",
+        p_actor_id: coreUserId,
+        p_reason: "Devis envoyé au client",
+      });
+      if (error) throw error;
+      toast.success(`Devis ${quote.quote_number} envoyé`);
+      refetch();
+    } catch (err: any) {
+      toast.error(err?.message ?? "Erreur lors de l'envoi");
+    } finally {
+      setSending(false);
+    }
+  }, [quote.id, quote.quote_number, coreUserId, refetch]);
+
+  const handleViewInvoice = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const { data } = await billingDb
+        .from("invoices")
+        .select("id")
+        .eq("quote_id", quote.id)
+        .maybeSingle();
+      if (data?.id) {
+        navigate(`/invoices/${data.id}`);
+      } else {
+        toast.info("Facture en cours de génération");
+      }
+    } catch {
+      toast.error("Impossible de récupérer la facture");
+    }
+  }, [quote.id, navigate]);
 
   return (
     <TableRow
@@ -380,7 +436,12 @@ function QuoteTableRow({ quote, onDelete }: { quote: Quote; onDelete: () => void
 
       {/* Col 5: Prochaine action (hidden mobile) */}
       <TableCell className="hidden md:table-cell">
-        <span className="text-xs text-muted-foreground">{nextActionText(quote)}</span>
+        <NextActionButton
+          quote={quote}
+          sending={sending}
+          onSend={handleSend}
+          onViewInvoice={handleViewInvoice}
+        />
       </TableCell>
 
       {/* Col 6: Actions dropdown */}
@@ -467,6 +528,165 @@ function QuoteTableRow({ quote, onDelete }: { quote: Quote; onDelete: () => void
       </TableCell>
     </TableRow>
   );
+}
+
+/* ── Next Action Button ── */
+
+function NextActionButton({
+  quote,
+  sending,
+  onSend,
+  onViewInvoice,
+}: {
+  quote: Quote;
+  sending: boolean;
+  onSend: (e: React.MouseEvent) => void;
+  onViewInvoice: (e: React.MouseEvent) => void;
+}) {
+  const navigate = useNavigate();
+  const { quote_kind: kind, quote_status: status } = quote;
+  const incomplete = isIncompleteDraft(quote);
+
+  // Incomplete draft → "Compléter"
+  if (incomplete) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs h-7"
+            onClick={(e) => { e.stopPropagation(); navigate(`/quotes/${quote.id}`); }}
+          >
+            <PenLine className="h-3 w-3 mr-1" />
+            Compléter
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Ouvrir et compléter ce brouillon</TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  // Draft with content → "Envoyer"
+  if (status === "draft" && quote.total_ht > 0) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs h-7"
+            disabled={sending}
+            onClick={onSend}
+          >
+            {sending ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <Send className="h-3 w-3 mr-1" />}
+            {kind === "final" ? "Envoyer pour signature" : "Envoyer"}
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Passer le devis en statut « envoyé »</TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  // Estimate sent → "Créer le définitif"
+  if (kind === "estimate" && status === "sent" && quote.project_id) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs h-7"
+            onClick={(e) => {
+              e.stopPropagation();
+              navigate(`/projects/${quote.project_id}/quotes/new?kind=final&from_quote_id=${quote.id}`);
+            }}
+          >
+            <FilePlus className="h-3 w-3 mr-1" />
+            Créer le définitif
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Créer un devis final à partir de cet estimatif</TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  // Final sent → "Obtenir la signature"
+  if (kind === "final" && status === "sent") {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs h-7"
+            onClick={(e) => { e.stopPropagation(); navigate(`/quotes/${quote.id}`); }}
+          >
+            <PenLine className="h-3 w-3 mr-1" />
+            Obtenir la signature
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Ouvrir la fiche pour signer le devis</TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  // Service sent → "Suivre la réponse"
+  if (kind === "service" && status === "sent") {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs h-7"
+            onClick={(e) => { e.stopPropagation(); navigate(`/quotes/${quote.id}`); }}
+          >
+            <ExternalLink className="h-3 w-3 mr-1" />
+            Suivre la réponse
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Ouvrir la fiche pour suivre la réponse du client</TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  // Signed → "Voir la facture"
+  if (status === "signed") {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs h-7"
+            onClick={onViewInvoice}
+          >
+            <Receipt className="h-3 w-3 mr-1" />
+            Voir la facture
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Ouvrir la facture d'acompte liée</TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  // Lost / expired / canceled → "Archiver" (disabled)
+  if (status === "lost" || status === "expired" || status === "canceled") {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button variant="ghost" size="sm" className="text-xs h-7" disabled>
+            <Archive className="h-3 w-3 mr-1" />
+            Archiver
+          </Button>
+        </TooltipTrigger>
+        <TooltipContent>Disponible prochainement</TooltipContent>
+      </Tooltip>
+    );
+  }
+
+  return <span className="text-xs text-muted-foreground">—</span>;
 }
 
 /* ── Empty State ── */

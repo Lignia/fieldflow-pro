@@ -1,11 +1,11 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
   Search, FileText, RefreshCw, Plus, AlertTriangle,
   MoreHorizontal, Eye, Send, FilePlus, PenLine, Receipt,
-  Trash2, Copy, FolderOpen,
+  Trash2, Copy, FolderOpen, Archive, ExternalLink, Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -39,6 +39,9 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { NewQuoteModal } from "@/components/quotes/NewQuoteModal";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { billingDb } from "@/integrations/supabase/schema-clients";
 
 /* ── Helpers ── */
 

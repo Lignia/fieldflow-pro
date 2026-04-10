@@ -134,7 +134,7 @@ export default function QuoteDetail() {
   const { coreUser } = useCurrentUser();
   const {
     quote, lines, activities, project,
-    depositInvoice, installation,
+    depositInvoice, installation, technicalSurvey,
     loading, error, refetch,
   } = useQuoteDetail(id);
   const [showDelete, setShowDelete] = useState(false);
@@ -524,7 +524,7 @@ export default function QuoteDetail() {
             ══════════════════════════════════ */}
         <div className="space-y-4 lg:sticky lg:top-4 lg:self-start">
 
-          {/* ── BLOC ACTIONS ── */}
+          {/* ── BLOC 1 — ACTIONS ── */}
           <Card className="p-4 space-y-3">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Actions</h3>
             <ActionsBloc
@@ -543,7 +543,51 @@ export default function QuoteDetail() {
             />
           </Card>
 
-          {/* ── BLOC ÉTAT DU DOSSIER ── */}
+          {/* ── BLOC 2 — ÉTAPE SUIVANTE ── */}
+          <NextStepBloc kind={quote.quote_kind} status={quote.quote_status} />
+
+          {/* ── BLOC 3 — RELEVÉ TECHNIQUE ── */}
+          {!isService && (
+            <Card className="p-4 space-y-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                <FileText className="h-3.5 w-3.5" />
+                Relevé technique
+              </h3>
+              {technicalSurvey ? (
+                <div className="space-y-2">
+                  <p className="text-sm text-accent flex items-center gap-1.5">
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    Relevé réalisé
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => navigate(`/technical-surveys/${technicalSurvey.id}`)}
+                  >
+                    Ouvrir le relevé
+                    <ExternalLink className="h-3 w-3 ml-1" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Non réalisé</p>
+                  {quote.project_id && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => navigate(`/technical-surveys/new?project_id=${quote.project_id}`)}
+                    >
+                      Créer un relevé
+                    </Button>
+                  )}
+                </div>
+              )}
+            </Card>
+          )}
+
+          {/* ── BLOC 4 — ÉTAT DU DOSSIER ── */}
           {!isService && (
             <Card className="p-4 space-y-3">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">État du dossier</h3>
@@ -559,7 +603,7 @@ export default function QuoteDetail() {
                       onClick={() => navigate(`/invoices/${depositInvoice.id}`)}
                       className="text-xs font-medium text-accent hover:underline flex items-center gap-1"
                     >
-                      Créée <ExternalLink className="h-3 w-3" />
+                      Créée ✔ <ExternalLink className="h-3 w-3" />
                     </button>
                   ) : (
                     <span className="text-xs text-muted-foreground">Non créée</span>
@@ -576,7 +620,7 @@ export default function QuoteDetail() {
                       onClick={() => navigate(`/installations/${installation.id}`)}
                       className="text-xs font-medium text-accent hover:underline flex items-center gap-1"
                     >
-                      Créée <ExternalLink className="h-3 w-3" />
+                      Créée ✔ <ExternalLink className="h-3 w-3" />
                     </button>
                   ) : (
                     <span className="text-xs text-muted-foreground">Non créée</span>
@@ -724,6 +768,48 @@ function SignDialog({ open, onOpenChange, signing, onConfirm }: {
   );
 }
 
+/* ── Duplicate button (reusable) ── */
+function DuplicateButton() {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span tabIndex={0} className="w-full">
+          <Button variant="outline" size="sm" className="w-full" disabled>
+            <Copy className="h-3.5 w-3.5 mr-1" />
+            Dupliquer
+          </Button>
+        </span>
+      </TooltipTrigger>
+      <TooltipContent>Disponible prochainement</TooltipContent>
+    </Tooltip>
+  );
+}
+
+/* ── Next Step Bloc ── */
+
+function NextStepBloc({ kind, status }: { kind: string; status: string }) {
+  let message: string | null = null;
+
+  if (kind === "estimate" && status === "draft") message = "Étape suivante : envoyer le devis estimatif au client";
+  else if (kind === "estimate" && status === "sent") message = "Étape suivante : réaliser le relevé technique puis créer le devis final";
+  else if (kind === "final" && status === "draft") message = "Étape suivante : envoyer le devis final au client";
+  else if (kind === "final" && status === "sent") message = "Étape suivante : obtenir la signature du client";
+  else if (status === "signed") message = "Étape suivante : planifier l'intervention";
+  else if (kind === "service" && status === "draft") message = "Étape suivante : envoyer le devis SAV";
+  else if (kind === "service" && status === "sent") message = "Étape suivante : suivre la réponse du client";
+
+  if (!message) return null;
+
+  return (
+    <Card className="p-4">
+      <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+        <CircleDot className="h-3 w-3 text-primary shrink-0" />
+        {message}
+      </p>
+    </Card>
+  );
+}
+
 /* ── Actions bloc (right sidebar) ── */
 
 interface ActionsBlocProps {
@@ -776,12 +862,13 @@ function ActionsBloc({
             </Button>
           </>
         )}
+        <DuplicateButton />
       </div>
     );
   }
 
-  /* CAS 1 — estimate/final + draft */
-  if (status === "draft") {
+  /* CAS 1 — estimate + draft */
+  if (kind === "estimate" && status === "draft") {
     return (
       <div className="space-y-2">
         <Button size="sm" className="w-full" disabled={transitioning} onClick={onSend}>
@@ -792,45 +879,7 @@ function ActionsBloc({
           <Pencil className="h-3.5 w-3.5 mr-1" />
           Modifier
         </Button>
-        <Button variant="destructive" size="sm" className="w-full" onClick={onDelete}>
-          <Trash2 className="h-3.5 w-3.5 mr-1" />
-          Supprimer
-        </Button>
-      </div>
-    );
-  }
-
-  /* CAS 2/2b — estimate + sent */
-  if (kind === "estimate" && status === "sent") {
-    if (expiry.isExpired) {
-      return (
-        <div className="space-y-2">
-          <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-destructive/15 text-destructive w-full justify-center">
-            Expiré
-          </span>
-          {project_id && (
-            <Button
-              size="sm"
-              className="w-full"
-              onClick={() => navigate(`/projects/${project_id}/quotes/new?kind=estimate`)}
-            >
-              Créer un nouveau devis
-            </Button>
-          )}
-        </div>
-      );
-    }
-    return (
-      <div className="space-y-2">
-        <span className="inline-flex items-center rounded-md bg-info/10 text-info px-3 py-1.5 text-xs font-medium text-center">
-          Devis estimatif — non signable
-        </span>
-        {project_id && (
-          <Button size="sm" className="w-full" onClick={() => navigate(`/projects/${project_id}/quotes/new?kind=final`)}>
-            Créer un devis final
-          </Button>
-        )}
-        <p className="text-xs text-muted-foreground text-center">Le devis final permettra d'engager le client</p>
+        <DuplicateButton />
         <Button variant="outline" size="sm" className="w-full" disabled={transitioning} onClick={onLost}>
           <XCircle className="h-3.5 w-3.5 mr-1" />
           Marquer perdu
@@ -839,26 +888,97 @@ function ActionsBloc({
     );
   }
 
-  /* CAS 4/4b — final + sent */
+  /* CAS 3 — final + draft */
+  if (kind === "final" && status === "draft") {
+    return (
+      <div className="space-y-2">
+        <Button size="sm" className="w-full" disabled={transitioning} onClick={onSend}>
+          <Send className="h-3.5 w-3.5 mr-1" />
+          Envoyer
+        </Button>
+        <Button variant="outline" size="sm" className="w-full" onClick={onEdit}>
+          <Pencil className="h-3.5 w-3.5 mr-1" />
+          Modifier
+        </Button>
+        <DuplicateButton />
+      </div>
+    );
+  }
+
+  /* CAS 2b — estimate + sent + expiré */
+  if (kind === "estimate" && status === "sent" && expiry.isExpired) {
+    return (
+      <div className="space-y-2">
+        <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-destructive/15 text-destructive w-full justify-center">
+          Expiré
+        </span>
+        {project_id && (
+          <Button
+            size="sm"
+            className="w-full"
+            onClick={() => navigate(`/projects/${project_id}/quotes/new?kind=estimate`)}
+          >
+            Recréer un devis estimatif
+          </Button>
+        )}
+        <DuplicateButton />
+        <Button variant="outline" size="sm" className="w-full" disabled={transitioning} onClick={onLost}>
+          <XCircle className="h-3.5 w-3.5 mr-1" />
+          Marquer perdu
+        </Button>
+      </div>
+    );
+  }
+
+  /* CAS 2 — estimate + sent + non expiré */
+  if (kind === "estimate" && status === "sent") {
+    return (
+      <div className="space-y-2">
+        <span className="inline-flex items-center rounded-md bg-info/10 text-info px-3 py-1.5 text-xs font-medium text-center w-full justify-center">
+          Devis estimatif — non signable
+        </span>
+        {project_id && (
+          <Button size="sm" className="w-full" onClick={() => navigate(`/projects/${project_id}/quotes/new?kind=final&from_quote_id=${quote.id}`)}>
+            Créer un devis final
+          </Button>
+        )}
+        <p className="text-xs text-muted-foreground text-center">Le devis final permettra d'engager le client</p>
+        <Button variant="outline" size="sm" className="w-full" onClick={onEdit}>
+          <Pencil className="h-3.5 w-3.5 mr-1" />
+          Modifier
+        </Button>
+        <DuplicateButton />
+        <Button variant="outline" size="sm" className="w-full" disabled={transitioning} onClick={onLost}>
+          <XCircle className="h-3.5 w-3.5 mr-1" />
+          Marquer perdu
+        </Button>
+      </div>
+    );
+  }
+
+  /* CAS 4b — final + sent + expiré */
+  if (kind === "final" && status === "sent" && expiry.isExpired) {
+    return (
+      <div className="space-y-2">
+        <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-destructive/15 text-destructive w-full justify-center">
+          Expiré
+        </span>
+        {project_id && (
+          <Button
+            size="sm"
+            className="w-full"
+            onClick={() => navigate(`/projects/${project_id}/quotes/new?kind=final`)}
+          >
+            Recréer un devis final
+          </Button>
+        )}
+        <DuplicateButton />
+      </div>
+    );
+  }
+
+  /* CAS 4 — final + sent + non expiré */
   if (kind === "final" && status === "sent") {
-    if (expiry.isExpired) {
-      return (
-        <div className="space-y-2">
-          <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-destructive/15 text-destructive w-full justify-center">
-            Expiré
-          </span>
-          {project_id && (
-            <Button
-              size="sm"
-              className="w-full"
-              onClick={() => navigate(`/projects/${project_id}/quotes/new?kind=final`)}
-            >
-              Recréer un devis final
-            </Button>
-          )}
-        </div>
-      );
-    }
     return (
       <div className="space-y-2">
         <Button
@@ -871,10 +991,11 @@ function ActionsBloc({
           <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
           Marquer comme signé
         </Button>
-        <Button variant="outline" size="sm" className="w-full" disabled={transitioning} onClick={onLost}>
-          <XCircle className="h-3.5 w-3.5 mr-1" />
-          Marquer perdu
+        <Button variant="outline" size="sm" className="w-full" onClick={onEdit}>
+          <Pencil className="h-3.5 w-3.5 mr-1" />
+          Modifier
         </Button>
+        <DuplicateButton />
       </div>
     );
   }
@@ -899,6 +1020,7 @@ function ActionsBloc({
             Ouvrir le projet
           </Button>
         )}
+        <DuplicateButton />
       </div>
     );
   }
@@ -915,6 +1037,7 @@ function ActionsBloc({
           Ouvrir le projet
         </Button>
       )}
+      <DuplicateButton />
     </div>
   );
 }

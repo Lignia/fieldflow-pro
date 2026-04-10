@@ -57,6 +57,11 @@ export interface QuoteInstallation {
   device_type: string | null;
 }
 
+export interface QuoteTechnicalSurvey {
+  id: string;
+  survey_status: string;
+}
+
 export interface QuoteActivity {
   id: string;
   activity_type: string;
@@ -94,6 +99,7 @@ interface UseQuoteDetailReturn {
   project: QuoteDetailProject | null;
   depositInvoice: QuoteDepositInvoice | null;
   installation: QuoteInstallation | null;
+  technicalSurvey: QuoteTechnicalSurvey | null;
   loading: boolean;
   error: string | null;
   refetch: () => void;
@@ -106,6 +112,7 @@ export function useQuoteDetail(quoteId: string | undefined): UseQuoteDetailRetur
   const [project, setProject] = useState<QuoteDetailProject | null>(null);
   const [depositInvoice, setDepositInvoice] = useState<QuoteDepositInvoice | null>(null);
   const [installation, setInstallation] = useState<QuoteInstallation | null>(null);
+  const [technicalSurvey, setTechnicalSurvey] = useState<QuoteTechnicalSurvey | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -248,6 +255,22 @@ export function useQuoteDetail(quoteId: string | undefined): UseQuoteDetailRetur
       } else {
         setInstallation(null);
       }
+
+      // Fetch technical survey (only for estimate/final)
+      if (q.project_id && q.tenant_id && (q.quote_kind === "estimate" || q.quote_kind === "final")) {
+        const { data: surveyData } = await coreDb
+          .from("technical_surveys")
+          .select("id, survey_status")
+          .eq("project_id", q.project_id)
+          .eq("tenant_id", q.tenant_id)
+          .maybeSingle();
+        setTechnicalSurvey(surveyData ? {
+          id: surveyData.id,
+          survey_status: surveyData.survey_status,
+        } : null);
+      } else {
+        setTechnicalSurvey(null);
+      }
     } catch (err: any) {
       setError(err.message ?? "Erreur inattendue");
     } finally {
@@ -259,5 +282,5 @@ export function useQuoteDetail(quoteId: string | undefined): UseQuoteDetailRetur
     fetchQuote();
   }, [fetchQuote]);
 
-  return { quote, lines, activities, project, depositInvoice, installation, loading, error, refetch: fetchQuote };
+  return { quote, lines, activities, project, depositInvoice, installation, technicalSurvey, loading, error, refetch: fetchQuote };
 }

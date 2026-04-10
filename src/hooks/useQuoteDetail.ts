@@ -90,6 +90,8 @@ interface UseQuoteDetailReturn {
   quote: QuoteDetailData | null;
   lines: QuoteLine[];
   activities: QuoteActivity[];
+  project: QuoteDetailProject | null;
+  depositInvoice: QuoteDepositInvoice | null;
   loading: boolean;
   error: string | null;
   refetch: () => void;
@@ -99,6 +101,8 @@ export function useQuoteDetail(quoteId: string | undefined): UseQuoteDetailRetur
   const [quote, setQuote] = useState<QuoteDetailData | null>(null);
   const [lines, setLines] = useState<QuoteLine[]>([]);
   const [activities, setActivities] = useState<QuoteActivity[]>([]);
+  const [project, setProject] = useState<QuoteDetailProject | null>(null);
+  const [depositInvoice, setDepositInvoice] = useState<QuoteDepositInvoice | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

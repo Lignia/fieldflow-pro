@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { billingDb, coreDb } from "@/integrations/supabase/schema-clients";
+import { coreDb } from "@/integrations/supabase/schema-clients";
 
 export type QuoteStatus = "draft" | "sent" | "signed" | "lost" | "expired" | "canceled";
 export type QuoteKind = "estimate" | "final" | "service";
@@ -23,40 +23,25 @@ export const QUOTE_KIND_LABELS: Record<QuoteKind, string> = {
   service: "SAV",
 };
 
-export type QuoteStatusFilter = QuoteStatus | "all";
-
-export interface QuoteCustomer {
-  id: string;
-  name: string;
-  email: string | null;
-  phone: string | null;
-}
-
-export interface QuoteProperty {
-  id: string;
-  address_line1: string | null;
-  city: string | null;
-  postal_code: string | null;
-}
+export type QuoteStatusFilter = QuoteStatus | "all" | "incomplete";
+export type QuoteKindFilter = QuoteKind | "all";
 
 export interface Quote {
   id: string;
   quote_number: string;
   quote_kind: QuoteKind;
   quote_status: QuoteStatus;
-  version_number: number;
   quote_date: string;
   expiry_date: string;
   total_ht: number;
-  total_vat: number;
   total_ttc: number;
-  sent_at: string | null;
-  signed_at: string | null;
+  customer_id: string | null;
+  customer_name: string | null;
+  address_line1: string | null;
+  city: string | null;
   project_id: string | null;
+  project_number: string | null;
   service_request_id: string | null;
-  installation_id: string | null;
-  customer: QuoteCustomer | null;
-  property: QuoteProperty | null;
 }
 
 interface UseQuotesReturn {
@@ -65,6 +50,14 @@ interface UseQuotesReturn {
   error: string | null;
   refetch: () => void;
 }
+
+const SELECTED_COLUMNS = [
+  "id", "quote_number", "quote_kind", "quote_status",
+  "quote_date", "expiry_date", "total_ht", "total_ttc",
+  "customer_id", "customer_name",
+  "address_line1", "city",
+  "project_id", "service_request_id",
+].join(", ");
 
 export function useQuotes(): UseQuotesReturn {
   const [quotes, setQuotes] = useState<Quote[]>([]);
@@ -78,7 +71,7 @@ export function useQuotes(): UseQuotesReturn {
     try {
       const { data, error: fetchError } = await coreDb
         .from("v_quotes_with_customer")
-        .select("*")
+        .select(SELECTED_COLUMNS)
         .order("created_at", { ascending: false });
 
       if (fetchError) {
@@ -86,24 +79,42 @@ export function useQuotes(): UseQuotesReturn {
         return;
       }
 
-      const mapped: Quote[] = (data ?? []).map((q: any) => ({
+      const rows = data ?? [];
+
+      // Collect unique project_ids to fetch project_numbers
+      const projectIds = [...new Set(
+        rows.map((q: any) => q.project_id).filter(Boolean)
+      )] as string[];
+
+      let projectMap: Record<string, string> = {};
+      if (projectIds.length > 0) {
+        const { data: projData } = await coreDb
+          .from("v_projects_with_customer")
+          .select("id, project_number")
+          .in("id", projectIds);
+        if (projData) {
+          for (const p of projData) {
+            projectMap[p.id] = p.project_number;
+          }
+        }
+      }
+
+      const mapped: Quote[] = rows.map((q: any) => ({
         id: q.id,
         quote_number: q.quote_number,
         quote_kind: q.quote_kind,
         quote_status: q.quote_status,
-        version_number: q.version_number ?? 1,
         quote_date: q.quote_date,
         expiry_date: q.expiry_date,
         total_ht: Number(q.total_ht) || 0,
-        total_vat: Number(q.total_vat) || 0,
         total_ttc: Number(q.total_ttc) || 0,
-        sent_at: q.sent_at ?? null,
-        signed_at: q.signed_at ?? null,
+        customer_id: q.customer_id ?? null,
+        customer_name: q.customer_name ?? null,
+        address_line1: q.address_line1 ?? null,
+        city: q.city ?? null,
         project_id: q.project_id ?? null,
+        project_number: q.project_id ? (projectMap[q.project_id] ?? null) : null,
         service_request_id: q.service_request_id ?? null,
-        installation_id: q.installation_id ?? null,
-        customer: q.customer_name ? { id: q.customer_id ?? "", name: q.customer_name, email: q.customer_email ?? null, phone: q.customer_phone ?? null } : null,
-        property: q.property_id ? { id: q.property_id, address_line1: q.address_line1 ?? null, city: q.city ?? null, postal_code: q.postal_code ?? null } : null,
       }));
 
       setQuotes(mapped);

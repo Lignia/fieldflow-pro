@@ -108,6 +108,7 @@ function nextActionText(q: Quote): string {
 /* ── Component ── */
 
 export default function Quotes() {
+  const { coreUser } = useCurrentUser();
   const navigate = useNavigate();
   const { quotes, loading, error, refetch } = useQuotes();
   const [statusFilter, setStatusFilter] = useState<QuoteStatusFilter>("all");

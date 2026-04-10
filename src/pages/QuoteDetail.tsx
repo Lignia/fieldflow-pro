@@ -27,6 +27,8 @@ import {
   StickyNote,
   CircleDot,
   Wrench,
+  Copy,
+  GitBranch,
 } from "lucide-react";
 import { toast } from "sonner";
 import { billingDb } from "@/integrations/supabase/schema-clients";

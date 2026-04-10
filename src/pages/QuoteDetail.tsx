@@ -524,7 +524,7 @@ export default function QuoteDetail() {
             ══════════════════════════════════ */}
         <div className="space-y-4 lg:sticky lg:top-4 lg:self-start">
 
-          {/* ── BLOC ACTIONS ── */}
+          {/* ── BLOC 1 — ACTIONS ── */}
           <Card className="p-4 space-y-3">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Actions</h3>
             <ActionsBloc
@@ -543,7 +543,51 @@ export default function QuoteDetail() {
             />
           </Card>
 
-          {/* ── BLOC ÉTAT DU DOSSIER ── */}
+          {/* ── BLOC 2 — ÉTAPE SUIVANTE ── */}
+          <NextStepBloc kind={quote.quote_kind} status={quote.quote_status} />
+
+          {/* ── BLOC 3 — RELEVÉ TECHNIQUE ── */}
+          {!isService && (
+            <Card className="p-4 space-y-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                <FileText className="h-3.5 w-3.5" />
+                Relevé technique
+              </h3>
+              {technicalSurvey ? (
+                <div className="space-y-2">
+                  <p className="text-sm text-accent flex items-center gap-1.5">
+                    <CheckCircle2 className="h-3.5 w-3.5" />
+                    Relevé réalisé
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full"
+                    onClick={() => navigate(`/technical-surveys/${technicalSurvey.id}`)}
+                  >
+                    Ouvrir le relevé
+                    <ExternalLink className="h-3 w-3 ml-1" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Non réalisé</p>
+                  {quote.project_id && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => navigate(`/technical-surveys/new?project_id=${quote.project_id}`)}
+                    >
+                      Créer un relevé
+                    </Button>
+                  )}
+                </div>
+              )}
+            </Card>
+          )}
+
+          {/* ── BLOC 4 — ÉTAT DU DOSSIER ── */}
           {!isService && (
             <Card className="p-4 space-y-3">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">État du dossier</h3>
@@ -559,7 +603,7 @@ export default function QuoteDetail() {
                       onClick={() => navigate(`/invoices/${depositInvoice.id}`)}
                       className="text-xs font-medium text-accent hover:underline flex items-center gap-1"
                     >
-                      Créée <ExternalLink className="h-3 w-3" />
+                      Créée ✔ <ExternalLink className="h-3 w-3" />
                     </button>
                   ) : (
                     <span className="text-xs text-muted-foreground">Non créée</span>
@@ -576,7 +620,7 @@ export default function QuoteDetail() {
                       onClick={() => navigate(`/installations/${installation.id}`)}
                       className="text-xs font-medium text-accent hover:underline flex items-center gap-1"
                     >
-                      Créée <ExternalLink className="h-3 w-3" />
+                      Créée ✔ <ExternalLink className="h-3 w-3" />
                     </button>
                   ) : (
                     <span className="text-xs text-muted-foreground">Non créée</span>

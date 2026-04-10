@@ -51,6 +51,14 @@ export interface QuoteDetailProject {
   status: string;
 }
 
+export interface QuoteDepositInvoice {
+  id: string;
+  invoice_number: string;
+  invoice_kind: string;
+  invoice_status: string;
+  total_ttc: number;
+}
+
 export interface QuoteActivity {
   id: string;
   activity_type: string;

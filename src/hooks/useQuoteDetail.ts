@@ -11,12 +11,6 @@ export const UNIT_LABELS: Record<UnitType, string> = {
   h: "heure",
 };
 
-export interface QuoteLineProduct {
-  id: string;
-  name: string;
-  sku: string | null;
-}
-
 export interface QuoteLine {
   id: string;
   label: string;
@@ -54,9 +48,13 @@ export interface QuoteDetailProject {
 export interface QuoteDepositInvoice {
   id: string;
   invoice_number: string;
-  invoice_kind: string;
   invoice_status: string;
-  total_ttc: number;
+}
+
+export interface QuoteInstallation {
+  id: string;
+  status: string;
+  device_type: string | null;
 }
 
 export interface QuoteActivity {
@@ -82,6 +80,9 @@ export interface QuoteDetailData {
   total_ttc: number;
   project_id: string | null;
   previous_quote_id: string | null;
+  tenant_id: string;
+  service_request_id: string | null;
+  installation_id: string | null;
   customer: QuoteDetailCustomer;
   property: QuoteDetailProperty | null;
 }
@@ -92,6 +93,7 @@ interface UseQuoteDetailReturn {
   activities: QuoteActivity[];
   project: QuoteDetailProject | null;
   depositInvoice: QuoteDepositInvoice | null;
+  installation: QuoteInstallation | null;
   loading: boolean;
   error: string | null;
   refetch: () => void;
@@ -103,6 +105,7 @@ export function useQuoteDetail(quoteId: string | undefined): UseQuoteDetailRetur
   const [activities, setActivities] = useState<QuoteActivity[]>([]);
   const [project, setProject] = useState<QuoteDetailProject | null>(null);
   const [depositInvoice, setDepositInvoice] = useState<QuoteDepositInvoice | null>(null);
+  const [installation, setInstallation] = useState<QuoteInstallation | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -140,7 +143,7 @@ export function useQuoteDetail(quoteId: string | undefined): UseQuoteDetailRetur
       }
 
       const q = quoteRes.data as any;
-      setQuote({
+      const quoteData: QuoteDetailData = {
         id: q.id,
         quote_number: q.quote_number,
         quote_kind: q.quote_kind,
@@ -155,9 +158,26 @@ export function useQuoteDetail(quoteId: string | undefined): UseQuoteDetailRetur
         total_ttc: Number(q.total_ttc) || 0,
         project_id: q.project_id,
         previous_quote_id: q.previous_quote_id,
-        customer: { id: q.customer_id ?? "", name: q.customer_name ?? "Client inconnu", email: q.customer_email ?? null, phone: q.customer_phone ?? null },
-        property: q.property_id ? { id: q.property_id, address_line1: q.address_line1 ?? null, address_line2: q.address_line2 ?? null, city: q.city ?? null, postal_code: q.postal_code ?? null } : null,
-      });
+        tenant_id: q.tenant_id,
+        service_request_id: q.service_request_id ?? null,
+        installation_id: q.installation_id ?? null,
+        customer: {
+          id: q.customer_id ?? "",
+          name: q.customer_name ?? "Client inconnu",
+          email: q.customer_email ?? null,
+          phone: q.customer_phone ?? null,
+        },
+        property: q.property_id
+          ? {
+              id: q.property_id,
+              address_line1: q.address_line1 ?? null,
+              address_line2: q.address_line2 ?? null,
+              city: q.city ?? null,
+              postal_code: q.postal_code ?? null,
+            }
+          : null,
+      };
+      setQuote(quoteData);
 
       setLines(
         (linesRes.data ?? []).map((l: any) => ({
@@ -184,39 +204,49 @@ export function useQuoteDetail(quoteId: string | undefined): UseQuoteDetailRetur
         }))
       );
 
-      // Fetch project number if project_id exists
+      // Fetch project
       if (q.project_id) {
         const { data: projData } = await coreDb
           .from("projects")
           .select("id, project_number, status")
           .eq("id", q.project_id)
           .single();
-        if (projData) {
-          setProject({ id: projData.id, project_number: projData.project_number, status: projData.status });
-        } else {
-          setProject(null);
-        }
+        setProject(projData ? { id: projData.id, project_number: projData.project_number, status: projData.status } : null);
       } else {
         setProject(null);
       }
 
-      // Fetch deposit invoice if quote is signed
+      // Fetch deposit invoice
       if (q.quote_status === "signed") {
         const { data: invData } = await billingDb
-          .from("v_invoices_with_context")
-          .select("id, invoice_number, invoice_kind, invoice_status, total_ttc")
+          .from("invoices")
+          .select("id, invoice_number, invoice_status")
           .eq("quote_id", quoteId)
-          .limit(1)
           .maybeSingle();
         setDepositInvoice(invData ? {
           id: invData.id,
           invoice_number: invData.invoice_number,
-          invoice_kind: invData.invoice_kind,
           invoice_status: invData.invoice_status,
-          total_ttc: Number(invData.total_ttc) || 0,
         } : null);
       } else {
         setDepositInvoice(null);
+      }
+
+      // Fetch installation
+      if (q.project_id && q.tenant_id) {
+        const { data: instData } = await coreDb
+          .from("installations")
+          .select("id, status, device_type")
+          .eq("project_id", q.project_id)
+          .eq("tenant_id", q.tenant_id)
+          .maybeSingle();
+        setInstallation(instData ? {
+          id: instData.id,
+          status: instData.status,
+          device_type: instData.device_type ?? null,
+        } : null);
+      } else {
+        setInstallation(null);
       }
     } catch (err: any) {
       setError(err.message ?? "Erreur inattendue");
@@ -229,5 +259,5 @@ export function useQuoteDetail(quoteId: string | undefined): UseQuoteDetailRetur
     fetchQuote();
   }, [fetchQuote]);
 
-  return { quote, lines, activities, project, depositInvoice, loading, error, refetch: fetchQuote };
+  return { quote, lines, activities, project, depositInvoice, installation, loading, error, refetch: fetchQuote };
 }

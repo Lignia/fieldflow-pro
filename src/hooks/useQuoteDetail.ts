@@ -112,6 +112,7 @@ export function useQuoteDetail(quoteId: string | undefined): UseQuoteDetailRetur
   const [project, setProject] = useState<QuoteDetailProject | null>(null);
   const [depositInvoice, setDepositInvoice] = useState<QuoteDepositInvoice | null>(null);
   const [installation, setInstallation] = useState<QuoteInstallation | null>(null);
+  const [technicalSurvey, setTechnicalSurvey] = useState<QuoteTechnicalSurvey | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 

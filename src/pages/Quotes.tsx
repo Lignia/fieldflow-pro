@@ -3,8 +3,9 @@ import { useNavigate, Link } from "react-router-dom";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
-  Search, FileText, RefreshCw, Plus, ChevronRight,
-  Send, FilePlus, PenLine, Receipt, AlertTriangle,
+  Search, FileText, RefreshCw, Plus, AlertTriangle,
+  MoreHorizontal, Eye, Send, FilePlus, PenLine, Receipt,
+  Trash2, Copy, FolderOpen,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -18,7 +19,6 @@ import {
   type QuoteStatusFilter,
   type Quote,
 } from "@/hooks/useQuotes";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -27,10 +27,17 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import {
-  Tooltip, TooltipContent, TooltipTrigger,
-} from "@/components/ui/tooltip";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Card } from "@/components/ui/card";
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
+} from "@/components/ui/dialog";
 import { NewQuoteModal } from "@/components/quotes/NewQuoteModal";
 
 /* ── Helpers ── */
@@ -39,26 +46,61 @@ function formatCurrency(amount: number): string {
   return Math.round(amount).toLocaleString("fr-FR") + " €";
 }
 
-function formatShortDate(date: string): string {
-  return format(new Date(date), "d MMM yyyy", { locale: fr });
-}
-
 function isIncompleteDraft(q: Quote): boolean {
   return q.quote_status === "draft" && q.total_ht === 0;
 }
 
-/* ── Badge variant mapping ── */
-
-type BadgeVariant = "default" | "secondary" | "destructive" | "outline" | "success" | "warning" | "info";
-
-const STATUS_BADGE_VARIANT: Record<QuoteStatus, BadgeVariant> = {
-  draft: "secondary",
-  sent: "default",
-  signed: "success",
-  lost: "outline",
-  expired: "destructive",
-  canceled: "outline",
+const KIND_LABEL: Record<string, string> = {
+  estimate: "Estimatif",
+  final: "Définitif",
+  service: "SAV",
 };
+
+function isExpired(q: Quote): boolean {
+  if (!q.expiry_date) return false;
+  return new Date(q.expiry_date) < new Date() && q.quote_status === "sent";
+}
+
+/* ── Single status badge ── */
+
+function StatusBadgeCell({ quote }: { quote: Quote }) {
+  const incomplete = isIncompleteDraft(quote);
+  const expired = isExpired(quote);
+
+  if (incomplete) {
+    return <Badge className="bg-orange-500 text-white hover:bg-orange-600">Incomplet</Badge>;
+  }
+  if (expired) {
+    return <Badge variant="destructive">Expiré</Badge>;
+  }
+  if (quote.quote_status === "signed") {
+    return <Badge className="bg-green-500 text-white hover:bg-green-600">Signé</Badge>;
+  }
+  if (quote.quote_status === "lost") {
+    return <Badge variant="destructive">Perdu</Badge>;
+  }
+  if (quote.quote_status === "sent") {
+    return <Badge variant="default">Envoyé</Badge>;
+  }
+  // draft with content
+  return <Badge variant="secondary">Brouillon</Badge>;
+}
+
+/* ── Next action text ── */
+
+function nextActionText(q: Quote): string {
+  if (isIncompleteDraft(q)) return "Compléter";
+  const { quote_kind: kind, quote_status: status } = q;
+  if (kind === "estimate" && status === "draft") return "Envoyer";
+  if (kind === "estimate" && status === "sent") return "Créer le définitif";
+  if (kind === "final" && status === "draft") return "Envoyer pour signature";
+  if (kind === "final" && status === "sent") return "Obtenir la signature";
+  if (kind === "service" && status === "draft") return "Envoyer";
+  if (kind === "service" && status === "sent") return "Suivre la réponse";
+  if (status === "signed") return "Voir la facture";
+  if (status === "lost" || status === "expired" || status === "canceled") return "Archiver";
+  return "—";
+}
 
 /* ── Component ── */
 
@@ -70,6 +112,7 @@ export default function Quotes() {
   const [search, setSearch] = useState("");
   const [showNewQuote, setShowNewQuote] = useState(false);
   const [showIncompleteOnly, setShowIncompleteOnly] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<Quote | null>(null);
 
   if (error && !loading) {
     toast.error(error, { id: "quotes-error" });
@@ -104,6 +147,12 @@ export default function Quotes() {
     }
     return list;
   }, [quotes, statusFilter, kindFilter, search, showIncompleteOnly]);
+
+  const handleDelete = (quote: Quote) => {
+    // TODO: call billingDb delete + refetch
+    toast.success(`Devis ${quote.quote_number} supprimé`);
+    setDeleteTarget(null);
+  };
 
   return (
     <div className="space-y-5">
@@ -152,7 +201,7 @@ export default function Quotes() {
         </Alert>
       )}
 
-      {/* Filters row: Tabs (status) + Select (type) */}
+      {/* Filters row */}
       <div className="flex items-center gap-3 flex-wrap">
         <Tabs
           value={showIncompleteOnly ? "__incomplete" : statusFilter}
@@ -198,7 +247,7 @@ export default function Quotes() {
         />
       </div>
 
-      {/* List */}
+      {/* Table */}
       {loading ? (
         <div className="space-y-2">
           {Array.from({ length: 5 }).map((_, i) => (
@@ -220,230 +269,204 @@ export default function Quotes() {
           showIncompleteOnly={showIncompleteOnly}
         />
       ) : (
-        <div className="space-y-1.5">
-          {filtered.map((quote) => (
-            <QuoteRow key={quote.id} quote={quote} />
-          ))}
+        <div className="rounded-md border">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>N° Devis</TableHead>
+                <TableHead>Client &amp; Chantier</TableHead>
+                <TableHead>Statut</TableHead>
+                <TableHead className="text-right">Montant TTC</TableHead>
+                <TableHead className="hidden md:table-cell">Prochaine action</TableHead>
+                <TableHead className="w-[50px]">
+                  <span className="sr-only">Actions</span>
+                </TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filtered.map((quote) => (
+                <QuoteTableRow
+                  key={quote.id}
+                  quote={quote}
+                  onDelete={() => setDeleteTarget(quote)}
+                />
+              ))}
+            </TableBody>
+          </Table>
         </div>
       )}
+
+      {/* Delete dialog */}
+      <Dialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Supprimer le devis</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            Êtes-vous sûr de vouloir supprimer <span className="font-mono font-semibold">{deleteTarget?.quote_number}</span> ? Cette action est irréversible.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteTarget(null)}>Annuler</Button>
+            <Button variant="destructive" onClick={() => deleteTarget && handleDelete(deleteTarget)}>
+              <Trash2 className="h-3.5 w-3.5 mr-1" />
+              Supprimer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
-/* ── QuoteRow ── */
+/* ── Table Row ── */
 
-function QuoteRow({ quote }: { quote: Quote }) {
-  const navigate = useNavigate();
-  const address = [quote.address_line1, quote.city].filter(Boolean).join(", ");
-  const incomplete = isIncompleteDraft(quote);
-
-  return (
-    <Card
-      className="p-4 hover:border-primary/20 transition-colors cursor-pointer group"
-      onClick={() => navigate(`/quotes/${quote.id}`)}
-    >
-      <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
-        {/* Quote number */}
-        <span className="font-mono text-xs text-primary shrink-0">
-          {quote.quote_number}
-        </span>
-
-        {/* Status badge (primary) */}
-        <StatusBadge status={quote.quote_status} />
-
-        {/* Incomplete badge */}
-        {incomplete && (
-          <Badge variant="destructive" className="text-[10px] px-1.5 py-0">
-            Incomplet
-          </Badge>
-        )}
-
-        {/* Type badge (secondary, discreet) */}
-        <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-muted-foreground">
-          {QUOTE_KIND_LABELS[quote.quote_kind] ?? quote.quote_kind}
-        </Badge>
-
-        {/* Customer */}
-        {quote.customer_name && quote.customer_id ? (
-          <Link
-            to={`/clients/${quote.customer_id}`}
-            className="text-sm font-medium min-w-0 truncate opacity-80 group-hover:opacity-100 hover:text-primary hover:underline"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {quote.customer_name}
-          </Link>
-        ) : (
-          <span className="text-sm text-muted-foreground truncate">Client inconnu</span>
-        )}
-
-        {/* Address */}
-        {address && (
-          <span className="hidden lg:inline text-xs text-muted-foreground truncate max-w-[180px]">
-            {address}
-          </span>
-        )}
-
-        {/* Context link: project or SAV */}
-        <ContextLink quote={quote} />
-
-        <span className="flex-1" />
-
-        {/* Amount */}
-        <span className="font-mono text-sm font-semibold shrink-0">
-          {formatCurrency(quote.total_ttc)}
-        </span>
-
-        {/* Date */}
-        <span className="text-xs text-muted-foreground shrink-0">
-          {formatShortDate(quote.quote_date)}
-        </span>
-
-        {/* Quick action */}
-        <QuickAction quote={quote} />
-
-        {/* Chevron */}
-        <ChevronRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />
-      </div>
-    </Card>
-  );
-}
-
-/* ── Status Badge ── */
-
-function StatusBadge({ status }: { status: QuoteStatus }) {
-  const label = QUOTE_STATUS_LABELS[status] ?? status;
-  const variant = STATUS_BADGE_VARIANT[status] ?? "secondary";
-  return <Badge variant={variant}>{label}</Badge>;
-}
-
-/* ── Context Link (project or SAV) ── */
-
-function ContextLink({ quote }: { quote: Quote }) {
-  if (quote.quote_kind === "service") {
-    if (quote.service_request_id) {
-      return (
-        <span className="hidden md:inline text-xs text-warning font-medium shrink-0">
-          Demande SAV
-        </span>
-      );
-    }
-    return null;
-  }
-
-  if (quote.project_id) {
-    return (
-      <Link
-        to={`/projects/${quote.project_id}`}
-        className="hidden md:inline text-xs font-mono text-muted-foreground opacity-80 group-hover:opacity-100 hover:text-primary hover:underline shrink-0"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {quote.project_number ?? "Projet"}
-      </Link>
-    );
-  }
-  return null;
-}
-
-/* ── Quick Action ── */
-
-function QuickAction({ quote }: { quote: Quote }) {
+function QuoteTableRow({ quote, onDelete }: { quote: Quote; onDelete: () => void }) {
   const navigate = useNavigate();
   const { quote_kind: kind, quote_status: status } = quote;
+  const customerDisplay = [quote.customer_first_name, quote.customer_last_name].filter(Boolean).join(" ") || quote.customer_name;
+  const city = quote.city ?? quote.property_city;
+  const subLine = [city, quote.quote_kind === "service" ? "SAV" : quote.project_number].filter(Boolean).join(" · ");
 
-  if (kind === "estimate" && status === "draft") {
-    return (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost" size="xs"
-            className="text-xs shrink-0"
-            onClick={(e) => { e.stopPropagation(); navigate(`/quotes/${quote.id}`); }}
+  return (
+    <TableRow
+      className="cursor-pointer hover:bg-muted/50"
+      onClick={() => navigate(`/quotes/${quote.id}`)}
+    >
+      {/* Col 1: N° Devis */}
+      <TableCell>
+        <Link
+          to={`/quotes/${quote.id}`}
+          className="font-mono text-xs text-primary hover:underline"
+          onClick={(e) => e.stopPropagation()}
+        >
+          {quote.quote_number}
+        </Link>
+        <p className="text-[11px] text-muted-foreground mt-0.5">
+          {KIND_LABEL[kind] ?? kind}
+        </p>
+      </TableCell>
+
+      {/* Col 2: Client & Chantier */}
+      <TableCell>
+        {quote.customer_id ? (
+          <Link
+            to={`/clients/${quote.customer_id}`}
+            className="text-sm font-medium hover:underline hover:text-primary"
+            onClick={(e) => e.stopPropagation()}
           >
-            <Send className="h-3 w-3 mr-1" />
-            Envoyer
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Envoyer le devis estimatif au client</TooltipContent>
-      </Tooltip>
-    );
-  }
+            {customerDisplay || "Client inconnu"}
+          </Link>
+        ) : (
+          <span className="text-sm text-muted-foreground">Client inconnu</span>
+        )}
+        {subLine && (
+          <p className="text-[11px] text-muted-foreground mt-0.5 truncate max-w-[200px]">
+            {subLine}
+          </p>
+        )}
+      </TableCell>
 
-  if (kind === "estimate" && status === "sent" && quote.project_id) {
-    return (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost" size="xs"
-            className="text-xs shrink-0"
-            onClick={(e) => {
-              e.stopPropagation();
-              navigate(`/projects/${quote.project_id}/quotes/new?kind=final`);
-            }}
-          >
-            <FilePlus className="h-3 w-3 mr-1" />
-            Devis final
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Créer le devis définitif à partir de cet estimatif</TooltipContent>
-      </Tooltip>
-    );
-  }
+      {/* Col 3: Statut (single badge) */}
+      <TableCell>
+        <StatusBadgeCell quote={quote} />
+      </TableCell>
 
-  if ((kind === "final" || kind === "service") && status === "draft") {
-    return (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost" size="xs"
-            className="text-xs shrink-0"
-            onClick={(e) => { e.stopPropagation(); navigate(`/quotes/${quote.id}`); }}
-          >
-            <Send className="h-3 w-3 mr-1" />
-            Envoyer
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Envoyer le devis au client</TooltipContent>
-      </Tooltip>
-    );
-  }
+      {/* Col 4: Montant TTC */}
+      <TableCell className="text-right">
+        <span className="font-mono font-semibold text-sm">
+          {quote.total_ttc > 0 ? formatCurrency(quote.total_ttc) : "—"}
+        </span>
+      </TableCell>
 
-  if (kind === "final" && status === "sent") {
-    return (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost" size="xs"
-            className="text-xs text-accent shrink-0"
-            onClick={(e) => { e.stopPropagation(); navigate(`/quotes/${quote.id}`); }}
-          >
-            <PenLine className="h-3 w-3 mr-1" />
-            Signer
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Marquer le devis comme signé par le client</TooltipContent>
-      </Tooltip>
-    );
-  }
+      {/* Col 5: Prochaine action (hidden mobile) */}
+      <TableCell className="hidden md:table-cell">
+        <span className="text-xs text-muted-foreground">{nextActionText(quote)}</span>
+      </TableCell>
 
-  if (status === "signed") {
-    return (
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            variant="ghost" size="xs"
-            className="text-xs shrink-0"
-            onClick={(e) => { e.stopPropagation(); navigate(`/quotes/${quote.id}`); }}
-          >
-            <Receipt className="h-3 w-3 mr-1" />
-            Facture
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent>Voir la facture d'acompte liée</TooltipContent>
-      </Tooltip>
-    );
-  }
+      {/* Col 6: Actions dropdown */}
+      <TableCell>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <MoreHorizontal className="h-4 w-4" />
+              <span className="sr-only">Actions</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
+            <DropdownMenuItem onClick={() => navigate(`/quotes/${quote.id}`)}>
+              <Eye className="h-3.5 w-3.5 mr-2" />
+              Ouvrir
+            </DropdownMenuItem>
 
-  return null;
+            {status === "draft" && quote.total_ht > 0 && (
+              <DropdownMenuItem onClick={() => navigate(`/quotes/${quote.id}`)}>
+                <Send className="h-3.5 w-3.5 mr-2" />
+                Envoyer
+              </DropdownMenuItem>
+            )}
+
+            {kind === "estimate" && status === "sent" && quote.project_id && (
+              <DropdownMenuItem
+                onClick={() =>
+                  navigate(`/projects/${quote.project_id}/quotes/new?kind=final&from_quote_id=${quote.id}`)
+                }
+              >
+                <FilePlus className="h-3.5 w-3.5 mr-2" />
+                Créer devis final
+              </DropdownMenuItem>
+            )}
+
+            {kind === "final" && status === "sent" && (
+              <DropdownMenuItem onClick={() => navigate(`/quotes/${quote.id}`)}>
+                <PenLine className="h-3.5 w-3.5 mr-2" />
+                Signer
+              </DropdownMenuItem>
+            )}
+
+            {status === "signed" && (
+              <DropdownMenuItem onClick={() => navigate(`/quotes/${quote.id}`)}>
+                <Receipt className="h-3.5 w-3.5 mr-2" />
+                Voir la facture
+              </DropdownMenuItem>
+            )}
+
+            <DropdownMenuItem disabled>
+              <Copy className="h-3.5 w-3.5 mr-2" />
+              Dupliquer
+            </DropdownMenuItem>
+
+            {kind !== "service" && quote.project_id && (
+              <DropdownMenuItem onClick={() => navigate(`/projects/${quote.project_id}`)}>
+                <FolderOpen className="h-3.5 w-3.5 mr-2" />
+                Voir le projet
+              </DropdownMenuItem>
+            )}
+
+            {status === "sent" && (
+              <DropdownMenuItem onClick={() => navigate(`/quotes/${quote.id}`)}>
+                Marquer perdu
+              </DropdownMenuItem>
+            )}
+
+            {status === "draft" && (
+              <DropdownMenuItem
+                className="text-destructive focus:text-destructive"
+                onClick={onDelete}
+              >
+                <Trash2 className="h-3.5 w-3.5 mr-2" />
+                Supprimer
+              </DropdownMenuItem>
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </TableCell>
+    </TableRow>
+  );
 }
 
 /* ── Empty State ── */

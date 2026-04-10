@@ -99,6 +99,7 @@ interface UseQuoteDetailReturn {
   project: QuoteDetailProject | null;
   depositInvoice: QuoteDepositInvoice | null;
   installation: QuoteInstallation | null;
+  technicalSurvey: QuoteTechnicalSurvey | null;
   loading: boolean;
   error: string | null;
   refetch: () => void;

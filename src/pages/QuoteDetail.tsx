@@ -18,6 +18,8 @@ import {
   FileDown,
   Receipt,
   History,
+  FolderOpen,
+  ExternalLink,
 } from "lucide-react";
 import { toast } from "sonner";
 import { billingDb } from "@/integrations/supabase/schema-clients";
@@ -110,7 +112,7 @@ export default function QuoteDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { coreUser } = useCurrentUser();
-  const { quote, lines, activities, loading, error, refetch } = useQuoteDetail(id);
+  const { quote, lines, activities, project, depositInvoice, loading, error, refetch } = useQuoteDetail(id);
   const [showDelete, setShowDelete] = useState(false);
   const [showSignConfirm, setShowSignConfirm] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
@@ -362,15 +364,26 @@ export default function QuoteDetail() {
 
             {quote.quote_status === "signed" && (
               <>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="outline" size="sm" disabled>
-                      <Receipt className="h-3.5 w-3.5 mr-1" />
-                      Facture d'acompte
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent>Bientôt disponible</TooltipContent>
-                </Tooltip>
+                {depositInvoice ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate(`/invoices/${depositInvoice.id}`)}
+                  >
+                    <Receipt className="h-3.5 w-3.5 mr-1" />
+                    Voir la facture d'acompte
+                  </Button>
+                ) : (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button variant="outline" size="sm" disabled>
+                        <Receipt className="h-3.5 w-3.5 mr-1" />
+                        Facture d'acompte
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>Aucune facture trouvée</TooltipContent>
+                  </Tooltip>
+                )}
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button variant="outline" size="sm" disabled>
@@ -415,14 +428,34 @@ export default function QuoteDetail() {
         </Card>
       </div>
 
-      {/* ── Client + Property ── */}
+      {/* ── Project link + Client + Property ── */}
+      {project && (
+        <Card className="p-4 flex items-center gap-2">
+          <FolderOpen className="h-4 w-4 text-muted-foreground" />
+          <span className="text-sm text-muted-foreground">Projet</span>
+          <button
+            onClick={() => navigate(`/projects/${project.id}`)}
+            className="text-sm font-medium text-primary hover:underline flex items-center gap-1"
+          >
+            {project.project_number}
+            <ExternalLink className="h-3 w-3" />
+          </button>
+        </Card>
+      )}
+
       <div className="grid sm:grid-cols-2 gap-3">
         <Card className="p-5">
           <div className="flex items-center gap-2 mb-3">
             <User className="h-4 w-4 text-muted-foreground" />
             <h2 className="text-sm font-semibold">Client</h2>
           </div>
-          <p className="font-medium text-sm">{customer.name}</p>
+          <button
+            onClick={() => navigate(`/clients/${customer.id}`)}
+            className="font-medium text-sm text-primary hover:underline flex items-center gap-1"
+          >
+            {customer.name}
+            <ExternalLink className="h-3 w-3" />
+          </button>
           <div className="mt-2 space-y-1.5 text-xs text-muted-foreground">
             {customer.email && (
               <a href={`mailto:${customer.email}`} className="flex items-center gap-1.5 hover:text-foreground transition-colors">

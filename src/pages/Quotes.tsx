@@ -293,6 +293,8 @@ export default function Quotes() {
                   key={quote.id}
                   quote={quote}
                   onDelete={() => setDeleteTarget(quote)}
+                  refetch={refetch}
+                  coreUserId={coreUser?.id ?? null}
                 />
               ))}
             </TableBody>

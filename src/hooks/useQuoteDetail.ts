@@ -57,6 +57,11 @@ export interface QuoteInstallation {
   device_type: string | null;
 }
 
+export interface QuoteTechnicalSurvey {
+  id: string;
+  survey_status: string;
+}
+
 export interface QuoteActivity {
   id: string;
   activity_type: string;

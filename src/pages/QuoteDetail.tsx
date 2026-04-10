@@ -289,20 +289,28 @@ export default function QuoteDetail() {
                   <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusCfg.className}`}>
                     {statusCfg.label}
                   </span>
-                  {/* Expiry badges */}
+                  {/* Expiry badges — only positive days or "Expiré" */}
                   {expiry.isExpired && (
                     <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-destructive/15 text-destructive">
                       Expiré
                     </span>
                   )}
-                  {expiry.isExpiringSoon && (
+                  {expiry.isExpiringSoon && expiry.days >= 0 && (
                     <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-warning/15 text-warning">
                       Expire dans {expiry.days} jour{expiry.days !== 1 ? "s" : ""}
                     </span>
                   )}
                 </div>
 
-                {/* Signed date */}
+                {/* Origin mention */}
+                {quote.previous_quote_id && (
+                  <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <GitBranch className="h-3 w-3" />
+                    Issu d'un devis estimatif
+                  </p>
+                )}
+
+                {/* Signed date — only if non-null */}
                 {quote.signed_at && (
                   <p className="text-sm text-accent flex items-center gap-1.5">
                     <CheckCircle2 className="h-3.5 w-3.5" />
@@ -310,6 +318,19 @@ export default function QuoteDetail() {
                   </p>
                 )}
               </div>
+
+              {/* Duplicate button (disabled placeholder) */}
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span tabIndex={0}>
+                    <Button variant="outline" size="sm" disabled>
+                      <Copy className="h-3.5 w-3.5 mr-1" />
+                      Dupliquer
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>Disponible prochainement</TooltipContent>
+              </Tooltip>
             </div>
 
             <Separator />
@@ -317,16 +338,18 @@ export default function QuoteDetail() {
             {/* Context links row */}
             <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
               {/* Client */}
-              <button
-                onClick={() => navigate(`/clients/${customer.id}`)}
-                className="flex items-center gap-1.5 text-primary hover:underline"
-              >
-                <User className="h-3.5 w-3.5" />
-                {customer.name}
-                <ExternalLink className="h-3 w-3 opacity-50" />
-              </button>
+              {customer && (
+                <button
+                  onClick={() => navigate(`/clients/${customer.id}`)}
+                  className="flex items-center gap-1.5 text-primary hover:underline"
+                >
+                  <User className="h-3.5 w-3.5" />
+                  {customer.name}
+                  <ExternalLink className="h-3 w-3 opacity-50" />
+                </button>
+              )}
 
-              {/* Project */}
+              {/* Project — only for non-service */}
               {project && !isService && (
                 <button
                   onClick={() => navigate(`/projects/${project.id}`)}
@@ -338,7 +361,19 @@ export default function QuoteDetail() {
                 </button>
               )}
 
-              {/* Address + Maps */}
+              {/* SAV link — only for service with service_request_id */}
+              {isService && quote.service_request_id && (
+                <button
+                  onClick={() => navigate(`/service-requests/${quote.service_request_id}`)}
+                  className="flex items-center gap-1.5 text-warning hover:underline"
+                >
+                  <Wrench className="h-3.5 w-3.5" />
+                  Voir la demande SAV
+                  <ExternalLink className="h-3 w-3 opacity-50" />
+                </button>
+              )}
+
+              {/* Address — label: "Adresse d'intervention" */}
               {property && (
                 <span className="flex items-center gap-1.5 text-muted-foreground">
                   <MapPin className="h-3.5 w-3.5" />
@@ -349,6 +384,7 @@ export default function QuoteDetail() {
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-primary hover:underline ml-1"
+                      title="Ouvrir dans Maps"
                     >
                       <MapPinned className="h-3.5 w-3.5 inline" />
                     </a>
@@ -357,7 +393,7 @@ export default function QuoteDetail() {
               )}
             </div>
 
-            {/* Dates row */}
+            {/* Dates row — conditional display */}
             <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Calendar className="h-3 w-3" />
@@ -367,10 +403,18 @@ export default function QuoteDetail() {
                 <Clock className="h-3 w-3" />
                 Valide jusqu'au {fmtDate(quote.expiry_date)}
               </span>
+              {/* sent_at — only if non-null */}
               {quote.sent_at && (
                 <span className="flex items-center gap-1">
                   <Send className="h-3 w-3" />
                   Envoyé le {fmtDate(quote.sent_at)}
+                </span>
+              )}
+              {/* signed_at — already shown above, but also in date row for consistency */}
+              {quote.signed_at && (
+                <span className="flex items-center gap-1">
+                  <CheckCircle2 className="h-3 w-3" />
+                  Signé le {fmtDate(quote.signed_at)}
                 </span>
               )}
             </div>

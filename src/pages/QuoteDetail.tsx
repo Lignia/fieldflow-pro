@@ -134,7 +134,7 @@ export default function QuoteDetail() {
   const { coreUser } = useCurrentUser();
   const {
     quote, lines, activities, project,
-    depositInvoice, installation,
+    depositInvoice, installation, technicalSurvey,
     loading, error, refetch,
   } = useQuoteDetail(id);
   const [showDelete, setShowDelete] = useState(false);

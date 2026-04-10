@@ -326,12 +326,62 @@ export default function Quotes() {
 
 /* ── Table Row ── */
 
-function QuoteTableRow({ quote, onDelete }: { quote: Quote; onDelete: () => void }) {
+interface QuoteTableRowProps {
+  quote: Quote;
+  onDelete: () => void;
+  refetch: () => void;
+  coreUserId: string | null;
+}
+
+function QuoteTableRow({ quote, onDelete, refetch, coreUserId }: QuoteTableRowProps) {
   const navigate = useNavigate();
+  const [sending, setSending] = useState(false);
   const { quote_kind: kind, quote_status: status } = quote;
   const customerDisplay = quote.customer_name;
   const city = quote.city;
   const subLine = [city, quote.quote_kind === "service" ? "SAV" : quote.project_number].filter(Boolean).join(" · ");
+
+  const handleSend = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!coreUserId) {
+      toast.error("Utilisateur non identifié");
+      return;
+    }
+    setSending(true);
+    try {
+      const { error } = await billingDb.rpc("transition_quote_status", {
+        p_quote_id: quote.id,
+        p_new_status: "sent",
+        p_actor_id: coreUserId,
+        p_reason: "Devis envoyé au client",
+      });
+      if (error) throw error;
+      toast.success(`Devis ${quote.quote_number} envoyé`);
+      refetch();
+    } catch (err: any) {
+      toast.error(err?.message ?? "Erreur lors de l'envoi");
+    } finally {
+      setSending(false);
+    }
+  }, [quote.id, quote.quote_number, coreUserId, refetch]);
+
+  const handleViewInvoice = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const { data } = await billingDb
+        .from("invoices")
+        .select("id")
+        .eq("quote_id", quote.id)
+        .maybeSingle();
+      if (data?.id) {
+        navigate(`/invoices/${data.id}`);
+      } else {
+        toast.info("Facture en cours de génération");
+      }
+    } catch {
+      toast.error("Impossible de récupérer la facture");
+    }
+  }, [quote.id, navigate]);
 
   return (
     <TableRow
@@ -386,7 +436,12 @@ function QuoteTableRow({ quote, onDelete }: { quote: Quote; onDelete: () => void
 
       {/* Col 5: Prochaine action (hidden mobile) */}
       <TableCell className="hidden md:table-cell">
-        <span className="text-xs text-muted-foreground">{nextActionText(quote)}</span>
+        <NextActionButton
+          quote={quote}
+          sending={sending}
+          onSend={handleSend}
+          onViewInvoice={handleViewInvoice}
+        />
       </TableCell>
 
       {/* Col 6: Actions dropdown */}

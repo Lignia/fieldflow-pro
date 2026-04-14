@@ -463,7 +463,7 @@ export default function LandingPage() {
                     <span className="ml-1 font-semibold text-foreground">4.8</span>
                   </div>
                   <span className="text-border">|</span>
-                  <span>200+ artisans · sans carte bancaire</span>
+                  <span>200+ pros du chauffage au bois utilisent déjà LIGNIA. Sans carte bancaire.</span>
                 </div>
               </Reveal>
             </div>
@@ -835,7 +835,7 @@ export default function LandingPage() {
                     <div className="flex h-11 w-11 items-center justify-center rounded-full bg-accent text-accent-foreground text-sm font-bold">PL</div>
                     <div>
                       <p className="text-sm font-semibold">Patrick Lefèvre</p>
-                      <p className="text-xs text-primary-foreground/50">Artisan chauffagiste · Annecy (74) · 6 employés</p>
+                      <p className="text-xs text-primary-foreground/50">Installateur de poêles et cheminées · Annecy (74) · 6 employés</p>
                     </div>
                   </div>
                 </div>
@@ -844,7 +844,7 @@ export default function LandingPage() {
               {/* Stats — 4 cols, stacked */}
               <div className="lg:col-span-4 flex flex-col gap-4">
                 {[
-                  { value: "200+", label: "artisans équipés", sub: "depuis 2024 · chauffage, HVAC, plomberie" },
+                  { value: "200+", label: "pros du chauffage au bois", sub: "depuis 2024 · installateurs, ramoneurs, showrooms" },
                   { value: "4.8/5", label: "satisfaction client", sub: "sur 127 avis vérifiés · Trustpilot" },
                   { value: "15 min", label: "prise en main", sub: "sans formation ni consultant" },
                 ].map((s) => (
@@ -883,7 +883,7 @@ export default function LandingPage() {
                   Demander une démo
                 </a>
               </div>
-              <p className="mt-6 text-[12px] text-primary-foreground/25">Aucune carte bancaire requise · Données hébergées en France · Support réactif</p>
+              <p className="mt-6 text-[12px] text-primary-foreground/25">Sans carte bancaire · Données hébergées en France · Support réactif</p>
             </div>
           </div>
         </section>

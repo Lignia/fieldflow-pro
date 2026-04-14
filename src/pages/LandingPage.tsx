@@ -428,26 +428,26 @@ export default function LandingPage() {
               <Reveal>
                 <div className="inline-flex items-center gap-2 rounded-full border border-accent/20 bg-accent/[0.06] px-3 py-1 text-[11px] font-medium text-accent mb-5">
                   <Flame className="h-3 w-3" />
-                  Chauffage bois · HVAC · Plomberie
+                  Spécialistes du chauffage au bois
                 </div>
               </Reveal>
               <Reveal delay={60}>
                 <h1 className="text-[2.5rem] sm:text-5xl lg:text-[3.2rem] xl:text-[3.6rem] font-bold tracking-tight text-foreground" style={{ lineHeight: "1.04" }}>
                   Vos chantiers.<br />
-                  Votre rythme.<br />
+                  Votre métier.<br />
                   <span className="text-accent">Zéro paperasse.</span>
                 </h1>
               </Reveal>
               <Reveal delay={120}>
                 <p className="mt-5 text-base md:text-lg text-muted-foreground max-w-md leading-relaxed">
-                  LIGNIA gère vos devis, planning et factures. Vous, restez sur le chantier.
+                  Pour les spécialistes du chauffage au bois qui vendent, installent et entretiennent, LIGNIA centralise devis, planning, attestations et factures.
                 </p>
               </Reveal>
               <Reveal delay={180}>
                 <div className="mt-7 flex items-center gap-5">
                   <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-[0_2px_8px_rgba(0,0,0,0.08),0_8px_32px_-4px_hsl(142_40%_45%/0.25)] active:scale-[0.97] transition-all text-sm font-semibold px-7 h-12 rounded-xl" asChild>
                     <Link to="/dashboard">
-                      Essai gratuit 14 jours
+                      Créez votre premier document en 15 min
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Link>
                   </Button>
@@ -521,15 +521,15 @@ export default function LandingPage() {
               <Reveal>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-warning/60 mb-4">Le problème</p>
                 <h2 className="text-3xl md:text-[2.75rem] font-bold leading-[1.06] mb-5" style={{ letterSpacing: "-0.02em" }}>
-                  Votre savoir-faire mérite mieux que des post-it
+                  Conseil, pose, entretien, ramonage : la paperasse vous prend trop de temps.
                 </h2>
                 <p className="text-primary-foreground/50 text-base md:text-lg leading-relaxed mb-8">
-                  Vous êtes artisan, pas secrétaire. Pourtant vous passez vos soirées à relancer, recopier et chercher ce devis parti où déjà…
+                  Entre les devis, les attestations, les relances et le planning, vous perdez du temps au bureau alors que votre métier est sur le terrain.
                 </p>
                 {/* Accent stat — large, punchy */}
                 <div className="inline-flex items-end gap-2 rounded-2xl border border-warning/20 bg-warning/[0.06] px-6 py-4">
                   <span className="text-5xl font-bold font-mono text-warning leading-none">67%</span>
-                  <span className="text-sm text-warning/70 mb-1 leading-tight">des artisans facturent<br />avec plus de 15j de retard</span>
+                  <span className="text-sm text-warning/70 mb-1 leading-tight">des pros facturent<br />avec plus de 15j de retard</span>
                 </div>
               </Reveal>
             </div>
@@ -538,10 +538,10 @@ export default function LandingPage() {
             <div className="lg:col-span-7">
               <div className="grid sm:grid-cols-2 gap-4">
                 {[
-                  { stat: "2h", unit: "/jour", label: "Perdues en admin", desc: "Devis recopiés à la main, mails non relancés, factures oubliées dans la boîte à gants du camion.", icon: Clock, offset: "" },
-                  { stat: "30", unit: "%", label: "De trajets inutiles", desc: "Sans planning partagé, vos techniciens se croisent sur les mêmes chantiers ou font 80 km pour rien.", icon: Truck, offset: "sm:mt-8" },
-                  { stat: "1/3", unit: "", label: "Des devis ne sont jamais relancés", desc: "Le client attend, vous oubliez, un concurrent répond plus vite.", icon: FileText, offset: "" },
-                  { stat: "45j", unit: "", label: "Délai moyen de paiement", desc: "Parce que facturer prend du temps, et relancer encore plus.", icon: Euro, offset: "sm:mt-8" },
+                  { stat: "2h", unit: "/jour", label: "Perdues en admin", desc: "Devis recopiés à la main, attestations égarées, factures oubliées.", icon: Clock, offset: "" },
+                  { stat: "3x", unit: "", label: "Ressaisie inutile", desc: "Les mêmes informations saisies plusieurs fois : devis, attestation, facture.", icon: Truck, offset: "sm:mt-8" },
+                  { stat: "1/3", unit: "", label: "Contrats non relancés", desc: "Contrats d'entretien non relancés à temps. Le client oublie, vous aussi.", icon: FileText, offset: "" },
+                  { stat: "45j", unit: "", label: "Facturation retardée", desc: "Planning partagé absent : doublons, trajets inutiles, facturation retardée après les chantiers.", icon: Euro, offset: "sm:mt-8" },
                 ].map((p, i) => (
                   <Reveal key={i} delay={i * 100}>
                     <div className={`${p.offset}`}>
@@ -572,10 +572,10 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl px-6 sm:px-10">
           <div className="flex flex-wrap items-center justify-between gap-4 md:gap-8">
             {[
-              "17 statuts projet",
-              "Devis signé → facture en 1 clic",
-              "Planning multi-technicien",
-              "Relevé terrain 55 points",
+              "Devis pour poêles, cheminées et installation",
+              "Attestations de ramonage et documents de suivi",
+              "Contrats d'entretien avec relances automatiques",
+              "Planning unifié pour pose, ramonage et SAV",
             ].map((t) => (
               <span key={t} className="text-sm font-semibold tracking-wide flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4" />
@@ -594,12 +594,12 @@ export default function LandingPage() {
               <div className="lg:col-span-7">
                 <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent mb-3">Tableau de bord</p>
                 <h2 className="text-3xl md:text-[2.75rem] font-bold leading-[1.06]">
-                  Votre activité en un regard,<br />pas en dix onglets
+                  Pose, ramonage, entretien :<br />toute votre activité sur un écran.
                 </h2>
               </div>
               <div className="lg:col-span-5 flex items-end">
                 <p className="text-muted-foreground leading-relaxed max-w-sm">
-                  CA du mois, pipeline en 17 étapes, interventions de la semaine, impayés — tout ce qui compte, rien de superflu.
+                  Suivez votre activité, vos devis, vos tournées, vos chantiers et vos contrats à renouveler sans ouvrir dix onglets.
                 </p>
               </div>
             </div>
@@ -634,7 +634,7 @@ export default function LandingPage() {
                 </h3>
               </div>
               <p className="text-muted-foreground text-base leading-relaxed max-w-sm">
-                Chaque technicien voit sa semaine. Vous voyez tout le monde. Un client appelle ? Vous savez qui est dispo dans l'heure.
+                Vos poseurs voient leurs chantiers, vos ramoneurs voient leurs tournées, votre équipe voit les créneaux disponibles et vous gardez une vue globale.
               </p>
             </div>
           </Reveal>
@@ -651,10 +651,10 @@ export default function LandingPage() {
           <Reveal delay={160}>
             <div className="flex flex-wrap gap-3 mt-8 md:mt-12">
               {[
-                "Vue semaine / jour / mois",
-                "Code couleur par type",
-                "Drag & drop interventions",
-                "Notification technicien en temps réel",
+                "Relevé technique guidé pour les installations",
+                "Tableau de bord clair pour suivre l'activité",
+                "Planning pose, ramonage et SAV",
+                "Notification équipe en temps réel",
               ].map((f) => (
                 <div key={f} className="flex items-center gap-2 rounded-full border bg-card px-4 py-2 text-[13px] font-medium shadow-[0_1px_4px_rgba(0,0,0,0.04)]">
                   <div className="h-1.5 w-1.5 rounded-full bg-warning" />
@@ -704,15 +704,15 @@ export default function LandingPage() {
               <Reveal>
                 <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-accent mb-3">Devis & Facturation</p>
                 <h3 className="text-2xl md:text-[2.5rem] font-bold mb-5 leading-[1.06]">
-                  Le client dit oui à 18h.<br />La facture part à 18h02.
+                  Le client signe.<br />Le document part tout de suite.
                 </h3>
                 <p className="text-muted-foreground text-base leading-relaxed mb-6">
-                  Créez vos devis depuis le catalogue, gérez la double TVA 5.5%/10%, envoyez pour signature. La facture d'acompte se génère toute seule.
+                  Créez vos devis, vos attestations et vos factures sans ressaisie. Tout est au même endroit pour avancer plus vite entre le terrain et le bureau.
                 </p>
                 <div className="space-y-3">
                   {[
-                    "Catalogue produits avec références fournisseur",
-                    "Double TVA 5.5% / 10% automatique",
+                    "Devis pour poêles, cheminées et installation",
+                    "Attestations et documents de suivi",
                     "Signature électronique intégrée",
                   ].map((h) => (
                     <div key={h} className="flex items-start gap-2.5 text-sm">
@@ -742,14 +742,14 @@ export default function LandingPage() {
                     Le relevé technique qui tient dans la poche
                   </h2>
                   <p className="text-primary-foreground/55 text-base leading-relaxed mb-8">
-                    55 points de contrôle en 8 sections guidées. Remplissez entre deux coups de marteau, même sans réseau.
+                    Renseignez vos mesures, vos photos et vos contrôles directement sur chantier, même hors connexion. LIGNIA vous aide à structurer vos relevés sans perdre de temps.
                   </p>
                   <div className="space-y-2.5">
                     {[
-                      { icon: ClipboardCheck, label: "8 sections : projet, habitation, conduit, fumisterie…" },
-                      { icon: Zap, label: "Sauvegarde auto à chaque champ" },
-                      { icon: Camera, label: "Photos directement dans le relevé" },
-                      { icon: Shield, label: "Fonctionne hors connexion" },
+                      { icon: ClipboardCheck, label: "Relevé technique guidé pour chaque installation" },
+                      { icon: Zap, label: "Sauvegarde automatique à chaque champ" },
+                      { icon: Camera, label: "Photos attachées au dossier chantier" },
+                      { icon: Shield, label: "Fonctionne hors connexion sur le terrain" },
                     ].map((item) => (
                       <div key={item.label} className="flex items-center gap-3 rounded-xl border border-primary-foreground/[0.08] bg-primary-foreground/[0.03] px-4 py-3 hover:bg-primary-foreground/[0.06] transition-colors duration-300">
                         <item.icon className="h-4 w-4 text-accent shrink-0" />
@@ -781,7 +781,7 @@ export default function LandingPage() {
             <div className="text-center mb-12 md:mb-16">
               <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-accent mb-3">Démarrage</p>
               <h2 className="text-3xl md:text-4xl font-bold" style={{ lineHeight: "1.08" }}>Opérationnel en 15 minutes</h2>
-              <p className="text-muted-foreground mt-3 max-w-md mx-auto">Pas de formation, pas d'intégrateur, pas de consultant à 800€/jour.</p>
+              <p className="text-muted-foreground mt-3 max-w-md mx-auto">Créez votre compte, importez vos clients et démarrez avec vos premiers devis ou vos premières tournées de ramonage.</p>
             </div>
           </Reveal>
           
@@ -791,9 +791,9 @@ export default function LandingPage() {
             <div className="hidden md:block absolute top-[36px] left-[16.67%] right-[16.67%] h-px bg-border z-0" />
             
             {[
-              { num: "01", title: "Créez votre compte", desc: "2 minutes. Sans carte bancaire. Votre espace est prêt, pré-configuré pour les métiers du bâtiment.", color: "bg-accent", iconBg: "bg-accent/10" },
-              { num: "02", title: "Importez vos données", desc: "Glissez un CSV de clients ou saisissez-les un par un. Ajoutez votre catalogue produits. C'est tout.", color: "bg-primary", iconBg: "bg-primary/10" },
-              { num: "03", title: "Vous êtes prêt", desc: "Premier devis ce soir. Premier planning demain matin. Vos techniciens ont l'app sur leur téléphone.", color: "bg-warning", iconBg: "bg-warning/10" },
+              { num: "01", title: "Créez votre compte", desc: "2 minutes. Sans carte bancaire. Votre espace est prêt pour le chauffage au bois.", color: "bg-accent", iconBg: "bg-accent/10" },
+              { num: "02", title: "Importez vos clients", desc: "Importez votre fichier clients ou saisissez-les un par un. Ajoutez votre catalogue.", color: "bg-primary", iconBg: "bg-primary/10" },
+              { num: "03", title: "Vous êtes prêt", desc: "Premier devis ou première tournée de ramonage dès aujourd'hui. Votre équipe a l'app sur le téléphone.", color: "bg-warning", iconBg: "bg-warning/10" },
             ].map((s, i) => (
               <Reveal key={i} delay={i * 120}>
                 <div className="relative">
@@ -828,7 +828,7 @@ export default function LandingPage() {
                       {[...Array(5)].map((_, i) => <Star key={i} className="h-4 w-4 fill-warning text-warning" />)}
                     </div>
                     <blockquote className="text-xl md:text-2xl font-semibold leading-snug mb-8" style={{ textWrap: "balance" } as React.CSSProperties}>
-                      Avant LIGNIA, mes devis traînaient une semaine. Maintenant je les envoie le soir même depuis le chantier. Et mes factures partent le lendemain de l'intervention — pas trois semaines après.
+                      Avant, je gérais devis, planning et attestations dans plusieurs outils. Aujourd'hui, je gagne du temps sur chaque chantier et je facture plus vite.
                     </blockquote>
                   </div>
                   <div className="flex items-center gap-3 relative z-10">
@@ -873,7 +873,7 @@ export default function LandingPage() {
                 Arrêtez de courir<br />après la paperasse
               </h2>
               <p className="text-primary-foreground/45 mb-10 max-w-md mx-auto text-base leading-relaxed">
-                14 jours gratuits. Sans engagement, sans carte bancaire. Si après 14 jours vous revenez au tableur — c'est que ça n'était pas pour vous.
+                Testez LIGNIA 14 jours sur vos vrais chantiers, vos tournées de ramonage et vos contrats d'entretien. Sans carte bancaire.
               </p>
               <div className="flex flex-col sm:flex-row gap-3 justify-center">
                 <Button size="lg" className="bg-accent text-accent-foreground hover:bg-accent/90 shadow-[0_2px_8px_rgba(0,0,0,0.08),0_8px_32px_-4px_hsl(142_40%_45%/0.25)] active:scale-[0.97] transition-all text-sm font-semibold px-8 h-12 rounded-xl" asChild>

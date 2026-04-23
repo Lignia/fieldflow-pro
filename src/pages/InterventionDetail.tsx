@@ -820,6 +820,109 @@ export default function InterventionDetail() {
         )}
       </Card>
     </div>
+
+    {/* Dialog Finaliser MES */}
+    <Dialog open={mesDialogOpen} onOpenChange={setMesDialogOpen}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Finaliser la mise en service</DialogTitle>
+          <DialogDescription>
+            Ces informations alimenteront la fiche installation dans le parc client.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-2">
+          <div className="grid gap-1.5">
+            <Label htmlFor="mes-date">Date de mise en service *</Label>
+            <Input
+              id="mes-date"
+              type="date"
+              value={mesForm.commissioning_date}
+              onChange={(e) =>
+                setMesForm((f) => ({ ...f, commissioning_date: e.target.value }))
+              }
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-1.5">
+              <Label htmlFor="mes-brand">Marque</Label>
+              <Input
+                id="mes-brand"
+                value={mesForm.brand}
+                onChange={(e) => setMesForm((f) => ({ ...f, brand: e.target.value }))}
+                placeholder="Jotul, Stûv…"
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="mes-model">Modèle</Label>
+              <Input
+                id="mes-model"
+                value={mesForm.model}
+                onChange={(e) => setMesForm((f) => ({ ...f, model: e.target.value }))}
+                placeholder="F305, P-10…"
+              />
+            </div>
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="mes-serial">Numéro de série</Label>
+            <Input
+              id="mes-serial"
+              value={mesForm.serial_number}
+              onChange={(e) =>
+                setMesForm((f) => ({ ...f, serial_number: e.target.value }))
+              }
+              placeholder="Relevé sur la plaque signalétique"
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="mes-fuel">Combustible</Label>
+            <Select
+              value={mesForm.fuel_type}
+              onValueChange={(v) => setMesForm((f) => ({ ...f, fuel_type: v }))}
+            >
+              <SelectTrigger id="mes-fuel">
+                <SelectValue placeholder="Choisir un combustible" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="wood">Bois</SelectItem>
+                <SelectItem value="pellet">Granulés</SelectItem>
+                <SelectItem value="gas">Gaz</SelectItem>
+                <SelectItem value="oil">Fioul</SelectItem>
+                <SelectItem value="mixed">Mixte</SelectItem>
+                <SelectItem value="other">Autre</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="mes-memo">Mémo</Label>
+            <Textarea
+              id="mes-memo"
+              value={mesForm.memo}
+              onChange={(e) => setMesForm((f) => ({ ...f, memo: e.target.value }))}
+              placeholder="Notes pour le dossier client…"
+              rows={3}
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => setMesDialogOpen(false)}
+            disabled={mesSubmitting}
+          >
+            Annuler
+          </Button>
+          <Button onClick={submitMes} disabled={mesSubmitting} variant="success">
+            {mesSubmitting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <CheckCircle2 className="h-4 w-4" />
+            )}
+            Finaliser la MES
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
 

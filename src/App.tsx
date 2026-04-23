@@ -36,6 +36,8 @@ import ProjectCreate from "./pages/projects/ProjectCreate";
 import Installations from "./pages/Installations";
 import InstallationDetail from "./pages/InstallationDetail";
 import Interventions from "./pages/Interventions";
+import InterventionCreate from "./pages/InterventionCreate";
+import InterventionDetail from "./pages/InterventionDetail";
 import { PlaceholderPage } from "./components/ui/PlaceholderPage";
 import ServiceRequestCreate from "./pages/ServiceRequestCreate";
 import ServiceRequestDetail from "./pages/ServiceRequestDetail";
@@ -100,8 +102,8 @@ const App = () => (
 
               {/* Interventions */}
               <Route path="/interventions" element={<Interventions />} />
-              <Route path="/interventions/new" element={<PlaceholderPage title="Nouvelle intervention" backTo="/interventions" backLabel="Interventions" />} />
-              <Route path="/interventions/:id" element={<PlaceholderPage title="Détail intervention" backTo="/interventions" backLabel="Interventions" />} />
+              <Route path="/interventions/new" element={<InterventionCreate />} />
+              <Route path="/interventions/:id" element={<InterventionDetail />} />
 
               {/* Planning */}
               <Route path="/planning" element={<Planning />} />

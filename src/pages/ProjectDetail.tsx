@@ -309,15 +309,16 @@ export default function ProjectDetail() {
             {transitions.length > 0 && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button size="sm" variant="outline">
+                  <Button size="sm" variant="outline" disabled={transitioning}>
                     Changer le statut <ChevronDown className="h-3.5 w-3.5 ml-1" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   {transitions.map((t) => (
-                    <DropdownMenuItem key={t.next} onClick={() => {
-                      toast.info(`Transition vers "${t.label}" — RPC non connectée en V1`, { id: "status-transition" });
-                    }}>
+                    <DropdownMenuItem
+                      key={t.next}
+                      onClick={() => transitionStatus(t.next, t.label)}
+                    >
                       {t.label}
                     </DropdownMenuItem>
                   ))}

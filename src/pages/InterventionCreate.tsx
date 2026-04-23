@@ -54,6 +54,25 @@ const FLUE_CONDITION_OPTIONS: { value: string; label: string }[] = [
   { value: "critical", label: "Critique — urgent" },
 ];
 
+const ERROR_CODE_HINTS: { code: string; label: string }[] = [
+  { code: "E101", label: "Allumage (Alarm no fire)" },
+  { code: "E109", label: "Pressostat (Alarm dep fail)" },
+  { code: "E105", label: "Surchauffe (Alarm hot temp)" },
+  { code: "E111", label: "Sonde fumées (Alarm sond fumi)" },
+  { code: "Service", label: "Entretien 2000h requis" },
+];
+
+const PARTS_HINTS: { label: string; price?: string }[] = [
+  { label: "Bougie d'allumage", price: "75-150€" },
+  { label: "Sonde de fumées" },
+  { label: "Pressostat" },
+  { label: "Extracteur de fumées", price: "200€" },
+  { label: "Ventilateur tangentiel", price: "75€" },
+  { label: "Carte électronique", price: "150-300€" },
+  { label: "Moteur vis sans fin", price: "100€" },
+  { label: "Creuset", price: "110€" },
+];
+
 const PROJECT_TYPES: InterventionType[] = [
   "technical_survey",
   "installation",
@@ -679,6 +698,95 @@ export default function InterventionCreate() {
                 placeholder="Recommandations pour le prochain entretien…"
                 rows={2}
               />
+            </div>
+          </div>
+        )}
+
+        {/* Champs spécifiques dépannage / diagnostic */}
+        {(type === "repair" || type === "diagnostic") && (
+          <div className="space-y-4 pt-2 border-t">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="h-4 w-4 text-destructive" />
+              <h3 className="text-sm font-semibold">Rapport de dépannage</h3>
+            </div>
+
+            {/* Code erreur */}
+            <div className="space-y-2">
+              <Label htmlFor="error-code">Code erreur affiché</Label>
+              <Input
+                id="error-code"
+                value={errorCode}
+                onChange={(e) => setErrorCode(e.target.value)}
+                placeholder="Ex: E109, Alarm dep fail, Service"
+                className="h-9 font-mono"
+              />
+              <div className="space-y-1.5">
+                <p className="text-xs text-muted-foreground">Codes fréquents :</p>
+                <div className="flex flex-wrap gap-1.5">
+                  {ERROR_CODE_HINTS.map((h) => (
+                    <button
+                      key={h.code}
+                      type="button"
+                      onClick={() => setErrorCode(h.code)}
+                      className="text-[11px] px-2 py-1 rounded border border-border bg-muted/40 hover:bg-accent transition"
+                      title={h.label}
+                    >
+                      <span className="font-mono font-medium">{h.code}</span>
+                      <span className="text-muted-foreground"> · {h.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Symptôme & diagnostic */}
+            <div className="space-y-2">
+              <Label htmlFor="diagnosis">Symptôme et diagnostic</Label>
+              <Textarea
+                id="diagnosis"
+                value={diagnosisNotes}
+                onChange={(e) => setDiagnosisNotes(e.target.value)}
+                placeholder={"Symptôme : \nDiagnostic : \nTravaux effectués : "}
+                rows={5}
+                className="font-mono text-xs"
+              />
+            </div>
+
+            {/* Composant en cause */}
+            <div className="space-y-2">
+              <Label htmlFor="parts-repair">Composant en cause / pièce remplacée</Label>
+              <Textarea
+                id="parts-repair"
+                value={partsReplaced}
+                onChange={(e) => setPartsReplaced(e.target.value)}
+                placeholder="Ex: Bougie d'allumage, sonde de fumées…"
+                rows={2}
+              />
+              <div className="space-y-1.5">
+                <p className="text-xs text-muted-foreground">
+                  Pièces fréquentes (cliquez pour ajouter) :
+                </p>
+                <div className="flex flex-wrap gap-1.5">
+                  {PARTS_HINTS.map((p) => (
+                    <button
+                      key={p.label}
+                      type="button"
+                      onClick={() => {
+                        const line = `${p.label}${p.price ? ` (${p.price})` : ""}`;
+                        setPartsReplaced((prev) =>
+                          prev.trim() ? `${prev.trim()}\n${line}` : line,
+                        );
+                      }}
+                      className="text-[11px] px-2 py-1 rounded border border-border bg-muted/40 hover:bg-accent transition"
+                    >
+                      <span className="font-medium">{p.label}</span>
+                      {p.price && (
+                        <span className="text-muted-foreground"> · {p.price}</span>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
         )}

@@ -1002,6 +1002,105 @@ export default function InterventionDetail() {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    {/* Dialog Compléter fiche appareil (Cycle 2bis) */}
+    <Dialog open={fieldDialogOpen} onOpenChange={setFieldDialogOpen}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Compléter la fiche appareil</DialogTitle>
+          <DialogDescription>
+            Ces informations seront ajoutées au Parc installé du client.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-2">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-1.5">
+              <Label htmlFor="field-brand">Marque</Label>
+              <Input
+                id="field-brand"
+                value={fieldForm.brand}
+                onChange={(e) =>
+                  setFieldForm((f) => ({ ...f, brand: e.target.value }))
+                }
+                placeholder="Jotul, Stûv…"
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="field-model">Modèle</Label>
+              <Input
+                id="field-model"
+                value={fieldForm.model}
+                onChange={(e) =>
+                  setFieldForm((f) => ({ ...f, model: e.target.value }))
+                }
+                placeholder="F305, P-10…"
+              />
+            </div>
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="field-serial">Numéro de série</Label>
+            <Input
+              id="field-serial"
+              value={fieldForm.serial_number}
+              onChange={(e) =>
+                setFieldForm((f) => ({ ...f, serial_number: e.target.value }))
+              }
+              placeholder="Relevé sur la plaque signalétique"
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="field-fuel">Combustible</Label>
+            <Select
+              value={fieldForm.fuel_type}
+              onValueChange={(v) =>
+                setFieldForm((f) => ({ ...f, fuel_type: v }))
+              }
+            >
+              <SelectTrigger id="field-fuel">
+                <SelectValue placeholder="Choisir un combustible" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="wood">Bois</SelectItem>
+                <SelectItem value="pellet">Granulés</SelectItem>
+                <SelectItem value="gas">Gaz</SelectItem>
+                <SelectItem value="oil">Fioul</SelectItem>
+                <SelectItem value="mixed">Mixte</SelectItem>
+                <SelectItem value="other">Autre</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="field-memo">Mémo</Label>
+            <Textarea
+              id="field-memo"
+              value={fieldForm.memo}
+              onChange={(e) =>
+                setFieldForm((f) => ({ ...f, memo: e.target.value }))
+              }
+              placeholder="Notes pour le dossier client…"
+              rows={3}
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => setFieldDialogOpen(false)}
+            disabled={fieldSubmitting}
+          >
+            Annuler
+          </Button>
+          <Button onClick={submitField} disabled={fieldSubmitting} variant="success">
+            {fieldSubmitting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <CheckCircle2 className="h-4 w-4" />
+            )}
+            Terminer l'intervention
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
     </>
   );
 }

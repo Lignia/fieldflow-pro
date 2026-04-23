@@ -131,6 +131,10 @@ export default function InterventionCreate() {
   const [partsReplaced, setPartsReplaced] = useState("");
   const [nextServiceRecommendation, setNextServiceRecommendation] = useState("");
 
+  // Dépannage / diagnostic
+  const [errorCode, setErrorCode] = useState("");
+  const [diagnosisNotes, setDiagnosisNotes] = useState("");
+
   // Suivi
   const [followupNeeded, setFollowupNeeded] = useState(false);
   const [followupNotes, setFollowupNotes] = useState("");

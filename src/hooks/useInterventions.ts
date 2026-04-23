@@ -59,6 +59,9 @@ export interface Intervention {
   next_service_recommendation: string | null;
   actual_start_datetime: string | null;
   actual_end_datetime: string | null;
+  // Dépannage / diagnostic
+  error_code: string | null;
+  diagnosis_notes: string | null;
   // Dénormalisé
   customer_name: string | null;
   customer_phone: string | null;

@@ -35,9 +35,9 @@ import OnboardingProfilePage from "./pages/onboarding/OnboardingProfilePage";
 import ProjectCreate from "./pages/projects/ProjectCreate";
 import Installations from "./pages/Installations";
 import InstallationDetail from "./pages/InstallationDetail";
+import { PlaceholderPage } from "./components/ui/PlaceholderPage";
 import ServiceRequestCreate from "./pages/ServiceRequestCreate";
 import ServiceRequestDetail from "./pages/ServiceRequestDetail";
-import { PlaceholderPage } from "./components/ui/PlaceholderPage";
 
 const queryClient = new QueryClient();
 

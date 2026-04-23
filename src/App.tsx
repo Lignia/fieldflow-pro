@@ -35,6 +35,8 @@ import OnboardingProfilePage from "./pages/onboarding/OnboardingProfilePage";
 import ProjectCreate from "./pages/projects/ProjectCreate";
 import Installations from "./pages/Installations";
 import InstallationDetail from "./pages/InstallationDetail";
+import ServiceRequestCreate from "./pages/ServiceRequestCreate";
+import ServiceRequestDetail from "./pages/ServiceRequestDetail";
 import { PlaceholderPage } from "./components/ui/PlaceholderPage";
 
 const queryClient = new QueryClient();
@@ -92,8 +94,8 @@ const App = () => (
 
               {/* Service Requests */}
               <Route path="/service-requests" element={<ServiceRequests />} />
-              <Route path="/service-requests/new" element={<PlaceholderPage title="Nouvelle demande SAV" backTo="/service-requests" backLabel="Demandes SAV" />} />
-              <Route path="/service-requests/:id" element={<PlaceholderPage title="Détail demande SAV" backTo="/service-requests" backLabel="Demandes SAV" />} />
+              <Route path="/service-requests/new" element={<ServiceRequestCreate />} />
+              <Route path="/service-requests/:id" element={<ServiceRequestDetail />} />
 
               {/* Interventions */}
               <Route path="/interventions" element={<PlaceholderPage title="Interventions" backTo="/dashboard" backLabel="Tableau de bord" />} />

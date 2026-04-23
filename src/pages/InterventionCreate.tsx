@@ -351,13 +351,38 @@ export default function InterventionCreate() {
   async function handleSubmit() {
     if (!canSubmit || !selectedCustomer || !tenantId) return;
     setSubmitting(true);
+
+    // Résolution property_id : la contrainte SQL exige
+    // project_id OU service_request_id OU (customer_id ET property_id).
+    let resolvedPropertyId = contextPropertyId;
+    if (!resolvedPropertyId && !contextProjectId && !contextServiceRequestId) {
+      const { data: props } = await coreDb
+        .from("properties")
+        .select("id")
+        .eq("customer_id", selectedCustomer.id)
+        .order("created_at", { ascending: true })
+        .limit(1);
+      if (props && props.length > 0) {
+        resolvedPropertyId = props[0].id as string;
+      } else {
+        setSubmitting(false);
+        toast({
+          title: "Adresse de chantier manquante",
+          description:
+            "Ce client n'a aucune adresse enregistrée. Ajoutez une adresse depuis sa fiche, ou rattachez l'intervention à un projet ou une demande SAV.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     const payload: Record<string, unknown> = {
       tenant_id: tenantId,
       intervention_type: type,
       workstream: workstreamFor(type),
       status: "planned",
       customer_id: selectedCustomer.id,
-      property_id: contextPropertyId,
+      property_id: resolvedPropertyId,
       project_id: contextProjectId,
       installation_id: contextInstallationId,
       service_request_id: contextServiceRequestId,

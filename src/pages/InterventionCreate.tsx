@@ -342,6 +342,19 @@ export default function InterventionCreate() {
       end_datetime: new Date(endAt).toISOString(),
       internal_notes: internalNotes.trim() || null,
       customer_visible_notes: customerNotes.trim() || null,
+      followup_needed: followupNeeded,
+      followup_notes: followupNeeded ? followupNotes.trim() || null : null,
+      quote_needed: quoteNeeded,
+      sweep_type: type === "sweep" && sweepType ? sweepType : null,
+      flue_condition: type === "sweep" && flueCondition ? flueCondition : null,
+      parts_replaced:
+        type === "annual_service" && partsReplaced.trim()
+          ? partsReplaced.trim()
+          : null,
+      next_service_recommendation:
+        type === "annual_service" && nextServiceRecommendation.trim()
+          ? nextServiceRecommendation.trim()
+          : null,
     };
     if (assignedTo !== "none") {
       payload.assigned_to = assignedTo;

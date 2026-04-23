@@ -193,10 +193,22 @@ export default function InterventionDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { coreUser, tenantId } = useCurrentUser();
   const { intervention, activities, loading, error, notFound, refetch } =
     useInterventionDetail(id);
 
   const [acting, setActing] = useState<null | "start" | "complete" | "cancel">(null);
+  const [mesDialogOpen, setMesDialogOpen] = useState(false);
+  const [mesSubmitting, setMesSubmitting] = useState(false);
+  const [mesForm, setMesForm] = useState({
+    commissioning_date: new Date().toISOString().slice(0, 10),
+    serial_number: "",
+    brand: "",
+    model: "",
+    fuel_type: "",
+    device_category: "",
+    memo: "",
+  });
 
   if (loading) {
     return (

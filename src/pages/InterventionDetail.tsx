@@ -24,6 +24,9 @@ import {
   Loader2,
   FileText,
   Activity,
+  Euro,
+  ClipboardList,
+  ScrollText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -108,6 +111,35 @@ const STATUS_STYLES: Record<InterventionStatus, { label: string; cls: string }> 
     label: "Annulée",
     cls: "bg-destructive/10 text-destructive border-destructive/20",
   },
+};
+
+const FLUE_CONDITION_META: Record<
+  string,
+  { label: string; cls: string }
+> = {
+  good: {
+    label: "Conduit en bon état",
+    cls: "bg-success/10 text-success border-success/20",
+  },
+  average: {
+    label: "Conduit moyen",
+    cls: "bg-yellow-500/10 text-yellow-700 border-yellow-500/20 dark:text-yellow-400",
+  },
+  poor: {
+    label: "Conduit en mauvais état",
+    cls: "bg-orange-500/10 text-orange-700 border-orange-500/20 dark:text-orange-400",
+  },
+  critical: {
+    label: "Conduit critique — urgent",
+    cls: "bg-destructive/10 text-destructive border-destructive/20",
+  },
+};
+
+const SWEEP_TYPE_LABELS: Record<string, string> = {
+  simple: "Conduit simple",
+  double: "Conduit double",
+  tubing: "Tubage",
+  desooting: "Débistrage",
 };
 
 function fullDateTime(start: string | null, end: string | null): string {

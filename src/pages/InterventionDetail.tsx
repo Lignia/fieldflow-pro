@@ -541,9 +541,11 @@ export default function InterventionDetail() {
                 onClick={() =>
                   isCommissioning
                     ? openMesDialog()
+                    : needsFieldCompletion
+                    ? openFieldDialog()
                     : transitionStatus("completed", "complete")
                 }
-                disabled={!!acting || mesSubmitting}
+                disabled={!!acting || mesSubmitting || fieldSubmitting}
                 size="sm"
                 variant="success"
               >
@@ -552,7 +554,11 @@ export default function InterventionDetail() {
                 ) : (
                   <CheckCircle2 className="h-4 w-4" />
                 )}
-                {isCommissioning ? "Finaliser la mise en service" : "Marquer terminée"}
+                {isCommissioning
+                  ? "Finaliser la mise en service"
+                  : needsFieldCompletion
+                  ? "Terminer et compléter l'appareil"
+                  : "Marquer terminée"}
               </Button>
             )}
             {showCancelButton && (

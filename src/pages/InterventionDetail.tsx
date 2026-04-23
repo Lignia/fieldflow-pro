@@ -322,6 +322,72 @@ export default function InterventionDetail() {
     intervention.status === "scheduled" ||
     intervention.status === "in_progress";
 
+  const isCommissioning = intervention.intervention_type === "commissioning";
+
+  function openMesDialog() {
+    if (!intervention) return;
+    setMesForm({
+      commissioning_date:
+        intervention.start_datetime?.slice(0, 10) ??
+        new Date().toISOString().slice(0, 10),
+      serial_number: "",
+      brand: intervention.brand ?? "",
+      model: intervention.model ?? "",
+      fuel_type: intervention.fuel_type ?? "",
+      device_category: intervention.device_category ?? "",
+      memo: "",
+    });
+    setMesDialogOpen(true);
+  }
+
+  async function submitMes() {
+    if (!intervention) return;
+    if (!tenantId || !coreUser) {
+      toast({
+        title: "Session non chargée",
+        description: "Réessayez dans un instant.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!mesForm.commissioning_date) {
+      toast({
+        title: "Date requise",
+        description: "Saisissez la date de mise en service.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setMesSubmitting(true);
+    const { error: rpcErr } = await operationsDb.rpc("complete_commissioning", {
+      p_intervention_id: intervention.id,
+      p_tenant_id: tenantId,
+      p_actor_id: coreUser.id,
+      p_commissioning_date: mesForm.commissioning_date,
+      p_serial_number: mesForm.serial_number.trim() || null,
+      p_brand: mesForm.brand.trim() || null,
+      p_model: mesForm.model.trim() || null,
+      p_fuel_type: mesForm.fuel_type || null,
+      p_device_category: mesForm.device_category || null,
+      p_memo: mesForm.memo.trim() || null,
+    });
+    setMesSubmitting(false);
+    if (rpcErr) {
+      toast({
+        title: "Erreur",
+        description: rpcErr.message,
+        variant: "destructive",
+      });
+      return;
+    }
+    toast({
+      title: "Mise en service terminée",
+      description: "Installation activée dans le parc.",
+    });
+    setMesDialogOpen(false);
+    refetch();
+  }
+
   const deviceLabel = [intervention.device_type, intervention.brand]
     .filter(Boolean)
     .join(" ");

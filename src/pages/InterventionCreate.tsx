@@ -125,6 +125,17 @@ export default function InterventionCreate() {
   const [internalNotes, setInternalNotes] = useState("");
   const [customerNotes, setCustomerNotes] = useState("");
 
+  // Champs conditionnels selon le type
+  const [sweepType, setSweepType] = useState<string>("");
+  const [flueCondition, setFlueCondition] = useState<string>("");
+  const [partsReplaced, setPartsReplaced] = useState("");
+  const [nextServiceRecommendation, setNextServiceRecommendation] = useState("");
+
+  // Suivi
+  const [followupNeeded, setFollowupNeeded] = useState(false);
+  const [followupNotes, setFollowupNotes] = useState("");
+  const [quoteNeeded, setQuoteNeeded] = useState(false);
+
   // Context
   const [contextLoading, setContextLoading] = useState(
     !!(qpProjectId || qpInstallationId || qpServiceRequestId),

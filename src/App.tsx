@@ -34,6 +34,7 @@ import OnboardingCompanyPage from "./pages/onboarding/OnboardingCompanyPage";
 import OnboardingProfilePage from "./pages/onboarding/OnboardingProfilePage";
 import ProjectCreate from "./pages/projects/ProjectCreate";
 import Installations from "./pages/Installations";
+import InstallationDetail from "./pages/InstallationDetail";
 import { PlaceholderPage } from "./components/ui/PlaceholderPage";
 
 const queryClient = new QueryClient();
@@ -104,7 +105,7 @@ const App = () => (
 
               {/* Installations */}
               <Route path="/installations" element={<Installations />} />
-              <Route path="/installations/:id" element={<PlaceholderPage title="Détail installation" backTo="/installations" backLabel="Installations" />} />
+              <Route path="/installations/:id" element={<InstallationDetail />} />
 
               {/* Catalog */}
               <Route path="/catalog" element={<Catalog />} />

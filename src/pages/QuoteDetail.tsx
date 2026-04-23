@@ -146,7 +146,10 @@ export default function QuoteDetail() {
 
   /* ── Status transition ── */
   async function transitionStatus(newStatus: string) {
-    if (!quote || !coreUser) return;
+    if (!quote || !coreUser) {
+      toast.error("Session non chargée, réessayez.");
+      return;
+    }
     setTransitioning(true);
     try {
       const { error: rpcErr } = await billingDb.rpc("transition_quote_status", {

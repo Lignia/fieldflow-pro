@@ -12,13 +12,14 @@ import {
   Receipt,
   RefreshCw,
   Plus,
-  ChevronDown,
   Clock,
   Calendar,
-  FolderKanban,
   ClipboardList,
   Hammer,
   Zap,
+  ArrowRight,
+  CheckCircle2,
+  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -33,32 +34,35 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 const DEV_BYPASS = import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
 
-// ─── Pipeline progress ──────────────────────────────────────────────────────
+// ─── Pipeline (4 phases) ────────────────────────────────────────────────────
 
-const PIPELINE_STEPS: { status: ProjectStatus; short: string }[] = [
-  { status: "lead_new", short: "Lead" },
-  { status: "lead_qualified", short: "Qualifié" },
-  { status: "estimate_sent", short: "Estimatif" },
-  { status: "vt_planned", short: "VT" },
-  { status: "vt_done", short: "VT faite" },
-  { status: "tech_review_done", short: "Étude" },
-  { status: "final_quote_sent", short: "Devis final" },
-  { status: "signed", short: "Signé" },
-  { status: "deposit_paid", short: "Acompte" },
-  { status: "supplier_ordered", short: "Commande" },
-  { status: "material_received", short: "Matériel" },
-  { status: "installation_scheduled", short: "Pose" },
-  { status: "mes_done", short: "MES" },
-  { status: "closed", short: "Clôturé" },
+type Phase = "commercial" | "terrain" | "signature" | "livraison";
+
+const PIPELINE_STEPS: { status: ProjectStatus; label: string; phase: Phase }[] = [
+  { status: "lead_new", label: "Lead entrant", phase: "commercial" },
+  { status: "lead_qualified", label: "Lead qualifié", phase: "commercial" },
+  { status: "estimate_sent", label: "Estimatif envoyé", phase: "commercial" },
+  { status: "vt_planned", label: "Visite technique planifiée", phase: "terrain" },
+  { status: "vt_done", label: "Visite technique réalisée", phase: "terrain" },
+  { status: "tech_review_done", label: "Étude technique validée", phase: "terrain" },
+  { status: "final_quote_sent", label: "Devis final envoyé", phase: "signature" },
+  { status: "signed", label: "Devis signé", phase: "signature" },
+  { status: "deposit_paid", label: "Acompte reçu", phase: "signature" },
+  { status: "supplier_ordered", label: "Commande fournisseur", phase: "livraison" },
+  { status: "material_received", label: "Matériel reçu", phase: "livraison" },
+  { status: "installation_scheduled", label: "Pose planifiée", phase: "livraison" },
+  { status: "mes_done", label: "Mise en service faite", phase: "livraison" },
+  { status: "closed", label: "Dossier clôturé", phase: "livraison" },
+];
+
+const PHASES: { key: Phase; label: string }[] = [
+  { key: "commercial", label: "Commercial" },
+  { key: "terrain", label: "Terrain" },
+  { key: "signature", label: "Signature" },
+  { key: "livraison", label: "Livraison" },
 ];
 
 function getStepIndex(status: ProjectStatus): number {
@@ -66,68 +70,67 @@ function getStepIndex(status: ProjectStatus): number {
 }
 
 function PipelineProgress({ status }: { status: ProjectStatus }) {
-  const currentIdx = getStepIndex(status);
   const isTerminal = status === "lost" || status === "cancelled" || status === "on_hold";
+  if (isTerminal) {
+    return (
+      <div className="flex items-center gap-2">
+        <StatusBadge status={status} type="project" size="md" />
+      </div>
+    );
+  }
+
+  const currentIdx = getStepIndex(status);
+  const current = PIPELINE_STEPS[currentIdx];
+  const currentPhase = current?.phase;
+  const phaseOrder = PHASES.map((p) => p.key);
+  const currentPhaseIdx = phaseOrder.indexOf(currentPhase);
 
   return (
-    <div className="space-y-2">
-      {isTerminal && (
-        <div className="flex items-center gap-2 mb-2">
-          <StatusBadge status={status} type="project" size="md" />
-        </div>
-      )}
-      <div className="flex items-center gap-0.5 overflow-x-auto pb-1">
-        {PIPELINE_STEPS.map((step, i) => {
-          const isDone = !isTerminal && i <= currentIdx;
-          const isCurrent = !isTerminal && i === currentIdx;
+    <div className="space-y-3">
+      <div className="flex items-center gap-1.5">
+        {PHASES.map((phase, i) => {
+          const isPast = i < currentPhaseIdx;
+          const isCurrent = i === currentPhaseIdx;
           return (
-            <div key={step.status} className="flex items-center">
-              {i > 0 && (
-                <div className={cn("h-0.5 w-3 sm:w-5", isDone ? "bg-accent" : "bg-border")} />
-              )}
-              <div className="flex flex-col items-center gap-1 min-w-0">
+            <div key={phase.key} className="flex-1 flex items-center gap-1.5">
+              <div className="flex-1 space-y-1.5">
                 <div
                   className={cn(
-                    "h-3 w-3 rounded-full border-2 shrink-0",
-                    isDone && !isCurrent && "bg-accent border-accent",
-                    isCurrent && "bg-accent border-accent ring-2 ring-accent/30",
-                    !isDone && "bg-background border-border"
+                    "h-2 rounded-full transition-colors",
+                    isPast && "bg-accent",
+                    isCurrent && "bg-accent ring-2 ring-accent/30",
+                    !isPast && !isCurrent && "bg-muted",
                   )}
                 />
-                <span
+                <p
                   className={cn(
-                    "text-[10px] leading-tight text-center whitespace-nowrap",
-                    isCurrent ? "font-semibold text-foreground" : "text-muted-foreground"
+                    "text-[10px] uppercase tracking-wider text-center font-medium",
+                    isCurrent ? "text-foreground" : "text-muted-foreground",
                   )}
                 >
-                  {step.short}
-                </span>
+                  {phase.label}
+                </p>
               </div>
+              {i < PHASES.length - 1 && (
+                <div
+                  className={cn(
+                    "h-1.5 w-1.5 rounded-full shrink-0 mt-[-14px]",
+                    isPast ? "bg-accent" : "bg-muted",
+                  )}
+                />
+              )}
             </div>
           );
         })}
       </div>
+      <p className="text-xs text-muted-foreground text-center">
+        <span className="font-mono">Étape {currentIdx + 1}/14</span>
+        <span className="mx-1.5">·</span>
+        <span className="font-medium text-foreground">{current?.label ?? status}</span>
+      </p>
     </div>
   );
 }
-
-// ─── Status transitions ─────────────────────────────────────────────────────
-
-const STATUS_TRANSITIONS: Partial<Record<ProjectStatus, { label: string; next: ProjectStatus }[]>> = {
-  lead_new:               [{ label: "Qualifier le lead", next: "lead_qualified" }],
-  lead_qualified:         [{ label: "Envoyer estimatif", next: "estimate_sent" }],
-  estimate_sent:          [{ label: "Planifier VT", next: "vt_planned" }],
-  vt_planned:             [{ label: "VT réalisée", next: "vt_done" }],
-  vt_done:                [{ label: "Étude faite", next: "tech_review_done" }],
-  tech_review_done:       [{ label: "Envoyer devis final", next: "final_quote_sent" }],
-  final_quote_sent:       [{ label: "Signé", next: "signed" }, { label: "Perdu", next: "lost" }],
-  signed:                 [{ label: "Acompte reçu", next: "deposit_paid" }],
-  deposit_paid:           [{ label: "Commander fournisseur", next: "supplier_ordered" }],
-  supplier_ordered:       [{ label: "Matériel reçu", next: "material_received" }],
-  material_received:      [{ label: "Planifier pose", next: "installation_scheduled" }],
-  installation_scheduled: [{ label: "MES faite", next: "mes_done" }],
-  mes_done:               [{ label: "Clôturer", next: "closed" }],
-};
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -143,6 +146,141 @@ const ORIGIN_LABELS: Record<string, string> = {
   manual: "Manuel", phone: "Téléphone", web: "Web", referral: "Parrainage",
   api: "API", showroom: "Showroom", fair: "Salon", partner: "Partenaire",
 };
+
+// ─── Qualification labels ───────────────────────────────────────────────────
+
+const PROJECT_TYPE_LABELS: Record<string, string> = {
+  installation_neuve: "Installation neuve",
+  remplacement: "Remplacement",
+  renovation: "Rénovation",
+};
+
+const ENERGY_LABELS: Record<string, string> = {
+  wood: "🪵 Bois",
+  pellet: "🟤 Granulés",
+  unknown: "❓ Inconnu",
+};
+
+const USAGE_LABELS: Record<string, string> = {
+  main: "Principal",
+  secondary: "Appoint",
+  comfort: "Confort",
+};
+
+const HOUSING_LABELS: Record<string, string> = {
+  house: "🏠 Maison",
+  apartment: "🏢 Appartement",
+};
+
+const HEATING_LABELS: Record<string, string> = {
+  electric: "Électrique",
+  gas: "Gaz",
+  oil: "Fioul",
+  other: "Autre",
+};
+
+const BUDGET_LABELS: Record<string, string> = {
+  lt_5k: "< 5 000 €",
+  "5k_10k": "5 000 – 10 000 €",
+  gt_10k: "> 10 000 €",
+  unknown: "Non défini",
+};
+
+const HORIZON_LABELS: Record<string, string> = {
+  urgent: "< 1 mois",
+  lt_3months: "1 à 3 mois",
+  gt_3months: "+ 3 mois",
+};
+
+function flueScenarioClass(scenario: string): string {
+  if (!scenario) return "bg-muted text-muted-foreground";
+  const first = scenario.trim().charAt(0);
+  if (first === "🟢") return "bg-success/10 text-success border-success/30";
+  if (first === "🟡") return "bg-warning/10 text-warning border-warning/30";
+  if (first === "🟠" || first === "🔴") return "bg-destructive/10 text-destructive border-destructive/30";
+  if (first === "⚪") return "bg-muted text-muted-foreground border-border";
+  return "bg-muted text-muted-foreground border-border";
+}
+
+function QualificationCard({ payload }: { payload: Record<string, any> }) {
+  if (!payload || !payload.project_type) return null;
+
+  const projectType = PROJECT_TYPE_LABELS[payload.project_type] ?? payload.project_type;
+  const energy = payload.energy_type ? (ENERGY_LABELS[payload.energy_type] ?? payload.energy_type) : null;
+  const usage = payload.usage_type ? (USAGE_LABELS[payload.usage_type] ?? payload.usage_type) : null;
+  const housing = payload.housing_type ? (HOUSING_LABELS[payload.housing_type] ?? payload.housing_type) : null;
+  const surface = payload.surface_m2 ? `${payload.surface_m2} m²` : null;
+  const power = payload.estimated_power_kw ? `~${payload.estimated_power_kw} kW indicatif` : null;
+  const heating = payload.current_heating ? (HEATING_LABELS[payload.current_heating] ?? payload.current_heating) : null;
+  const flueScenario: string | null = payload.flue_scenario ?? null;
+  const budget = payload.budget ? (BUDGET_LABELS[payload.budget] ?? payload.budget) : null;
+  const horizon = payload.horizon ? (HORIZON_LABELS[payload.horizon] ?? payload.horizon) : null;
+  const reliability: string | null = payload.reliability_badge ?? null;
+  const score: number | null = typeof payload.qualification_score === "number" ? payload.qualification_score : null;
+
+  return (
+    <Card className="p-4 sm:p-5">
+      <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
+        <div className="flex items-center gap-2">
+          <Sparkles className="h-4 w-4 text-muted-foreground" />
+          <h2 className="text-sm font-semibold">Qualification</h2>
+        </div>
+        {reliability && (
+          <span className={cn(
+            "inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium border",
+            flueScenarioClass(reliability),
+          )}>
+            {reliability}
+          </span>
+        )}
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        {/* Col 1 — Projet */}
+        <div className="space-y-1.5">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Projet</p>
+          <p className="text-sm font-medium">{projectType}</p>
+          {energy && <p className="text-xs text-muted-foreground">{energy}</p>}
+          {usage && <p className="text-xs text-muted-foreground">Usage : {usage}</p>}
+        </div>
+
+        {/* Col 2 — Logement */}
+        <div className="space-y-1.5">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Logement</p>
+          {housing && <p className="text-sm font-medium">{housing}</p>}
+          {surface && <p className="text-xs text-muted-foreground font-mono">{surface}</p>}
+          {power && <p className="text-xs text-muted-foreground font-mono">{power}</p>}
+          {heating && <p className="text-xs text-muted-foreground">Chauffage : {heating}</p>}
+        </div>
+
+        {/* Col 3 — Fumisterie */}
+        <div className="space-y-1.5">
+          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Fumisterie</p>
+          {flueScenario ? (
+            <span className={cn(
+              "inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium border",
+              flueScenarioClass(flueScenario),
+            )}>
+              {flueScenario}
+            </span>
+          ) : (
+            <p className="text-xs text-muted-foreground">—</p>
+          )}
+          {budget && <p className="text-xs text-muted-foreground">Budget : {budget}</p>}
+          {horizon && <p className="text-xs text-muted-foreground">Délai : {horizon}</p>}
+        </div>
+      </div>
+
+      {score !== null && (
+        <div className="mt-3 pt-3 border-t border-border">
+          <p className="text-[11px] text-muted-foreground">
+            Score qualification : <span className="font-mono font-medium text-foreground">{score}/5</span>
+          </p>
+        </div>
+      )}
+    </Card>
+  );
+}
 
 // ─── Activities ─────────────────────────────────────────────────────────────
 
@@ -177,11 +315,8 @@ function useHandleBack(fallback: string) {
   const navigate = useNavigate();
   const location = useLocation();
   return () => {
-    if (location.key !== "default") {
-      navigate(-1);
-    } else {
-      navigate(fallback);
-    }
+    if (location.key !== "default") navigate(-1);
+    else navigate(fallback);
   };
 }
 
@@ -280,8 +415,7 @@ export default function ProjectDetail() {
     );
   }
 
-  const { customer, property, quotes, invoices } = project;
-  const transitions = STATUS_TRANSITIONS[project.status] ?? [];
+  const { customer, property, quotes, invoices, payload } = project;
 
   return (
     <div className="space-y-6">
@@ -306,25 +440,6 @@ export default function ProjectDetail() {
                 <RefreshCw className="h-3.5 w-3.5 mr-1" /> Réessayer
               </Button>
             )}
-            {transitions.length > 0 && (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button size="sm" variant="outline" disabled={transitioning}>
-                    Changer le statut <ChevronDown className="h-3.5 w-3.5 ml-1" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  {transitions.map((t) => (
-                    <DropdownMenuItem
-                      key={t.next}
-                      onClick={() => transitionStatus(t.next, t.label)}
-                    >
-                      {t.label}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
           </div>
         </div>
       </div>
@@ -332,27 +447,29 @@ export default function ProjectDetail() {
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={(v) => setSearchParams({ tab: v })}>
         <TabsList className="w-full justify-start overflow-x-auto">
-          <TabsTrigger value="general">Général</TabsTrigger>
-          <TabsTrigger value="devis">
-            Devis {quotes.length > 0 && `(${quotes.length})`}
+          <TabsTrigger value="general">Vue d'ensemble</TabsTrigger>
+          <TabsTrigger value="commercial">
+            Devis &amp; Factures {(quotes.length + invoices.length) > 0 && `(${quotes.length + invoices.length})`}
           </TabsTrigger>
           <TabsTrigger value="interventions">Interventions</TabsTrigger>
-          <TabsTrigger value="releve">Relevé technique</TabsTrigger>
-          <TabsTrigger value="documents">Documents</TabsTrigger>
           <TabsTrigger value="historique">Historique</TabsTrigger>
         </TabsList>
 
-        {/* ── Général ── */}
+        {/* ── Vue d'ensemble ── */}
         <TabsContent value="general" className="space-y-4 mt-4">
+          <ActionRecommendedCard
+            project={project}
+            transitioning={transitioning}
+            onTransition={transitionStatus}
+            onNavigate={navigate}
+          />
+
           <Card className="p-4 sm:p-5">
-            <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
-              <p className="text-xs font-medium text-muted-foreground">Cycle de vente</p>
-              <p className="text-[11px] text-muted-foreground italic">
-                Avancez le statut via le menu « Changer le statut »
-              </p>
-            </div>
+            <p className="text-xs font-medium text-muted-foreground mb-3">Cycle de vente</p>
             <PipelineProgress status={project.status} />
           </Card>
+
+          <QualificationCard payload={payload} />
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card className="p-5">
@@ -384,111 +501,130 @@ export default function ProjectDetail() {
           </div>
         </TabsContent>
 
-        {/* ── Devis ── */}
-        <TabsContent value="devis" className="space-y-3 mt-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-semibold flex items-center gap-2">
-              <FileText className="h-4 w-4 text-muted-foreground" />
-              Devis ({quotes.length})
-            </h2>
-            <Button size="sm" onClick={() => navigate(`/projects/${project.id}/quotes/new?kind=estimate`)}>
-              <Plus className="h-3.5 w-3.5 mr-1" /> Nouveau devis
-            </Button>
-          </div>
-          {quotes.length === 0 ? (
-            <Card className="p-6 text-center">
-              <p className="text-sm text-muted-foreground">Aucun devis lié à ce projet</p>
-            </Card>
-          ) : (
-            <div className="space-y-1.5">
-              {quotes.map((q) => (
-                <Card key={q.id} className="p-3.5 cursor-pointer hover:border-accent/20 transition-colors" onClick={() => navigate(`/quotes/${q.id}`)}>
-                  <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
-                    <span className="font-mono text-xs text-muted-foreground shrink-0">{q.quote_number}</span>
-                    <StatusBadge status={q.quote_kind} type="quote_kind" size="sm" />
-                    <StatusBadge status={q.quote_status} type="quote" size="sm" />
-                    <span className="flex-1" />
-                    <span className="font-mono text-sm font-semibold shrink-0">{formatCurrency(q.total_ttc)}</span>
-                    <span className="text-xs text-muted-foreground shrink-0">{formatDateShort(q.quote_date)}</span>
-                  </div>
-                </Card>
-              ))}
+        {/* ── Devis & Factures ── */}
+        <TabsContent value="commercial" className="space-y-6 mt-4">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-semibold flex items-center gap-2">
+                <FileText className="h-4 w-4 text-muted-foreground" />
+                Devis ({quotes.length})
+              </h2>
+              <Button size="sm" onClick={() => navigate(`/projects/${project.id}/quotes/new?kind=estimate`)}>
+                <Plus className="h-3.5 w-3.5 mr-1" /> Nouveau devis
+              </Button>
             </div>
-          )}
+            {quotes.length === 0 ? (
+              <Card className="p-6 text-center">
+                <p className="text-sm text-muted-foreground">Aucun devis lié à ce projet</p>
+              </Card>
+            ) : (
+              <div className="space-y-1.5">
+                {quotes.map((q) => (
+                  <Card key={q.id} className="p-3.5 cursor-pointer hover:border-accent/20 transition-colors" onClick={() => navigate(`/quotes/${q.id}`)}>
+                    <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
+                      <span className="font-mono text-xs text-muted-foreground shrink-0">{q.quote_number}</span>
+                      <StatusBadge status={q.quote_kind} type="quote_kind" size="sm" />
+                      <StatusBadge status={q.quote_status} type="quote" size="sm" />
+                      <span className="flex-1" />
+                      <span className="font-mono text-sm font-semibold shrink-0">{formatCurrency(q.total_ttc)}</span>
+                      <span className="text-xs text-muted-foreground shrink-0">{formatDateShort(q.quote_date)}</span>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-3">
+            <h2 className="text-base font-semibold flex items-center gap-2">
+              <Receipt className="h-4 w-4 text-muted-foreground" />
+              Factures ({invoices.length})
+            </h2>
+            {invoices.length === 0 ? (
+              <Card className="p-6 text-center">
+                <p className="text-sm text-muted-foreground">Aucune facture liée à ce projet</p>
+              </Card>
+            ) : (
+              <div className="space-y-1.5">
+                {invoices.map((inv) => (
+                  <Card key={inv.id} className="p-3.5 cursor-pointer hover:border-accent/20 transition-colors" onClick={() => navigate(`/invoices/${inv.id}`)}>
+                    <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
+                      <span className="font-mono text-xs text-muted-foreground shrink-0">{inv.invoice_number}</span>
+                      <StatusBadge status={inv.invoice_kind} type="invoice_kind" size="sm" />
+                      <StatusBadge status={inv.invoice_status} type="invoice" size="sm" />
+                      <span className="flex-1" />
+                      <span className="font-mono text-sm font-semibold shrink-0">{formatCurrency(inv.total_ttc)}</span>
+                      <span className="text-xs text-muted-foreground shrink-0">{formatDateShort(inv.invoice_date)}</span>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
         </TabsContent>
 
         {/* ── Interventions ── */}
-        <TabsContent value="interventions" className="space-y-3 mt-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-semibold">Interventions</h2>
-            <div className="flex gap-2 flex-wrap justify-end">
-              <Button variant="outline" size="sm" onClick={() => navigate(`/planning?project=${id}`)}>
-                <Calendar className="h-3.5 w-3.5 mr-1" /> Voir dans le planning
-              </Button>
-              {(project.status === "estimate_sent" || project.status === "vt_planned") && (
-                <Button
-                  size="sm"
-                  onClick={() =>
-                    navigate(`/interventions/new?type=technical_survey&project_id=${project.id}`)
-                  }
-                >
-                  <ClipboardList className="h-3.5 w-3.5 mr-1" /> Planifier la visite technique
+        <TabsContent value="interventions" className="space-y-6 mt-4">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-semibold">Interventions</h2>
+              <div className="flex gap-2 flex-wrap justify-end">
+                <Button variant="outline" size="sm" onClick={() => navigate(`/planning?project=${id}`)}>
+                  <Calendar className="h-3.5 w-3.5 mr-1" /> Voir dans le planning
                 </Button>
-              )}
-              {(project.status === "installation_scheduled" ||
-                project.status === "material_received" ||
-                project.status === "deposit_paid" ||
-                project.status === "supplier_ordered") && (
+                {(project.status === "estimate_sent" || project.status === "vt_planned") && (
+                  <Button
+                    size="sm"
+                    onClick={() => navigate(`/interventions/new?type=technical_survey&project_id=${project.id}`)}
+                  >
+                    <ClipboardList className="h-3.5 w-3.5 mr-1" /> Planifier la visite technique
+                  </Button>
+                )}
+                {(project.status === "installation_scheduled" ||
+                  project.status === "material_received" ||
+                  project.status === "deposit_paid" ||
+                  project.status === "supplier_ordered") && (
+                  <Button
+                    size="sm"
+                    onClick={() => navigate(`/interventions/new?type=installation&project_id=${project.id}`)}
+                  >
+                    <Hammer className="h-3.5 w-3.5 mr-1" /> Planifier la pose
+                  </Button>
+                )}
+                {project.status === "mes_done" && (
+                  <Button
+                    size="sm"
+                    onClick={() => navigate(`/interventions/new?type=commissioning&project_id=${project.id}`)}
+                  >
+                    <Zap className="h-3.5 w-3.5 mr-1" /> Planifier la mise en service
+                  </Button>
+                )}
                 <Button
+                  variant="outline"
                   size="sm"
-                  onClick={() =>
-                    navigate(`/interventions/new?type=installation&project_id=${project.id}`)
-                  }
+                  onClick={() => navigate(`/interventions/new?project_id=${project.id}`)}
                 >
-                  <Hammer className="h-3.5 w-3.5 mr-1" /> Planifier la pose
+                  <Plus className="h-3.5 w-3.5 mr-1" /> Autre intervention
                 </Button>
-              )}
-              {project.status === "mes_done" && (
-                <Button
-                  size="sm"
-                  onClick={() =>
-                    navigate(`/interventions/new?type=commissioning&project_id=${project.id}`)
-                  }
-                >
-                  <Zap className="h-3.5 w-3.5 mr-1" /> Planifier la mise en service
-                </Button>
-              )}
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate(`/interventions/new?project_id=${project.id}`)}
-              >
-                <Plus className="h-3.5 w-3.5 mr-1" /> Autre intervention
-              </Button>
+              </div>
             </div>
+            <Card className="p-6 text-center">
+              <p className="text-sm text-muted-foreground">Aucune intervention liée à ce projet</p>
+            </Card>
           </div>
-          <Card className="p-6 text-center">
-            <p className="text-sm text-muted-foreground">Aucune intervention liée à ce projet</p>
-          </Card>
-        </TabsContent>
 
-        {/* ── Relevé technique ── */}
-        <TabsContent value="releve" className="space-y-3 mt-4">
-          <h2 className="text-base font-semibold">Relevé technique</h2>
-          <Card className="p-6 text-center space-y-3">
-            <p className="text-sm text-muted-foreground">Aucun relevé technique enregistré</p>
-            <Button size="sm" onClick={() => navigate(`/technical-surveys/new?project=${id}`)}>
-              <Plus className="h-3.5 w-3.5 mr-1" /> Créer le relevé technique
-            </Button>
-          </Card>
-        </TabsContent>
-
-        {/* ── Documents ── */}
-        <TabsContent value="documents" className="space-y-3 mt-4">
-          <h2 className="text-base font-semibold">Documents</h2>
-          <Card className="p-6 text-center">
-            <p className="text-sm text-muted-foreground">Aucun document attaché</p>
-          </Card>
+          <div className="space-y-3">
+            <h2 className="text-base font-semibold flex items-center gap-2">
+              <ClipboardList className="h-4 w-4 text-muted-foreground" />
+              Relevé technique
+            </h2>
+            <Card className="p-6 text-center space-y-3">
+              <p className="text-sm text-muted-foreground">Aucun relevé technique enregistré</p>
+              <Button size="sm" onClick={() => navigate(`/technical-surveys/new?project=${id}`)}>
+                <Plus className="h-3.5 w-3.5 mr-1" /> Créer le relevé technique
+              </Button>
+            </Card>
+          </div>
         </TabsContent>
 
         {/* ── Historique ── */}
@@ -520,30 +656,297 @@ export default function ProjectDetail() {
           )}
         </TabsContent>
       </Tabs>
-
-      {/* Invoices (always visible below tabs) */}
-      {invoices.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <Receipt className="h-4 w-4 text-muted-foreground" />
-            <h2 className="text-base font-semibold">Factures ({invoices.length})</h2>
-          </div>
-          <div className="space-y-1.5">
-            {invoices.map((inv) => (
-              <Card key={inv.id} className="p-3.5 cursor-pointer hover:border-accent/20 transition-colors" onClick={() => navigate(`/invoices/${inv.id}`)}>
-                <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
-                  <span className="font-mono text-xs text-muted-foreground shrink-0">{inv.invoice_number}</span>
-                  <StatusBadge status={inv.invoice_kind} type="invoice_kind" size="sm" />
-                  <StatusBadge status={inv.invoice_status} type="invoice" size="sm" />
-                  <span className="flex-1" />
-                  <span className="font-mono text-sm font-semibold shrink-0">{formatCurrency(inv.total_ttc)}</span>
-                  <span className="text-xs text-muted-foreground shrink-0">{formatDateShort(inv.invoice_date)}</span>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
+  );
+}
+
+// ─── Action Recommended Card ────────────────────────────────────────────────
+
+interface ActionRecommendedCardProps {
+  project: ReturnType<typeof useProjectDetail>["project"];
+  transitioning: boolean;
+  onTransition: (next: ProjectStatus, label: string) => void;
+  onNavigate: (path: string) => void;
+}
+
+function ActionRecommendedCard({ project, transitioning, onTransition, onNavigate }: ActionRecommendedCardProps) {
+  if (!project) return null;
+  const status = project.status;
+
+  // Pas de Card pour statuts terminaux
+  if (status === "closed" || status === "lost" || status === "cancelled" || status === "on_hold") {
+    return null;
+  }
+
+  const { quotes, invoices } = project;
+  const hasSignedFinalQuote = quotes.some((q) => q.quote_kind === "final" && q.quote_status === "signed");
+  const hasDepositInvoice = invoices.some((i) => i.invoice_kind === "deposit");
+  const firstDepositInvoice = invoices.find((i) => i.invoice_kind === "deposit");
+
+  const renderContent = () => {
+    switch (status) {
+      case "lead_new":
+        return {
+          title: "Étape suivante : qualifier ce lead",
+          actions: (
+            <Button
+              size="sm"
+              disabled={transitioning}
+              onClick={() => onTransition("lead_qualified", "Lead qualifié")}
+            >
+              Qualifier <ArrowRight className="h-3.5 w-3.5 ml-1" />
+            </Button>
+          ),
+        };
+
+      case "lead_qualified":
+        return {
+          title: "Étape suivante : créer le devis estimatif",
+          actions: (
+            <Button
+              size="sm"
+              onClick={() => onNavigate(`/projects/${project.id}/quotes/new?kind=estimate`)}
+            >
+              <Plus className="h-3.5 w-3.5 mr-1" /> Créer le devis estimatif
+            </Button>
+          ),
+          note: "Le statut passera à « Estimatif envoyé » après envoi du devis.",
+        };
+
+      case "estimate_sent":
+        return {
+          title: "Étape suivante : planifier la visite technique",
+          actions: (
+            <>
+              <Button
+                size="sm"
+                onClick={() => onNavigate(`/interventions/new?type=technical_survey&project_id=${project.id}`)}
+              >
+                <ClipboardList className="h-3.5 w-3.5 mr-1" /> Planifier la VT
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={transitioning}
+                onClick={() => onTransition("vt_planned", "VT planifiée")}
+              >
+                VT planifiée <ArrowRight className="h-3.5 w-3.5 ml-1" />
+              </Button>
+            </>
+          ),
+        };
+
+      case "vt_planned":
+        return {
+          title: "Visite technique planifiée",
+          actions: (
+            <Button
+              size="sm"
+              disabled={transitioning}
+              onClick={() => onTransition("vt_done", "VT réalisée")}
+            >
+              Marquer la VT réalisée <ArrowRight className="h-3.5 w-3.5 ml-1" />
+            </Button>
+          ),
+        };
+
+      case "vt_done":
+        return {
+          title: "Étape suivante : créer le relevé technique",
+          actions: (
+            <>
+              <Button
+                size="sm"
+                onClick={() => onNavigate(`/technical-surveys/new?project=${project.id}`)}
+              >
+                <Plus className="h-3.5 w-3.5 mr-1" /> Créer le relevé technique
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={transitioning}
+                onClick={() => onTransition("tech_review_done", "Étude validée")}
+              >
+                Étude validée <ArrowRight className="h-3.5 w-3.5 ml-1" />
+              </Button>
+            </>
+          ),
+        };
+
+      case "tech_review_done":
+        return {
+          title: "Étape suivante : créer le devis final",
+          actions: (
+            <Button
+              size="sm"
+              onClick={() => onNavigate(`/projects/${project.id}/quotes/new?kind=final`)}
+            >
+              <Plus className="h-3.5 w-3.5 mr-1" /> Créer le devis final
+            </Button>
+          ),
+        };
+
+      case "final_quote_sent":
+        return {
+          title: "En attente de signature client",
+          actions: hasSignedFinalQuote ? (
+            <Button
+              size="sm"
+              disabled={transitioning}
+              onClick={() => onTransition("signed", "Devis signé")}
+            >
+              Marquer comme signé <ArrowRight className="h-3.5 w-3.5 ml-1" />
+            </Button>
+          ) : (
+            <Button size="sm" disabled>
+              En attente de signature
+            </Button>
+          ),
+          note: hasSignedFinalQuote
+            ? undefined
+            : "Signez d'abord le devis final depuis l'onglet Devis & Factures.",
+        };
+
+      case "signed":
+        return {
+          title: "Devis signé ✓",
+          actions: hasDepositInvoice ? (
+            <>
+              <span className="inline-flex items-center gap-1 text-xs text-success">
+                <CheckCircle2 className="h-3.5 w-3.5" /> Facture acompte créée
+              </span>
+              <Button
+                size="sm"
+                disabled={transitioning}
+                onClick={() => onTransition("deposit_paid", "Acompte reçu")}
+              >
+                Acompte reçu <ArrowRight className="h-3.5 w-3.5 ml-1" />
+              </Button>
+            </>
+          ) : (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => firstDepositInvoice && onNavigate(`/invoices/${firstDepositInvoice.id}`)}
+              disabled={!firstDepositInvoice}
+            >
+              <Receipt className="h-3.5 w-3.5 mr-1" /> Voir la facture acompte
+            </Button>
+          ),
+        };
+
+      case "deposit_paid":
+        return {
+          title: "Acompte reçu ✓",
+          actions: (
+            <Button
+              size="sm"
+              disabled={transitioning}
+              onClick={() => onTransition("supplier_ordered", "Commande passée")}
+            >
+              Commande fournisseur passée <ArrowRight className="h-3.5 w-3.5 ml-1" />
+            </Button>
+          ),
+        };
+
+      case "supplier_ordered":
+        return {
+          title: "Commande passée ✓",
+          actions: (
+            <Button
+              size="sm"
+              disabled={transitioning}
+              onClick={() => onTransition("material_received", "Matériel reçu")}
+            >
+              Matériel reçu <ArrowRight className="h-3.5 w-3.5 ml-1" />
+            </Button>
+          ),
+        };
+
+      case "material_received":
+        return {
+          title: "Étape suivante : planifier la pose",
+          actions: (
+            <>
+              <Button
+                size="sm"
+                onClick={() => onNavigate(`/interventions/new?type=installation&project_id=${project.id}`)}
+              >
+                <Hammer className="h-3.5 w-3.5 mr-1" /> Planifier la pose
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={transitioning}
+                onClick={() => onTransition("installation_scheduled", "Pose planifiée")}
+              >
+                Pose planifiée <ArrowRight className="h-3.5 w-3.5 ml-1" />
+              </Button>
+            </>
+          ),
+        };
+
+      case "installation_scheduled":
+        return {
+          title: "Pose planifiée ✓",
+          actions: (
+            <>
+              <Button
+                size="sm"
+                onClick={() => onNavigate(`/interventions/new?type=commissioning&project_id=${project.id}`)}
+              >
+                <Zap className="h-3.5 w-3.5 mr-1" /> Planifier la mise en service
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={transitioning}
+                onClick={() => onTransition("mes_done", "MES réalisée")}
+              >
+                MES réalisée <ArrowRight className="h-3.5 w-3.5 ml-1" />
+              </Button>
+            </>
+          ),
+        };
+
+      case "mes_done":
+        return {
+          title: "Mise en service réalisée ✓",
+          actions: (
+            <Button
+              size="sm"
+              disabled={transitioning}
+              onClick={() => onTransition("closed", "Dossier clôturé")}
+            >
+              Clôturer le dossier <ArrowRight className="h-3.5 w-3.5 ml-1" />
+            </Button>
+          ),
+        };
+
+      default:
+        return null;
+    }
+  };
+
+  const content = renderContent();
+  if (!content) return null;
+
+  return (
+    <Card className="p-4 sm:p-5 border-accent/40 bg-accent/5">
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="space-y-1 flex-1 min-w-0">
+          <p className="text-[10px] uppercase tracking-wider text-accent font-semibold">
+            Action recommandée
+          </p>
+          <h2 className="text-sm font-semibold">{content.title}</h2>
+          {content.note && (
+            <p className="text-xs text-muted-foreground mt-1">{content.note}</p>
+          )}
+        </div>
+        <div className="flex items-center gap-2 flex-wrap">
+          {content.actions}
+        </div>
+      </div>
+    </Card>
   );
 }

@@ -1114,12 +1114,119 @@ interface SuitesSectionProps {
   intervention: ReturnType<typeof useInterventionDetail>["intervention"];
   onNavigate: (path: string) => void;
   onToast: ReturnType<typeof useToast>["toast"];
+  tenantId: string | null;
+  actorId: string | null;
 }
 
-function SuitesSection({ intervention, onNavigate, onToast }: SuitesSectionProps) {
+interface InvoiceLine {
+  label: string;
+  qty: number;
+  unit_price_ht: number;
+  vat_rate: number;
+}
+
+function defaultInvoiceLine(t: string | null): InvoiceLine {
+  if (t === "sweep")
+    return { label: "Ramonage", qty: 1, unit_price_ht: 100, vat_rate: 10 };
+  if (t === "annual_service")
+    return { label: "Entretien annuel", qty: 1, unit_price_ht: 150, vat_rate: 10 };
+  return { label: "Dépannage", qty: 1, unit_price_ht: 90, vat_rate: 10 };
+}
+
+function SuitesSection({
+  intervention,
+  onNavigate,
+  onToast,
+  tenantId,
+  actorId,
+}: SuitesSectionProps) {
+  const [invoiceOpen, setInvoiceOpen] = useState(false);
+  const [invoiceSubmitting, setInvoiceSubmitting] = useState(false);
+  const [invoiceLines, setInvoiceLines] = useState<InvoiceLine[]>([]);
+
   if (!intervention) return null;
 
   const t = intervention.intervention_type;
+  const canInvoiceFromIntervention =
+    t === "sweep" || t === "annual_service" || t === "repair" || t === "diagnostic";
+
+  function openInvoiceDialog() {
+    setInvoiceLines([defaultInvoiceLine(t)]);
+    setInvoiceOpen(true);
+  }
+
+  function updateLine(idx: number, patch: Partial<InvoiceLine>) {
+    setInvoiceLines((lines) =>
+      lines.map((l, i) => (i === idx ? { ...l, ...patch } : l)),
+    );
+  }
+
+  function addLine() {
+    setInvoiceLines((lines) => [
+      ...lines,
+      { label: "Pièce détachée", qty: 1, unit_price_ht: 0, vat_rate: 20 },
+    ]);
+  }
+
+  function removeLine(idx: number) {
+    setInvoiceLines((lines) => lines.filter((_, i) => i !== idx));
+  }
+
+  const totalTtc = invoiceLines.reduce(
+    (sum, l) => sum + l.qty * l.unit_price_ht * (1 + l.vat_rate / 100),
+    0,
+  );
+
+  async function submitInvoice() {
+    if (!intervention) return;
+    if (!tenantId || !actorId) {
+      onToast({
+        title: "Session non chargée",
+        description: "Réessayez dans un instant.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (invoiceLines.length === 0) {
+      onToast({
+        title: "Au moins une ligne requise",
+        variant: "destructive",
+      });
+      return;
+    }
+    setInvoiceSubmitting(true);
+    const { data, error: rpcErr } = await billingDb.rpc(
+      "create_invoice_from_intervention",
+      {
+        p_intervention_id: intervention.id,
+        p_tenant_id: tenantId,
+        p_actor_id: actorId,
+        p_lines: invoiceLines,
+      },
+    );
+    setInvoiceSubmitting(false);
+    if (rpcErr) {
+      onToast({
+        title: "Erreur",
+        description: rpcErr.message,
+        variant: "destructive",
+      });
+      return;
+    }
+    const result = data as
+      | { success?: boolean; invoice_id?: string; invoice_number?: string }
+      | null;
+    onToast({
+      title: "Facture créée",
+      description: result?.invoice_number
+        ? `N° ${result.invoice_number}`
+        : undefined,
+    });
+    setInvoiceOpen(false);
+    if (result?.invoice_id) {
+      onNavigate(`/invoices/${result.invoice_id}`);
+    }
+  }
 
   function handleCreateQuote() {
     if (intervention?.project_id) {
@@ -1137,6 +1244,7 @@ function SuitesSection({ intervention, onNavigate, onToast }: SuitesSectionProps
   }
 
   return (
+    <>
     <Card className="p-6 space-y-4">
       <div className="flex items-center gap-2">
         <ScrollText className="h-4 w-4 text-muted-foreground" />

@@ -606,6 +606,106 @@ export default function InterventionCreate() {
             rows={3}
           />
         </div>
+
+        {/* Champs spécifiques ramonage */}
+        {type === "sweep" && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t">
+            <div className="space-y-2">
+              <Label htmlFor="sweep-type">Type de ramonage</Label>
+              <Select value={sweepType} onValueChange={setSweepType}>
+                <SelectTrigger id="sweep-type" className="h-9">
+                  <SelectValue placeholder="Sélectionner…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {SWEEP_TYPE_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="flue-condition">État du conduit</Label>
+              <Select value={flueCondition} onValueChange={setFlueCondition}>
+                <SelectTrigger id="flue-condition" className="h-9">
+                  <SelectValue placeholder="Sélectionner…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {FLUE_CONDITION_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        )}
+
+        {/* Champs spécifiques entretien annuel */}
+        {type === "annual_service" && (
+          <div className="space-y-4 pt-2 border-t">
+            <div className="space-y-2">
+              <Label htmlFor="parts">Pièces remplacées</Label>
+              <Textarea
+                id="parts"
+                value={partsReplaced}
+                onChange={(e) => setPartsReplaced(e.target.value)}
+                placeholder="Ex: Joint vitre, allumeur céramique…"
+                rows={2}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="reco">Recommandations</Label>
+              <Textarea
+                id="reco"
+                value={nextServiceRecommendation}
+                onChange={(e) => setNextServiceRecommendation(e.target.value)}
+                placeholder="Recommandations pour le prochain entretien…"
+                rows={2}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Suivi */}
+        <div className="space-y-3 pt-2 border-t">
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-0.5">
+              <Label htmlFor="followup">Prévoir une autre intervention</Label>
+              <p className="text-xs text-muted-foreground">
+                Une suite est nécessaire (retour, contrôle, etc.)
+              </p>
+            </div>
+            <Switch
+              id="followup"
+              checked={followupNeeded}
+              onCheckedChange={setFollowupNeeded}
+            />
+          </div>
+          {followupNeeded && (
+            <Textarea
+              value={followupNotes}
+              onChange={(e) => setFollowupNotes(e.target.value)}
+              placeholder="Décrire la suite à donner…"
+              rows={2}
+            />
+          )}
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-0.5">
+              <Label htmlFor="quote">Devis à établir</Label>
+              <p className="text-xs text-muted-foreground">
+                Un devis sera nécessaire suite à cette intervention
+              </p>
+            </div>
+            <Switch
+              id="quote"
+              checked={quoteNeeded}
+              onCheckedChange={setQuoteNeeded}
+            />
+          </div>
+        </div>
       </Card>
 
       <div className="flex items-center justify-end gap-2">

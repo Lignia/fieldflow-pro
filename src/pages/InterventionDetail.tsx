@@ -1,0 +1,550 @@
+import { useState } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import {
+  ArrowLeft,
+  AlertCircle,
+  CheckCircle2,
+  XCircle,
+  PlayCircle,
+  RotateCcw,
+  Phone,
+  MapPin,
+  User,
+  FolderKanban,
+  Wrench,
+  Hammer,
+  Zap,
+  CalendarCheck,
+  AlertTriangle,
+  Briefcase,
+  Search,
+  CalendarClock,
+  Loader2,
+  FileText,
+  Activity,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
+import { useToast } from "@/hooks/use-toast";
+import { coreDb, operationsDb } from "@/integrations/supabase/schema-clients";
+import { toTitleCase } from "@/lib/format";
+import { useInterventionDetail } from "@/hooks/useInterventionDetail";
+import type {
+  InterventionStatus,
+  InterventionType,
+} from "@/hooks/useInterventions";
+
+const TYPE_META: Record<
+  InterventionType,
+  { label: string; icon: typeof Wrench; iconCls: string; bgCls: string }
+> = {
+  technical_survey: {
+    label: "Visite technique",
+    icon: FolderKanban,
+    iconCls: "text-blue-600 dark:text-blue-400",
+    bgCls: "bg-blue-500/10",
+  },
+  installation: {
+    label: "Pose",
+    icon: Hammer,
+    iconCls: "text-indigo-600 dark:text-indigo-400",
+    bgCls: "bg-indigo-500/10",
+  },
+  commissioning: {
+    label: "Mise en service",
+    icon: Zap,
+    iconCls: "text-violet-600 dark:text-violet-400",
+    bgCls: "bg-violet-500/10",
+  },
+  sweep: {
+    label: "Ramonage",
+    icon: Wrench,
+    iconCls: "text-orange-600 dark:text-orange-400",
+    bgCls: "bg-orange-500/10",
+  },
+  annual_service: {
+    label: "Entretien annuel",
+    icon: CalendarCheck,
+    iconCls: "text-success",
+    bgCls: "bg-success/10",
+  },
+  repair: {
+    label: "Dépannage",
+    icon: AlertTriangle,
+    iconCls: "text-destructive",
+    bgCls: "bg-destructive/10",
+  },
+  diagnostic: {
+    label: "Diagnostic",
+    icon: Search,
+    iconCls: "text-yellow-600 dark:text-yellow-400",
+    bgCls: "bg-yellow-500/10",
+  },
+  commercial_visit: {
+    label: "Visite commerciale",
+    icon: Briefcase,
+    iconCls: "text-muted-foreground",
+    bgCls: "bg-muted",
+  },
+};
+
+const STATUS_STYLES: Record<InterventionStatus, { label: string; cls: string }> = {
+  planned: { label: "Planifiée", cls: "bg-muted text-muted-foreground border-border" },
+  scheduled: {
+    label: "Confirmée",
+    cls: "bg-blue-500/10 text-blue-700 border-blue-500/20 dark:text-blue-400",
+  },
+  in_progress: {
+    label: "En cours",
+    cls: "bg-orange-500/10 text-orange-700 border-orange-500/20 dark:text-orange-400",
+  },
+  completed: { label: "Terminée", cls: "bg-success/10 text-success border-success/20" },
+  cancelled: {
+    label: "Annulée",
+    cls: "bg-destructive/10 text-destructive border-destructive/20",
+  },
+};
+
+function fullDateTime(start: string | null, end: string | null): string {
+  if (!start) return "Date à définir";
+  const s = new Date(start);
+  const date = format(s, "EEEE d MMMM yyyy", { locale: fr });
+  const startTime = format(s, "H'h'mm", { locale: fr });
+  if (!end) return `${date} · ${startTime}`;
+  const endTime = format(new Date(end), "H'h'mm", { locale: fr });
+  return `${date} · ${startTime} → ${endTime}`;
+}
+
+function durationLabel(start: string | null, end: string | null): string | null {
+  if (!start || !end) return null;
+  const ms = new Date(end).getTime() - new Date(start).getTime();
+  if (isNaN(ms) || ms <= 0) return null;
+  const mins = Math.round(ms / 60000);
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  if (h === 0) return `${m} min`;
+  if (m === 0) return `${h}h`;
+  return `${h}h${String(m).padStart(2, "0")}`;
+}
+
+function addOneYear(iso: string): string {
+  const d = new Date(iso);
+  d.setFullYear(d.getFullYear() + 1);
+  return d.toISOString().slice(0, 10);
+}
+
+export default function InterventionDetail() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const { intervention, activities, loading, error, notFound, refetch } =
+    useInterventionDetail(id);
+
+  const [acting, setActing] = useState<null | "start" | "complete" | "cancel">(null);
+  const [installUpdate, setInstallUpdate] = useState<{
+    last: string;
+    next: string;
+  } | null>(null);
+
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-10 w-40" />
+        <Skeleton className="h-32 w-full" />
+        <Skeleton className="h-48 w-full" />
+      </div>
+    );
+  }
+
+  if (notFound || !intervention) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 text-center">
+        <AlertCircle className="h-10 w-10 text-muted-foreground mb-3" />
+        <p className="text-sm text-muted-foreground mb-4">Intervention introuvable.</p>
+        <Button variant="outline" onClick={() => navigate("/interventions")}>
+          Retour aux interventions
+        </Button>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-16 text-center">
+        <AlertCircle className="h-10 w-10 text-destructive mb-3" />
+        <p className="text-sm text-muted-foreground mb-4">{error}</p>
+        <Button variant="outline" onClick={refetch}>
+          Réessayer
+        </Button>
+      </div>
+    );
+  }
+
+  const typeMeta = TYPE_META[intervention.intervention_type];
+  const statusMeta = STATUS_STYLES[intervention.status];
+  const Icon = typeMeta.icon;
+  const duration = durationLabel(
+    intervention.start_datetime,
+    intervention.end_datetime,
+  );
+
+  async function transitionStatus(
+    next: InterventionStatus,
+    actionKey: "start" | "complete" | "cancel",
+  ) {
+    if (!intervention) return;
+    setActing(actionKey);
+    const { error: upErr } = await operationsDb
+      .from("interventions")
+      .update({ status: next })
+      .eq("id", intervention.id);
+
+    if (upErr) {
+      setActing(null);
+      toast({
+        title: "Erreur",
+        description: upErr.message,
+        variant: "destructive",
+      });
+      return;
+    }
+
+    // If completing a sweep on an installation, update installation dates
+    if (
+      next === "completed" &&
+      intervention.intervention_type === "sweep" &&
+      intervention.installation_id &&
+      intervention.start_datetime
+    ) {
+      const last = intervention.start_datetime.slice(0, 10);
+      const nextDate = addOneYear(intervention.start_datetime);
+      const { error: instErr } = await coreDb
+        .from("installations")
+        .update({
+          last_sweep_date: last,
+          next_sweep_date: nextDate,
+        })
+        .eq("id", intervention.installation_id);
+      if (!instErr) {
+        setInstallUpdate({ last, next: nextDate });
+      }
+    }
+
+    setActing(null);
+    toast({ title: "Statut mis à jour" });
+    refetch();
+  }
+
+  const showStartButton =
+    intervention.status === "planned" || intervention.status === "scheduled";
+  const showCompleteButton = intervention.status === "in_progress";
+  const showCancelButton =
+    intervention.status === "planned" ||
+    intervention.status === "scheduled" ||
+    intervention.status === "in_progress";
+
+  const deviceLabel = [intervention.device_type, intervention.brand]
+    .filter(Boolean)
+    .join(" ");
+  const fullAddress = [
+    intervention.address_line1,
+    [intervention.postal_code, intervention.city].filter(Boolean).join(" "),
+  ]
+    .filter(Boolean)
+    .join(", ");
+
+  return (
+    <div className="space-y-6 max-w-4xl">
+      {/* SECTION 1 — Header */}
+      <div className="space-y-4">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate("/interventions")}
+          className="-ml-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Retour aux interventions
+        </Button>
+
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <div
+                className={cn(
+                  "flex items-center justify-center h-9 w-9 rounded-md",
+                  typeMeta.bgCls,
+                )}
+              >
+                <Icon className={cn("h-5 w-5", typeMeta.iconCls)} />
+              </div>
+              <h1
+                className="text-2xl font-bold tracking-tight"
+                style={{ lineHeight: "1.1" }}
+              >
+                {typeMeta.label}
+              </h1>
+              <Badge variant="outline" className={cn("font-normal", statusMeta.cls)}>
+                {statusMeta.label}
+              </Badge>
+              {intervention.rescheduled_from_id && (
+                <Badge
+                  variant="outline"
+                  className="font-normal gap-1 bg-yellow-500/10 text-yellow-700 border-yellow-500/20 dark:text-yellow-400"
+                >
+                  <RotateCcw className="h-3 w-3" />
+                  Reprogrammée
+                </Badge>
+              )}
+            </div>
+            <p className="text-sm text-muted-foreground flex items-center gap-1.5">
+              <CalendarClock className="h-4 w-4" />
+              {fullDateTime(intervention.start_datetime, intervention.end_datetime)}
+            </p>
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            {showStartButton && (
+              <Button
+                onClick={() => transitionStatus("in_progress", "start")}
+                disabled={!!acting}
+                size="sm"
+              >
+                {acting === "start" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <PlayCircle className="h-4 w-4" />
+                )}
+                Marquer en cours
+              </Button>
+            )}
+            {showCompleteButton && (
+              <Button
+                onClick={() => transitionStatus("completed", "complete")}
+                disabled={!!acting}
+                size="sm"
+                variant="success"
+              >
+                {acting === "complete" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <CheckCircle2 className="h-4 w-4" />
+                )}
+                Marquer terminée
+              </Button>
+            )}
+            {showCancelButton && (
+              <Button
+                onClick={() => transitionStatus("cancelled", "cancel")}
+                disabled={!!acting}
+                size="sm"
+                variant="outline"
+              >
+                {acting === "cancel" ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <XCircle className="h-4 w-4" />
+                )}
+                Annuler
+              </Button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* SECTION 2 — Context */}
+      <Card className="p-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Left column: customer + links */}
+          <div className="space-y-3">
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              Client & lieu
+            </h2>
+            {intervention.customer_id ? (
+              <button
+                onClick={() => navigate(`/clients/${intervention.customer_id}`)}
+                className="flex items-start gap-2 text-left hover:text-primary"
+              >
+                <User className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                <div>
+                  <p className="font-medium">
+                    {intervention.customer_name
+                      ? toTitleCase(intervention.customer_name)
+                      : "Client"}
+                  </p>
+                  {intervention.customer_phone && (
+                    <p className="text-xs text-muted-foreground font-mono">
+                      {intervention.customer_phone}
+                    </p>
+                  )}
+                </div>
+              </button>
+            ) : (
+              <p className="text-sm text-muted-foreground">Aucun client lié</p>
+            )}
+
+            {fullAddress && (
+              <div className="flex items-start gap-2 text-sm">
+                <MapPin className="h-4 w-4 mt-0.5 text-muted-foreground" />
+                <span>{fullAddress}</span>
+              </div>
+            )}
+
+            <div className="flex flex-col gap-1.5 pt-2">
+              {intervention.project_id && (
+                <button
+                  onClick={() => navigate(`/projects/${intervention.project_id}`)}
+                  className="flex items-center gap-1.5 text-sm text-primary hover:underline w-fit"
+                >
+                  <FolderKanban className="h-3.5 w-3.5" />
+                  Projet {intervention.project_number ?? ""}
+                </button>
+              )}
+              {intervention.service_request_id && (
+                <button
+                  onClick={() =>
+                    navigate(`/service-requests/${intervention.service_request_id}`)
+                  }
+                  className="flex items-center gap-1.5 text-sm text-primary hover:underline w-fit"
+                >
+                  <AlertCircle className="h-3.5 w-3.5" />
+                  Demande SAV
+                </button>
+              )}
+              {intervention.installation_id && deviceLabel && (
+                <button
+                  onClick={() =>
+                    navigate(`/installations/${intervention.installation_id}`)
+                  }
+                  className="flex items-center gap-1.5 text-sm text-primary hover:underline w-fit"
+                >
+                  <Wrench className="h-3.5 w-3.5" />
+                  {deviceLabel}
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Right column: details */}
+          <div className="space-y-3">
+            <h2 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
+              Détails
+            </h2>
+            <div className="text-sm space-y-2">
+              <div>
+                <span className="text-muted-foreground">Technicien : </span>
+                <span className="font-medium">
+                  {intervention.assigned_to_name
+                    ? toTitleCase(intervention.assigned_to_name)
+                    : "Non assigné"}
+                </span>
+              </div>
+              {duration && (
+                <div>
+                  <span className="text-muted-foreground">Durée : </span>
+                  <span className="font-mono">{duration}</span>
+                </div>
+              )}
+              {intervention.certificate_number && (
+                <div>
+                  <span className="text-muted-foreground">Certificat : </span>
+                  <span className="font-mono">{intervention.certificate_number}</span>
+                </div>
+              )}
+            </div>
+
+            {intervention.internal_notes && (
+              <div className="pt-2">
+                <p className="text-xs text-muted-foreground mb-1">Notes internes</p>
+                <p className="text-sm whitespace-pre-wrap">
+                  {intervention.internal_notes}
+                </p>
+              </div>
+            )}
+            {intervention.customer_visible_notes && (
+              <div className="pt-2">
+                <p className="text-xs text-muted-foreground mb-1">Notes client</p>
+                <p className="text-sm whitespace-pre-wrap">
+                  {intervention.customer_visible_notes}
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </Card>
+
+      {/* SECTION 3 — Quick info after completion */}
+      {intervention.status === "completed" &&
+        intervention.intervention_type === "sweep" &&
+        intervention.installation_id &&
+        installUpdate && (
+          <Card className="p-4 bg-success/5 border-success/30">
+            <div className="flex items-start gap-3">
+              <CheckCircle2 className="h-5 w-5 text-success mt-0.5" />
+              <div className="text-sm space-y-1">
+                <p className="font-medium">Installation mise à jour</p>
+                <p>
+                  <span className="text-muted-foreground">
+                    Dernier ramonage mis à jour :{" "}
+                  </span>
+                  <span className="font-mono">
+                    {format(new Date(installUpdate.last), "d MMM yyyy", { locale: fr })}
+                  </span>
+                </p>
+                <p>
+                  <span className="text-muted-foreground">
+                    Prochain ramonage prévu :{" "}
+                  </span>
+                  <span className="font-mono">
+                    {format(new Date(installUpdate.next), "d MMM yyyy", { locale: fr })}
+                  </span>
+                </p>
+              </div>
+            </div>
+          </Card>
+        )}
+
+      {/* SECTION 4 — Activities */}
+      <Card className="p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Activity className="h-4 w-4 text-muted-foreground" />
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Historique
+          </h2>
+          <Badge variant="secondary" className="font-mono text-[10px]">
+            {activities.length}
+          </Badge>
+        </div>
+        {activities.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            Aucune activité enregistrée pour cette intervention.
+          </p>
+        ) : (
+          <ul className="space-y-3">
+            {activities.map((a) => (
+              <li
+                key={a.id}
+                className="flex items-start gap-3 text-sm border-l-2 border-border pl-3"
+              >
+                <FileText className="h-3.5 w-3.5 mt-1 text-muted-foreground" />
+                <div className="flex-1">
+                  <p className="font-medium">{a.activity_type}</p>
+                  <p className="text-xs text-muted-foreground">
+                    {format(new Date(a.occurred_at), "d MMM yyyy à HH:mm", {
+                      locale: fr,
+                    })}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        )}
+      </Card>
+    </div>
+  );
+}

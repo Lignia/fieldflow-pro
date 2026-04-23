@@ -24,7 +24,6 @@ import {
   MapPinned,
   FileText,
   TrendingUp,
-  StickyNote,
   CircleDot,
   Wrench,
   Copy,
@@ -39,7 +38,6 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -148,7 +146,10 @@ export default function QuoteDetail() {
 
   /* ── Status transition ── */
   async function transitionStatus(newStatus: string) {
-    if (!quote || !coreUser) return;
+    if (!quote || !coreUser) {
+      toast.error("Session non chargée, réessayez.");
+      return;
+    }
     setTransitioning(true);
     try {
       const { error: rpcErr } = await billingDb.rpc("transition_quote_status", {
@@ -537,7 +538,7 @@ export default function QuoteDetail() {
               onSend={() => transitionStatus("sent")}
               onSign={() => setShowSignConfirm(true)}
               onLost={() => transitionStatus("lost")}
-              onEdit={() => navigate(`/projects/${quote.project_id}/quotes/new`)}
+              onEdit={() => navigate(`/projects/${quote.project_id}/quotes/editor?quote_id=${quote.id}`)}
               onDelete={() => setShowDelete(true)}
               navigate={navigate}
             />
@@ -681,17 +682,6 @@ export default function QuoteDetail() {
             </Card>
           )}
 
-          {/* ── BLOC NOTES ── */}
-          <Card className="p-4 space-y-3">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-              <StickyNote className="h-3.5 w-3.5" />
-              Notes
-            </h3>
-            <Textarea
-              placeholder="Ajouter une note…"
-              className="min-h-[80px] text-sm"
-            />
-          </Card>
         </div>
       </div>
     </div>

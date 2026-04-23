@@ -679,17 +679,6 @@ export default function QuoteDetail() {
             </Card>
           )}
 
-          {/* ── BLOC NOTES ── */}
-          <Card className="p-4 space-y-3">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-              <StickyNote className="h-3.5 w-3.5" />
-              Notes
-            </h3>
-            <Textarea
-              placeholder="Ajouter une note…"
-              className="min-h-[80px] text-sm"
-            />
-          </Card>
         </div>
       </div>
     </div>

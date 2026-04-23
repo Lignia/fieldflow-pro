@@ -24,7 +24,6 @@ import {
   MapPinned,
   FileText,
   TrendingUp,
-  StickyNote,
   CircleDot,
   Wrench,
   Copy,
@@ -39,7 +38,6 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,

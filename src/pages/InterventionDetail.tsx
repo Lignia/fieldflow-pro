@@ -516,8 +516,12 @@ export default function InterventionDetail() {
             )}
             {showCompleteButton && (
               <Button
-                onClick={() => transitionStatus("completed", "complete")}
-                disabled={!!acting}
+                onClick={() =>
+                  isCommissioning
+                    ? openMesDialog()
+                    : transitionStatus("completed", "complete")
+                }
+                disabled={!!acting || mesSubmitting}
                 size="sm"
                 variant="success"
               >
@@ -526,7 +530,7 @@ export default function InterventionDetail() {
                 ) : (
                   <CheckCircle2 className="h-4 w-4" />
                 )}
-                Marquer terminée
+                {isCommissioning ? "Finaliser la mise en service" : "Marquer terminée"}
               </Button>
             )}
             {showCancelButton && (

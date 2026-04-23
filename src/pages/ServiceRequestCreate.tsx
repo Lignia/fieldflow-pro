@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Search, X, Loader2 } from "lucide-react";
+import { ArrowLeft, Search, X, Loader2, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -16,7 +18,7 @@ import {
 } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
-import { coreDb, operationsDb } from "@/integrations/supabase/schema-clients";
+import { coreDb, operationsDb, catalogDb } from "@/integrations/supabase/schema-clients";
 import { toTitleCase } from "@/lib/format";
 
 interface CustomerLite {
@@ -34,6 +36,25 @@ interface InstallationLite {
   brand: string | null;
   model: string | null;
   status: string | null;
+}
+
+interface CatalogItemLite {
+  id: string;
+  name: string;
+  brand: string | null;
+  model_ref: string | null;
+  device_category: string | null;
+  fuel_type: string | null;
+  power_kw: number | null;
+  warranty_years_manufacturer: number | null;
+  warranty_years_installer: number | null;
+}
+
+interface DeviceTypeOption {
+  code: string;
+  label: string;
+  device_category: string | null;
+  fuel_hint: string | null;
 }
 
 const CATEGORY_OPTIONS = [

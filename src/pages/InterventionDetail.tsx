@@ -209,6 +209,16 @@ export default function InterventionDetail() {
     device_category: "",
     memo: "",
   });
+  const [fieldDialogOpen, setFieldDialogOpen] = useState(false);
+  const [fieldSubmitting, setFieldSubmitting] = useState(false);
+  const [fieldForm, setFieldForm] = useState({
+    brand: "",
+    model: "",
+    serial_number: "",
+    fuel_type: "",
+    device_category: "",
+    memo: "",
+  });
 
   if (loading) {
     return (

@@ -18,6 +18,7 @@ import {
   RefreshCw,
   Activity as ActivityIcon,
   ShieldCheck,
+  AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -537,6 +538,48 @@ export default function InstallationDetail() {
           <p className="text-sm text-muted-foreground italic">Aucun mémo enregistré.</p>
         )}
       </Card>
+
+      {/* Actions rapides */}
+      {status === "active" && (
+        <Card className="p-5">
+          <h2 className="text-sm font-semibold mb-3">Actions rapides</h2>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                navigate(`/interventions/new?type=sweep&installation_id=${installation.id}`)
+              }
+            >
+              <Wrench className="h-3.5 w-3.5 mr-2" />
+              Planifier un ramonage
+            </Button>
+            {(installation.fuel_type === "pellet" ||
+              (installation.device_category && installation.device_category !== "fireplace")) && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  navigate(
+                    `/interventions/new?type=annual_service&installation_id=${installation.id}`,
+                  )
+                }
+              >
+                <Calendar className="h-3.5 w-3.5 mr-2" />
+                Planifier un entretien
+              </Button>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => navigate(`/service-requests/new`)}
+            >
+              <AlertTriangle className="h-3.5 w-3.5 mr-2" />
+              Créer une demande SAV
+            </Button>
+          </div>
+        </Card>
+      )}
 
       {/* SECTION 5 — Historique */}
       <Card className="p-5">

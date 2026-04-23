@@ -251,16 +251,31 @@ export default function InterventionDetail() {
     ) {
       const last = intervention.start_datetime.slice(0, 10);
       const nextDate = addOneYear(intervention.start_datetime);
-      const { error: instErr } = await coreDb
+      await coreDb
         .from("installations")
         .update({
           last_sweep_date: last,
           next_sweep_date: nextDate,
         })
         .eq("id", intervention.installation_id);
-      if (!instErr) {
-        setInstallUpdate({ last, next: nextDate });
-      }
+    }
+
+    // Si entretien annuel : mise à jour des dates entretien sur l'installation
+    if (
+      next === "completed" &&
+      intervention.intervention_type === "annual_service" &&
+      intervention.installation_id &&
+      intervention.start_datetime
+    ) {
+      const last = intervention.start_datetime.slice(0, 10);
+      const nextDate = addOneYear(intervention.start_datetime);
+      await coreDb
+        .from("installations")
+        .update({
+          last_service_date: last,
+          next_service_date: nextDate,
+        })
+        .eq("id", intervention.installation_id);
     }
 
     setActing(null);

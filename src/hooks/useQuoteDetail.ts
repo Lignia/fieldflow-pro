@@ -211,66 +211,52 @@ export function useQuoteDetail(quoteId: string | undefined): UseQuoteDetailRetur
         }))
       );
 
-      // Fetch project
-      if (q.project_id) {
-        const { data: projData } = await coreDb
-          .from("projects")
-          .select("id, project_number, status")
-          .eq("id", q.project_id)
-          .single();
-        setProject(projData ? { id: projData.id, project_number: projData.project_number, status: projData.status } : null);
-      } else {
-        setProject(null);
-      }
+      // Fetch project / deposit invoice / installation / technical survey IN PARALLEL
+      const projectPromise = q.project_id
+        ? coreDb.from("projects").select("id, project_number, status").eq("id", q.project_id).single()
+        : Promise.resolve({ data: null, error: null } as any);
 
-      // Fetch deposit invoice
-      if (q.quote_status === "signed") {
-        const { data: invData } = await billingDb
-          .from("invoices")
-          .select("id, invoice_number, invoice_status")
-          .eq("quote_id", quoteId)
-          .maybeSingle();
-        setDepositInvoice(invData ? {
-          id: invData.id,
-          invoice_number: invData.invoice_number,
-          invoice_status: invData.invoice_status,
-        } : null);
-      } else {
-        setDepositInvoice(null);
-      }
+      const depositPromise = q.quote_status === "signed"
+        ? billingDb.from("invoices").select("id, invoice_number, invoice_status").eq("quote_id", quoteId).maybeSingle()
+        : Promise.resolve({ data: null, error: null } as any);
 
-      // Fetch installation
-      if (q.project_id && q.tenant_id) {
-        const { data: instData } = await coreDb
-          .from("installations")
-          .select("id, status, device_type")
-          .eq("project_id", q.project_id)
-          .eq("tenant_id", q.tenant_id)
-          .maybeSingle();
-        setInstallation(instData ? {
-          id: instData.id,
-          status: instData.status,
-          device_type: instData.device_type ?? null,
-        } : null);
-      } else {
-        setInstallation(null);
-      }
+      const installationPromise = q.project_id && q.tenant_id
+        ? coreDb.from("installations").select("id, status, device_type").eq("project_id", q.project_id).eq("tenant_id", q.tenant_id).maybeSingle()
+        : Promise.resolve({ data: null, error: null } as any);
 
-      // Fetch technical survey (only for estimate/final)
-      if (q.project_id && q.tenant_id && (q.quote_kind === "estimate" || q.quote_kind === "final")) {
-        const { data: surveyData } = await coreDb
-          .from("technical_surveys")
-          .select("id, survey_status")
-          .eq("project_id", q.project_id)
-          .eq("tenant_id", q.tenant_id)
-          .maybeSingle();
-        setTechnicalSurvey(surveyData ? {
-          id: surveyData.id,
-          survey_status: surveyData.survey_status,
-        } : null);
-      } else {
-        setTechnicalSurvey(null);
-      }
+      const surveyPromise = q.project_id && q.tenant_id && (q.quote_kind === "estimate" || q.quote_kind === "final")
+        ? coreDb.from("technical_surveys").select("id, survey_status").eq("project_id", q.project_id).eq("tenant_id", q.tenant_id).maybeSingle()
+        : Promise.resolve({ data: null, error: null } as any);
+
+      const [projRes, invRes, instRes, surveyRes] = await Promise.all([
+        projectPromise,
+        depositPromise,
+        installationPromise,
+        surveyPromise,
+      ]);
+
+      const projData = projRes.data as any;
+      setProject(projData ? { id: projData.id, project_number: projData.project_number, status: projData.status } : null);
+
+      const invData = invRes.data as any;
+      setDepositInvoice(invData ? {
+        id: invData.id,
+        invoice_number: invData.invoice_number,
+        invoice_status: invData.invoice_status,
+      } : null);
+
+      const instData = instRes.data as any;
+      setInstallation(instData ? {
+        id: instData.id,
+        status: instData.status,
+        device_type: instData.device_type ?? null,
+      } : null);
+
+      const surveyData = surveyRes.data as any;
+      setTechnicalSurvey(surveyData ? {
+        id: surveyData.id,
+        survey_status: surveyData.survey_status,
+      } : null);
     } catch (err: any) {
       setError(err.message ?? "Erreur inattendue");
     } finally {

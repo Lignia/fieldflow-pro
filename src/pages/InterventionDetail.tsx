@@ -37,6 +37,25 @@ import { useToast } from "@/hooks/use-toast";
 import { coreDb, operationsDb } from "@/integrations/supabase/schema-clients";
 import { toTitleCase } from "@/lib/format";
 import { useInterventionDetail } from "@/hooks/useInterventionDetail";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import type {
   InterventionStatus,
   InterventionType,
@@ -174,10 +193,22 @@ export default function InterventionDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { coreUser, tenantId } = useCurrentUser();
   const { intervention, activities, loading, error, notFound, refetch } =
     useInterventionDetail(id);
 
   const [acting, setActing] = useState<null | "start" | "complete" | "cancel">(null);
+  const [mesDialogOpen, setMesDialogOpen] = useState(false);
+  const [mesSubmitting, setMesSubmitting] = useState(false);
+  const [mesForm, setMesForm] = useState({
+    commissioning_date: new Date().toISOString().slice(0, 10),
+    serial_number: "",
+    brand: "",
+    model: "",
+    fuel_type: "",
+    device_category: "",
+    memo: "",
+  });
 
   if (loading) {
     return (
@@ -291,6 +322,72 @@ export default function InterventionDetail() {
     intervention.status === "scheduled" ||
     intervention.status === "in_progress";
 
+  const isCommissioning = intervention.intervention_type === "commissioning";
+
+  function openMesDialog() {
+    if (!intervention) return;
+    setMesForm({
+      commissioning_date:
+        intervention.start_datetime?.slice(0, 10) ??
+        new Date().toISOString().slice(0, 10),
+      serial_number: "",
+      brand: intervention.brand ?? "",
+      model: intervention.model ?? "",
+      fuel_type: "",
+      device_category: intervention.device_category ?? "",
+      memo: "",
+    });
+    setMesDialogOpen(true);
+  }
+
+  async function submitMes() {
+    if (!intervention) return;
+    if (!tenantId || !coreUser) {
+      toast({
+        title: "Session non chargée",
+        description: "Réessayez dans un instant.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (!mesForm.commissioning_date) {
+      toast({
+        title: "Date requise",
+        description: "Saisissez la date de mise en service.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setMesSubmitting(true);
+    const { error: rpcErr } = await operationsDb.rpc("complete_commissioning", {
+      p_intervention_id: intervention.id,
+      p_tenant_id: tenantId,
+      p_actor_id: coreUser.id,
+      p_commissioning_date: mesForm.commissioning_date,
+      p_serial_number: mesForm.serial_number.trim() || null,
+      p_brand: mesForm.brand.trim() || null,
+      p_model: mesForm.model.trim() || null,
+      p_fuel_type: mesForm.fuel_type || null,
+      p_device_category: mesForm.device_category || null,
+      p_memo: mesForm.memo.trim() || null,
+    });
+    setMesSubmitting(false);
+    if (rpcErr) {
+      toast({
+        title: "Erreur",
+        description: rpcErr.message,
+        variant: "destructive",
+      });
+      return;
+    }
+    toast({
+      title: "Mise en service terminée",
+      description: "Installation activée dans le parc.",
+    });
+    setMesDialogOpen(false);
+    refetch();
+  }
+
   const deviceLabel = [intervention.device_type, intervention.brand]
     .filter(Boolean)
     .join(" ");
@@ -302,6 +399,7 @@ export default function InterventionDetail() {
     .join(", ");
 
   return (
+    <>
     <div className="space-y-6 max-w-4xl">
       {/* SECTION 1 — Header */}
       <div className="space-y-4">
@@ -419,8 +517,12 @@ export default function InterventionDetail() {
             )}
             {showCompleteButton && (
               <Button
-                onClick={() => transitionStatus("completed", "complete")}
-                disabled={!!acting}
+                onClick={() =>
+                  isCommissioning
+                    ? openMesDialog()
+                    : transitionStatus("completed", "complete")
+                }
+                disabled={!!acting || mesSubmitting}
                 size="sm"
                 variant="success"
               >
@@ -429,7 +531,7 @@ export default function InterventionDetail() {
                 ) : (
                   <CheckCircle2 className="h-4 w-4" />
                 )}
-                Marquer terminée
+                {isCommissioning ? "Finaliser la mise en service" : "Marquer terminée"}
               </Button>
             )}
             {showCancelButton && (
@@ -719,6 +821,109 @@ export default function InterventionDetail() {
         )}
       </Card>
     </div>
+
+    {/* Dialog Finaliser MES */}
+    <Dialog open={mesDialogOpen} onOpenChange={setMesDialogOpen}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Finaliser la mise en service</DialogTitle>
+          <DialogDescription>
+            Ces informations alimenteront la fiche installation dans le parc client.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-2">
+          <div className="grid gap-1.5">
+            <Label htmlFor="mes-date">Date de mise en service *</Label>
+            <Input
+              id="mes-date"
+              type="date"
+              value={mesForm.commissioning_date}
+              onChange={(e) =>
+                setMesForm((f) => ({ ...f, commissioning_date: e.target.value }))
+              }
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-1.5">
+              <Label htmlFor="mes-brand">Marque</Label>
+              <Input
+                id="mes-brand"
+                value={mesForm.brand}
+                onChange={(e) => setMesForm((f) => ({ ...f, brand: e.target.value }))}
+                placeholder="Jotul, Stûv…"
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="mes-model">Modèle</Label>
+              <Input
+                id="mes-model"
+                value={mesForm.model}
+                onChange={(e) => setMesForm((f) => ({ ...f, model: e.target.value }))}
+                placeholder="F305, P-10…"
+              />
+            </div>
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="mes-serial">Numéro de série</Label>
+            <Input
+              id="mes-serial"
+              value={mesForm.serial_number}
+              onChange={(e) =>
+                setMesForm((f) => ({ ...f, serial_number: e.target.value }))
+              }
+              placeholder="Relevé sur la plaque signalétique"
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="mes-fuel">Combustible</Label>
+            <Select
+              value={mesForm.fuel_type}
+              onValueChange={(v) => setMesForm((f) => ({ ...f, fuel_type: v }))}
+            >
+              <SelectTrigger id="mes-fuel">
+                <SelectValue placeholder="Choisir un combustible" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="wood">Bois</SelectItem>
+                <SelectItem value="pellet">Granulés</SelectItem>
+                <SelectItem value="gas">Gaz</SelectItem>
+                <SelectItem value="oil">Fioul</SelectItem>
+                <SelectItem value="mixed">Mixte</SelectItem>
+                <SelectItem value="other">Autre</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="mes-memo">Mémo</Label>
+            <Textarea
+              id="mes-memo"
+              value={mesForm.memo}
+              onChange={(e) => setMesForm((f) => ({ ...f, memo: e.target.value }))}
+              placeholder="Notes pour le dossier client…"
+              rows={3}
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => setMesDialogOpen(false)}
+            disabled={mesSubmitting}
+          >
+            Annuler
+          </Button>
+          <Button onClick={submitMes} disabled={mesSubmitting} variant="success">
+            {mesSubmitting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <CheckCircle2 className="h-4 w-4" />
+            )}
+            Finaliser la MES
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }
 
@@ -828,6 +1033,46 @@ function SuitesSection({ intervention, onNavigate, onToast }: SuitesSectionProps
         )}
         {(t === "installation" || t === "commissioning") && (
           <>
+          {t === "commissioning" && intervention.start_datetime && (
+            <div className="rounded-md border border-success/30 bg-success/5 p-4 space-y-2 w-full">
+              <p className="text-sm font-medium flex items-center gap-1.5">
+                <Zap className="h-4 w-4 text-success" />
+                Mise en service réalisée
+              </p>
+              <p className="text-sm">
+                <span className="text-muted-foreground">Date : </span>
+                <span className="font-mono">
+                  {format(new Date(intervention.start_datetime), "d MMMM yyyy", {
+                    locale: fr,
+                  })}
+                </span>
+              </p>
+              <div className="flex flex-wrap gap-2 pt-1">
+                {intervention.installation_id && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      onNavigate(`/installations/${intervention.installation_id}`)
+                    }
+                  >
+                    <Wrench className="h-4 w-4" />
+                    Voir l'installation dans le parc
+                  </Button>
+                )}
+                {intervention.project_id && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => onNavigate(`/projects/${intervention.project_id}`)}
+                  >
+                    <FolderKanban className="h-4 w-4" />
+                    Voir le projet
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
             <Button size="sm" variant="outline" onClick={handleSoonV3}>
               <FileText className="h-4 w-4" />
               Créer le PV de réception

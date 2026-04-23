@@ -1307,14 +1307,14 @@ function SuitesSection({
               <FileText className="h-4 w-4" />
               Générer le certificat de ramonage
             </Button>
-            <Button size="sm" variant="outline" onClick={() => onNavigate("/invoices/new")}>
+            <Button size="sm" variant="outline" onClick={openInvoiceDialog}>
               <Euro className="h-4 w-4" />
               Créer la facture
             </Button>
           </>
         )}
         {t === "annual_service" && (
-          <Button size="sm" variant="outline" onClick={() => onNavigate("/invoices/new")}>
+          <Button size="sm" variant="outline" onClick={openInvoiceDialog}>
             <Euro className="h-4 w-4" />
             Créer la facture
           </Button>

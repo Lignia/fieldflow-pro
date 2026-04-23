@@ -10,10 +10,13 @@ import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { coreDb, operationsDb } from "@/integrations/supabase/schema-clients";
@@ -23,15 +26,32 @@ import type {
   InterventionWorkstream,
 } from "@/hooks/useInterventions";
 
-const TYPE_OPTIONS: { value: InterventionType; label: string }[] = [
+const PROJECT_TYPE_OPTIONS: { value: InterventionType; label: string }[] = [
+  { value: "technical_survey", label: "Visite technique" },
+  { value: "installation", label: "Pose" },
+  { value: "commissioning", label: "Mise en service" },
+  { value: "commercial_visit", label: "Visite commerciale" },
+];
+
+const AFTERCARE_TYPE_OPTIONS: { value: InterventionType; label: string }[] = [
   { value: "sweep", label: "Ramonage" },
   { value: "annual_service", label: "Entretien annuel" },
   { value: "repair", label: "Dépannage" },
   { value: "diagnostic", label: "Diagnostic" },
-  { value: "commissioning", label: "Mise en service" },
-  { value: "installation", label: "Pose" },
-  { value: "technical_survey", label: "Visite technique" },
-  { value: "commercial_visit", label: "Visite commerciale" },
+];
+
+const SWEEP_TYPE_OPTIONS: { value: string; label: string }[] = [
+  { value: "simple", label: "Conduit simple" },
+  { value: "double", label: "Conduit double" },
+  { value: "tubing", label: "Tubage" },
+  { value: "desooting", label: "Débistrage" },
+];
+
+const FLUE_CONDITION_OPTIONS: { value: string; label: string }[] = [
+  { value: "good", label: "Bon" },
+  { value: "average", label: "Moyen" },
+  { value: "poor", label: "Mauvais" },
+  { value: "critical", label: "Critique — urgent" },
 ];
 
 const PROJECT_TYPES: InterventionType[] = [
@@ -104,6 +124,17 @@ export default function InterventionCreate() {
   const [assignedTo, setAssignedTo] = useState<string>("none");
   const [internalNotes, setInternalNotes] = useState("");
   const [customerNotes, setCustomerNotes] = useState("");
+
+  // Champs conditionnels selon le type
+  const [sweepType, setSweepType] = useState<string>("");
+  const [flueCondition, setFlueCondition] = useState<string>("");
+  const [partsReplaced, setPartsReplaced] = useState("");
+  const [nextServiceRecommendation, setNextServiceRecommendation] = useState("");
+
+  // Suivi
+  const [followupNeeded, setFollowupNeeded] = useState(false);
+  const [followupNotes, setFollowupNotes] = useState("");
+  const [quoteNeeded, setQuoteNeeded] = useState(false);
 
   // Context
   const [contextLoading, setContextLoading] = useState(
@@ -311,6 +342,19 @@ export default function InterventionCreate() {
       end_datetime: new Date(endAt).toISOString(),
       internal_notes: internalNotes.trim() || null,
       customer_visible_notes: customerNotes.trim() || null,
+      followup_needed: followupNeeded,
+      followup_notes: followupNeeded ? followupNotes.trim() || null : null,
+      quote_needed: quoteNeeded,
+      sweep_type: type === "sweep" && sweepType ? sweepType : null,
+      flue_condition: type === "sweep" && flueCondition ? flueCondition : null,
+      parts_replaced:
+        type === "annual_service" && partsReplaced.trim()
+          ? partsReplaced.trim()
+          : null,
+      next_service_recommendation:
+        type === "annual_service" && nextServiceRecommendation.trim()
+          ? nextServiceRecommendation.trim()
+          : null,
     };
     if (assignedTo !== "none") {
       payload.assigned_to = assignedTo;
@@ -395,11 +439,22 @@ export default function InterventionCreate() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {TYPE_OPTIONS.map((o) => (
-                <SelectItem key={o.value} value={o.value}>
-                  {o.label}
-                </SelectItem>
-              ))}
+              <SelectGroup>
+                <SelectLabel>Projet</SelectLabel>
+                {PROJECT_TYPE_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+              <SelectGroup>
+                <SelectLabel>SAV & Récurrent</SelectLabel>
+                {AFTERCARE_TYPE_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
             </SelectContent>
           </Select>
         </div>
@@ -550,6 +605,106 @@ export default function InterventionCreate() {
             placeholder="Informations transmises au client…"
             rows={3}
           />
+        </div>
+
+        {/* Champs spécifiques ramonage */}
+        {type === "sweep" && (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t">
+            <div className="space-y-2">
+              <Label htmlFor="sweep-type">Type de ramonage</Label>
+              <Select value={sweepType} onValueChange={setSweepType}>
+                <SelectTrigger id="sweep-type" className="h-9">
+                  <SelectValue placeholder="Sélectionner…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {SWEEP_TYPE_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="flue-condition">État du conduit</Label>
+              <Select value={flueCondition} onValueChange={setFlueCondition}>
+                <SelectTrigger id="flue-condition" className="h-9">
+                  <SelectValue placeholder="Sélectionner…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {FLUE_CONDITION_OPTIONS.map((o) => (
+                    <SelectItem key={o.value} value={o.value}>
+                      {o.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        )}
+
+        {/* Champs spécifiques entretien annuel */}
+        {type === "annual_service" && (
+          <div className="space-y-4 pt-2 border-t">
+            <div className="space-y-2">
+              <Label htmlFor="parts">Pièces remplacées</Label>
+              <Textarea
+                id="parts"
+                value={partsReplaced}
+                onChange={(e) => setPartsReplaced(e.target.value)}
+                placeholder="Ex: Joint vitre, allumeur céramique…"
+                rows={2}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="reco">Recommandations</Label>
+              <Textarea
+                id="reco"
+                value={nextServiceRecommendation}
+                onChange={(e) => setNextServiceRecommendation(e.target.value)}
+                placeholder="Recommandations pour le prochain entretien…"
+                rows={2}
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Suivi */}
+        <div className="space-y-3 pt-2 border-t">
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-0.5">
+              <Label htmlFor="followup">Prévoir une autre intervention</Label>
+              <p className="text-xs text-muted-foreground">
+                Une suite est nécessaire (retour, contrôle, etc.)
+              </p>
+            </div>
+            <Switch
+              id="followup"
+              checked={followupNeeded}
+              onCheckedChange={setFollowupNeeded}
+            />
+          </div>
+          {followupNeeded && (
+            <Textarea
+              value={followupNotes}
+              onChange={(e) => setFollowupNotes(e.target.value)}
+              placeholder="Décrire la suite à donner…"
+              rows={2}
+            />
+          )}
+          <div className="flex items-start justify-between gap-4">
+            <div className="space-y-0.5">
+              <Label htmlFor="quote">Devis à établir</Label>
+              <p className="text-xs text-muted-foreground">
+                Un devis sera nécessaire suite à cette intervention
+              </p>
+            </div>
+            <Switch
+              id="quote"
+              checked={quoteNeeded}
+              onCheckedChange={setQuoteNeeded}
+            />
+          </div>
         </div>
       </Card>
 

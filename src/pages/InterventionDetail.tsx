@@ -24,6 +24,9 @@ import {
   Loader2,
   FileText,
   Activity,
+  Euro,
+  ClipboardList,
+  ScrollText,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -110,6 +113,35 @@ const STATUS_STYLES: Record<InterventionStatus, { label: string; cls: string }> 
   },
 };
 
+const FLUE_CONDITION_META: Record<
+  string,
+  { label: string; cls: string }
+> = {
+  good: {
+    label: "Conduit en bon état",
+    cls: "bg-success/10 text-success border-success/20",
+  },
+  average: {
+    label: "Conduit moyen",
+    cls: "bg-yellow-500/10 text-yellow-700 border-yellow-500/20 dark:text-yellow-400",
+  },
+  poor: {
+    label: "Conduit en mauvais état",
+    cls: "bg-orange-500/10 text-orange-700 border-orange-500/20 dark:text-orange-400",
+  },
+  critical: {
+    label: "Conduit critique — urgent",
+    cls: "bg-destructive/10 text-destructive border-destructive/20",
+  },
+};
+
+const SWEEP_TYPE_LABELS: Record<string, string> = {
+  simple: "Conduit simple",
+  double: "Conduit double",
+  tubing: "Tubage",
+  desooting: "Débistrage",
+};
+
 function fullDateTime(start: string | null, end: string | null): string {
   if (!start) return "Date à définir";
   const s = new Date(start);
@@ -146,10 +178,6 @@ export default function InterventionDetail() {
     useInterventionDetail(id);
 
   const [acting, setActing] = useState<null | "start" | "complete" | "cancel">(null);
-  const [installUpdate, setInstallUpdate] = useState<{
-    last: string;
-    next: string;
-  } | null>(null);
 
   if (loading) {
     return (
@@ -223,16 +251,31 @@ export default function InterventionDetail() {
     ) {
       const last = intervention.start_datetime.slice(0, 10);
       const nextDate = addOneYear(intervention.start_datetime);
-      const { error: instErr } = await coreDb
+      await coreDb
         .from("installations")
         .update({
           last_sweep_date: last,
           next_sweep_date: nextDate,
         })
         .eq("id", intervention.installation_id);
-      if (!instErr) {
-        setInstallUpdate({ last, next: nextDate });
-      }
+    }
+
+    // Si entretien annuel : mise à jour des dates entretien sur l'installation
+    if (
+      next === "completed" &&
+      intervention.intervention_type === "annual_service" &&
+      intervention.installation_id &&
+      intervention.start_datetime
+    ) {
+      const last = intervention.start_datetime.slice(0, 10);
+      const nextDate = addOneYear(intervention.start_datetime);
+      await coreDb
+        .from("installations")
+        .update({
+          last_service_date: last,
+          next_service_date: nextDate,
+        })
+        .eq("id", intervention.installation_id);
     }
 
     setActing(null);
@@ -299,6 +342,24 @@ export default function InterventionDetail() {
                 >
                   <RotateCcw className="h-3 w-3" />
                   Reprogrammée
+                </Badge>
+              )}
+              {intervention.followup_needed && (
+                <Badge
+                  variant="outline"
+                  className="font-normal gap-1 bg-orange-500/10 text-orange-700 border-orange-500/20 dark:text-orange-400"
+                >
+                  <ClipboardList className="h-3 w-3" />
+                  Suite à planifier
+                </Badge>
+              )}
+              {intervention.quote_needed && (
+                <Badge
+                  variant="outline"
+                  className="font-normal gap-1 bg-blue-500/10 text-blue-700 border-blue-500/20 dark:text-blue-400"
+                >
+                  <Euro className="h-3 w-3" />
+                  Devis à établir
                 </Badge>
               )}
             </div>
@@ -456,7 +517,45 @@ export default function InterventionDetail() {
                   <span className="font-mono">{intervention.certificate_number}</span>
                 </div>
               )}
+              {intervention.sweep_type && (
+                <div>
+                  <span className="text-muted-foreground">Type : </span>
+                  <span className="font-medium">
+                    Ramonage {SWEEP_TYPE_LABELS[intervention.sweep_type] ?? intervention.sweep_type}
+                  </span>
+                </div>
+              )}
+              {intervention.flue_condition && FLUE_CONDITION_META[intervention.flue_condition] && (
+                <div className="pt-1">
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "font-normal",
+                      FLUE_CONDITION_META[intervention.flue_condition].cls,
+                    )}
+                  >
+                    {FLUE_CONDITION_META[intervention.flue_condition].label}
+                  </Badge>
+                </div>
+              )}
             </div>
+
+            {intervention.parts_replaced && (
+              <div className="pt-2">
+                <p className="text-xs text-muted-foreground mb-1">Pièces remplacées</p>
+                <p className="text-sm whitespace-pre-wrap">
+                  {intervention.parts_replaced}
+                </p>
+              </div>
+            )}
+            {intervention.next_service_recommendation && (
+              <div className="pt-2">
+                <p className="text-xs text-muted-foreground mb-1">Recommandation</p>
+                <p className="text-sm whitespace-pre-wrap">
+                  {intervention.next_service_recommendation}
+                </p>
+              </div>
+            )}
 
             {intervention.internal_notes && (
               <div className="pt-2">
@@ -478,11 +577,12 @@ export default function InterventionDetail() {
         </div>
       </Card>
 
-      {/* SECTION 3 — Quick info after completion */}
+      {/* SECTION 3 — Mise à jour installation après complétion */}
       {intervention.status === "completed" &&
-        intervention.intervention_type === "sweep" &&
         intervention.installation_id &&
-        installUpdate && (
+        intervention.start_datetime &&
+        (intervention.intervention_type === "sweep" ||
+          intervention.intervention_type === "annual_service") && (
           <Card className="p-4 bg-success/5 border-success/30">
             <div className="flex items-start gap-3">
               <CheckCircle2 className="h-5 w-5 text-success mt-0.5" />
@@ -490,24 +590,41 @@ export default function InterventionDetail() {
                 <p className="font-medium">Installation mise à jour</p>
                 <p>
                   <span className="text-muted-foreground">
-                    Dernier ramonage mis à jour :{" "}
+                    {intervention.intervention_type === "sweep"
+                      ? "Dernier ramonage : "
+                      : "Dernier entretien : "}
                   </span>
                   <span className="font-mono">
-                    {format(new Date(installUpdate.last), "d MMM yyyy", { locale: fr })}
+                    {format(new Date(intervention.start_datetime), "d MMM yyyy", {
+                      locale: fr,
+                    })}
                   </span>
                 </p>
                 <p>
                   <span className="text-muted-foreground">
-                    Prochain ramonage prévu :{" "}
+                    {intervention.intervention_type === "sweep"
+                      ? "Prochain ramonage prévu : "
+                      : "Prochain entretien prévu : "}
                   </span>
                   <span className="font-mono">
-                    {format(new Date(installUpdate.next), "d MMM yyyy", { locale: fr })}
+                    {format(new Date(addOneYear(intervention.start_datetime)), "d MMM yyyy", {
+                      locale: fr,
+                    })}
                   </span>
                 </p>
               </div>
             </div>
           </Card>
         )}
+
+      {/* SECTION — Suites */}
+      {intervention.status === "completed" && (
+        <SuitesSection
+          intervention={intervention}
+          onNavigate={navigate}
+          onToast={toast}
+        />
+      )}
 
       {/* SECTION 4 — Activities */}
       <Card className="p-6">
@@ -546,5 +663,154 @@ export default function InterventionDetail() {
         )}
       </Card>
     </div>
+  );
+}
+
+// ============================================================
+// SuitesSection — actions de suite après intervention terminée
+// ============================================================
+interface SuitesSectionProps {
+  intervention: ReturnType<typeof useInterventionDetail>["intervention"];
+  onNavigate: (path: string) => void;
+  onToast: ReturnType<typeof useToast>["toast"];
+}
+
+function SuitesSection({ intervention, onNavigate, onToast }: SuitesSectionProps) {
+  if (!intervention) return null;
+
+  const t = intervention.intervention_type;
+
+  function handleCreateQuote() {
+    if (intervention?.project_id) {
+      onNavigate(`/projects/${intervention.project_id}?tab=devis`);
+    } else {
+      onToast({
+        title: "Projet requis",
+        description: "Créez d'abord un projet pour ce client.",
+      });
+    }
+  }
+
+  function handleSoonV3() {
+    onToast({ title: "Disponible prochainement — V3" });
+  }
+
+  return (
+    <Card className="p-6 space-y-4">
+      <div className="flex items-center gap-2">
+        <ScrollText className="h-4 w-4 text-muted-foreground" />
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          Suites
+        </h2>
+      </div>
+
+      {intervention.followup_needed && (
+        <div className="rounded-md border border-orange-500/30 bg-orange-500/5 p-4 space-y-3">
+          <div className="flex items-start gap-2">
+            <ClipboardList className="h-4 w-4 mt-0.5 text-orange-600 dark:text-orange-400" />
+            <div className="flex-1">
+              <p className="text-sm font-medium">Suite nécessaire</p>
+              {intervention.followup_notes && (
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap mt-1">
+                  {intervention.followup_notes}
+                </p>
+              )}
+            </div>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              const params = new URLSearchParams();
+              params.set("type", intervention.intervention_type);
+              if (intervention.installation_id) {
+                params.set("installation_id", intervention.installation_id);
+              }
+              onNavigate(`/interventions/new?${params.toString()}`);
+            }}
+          >
+            Planifier l'intervention suivante
+          </Button>
+        </div>
+      )}
+
+      {intervention.quote_needed && (
+        <div className="rounded-md border border-blue-500/30 bg-blue-500/5 p-4 space-y-3">
+          <div className="flex items-start gap-2">
+            <Euro className="h-4 w-4 mt-0.5 text-blue-600 dark:text-blue-400" />
+            <div className="flex-1">
+              <p className="text-sm font-medium">Devis à établir</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Un devis est nécessaire suite à cette intervention.
+              </p>
+            </div>
+          </div>
+          <Button size="sm" variant="outline" onClick={handleCreateQuote}>
+            Créer un devis
+          </Button>
+        </div>
+      )}
+
+      <div className="flex flex-wrap gap-2 pt-2 border-t">
+        {t === "sweep" && (
+          <>
+            <Button size="sm" variant="outline" onClick={handleSoonV3}>
+              <FileText className="h-4 w-4" />
+              Générer le certificat de ramonage
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => onNavigate("/invoices/new")}>
+              <Euro className="h-4 w-4" />
+              Créer la facture
+            </Button>
+          </>
+        )}
+        {t === "annual_service" && (
+          <Button size="sm" variant="outline" onClick={() => onNavigate("/invoices/new")}>
+            <Euro className="h-4 w-4" />
+            Créer la facture
+          </Button>
+        )}
+        {(t === "installation" || t === "commissioning") && (
+          <>
+            <Button size="sm" variant="outline" onClick={handleSoonV3}>
+              <FileText className="h-4 w-4" />
+              Créer le PV de réception
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => onNavigate("/invoices/new")}>
+              <Euro className="h-4 w-4" />
+              Créer la facture solde
+            </Button>
+          </>
+        )}
+        {t === "technical_survey" && (
+          <>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() =>
+                onNavigate(
+                  `/technical-surveys/new${
+                    intervention.project_id ? `?project=${intervention.project_id}` : ""
+                  }`,
+                )
+              }
+            >
+              <ClipboardList className="h-4 w-4" />
+              Créer le relevé technique
+            </Button>
+            <Button size="sm" variant="outline" onClick={handleCreateQuote}>
+              <Euro className="h-4 w-4" />
+              Créer le devis estimatif
+            </Button>
+          </>
+        )}
+        {(t === "repair" || t === "diagnostic") && (
+          <Button size="sm" variant="outline" onClick={() => onNavigate("/invoices/new")}>
+            <Euro className="h-4 w-4" />
+            Créer la facture
+          </Button>
+        )}
+      </div>
+    </Card>
   );
 }

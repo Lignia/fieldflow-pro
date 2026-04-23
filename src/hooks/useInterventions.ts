@@ -48,6 +48,17 @@ export interface Intervention {
   rescheduled_from_id: string | null;
   created_at: string;
   modified_at: string;
+  // Rapport terrain & suivi
+  report_notes: string | null;
+  followup_needed: boolean | null;
+  followup_notes: string | null;
+  quote_needed: boolean | null;
+  sweep_type: string | null;
+  flue_condition: string | null;
+  parts_replaced: string | null;
+  next_service_recommendation: string | null;
+  actual_start_datetime: string | null;
+  actual_end_datetime: string | null;
   // Dénormalisé
   customer_name: string | null;
   customer_phone: string | null;

@@ -34,7 +34,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
-import { coreDb, operationsDb } from "@/integrations/supabase/schema-clients";
+import { billingDb, coreDb, operationsDb } from "@/integrations/supabase/schema-clients";
 import { toTitleCase } from "@/lib/format";
 import { useInterventionDetail } from "@/hooks/useInterventionDetail";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
@@ -209,6 +209,16 @@ export default function InterventionDetail() {
     device_category: "",
     memo: "",
   });
+  const [fieldDialogOpen, setFieldDialogOpen] = useState(false);
+  const [fieldSubmitting, setFieldSubmitting] = useState(false);
+  const [fieldForm, setFieldForm] = useState({
+    brand: "",
+    model: "",
+    serial_number: "",
+    fuel_type: "",
+    device_category: "",
+    memo: "",
+  });
 
   if (loading) {
     return (
@@ -324,6 +334,17 @@ export default function InterventionDetail() {
 
   const isCommissioning = intervention.intervention_type === "commissioning";
 
+  // Cycle 2bis : intervention terrain sur installation encore "draft"
+  // (appareil découvert sur place) → compléter la fiche appareil à la complétion.
+  const isFieldType =
+    intervention.intervention_type === "sweep" ||
+    intervention.intervention_type === "annual_service" ||
+    intervention.intervention_type === "repair" ||
+    intervention.intervention_type === "diagnostic";
+  const isDraftInstallation =
+    !!intervention.installation_id && !intervention.device_category;
+  const needsFieldCompletion = isFieldType && isDraftInstallation;
+
   function openMesDialog() {
     if (!intervention) return;
     setMesForm({
@@ -385,6 +406,58 @@ export default function InterventionDetail() {
       description: "Installation activée dans le parc.",
     });
     setMesDialogOpen(false);
+    refetch();
+  }
+
+  function openFieldDialog() {
+    if (!intervention) return;
+    setFieldForm({
+      brand: intervention.brand ?? "",
+      model: intervention.model ?? "",
+      serial_number: "",
+      fuel_type: "",
+      device_category: intervention.device_category ?? "",
+      memo: "",
+    });
+    setFieldDialogOpen(true);
+  }
+
+  async function submitField() {
+    if (!intervention) return;
+    if (!tenantId || !coreUser) {
+      toast({
+        title: "Session non chargée",
+        description: "Réessayez dans un instant.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setFieldSubmitting(true);
+    const { error: rpcErr } = await operationsDb.rpc("complete_field_intervention", {
+      p_intervention_id: intervention.id,
+      p_tenant_id: tenantId,
+      p_actor_id: coreUser.id,
+      p_brand: fieldForm.brand.trim() || null,
+      p_model: fieldForm.model.trim() || null,
+      p_serial_number: fieldForm.serial_number.trim() || null,
+      p_fuel_type: fieldForm.fuel_type || null,
+      p_device_category: fieldForm.device_category || null,
+      p_memo: fieldForm.memo.trim() || null,
+    });
+    setFieldSubmitting(false);
+    if (rpcErr) {
+      toast({
+        title: "Erreur",
+        description: rpcErr.message,
+        variant: "destructive",
+      });
+      return;
+    }
+    toast({
+      title: "Intervention terminée",
+      description: "Appareil ajouté au parc.",
+    });
+    setFieldDialogOpen(false);
     refetch();
   }
 
@@ -520,9 +593,11 @@ export default function InterventionDetail() {
                 onClick={() =>
                   isCommissioning
                     ? openMesDialog()
+                    : needsFieldCompletion
+                    ? openFieldDialog()
                     : transitionStatus("completed", "complete")
                 }
-                disabled={!!acting || mesSubmitting}
+                disabled={!!acting || mesSubmitting || fieldSubmitting}
                 size="sm"
                 variant="success"
               >
@@ -531,7 +606,11 @@ export default function InterventionDetail() {
                 ) : (
                   <CheckCircle2 className="h-4 w-4" />
                 )}
-                {isCommissioning ? "Finaliser la mise en service" : "Marquer terminée"}
+                {isCommissioning
+                  ? "Finaliser la mise en service"
+                  : needsFieldCompletion
+                  ? "Terminer et compléter l'appareil"
+                  : "Marquer terminée"}
               </Button>
             )}
             {showCancelButton && (
@@ -781,6 +860,8 @@ export default function InterventionDetail() {
           intervention={intervention}
           onNavigate={navigate}
           onToast={toast}
+          tenantId={tenantId}
+          actorId={coreUser?.id ?? null}
         />
       )}
 
@@ -923,6 +1004,105 @@ export default function InterventionDetail() {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+
+    {/* Dialog Compléter fiche appareil (Cycle 2bis) */}
+    <Dialog open={fieldDialogOpen} onOpenChange={setFieldDialogOpen}>
+      <DialogContent className="sm:max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Compléter la fiche appareil</DialogTitle>
+          <DialogDescription>
+            Ces informations seront ajoutées au Parc installé du client.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="grid gap-4 py-2">
+          <div className="grid grid-cols-2 gap-3">
+            <div className="grid gap-1.5">
+              <Label htmlFor="field-brand">Marque</Label>
+              <Input
+                id="field-brand"
+                value={fieldForm.brand}
+                onChange={(e) =>
+                  setFieldForm((f) => ({ ...f, brand: e.target.value }))
+                }
+                placeholder="Jotul, Stûv…"
+              />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="field-model">Modèle</Label>
+              <Input
+                id="field-model"
+                value={fieldForm.model}
+                onChange={(e) =>
+                  setFieldForm((f) => ({ ...f, model: e.target.value }))
+                }
+                placeholder="F305, P-10…"
+              />
+            </div>
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="field-serial">Numéro de série</Label>
+            <Input
+              id="field-serial"
+              value={fieldForm.serial_number}
+              onChange={(e) =>
+                setFieldForm((f) => ({ ...f, serial_number: e.target.value }))
+              }
+              placeholder="Relevé sur la plaque signalétique"
+            />
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="field-fuel">Combustible</Label>
+            <Select
+              value={fieldForm.fuel_type}
+              onValueChange={(v) =>
+                setFieldForm((f) => ({ ...f, fuel_type: v }))
+              }
+            >
+              <SelectTrigger id="field-fuel">
+                <SelectValue placeholder="Choisir un combustible" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="wood">Bois</SelectItem>
+                <SelectItem value="pellet">Granulés</SelectItem>
+                <SelectItem value="gas">Gaz</SelectItem>
+                <SelectItem value="oil">Fioul</SelectItem>
+                <SelectItem value="mixed">Mixte</SelectItem>
+                <SelectItem value="other">Autre</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="grid gap-1.5">
+            <Label htmlFor="field-memo">Mémo</Label>
+            <Textarea
+              id="field-memo"
+              value={fieldForm.memo}
+              onChange={(e) =>
+                setFieldForm((f) => ({ ...f, memo: e.target.value }))
+              }
+              placeholder="Notes pour le dossier client…"
+              rows={3}
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => setFieldDialogOpen(false)}
+            disabled={fieldSubmitting}
+          >
+            Annuler
+          </Button>
+          <Button onClick={submitField} disabled={fieldSubmitting} variant="success">
+            {fieldSubmitting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <CheckCircle2 className="h-4 w-4" />
+            )}
+            Terminer l'intervention
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
     </>
   );
 }
@@ -934,12 +1114,119 @@ interface SuitesSectionProps {
   intervention: ReturnType<typeof useInterventionDetail>["intervention"];
   onNavigate: (path: string) => void;
   onToast: ReturnType<typeof useToast>["toast"];
+  tenantId: string | null;
+  actorId: string | null;
 }
 
-function SuitesSection({ intervention, onNavigate, onToast }: SuitesSectionProps) {
+interface InvoiceLine {
+  label: string;
+  qty: number;
+  unit_price_ht: number;
+  vat_rate: number;
+}
+
+function defaultInvoiceLine(t: string | null): InvoiceLine {
+  if (t === "sweep")
+    return { label: "Ramonage", qty: 1, unit_price_ht: 100, vat_rate: 10 };
+  if (t === "annual_service")
+    return { label: "Entretien annuel", qty: 1, unit_price_ht: 150, vat_rate: 10 };
+  return { label: "Dépannage", qty: 1, unit_price_ht: 90, vat_rate: 10 };
+}
+
+function SuitesSection({
+  intervention,
+  onNavigate,
+  onToast,
+  tenantId,
+  actorId,
+}: SuitesSectionProps) {
+  const [invoiceOpen, setInvoiceOpen] = useState(false);
+  const [invoiceSubmitting, setInvoiceSubmitting] = useState(false);
+  const [invoiceLines, setInvoiceLines] = useState<InvoiceLine[]>([]);
+
   if (!intervention) return null;
 
   const t = intervention.intervention_type;
+  const canInvoiceFromIntervention =
+    t === "sweep" || t === "annual_service" || t === "repair" || t === "diagnostic";
+
+  function openInvoiceDialog() {
+    setInvoiceLines([defaultInvoiceLine(t)]);
+    setInvoiceOpen(true);
+  }
+
+  function updateLine(idx: number, patch: Partial<InvoiceLine>) {
+    setInvoiceLines((lines) =>
+      lines.map((l, i) => (i === idx ? { ...l, ...patch } : l)),
+    );
+  }
+
+  function addLine() {
+    setInvoiceLines((lines) => [
+      ...lines,
+      { label: "Pièce détachée", qty: 1, unit_price_ht: 0, vat_rate: 20 },
+    ]);
+  }
+
+  function removeLine(idx: number) {
+    setInvoiceLines((lines) => lines.filter((_, i) => i !== idx));
+  }
+
+  const totalTtc = invoiceLines.reduce(
+    (sum, l) => sum + l.qty * l.unit_price_ht * (1 + l.vat_rate / 100),
+    0,
+  );
+
+  async function submitInvoice() {
+    if (!intervention) return;
+    if (!tenantId || !actorId) {
+      onToast({
+        title: "Session non chargée",
+        description: "Réessayez dans un instant.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (invoiceLines.length === 0) {
+      onToast({
+        title: "Au moins une ligne requise",
+        variant: "destructive",
+      });
+      return;
+    }
+    setInvoiceSubmitting(true);
+    const { data, error: rpcErr } = await billingDb.rpc(
+      "create_invoice_from_intervention",
+      {
+        p_intervention_id: intervention.id,
+        p_tenant_id: tenantId,
+        p_actor_id: actorId,
+        p_lines: invoiceLines,
+      },
+    );
+    setInvoiceSubmitting(false);
+    if (rpcErr) {
+      onToast({
+        title: "Erreur",
+        description: rpcErr.message,
+        variant: "destructive",
+      });
+      return;
+    }
+    const result = data as
+      | { success?: boolean; invoice_id?: string; invoice_number?: string }
+      | null;
+    onToast({
+      title: "Facture créée",
+      description: result?.invoice_number
+        ? `N° ${result.invoice_number}`
+        : undefined,
+    });
+    setInvoiceOpen(false);
+    if (result?.invoice_id) {
+      onNavigate(`/invoices/${result.invoice_id}`);
+    }
+  }
 
   function handleCreateQuote() {
     if (intervention?.project_id) {
@@ -957,6 +1244,7 @@ function SuitesSection({ intervention, onNavigate, onToast }: SuitesSectionProps
   }
 
   return (
+    <>
     <Card className="p-6 space-y-4">
       <div className="flex items-center gap-2">
         <ScrollText className="h-4 w-4 text-muted-foreground" />
@@ -1019,14 +1307,14 @@ function SuitesSection({ intervention, onNavigate, onToast }: SuitesSectionProps
               <FileText className="h-4 w-4" />
               Générer le certificat de ramonage
             </Button>
-            <Button size="sm" variant="outline" onClick={() => onNavigate("/invoices/new")}>
+            <Button size="sm" variant="outline" onClick={openInvoiceDialog}>
               <Euro className="h-4 w-4" />
               Créer la facture
             </Button>
           </>
         )}
         {t === "annual_service" && (
-          <Button size="sm" variant="outline" onClick={() => onNavigate("/invoices/new")}>
+          <Button size="sm" variant="outline" onClick={openInvoiceDialog}>
             <Euro className="h-4 w-4" />
             Créer la facture
           </Button>
@@ -1106,12 +1394,125 @@ function SuitesSection({ intervention, onNavigate, onToast }: SuitesSectionProps
           </>
         )}
         {(t === "repair" || t === "diagnostic") && (
-          <Button size="sm" variant="outline" onClick={() => onNavigate("/invoices/new")}>
+          <Button size="sm" variant="outline" onClick={openInvoiceDialog}>
             <Euro className="h-4 w-4" />
             Créer la facture
           </Button>
         )}
       </div>
     </Card>
+
+    {/* Dialog Facturer l'intervention */}
+    <Dialog open={invoiceOpen} onOpenChange={setInvoiceOpen}>
+      <DialogContent className="sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Facturer l'intervention</DialogTitle>
+          <DialogDescription>
+            Ajustez les lignes puis créez la facture liée à cette intervention.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-2 py-2">
+          <div className="grid grid-cols-12 gap-2 text-xs font-medium text-muted-foreground px-1">
+            <div className="col-span-5">Désignation</div>
+            <div className="col-span-2 text-right">Qté</div>
+            <div className="col-span-2 text-right">PU HT</div>
+            <div className="col-span-2 text-right">TVA</div>
+            <div className="col-span-1"></div>
+          </div>
+          {invoiceLines.map((line, idx) => (
+            <div key={idx} className="grid grid-cols-12 gap-2 items-center">
+              <Input
+                className="col-span-5 h-9"
+                value={line.label}
+                onChange={(e) => updateLine(idx, { label: e.target.value })}
+                placeholder="Désignation"
+              />
+              <Input
+                className="col-span-2 h-9 text-right font-mono"
+                type="number"
+                step="0.01"
+                value={line.qty}
+                onChange={(e) =>
+                  updateLine(idx, { qty: parseFloat(e.target.value) || 0 })
+                }
+              />
+              <Input
+                className="col-span-2 h-9 text-right font-mono"
+                type="number"
+                step="0.01"
+                value={line.unit_price_ht}
+                onChange={(e) =>
+                  updateLine(idx, {
+                    unit_price_ht: parseFloat(e.target.value) || 0,
+                  })
+                }
+              />
+              <Select
+                value={String(line.vat_rate)}
+                onValueChange={(v) =>
+                  updateLine(idx, { vat_rate: parseFloat(v) })
+                }
+              >
+                <SelectTrigger className="col-span-2 h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5.5">5,5 %</SelectItem>
+                  <SelectItem value="10">10 %</SelectItem>
+                  <SelectItem value="20">20 %</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="col-span-1 h-9 w-9 text-destructive"
+                onClick={() => removeLine(idx)}
+                disabled={invoiceLines.length <= 1}
+              >
+                <XCircle className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={addLine}
+            className="mt-2"
+          >
+            + Ajouter une ligne
+          </Button>
+          <div className="flex items-center justify-between border-t pt-3 mt-3">
+            <span className="text-sm text-muted-foreground">Total TTC</span>
+            <span className="text-lg font-mono font-semibold">
+              {totalTtc.toLocaleString("fr-FR", {
+                style: "currency",
+                currency: "EUR",
+              })}
+            </span>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => setInvoiceOpen(false)}
+            disabled={invoiceSubmitting}
+          >
+            Annuler
+          </Button>
+          <Button
+            onClick={submitInvoice}
+            disabled={invoiceSubmitting || invoiceLines.length === 0}
+          >
+            {invoiceSubmitting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Euro className="h-4 w-4" />
+            )}
+            Créer la facture
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }

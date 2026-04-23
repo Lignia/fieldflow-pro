@@ -344,6 +344,24 @@ export default function InterventionDetail() {
                   Reprogrammée
                 </Badge>
               )}
+              {intervention.followup_needed && (
+                <Badge
+                  variant="outline"
+                  className="font-normal gap-1 bg-orange-500/10 text-orange-700 border-orange-500/20 dark:text-orange-400"
+                >
+                  <ClipboardList className="h-3 w-3" />
+                  Suite à planifier
+                </Badge>
+              )}
+              {intervention.quote_needed && (
+                <Badge
+                  variant="outline"
+                  className="font-normal gap-1 bg-blue-500/10 text-blue-700 border-blue-500/20 dark:text-blue-400"
+                >
+                  <Euro className="h-3 w-3" />
+                  Devis à établir
+                </Badge>
+              )}
             </div>
             <p className="text-sm text-muted-foreground flex items-center gap-1.5">
               <CalendarClock className="h-4 w-4" />

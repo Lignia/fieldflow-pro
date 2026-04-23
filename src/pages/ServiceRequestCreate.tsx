@@ -548,24 +548,181 @@ export default function ServiceRequestCreate() {
         {selectedCustomer && (
           <div className="space-y-2">
             <Label>Installation liée</Label>
-            <Select value={installationId} onValueChange={setInstallationId}>
-              <SelectTrigger>
-                <SelectValue placeholder="Aucune installation spécifique" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">Aucune installation spécifique</SelectItem>
-                {installations.map((i) => (
-                  <SelectItem key={i.id} value={i.id}>
-                    {[i.device_type, i.brand, i.model].filter(Boolean).join(" • ") ||
-                      "Installation"}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {installations.length === 0 && (
-              <p className="text-xs text-muted-foreground">
-                Aucune installation enregistrée pour ce client.
-              </p>
+            {installations.length > 0 ? (
+              <Select value={installationId} onValueChange={setInstallationId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Aucune installation spécifique" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Aucune installation spécifique</SelectItem>
+                  {installations.map((i) => (
+                    <SelectItem key={i.id} value={i.id}>
+                      {[i.device_type, i.brand, i.model].filter(Boolean).join(" • ") ||
+                        "Installation"}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <div className="space-y-3">
+                <RadioGroup
+                  value={newInstallMode}
+                  onValueChange={(v) => setNewInstallMode(v as "later" | "describe")}
+                  className="space-y-2"
+                >
+                  <div className="flex items-start gap-3 rounded-md border p-3">
+                    <RadioGroupItem value="later" id="mode-later" className="mt-0.5" />
+                    <Label htmlFor="mode-later" className="font-normal cursor-pointer flex-1">
+                      <div className="text-sm font-medium">Identifier plus tard</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        L'appareil sera identifié lors de l'intervention.
+                      </div>
+                    </Label>
+                  </div>
+                  <div className="flex items-start gap-3 rounded-md border p-3">
+                    <RadioGroupItem value="describe" id="mode-describe" className="mt-0.5" />
+                    <Label htmlFor="mode-describe" className="font-normal cursor-pointer flex-1">
+                      <div className="text-sm font-medium">Décrire l'appareil maintenant</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">
+                        Crée une installation "reprise" liée à cette demande.
+                      </div>
+                    </Label>
+                  </div>
+                </RadioGroup>
+
+                {newInstallMode === "describe" && (
+                  <div className="rounded-md border bg-muted/30 p-4 space-y-4">
+                    {/* Catalog search */}
+                    <div className="space-y-2">
+                      <Label className="text-xs">
+                        Article catalogue (optionnel)
+                      </Label>
+                      {selectedCatalogItem ? (
+                        <div className="flex items-center justify-between rounded-md border bg-background px-3 py-2">
+                          <div className="flex items-center gap-2 min-w-0">
+                            <BookOpen className="h-4 w-4 text-primary shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium truncate">
+                                {selectedCatalogItem.name}
+                              </p>
+                              <Badge variant="secondary" className="mt-0.5 text-xs">
+                                Depuis le catalogue
+                              </Badge>
+                            </div>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            type="button"
+                            onClick={clearCatalogItem}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="relative">
+                          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                          <Input
+                            value={catalogSearch}
+                            onChange={(e) => setCatalogSearch(e.target.value)}
+                            placeholder="Rechercher un article du catalogue…"
+                            className="pl-9"
+                          />
+                          {catalogSearching && (
+                            <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-muted-foreground" />
+                          )}
+                          {catalogResults.length > 0 && (
+                            <div className="mt-1 rounded-md border bg-popover shadow-md overflow-hidden">
+                              {catalogResults.map((item) => (
+                                <button
+                                  key={item.id}
+                                  type="button"
+                                  onClick={() => applyCatalogItem(item)}
+                                  className="w-full text-left px-3 py-2 hover:bg-accent text-sm border-b last:border-b-0"
+                                >
+                                  <div className="font-medium">{item.name}</div>
+                                  <div className="text-xs text-muted-foreground">
+                                    {[item.brand, item.model_ref, item.power_kw && `${item.power_kw} kW`]
+                                      .filter(Boolean)
+                                      .join(" • ")}
+                                  </div>
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Device type select */}
+                    <div className="space-y-2">
+                      <Label className="text-xs">
+                        Type d'appareil <span className="text-destructive">*</span>
+                      </Label>
+                      <Select value={deviceTypeCode} onValueChange={handleDeviceTypeChange}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Choisir un type d'appareil" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {deviceTypes.map((d) => (
+                            <SelectItem key={d.code} value={d.code}>
+                              {d.label}
+                            </SelectItem>
+                          ))}
+                          <SelectItem value="other">Autre</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      {(deviceTypeCode === "other" || !deviceTypeCode) && (
+                        <Input
+                          value={deviceType}
+                          onChange={(e) => setDeviceType(e.target.value)}
+                          placeholder="ex: Poêle à bois, Insert, Chaudière…"
+                        />
+                      )}
+                      {errors.deviceType && (
+                        <p className="text-xs text-destructive">{errors.deviceType}</p>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label className="text-xs">Marque</Label>
+                        <Input
+                          value={deviceBrand}
+                          onChange={(e) => setDeviceBrand(e.target.value)}
+                          placeholder="ex: Jotul"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs">Modèle</Label>
+                        <Input
+                          value={deviceModel}
+                          onChange={(e) => setDeviceModel(e.target.value)}
+                          placeholder="ex: F 305"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs">Numéro de série</Label>
+                        <Input
+                          value={deviceSerial}
+                          onChange={(e) => setDeviceSerial(e.target.value)}
+                          placeholder="optionnel"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="text-xs">Puissance (kW)</Label>
+                        <Input
+                          type="number"
+                          step="0.1"
+                          value={devicePower}
+                          onChange={(e) => setDevicePower(e.target.value)}
+                          placeholder="ex: 8"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         )}

@@ -112,6 +112,23 @@ export default function ServiceRequestCreate() {
   const [installations, setInstallations] = useState<InstallationLite[]>([]);
   const [installationId, setInstallationId] = useState<string>("none");
 
+  // New install (when customer has no installations)
+  const [newInstallMode, setNewInstallMode] = useState<"later" | "describe">("later");
+  const [deviceTypes, setDeviceTypes] = useState<DeviceTypeOption[]>([]);
+  const [deviceTypeCode, setDeviceTypeCode] = useState<string>("");
+  const [catalogSearch, setCatalogSearch] = useState("");
+  const [catalogDebounced, setCatalogDebounced] = useState("");
+  const [catalogResults, setCatalogResults] = useState<CatalogItemLite[]>([]);
+  const [catalogSearching, setCatalogSearching] = useState(false);
+  const [selectedCatalogItem, setSelectedCatalogItem] = useState<CatalogItemLite | null>(null);
+  const [deviceType, setDeviceType] = useState("");
+  const [deviceBrand, setDeviceBrand] = useState("");
+  const [deviceModel, setDeviceModel] = useState("");
+  const [deviceSerial, setDeviceSerial] = useState("");
+  const [devicePower, setDevicePower] = useState("");
+  const [deviceCategory, setDeviceCategory] = useState<string | null>(null);
+  const [fuelType, setFuelType] = useState<string | null>(null);
+
   // Form
   const [category, setCategory] = useState<string>("");
   const [priority, setPriority] = useState<string>("medium");
@@ -197,6 +214,80 @@ export default function ServiceRequestCreate() {
       cancelled = true;
     };
   }, [selectedCustomer, toast]);
+
+  // Load device types catalog (once)
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data } = await catalogDb
+        .from("device_types")
+        .select("code, label, device_category, fuel_hint")
+        .eq("is_active", true)
+        .order("sort_order");
+      if (cancelled) return;
+      setDeviceTypes((data ?? []) as DeviceTypeOption[]);
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Debounce catalog search
+  useEffect(() => {
+    const t = setTimeout(() => setCatalogDebounced(catalogSearch.trim()), 300);
+    return () => clearTimeout(t);
+  }, [catalogSearch]);
+
+  // Run catalog search
+  useEffect(() => {
+    if (selectedCatalogItem || catalogDebounced.length < 2) {
+      setCatalogResults([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      setCatalogSearching(true);
+      const { data } = await catalogDb
+        .from("catalog_items")
+        .select("id, name, brand, model_ref, device_category, fuel_type, power_kw, warranty_years_manufacturer, warranty_years_installer")
+        .eq("is_active", true)
+        .ilike("name", `%${catalogDebounced}%`)
+        .limit(8);
+      if (cancelled) return;
+      setCatalogResults((data ?? []) as CatalogItemLite[]);
+      setCatalogSearching(false);
+    })();
+    return () => { cancelled = true; };
+  }, [catalogDebounced, selectedCatalogItem]);
+
+  function applyCatalogItem(item: CatalogItemLite) {
+    setSelectedCatalogItem(item);
+    setCatalogResults([]);
+    setCatalogSearch("");
+    setDeviceType(item.name || "");
+    setDeviceBrand(item.brand || "");
+    setDeviceModel(item.model_ref || "");
+    setDevicePower(item.power_kw != null ? String(item.power_kw) : "");
+    setDeviceCategory(item.device_category || null);
+    setFuelType(item.fuel_type || null);
+  }
+
+  function clearCatalogItem() {
+    setSelectedCatalogItem(null);
+  }
+
+  function handleDeviceTypeChange(code: string) {
+    setDeviceTypeCode(code);
+    if (code === "other") {
+      setDeviceCategory(null);
+      setFuelType(null);
+      return;
+    }
+    const opt = deviceTypes.find((d) => d.code === code);
+    if (opt) {
+      setDeviceType(opt.label);
+      setDeviceCategory(opt.device_category);
+      setFuelType(opt.fuel_hint);
+    }
+  }
 
   function validate(): boolean {
     const e: Record<string, string> = {};

@@ -860,6 +860,8 @@ export default function InterventionDetail() {
           intervention={intervention}
           onNavigate={navigate}
           onToast={toast}
+          tenantId={tenantId}
+          actorId={coreUser?.id ?? null}
         />
       )}
 

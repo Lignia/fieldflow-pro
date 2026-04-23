@@ -577,11 +577,12 @@ export default function InterventionDetail() {
         </div>
       </Card>
 
-      {/* SECTION 3 — Quick info after completion */}
+      {/* SECTION 3 — Mise à jour installation après complétion */}
       {intervention.status === "completed" &&
-        intervention.intervention_type === "sweep" &&
         intervention.installation_id &&
-        installUpdate && (
+        intervention.start_datetime &&
+        (intervention.intervention_type === "sweep" ||
+          intervention.intervention_type === "annual_service") && (
           <Card className="p-4 bg-success/5 border-success/30">
             <div className="flex items-start gap-3">
               <CheckCircle2 className="h-5 w-5 text-success mt-0.5" />
@@ -589,24 +590,41 @@ export default function InterventionDetail() {
                 <p className="font-medium">Installation mise à jour</p>
                 <p>
                   <span className="text-muted-foreground">
-                    Dernier ramonage mis à jour :{" "}
+                    {intervention.intervention_type === "sweep"
+                      ? "Dernier ramonage : "
+                      : "Dernier entretien : "}
                   </span>
                   <span className="font-mono">
-                    {format(new Date(installUpdate.last), "d MMM yyyy", { locale: fr })}
+                    {format(new Date(intervention.start_datetime), "d MMM yyyy", {
+                      locale: fr,
+                    })}
                   </span>
                 </p>
                 <p>
                   <span className="text-muted-foreground">
-                    Prochain ramonage prévu :{" "}
+                    {intervention.intervention_type === "sweep"
+                      ? "Prochain ramonage prévu : "
+                      : "Prochain entretien prévu : "}
                   </span>
                   <span className="font-mono">
-                    {format(new Date(installUpdate.next), "d MMM yyyy", { locale: fr })}
+                    {format(new Date(addOneYear(intervention.start_datetime)), "d MMM yyyy", {
+                      locale: fr,
+                    })}
                   </span>
                 </p>
               </div>
             </div>
           </Card>
         )}
+
+      {/* SECTION — Suites */}
+      {intervention.status === "completed" && (
+        <SuitesSection
+          intervention={intervention}
+          onNavigate={navigate}
+          onToast={toast}
+        />
+      )}
 
       {/* SECTION 4 — Activities */}
       <Card className="p-6">

@@ -334,6 +334,17 @@ export default function InterventionDetail() {
 
   const isCommissioning = intervention.intervention_type === "commissioning";
 
+  // Cycle 2bis : intervention terrain sur installation encore "draft"
+  // (appareil découvert sur place) → compléter la fiche appareil à la complétion.
+  const isFieldType =
+    intervention.intervention_type === "sweep" ||
+    intervention.intervention_type === "annual_service" ||
+    intervention.intervention_type === "repair" ||
+    intervention.intervention_type === "diagnostic";
+  const isDraftInstallation =
+    !!intervention.installation_id && !intervention.device_category;
+  const needsFieldCompletion = isFieldType && isDraftInstallation;
+
   function openMesDialog() {
     if (!intervention) return;
     setMesForm({

@@ -35,6 +35,7 @@ import OnboardingProfilePage from "./pages/onboarding/OnboardingProfilePage";
 import ProjectCreate from "./pages/projects/ProjectCreate";
 import Installations from "./pages/Installations";
 import InstallationDetail from "./pages/InstallationDetail";
+import Interventions from "./pages/Interventions";
 import { PlaceholderPage } from "./components/ui/PlaceholderPage";
 import ServiceRequestCreate from "./pages/ServiceRequestCreate";
 import ServiceRequestDetail from "./pages/ServiceRequestDetail";
@@ -98,7 +99,7 @@ const App = () => (
               <Route path="/service-requests/:id" element={<ServiceRequestDetail />} />
 
               {/* Interventions */}
-              <Route path="/interventions" element={<PlaceholderPage title="Interventions" backTo="/dashboard" backLabel="Tableau de bord" />} />
+              <Route path="/interventions" element={<Interventions />} />
               <Route path="/interventions/new" element={<PlaceholderPage title="Nouvelle intervention" backTo="/interventions" backLabel="Interventions" />} />
               <Route path="/interventions/:id" element={<PlaceholderPage title="Détail intervention" backTo="/interventions" backLabel="Interventions" />} />
 

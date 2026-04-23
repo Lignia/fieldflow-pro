@@ -409,6 +409,58 @@ export default function InterventionDetail() {
     refetch();
   }
 
+  function openFieldDialog() {
+    if (!intervention) return;
+    setFieldForm({
+      brand: intervention.brand ?? "",
+      model: intervention.model ?? "",
+      serial_number: "",
+      fuel_type: "",
+      device_category: intervention.device_category ?? "",
+      memo: "",
+    });
+    setFieldDialogOpen(true);
+  }
+
+  async function submitField() {
+    if (!intervention) return;
+    if (!tenantId || !coreUser) {
+      toast({
+        title: "Session non chargée",
+        description: "Réessayez dans un instant.",
+        variant: "destructive",
+      });
+      return;
+    }
+    setFieldSubmitting(true);
+    const { error: rpcErr } = await operationsDb.rpc("complete_field_intervention", {
+      p_intervention_id: intervention.id,
+      p_tenant_id: tenantId,
+      p_actor_id: coreUser.id,
+      p_brand: fieldForm.brand.trim() || null,
+      p_model: fieldForm.model.trim() || null,
+      p_serial_number: fieldForm.serial_number.trim() || null,
+      p_fuel_type: fieldForm.fuel_type || null,
+      p_device_category: fieldForm.device_category || null,
+      p_memo: fieldForm.memo.trim() || null,
+    });
+    setFieldSubmitting(false);
+    if (rpcErr) {
+      toast({
+        title: "Erreur",
+        description: rpcErr.message,
+        variant: "destructive",
+      });
+      return;
+    }
+    toast({
+      title: "Intervention terminée",
+      description: "Appareil ajouté au parc.",
+    });
+    setFieldDialogOpen(false);
+    refetch();
+  }
+
   const deviceLabel = [intervention.device_type, intervention.brand]
     .filter(Boolean)
     .join(" ");

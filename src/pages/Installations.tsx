@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { differenceInDays, parseISO } from "date-fns";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Flame, Radiator, Plus, Search, RefreshCw, MapPin, Wrench, Calendar, AlertTriangle } from "lucide-react";
+import { Flame, Thermometer, Plus, Search, RefreshCw, MapPin, Wrench, Calendar, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
@@ -19,7 +19,7 @@ import { useInstallations, type Installation, type DeviceCategory } from "@/hook
 type QuickFilter = "all" | "sweep_due" | "with_contract";
 
 function deviceIcon(category: DeviceCategory | null) {
-  if (category === "boiler") return Radiator;
+  if (category === "boiler") return Thermometer;
   return Flame;
 }
 

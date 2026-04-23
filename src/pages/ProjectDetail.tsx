@@ -26,6 +26,7 @@ import { cn } from "@/lib/utils";
 import { useProjectDetail } from "@/hooks/useProjectDetail";
 import { type ProjectStatus } from "@/hooks/useProjects";
 import { coreDb } from "@/integrations/supabase/schema-clients";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { StatusBadge } from "@/components/StatusBadge";
 import { CustomerBadge } from "@/components/CustomerBadge";
 import { Card } from "@/components/ui/card";
@@ -196,6 +197,34 @@ export default function ProjectDetail() {
   const { project, loading, error, refetch } = useProjectDetail(id);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [activitiesLoading, setActivitiesLoading] = useState(false);
+  const { coreUser } = useCurrentUser();
+  const [transitioning, setTransitioning] = useState(false);
+
+  async function transitionStatus(next: ProjectStatus, label: string) {
+    if (!project) return;
+    if (!coreUser) {
+      toast.error("Session non chargée, réessayez.");
+      return;
+    }
+    setTransitioning(true);
+    try {
+      const { error: rpcErr } = await coreDb.rpc("transition_project_status", {
+        p_project_id: project.id,
+        p_new_status: next,
+        p_actor_id: coreUser.id,
+      });
+      if (rpcErr) {
+        toast.error(rpcErr.message);
+        return;
+      }
+      toast.success(`Statut mis à jour : ${label}`);
+      refetch();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erreur lors du changement de statut");
+    } finally {
+      setTransitioning(false);
+    }
+  }
 
   useEffect(() => {
     if (!id) return;
@@ -280,15 +309,16 @@ export default function ProjectDetail() {
             {transitions.length > 0 && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button size="sm" variant="outline">
+                  <Button size="sm" variant="outline" disabled={transitioning}>
                     Changer le statut <ChevronDown className="h-3.5 w-3.5 ml-1" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   {transitions.map((t) => (
-                    <DropdownMenuItem key={t.next} onClick={() => {
-                      toast.info(`Transition vers "${t.label}" — RPC non connectée en V1`, { id: "status-transition" });
-                    }}>
+                    <DropdownMenuItem
+                      key={t.next}
+                      onClick={() => transitionStatus(t.next, t.label)}
+                    >
                       {t.label}
                     </DropdownMenuItem>
                   ))}
@@ -315,7 +345,12 @@ export default function ProjectDetail() {
         {/* ── Général ── */}
         <TabsContent value="general" className="space-y-4 mt-4">
           <Card className="p-4 sm:p-5">
-            <p className="text-xs font-medium text-muted-foreground mb-3">Cycle de vente</p>
+            <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
+              <p className="text-xs font-medium text-muted-foreground">Cycle de vente</p>
+              <p className="text-[11px] text-muted-foreground italic">
+                Avancez le statut via le menu « Changer le statut »
+              </p>
+            </div>
             <PipelineProgress status={project.status} />
           </Card>
 

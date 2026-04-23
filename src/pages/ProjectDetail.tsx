@@ -26,6 +26,7 @@ import { cn } from "@/lib/utils";
 import { useProjectDetail } from "@/hooks/useProjectDetail";
 import { type ProjectStatus } from "@/hooks/useProjects";
 import { coreDb } from "@/integrations/supabase/schema-clients";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { StatusBadge } from "@/components/StatusBadge";
 import { CustomerBadge } from "@/components/CustomerBadge";
 import { Card } from "@/components/ui/card";

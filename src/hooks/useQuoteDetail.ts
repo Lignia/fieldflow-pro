@@ -216,9 +216,11 @@ export function useQuoteDetail(quoteId: string | undefined): UseQuoteDetailRetur
         ? coreDb.from("projects").select("id, project_number, status").eq("id", q.project_id).single()
         : Promise.resolve({ data: null, error: null } as any);
 
-      const depositPromise = q.quote_status === "signed"
-        ? billingDb.from("invoices").select("id, invoice_number, invoice_status").eq("quote_id", quoteId).maybeSingle()
-        : Promise.resolve({ data: null, error: null } as any);
+      const depositPromise = billingDb
+        .from("invoices")
+        .select("id, invoice_number, invoice_status")
+        .eq("quote_id", quoteId)
+        .maybeSingle();
 
       const installationPromise = q.project_id && q.tenant_id
         ? coreDb.from("installations").select("id, status, device_type").eq("project_id", q.project_id).eq("tenant_id", q.tenant_id).maybeSingle()

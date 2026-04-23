@@ -178,10 +178,6 @@ export default function InterventionDetail() {
     useInterventionDetail(id);
 
   const [acting, setActing] = useState<null | "start" | "complete" | "cancel">(null);
-  const [installUpdate, setInstallUpdate] = useState<{
-    last: string;
-    next: string;
-  } | null>(null);
 
   if (loading) {
     return (

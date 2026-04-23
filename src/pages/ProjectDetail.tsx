@@ -197,6 +197,34 @@ export default function ProjectDetail() {
   const { project, loading, error, refetch } = useProjectDetail(id);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [activitiesLoading, setActivitiesLoading] = useState(false);
+  const { coreUser } = useCurrentUser();
+  const [transitioning, setTransitioning] = useState(false);
+
+  async function transitionStatus(next: ProjectStatus, label: string) {
+    if (!project) return;
+    if (!coreUser) {
+      toast.error("Session non chargée, réessayez.");
+      return;
+    }
+    setTransitioning(true);
+    try {
+      const { error: rpcErr } = await coreDb.rpc("transition_project_status", {
+        p_project_id: project.id,
+        p_new_status: next,
+        p_actor_id: coreUser.id,
+      });
+      if (rpcErr) {
+        toast.error(rpcErr.message);
+        return;
+      }
+      toast.success(`Statut mis à jour : ${label}`);
+      refetch();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Erreur lors du changement de statut");
+    } finally {
+      setTransitioning(false);
+    }
+  }
 
   useEffect(() => {
     if (!id) return;

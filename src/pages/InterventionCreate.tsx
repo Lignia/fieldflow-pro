@@ -359,6 +359,20 @@ export default function InterventionCreate() {
         type === "annual_service" && nextServiceRecommendation.trim()
           ? nextServiceRecommendation.trim()
           : null,
+      error_code:
+        (type === "repair" || type === "diagnostic") && errorCode.trim()
+          ? errorCode.trim()
+          : null,
+      diagnosis_notes:
+        (type === "repair" || type === "diagnostic") && diagnosisNotes.trim()
+          ? diagnosisNotes.trim()
+          : null,
+      parts_replaced:
+        type === "annual_service" && partsReplaced.trim()
+          ? partsReplaced.trim()
+          : (type === "repair" || type === "diagnostic") && partsReplaced.trim()
+            ? partsReplaced.trim()
+            : null,
     };
     if (assignedTo !== "none") {
       payload.assigned_to = assignedTo;

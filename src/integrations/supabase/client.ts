@@ -1,8 +1,8 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = "https://hejxvqghsyaauwzkfikg.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imhlanh2cWdoc3lhYXV3emtmaWtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxOTU5MzUsImV4cCI6MjA4OTc3MTkzNX0.J8p-2ldZjLBXBPzXPhASa8DRoKHdZswAY7mjPBekZUI";
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
 
 /* ------------------------------------------------------------------ */
 /*  Dynamic storage: switches between localStorage and sessionStorage */
@@ -28,7 +28,7 @@ const dynamicStorage: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> = {
 };
 
 /* Single Supabase instance — never recreated */
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     storage: dynamicStorage,
     persistSession: true,

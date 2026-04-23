@@ -123,7 +123,7 @@ export function useQuoteDetail(quoteId: string | undefined): UseQuoteDetailRetur
 
     try {
       const [quoteRes, linesRes, activitiesRes] = await Promise.all([
-        coreDb
+        billingDb
           .from("v_quotes_with_customer")
           .select("*")
           .eq("id", quoteId)

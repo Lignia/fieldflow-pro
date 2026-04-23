@@ -9,7 +9,6 @@ import {
   XCircle,
   PlayCircle,
   RotateCcw,
-  Phone,
   MapPin,
   User,
   FolderKanban,
@@ -27,6 +26,7 @@ import {
   Euro,
   ClipboardList,
   ScrollText,
+  Bug,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -315,6 +315,39 @@ export default function InterventionDetail() {
           Retour aux interventions
         </Button>
 
+        {/* Alerte conduit critique / mauvais */}
+        {(intervention.flue_condition === "critical" ||
+          intervention.flue_condition === "poor") && (
+          <Card className="p-4 border-destructive/40 bg-destructive/5">
+            <div className="flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-destructive mt-0.5 shrink-0" />
+              <div className="flex-1 space-y-2">
+                <p className="text-sm font-semibold text-destructive">
+                  Conduit en mauvais état — intervention urgente requise
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  L'état du conduit nécessite une intervention de remise en
+                  conformité (tubage, débistrage ou réparation).
+                </p>
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  onClick={() => {
+                    const params = new URLSearchParams();
+                    params.set("type", "repair");
+                    if (intervention.installation_id) {
+                      params.set("installation_id", intervention.installation_id);
+                    }
+                    navigate(`/interventions/new?${params.toString()}`);
+                  }}
+                >
+                  Planifier l'intervention suivante
+                </Button>
+              </div>
+            </div>
+          </Card>
+        )}
+
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-2">
@@ -538,7 +571,30 @@ export default function InterventionDetail() {
                   </Badge>
                 </div>
               )}
+              {intervention.error_code && (
+                <div className="pt-1">
+                  <Badge
+                    variant="outline"
+                    className="font-normal gap-1 bg-destructive/10 text-destructive border-destructive/20"
+                  >
+                    <Bug className="h-3 w-3" />
+                    Code erreur :{" "}
+                    <span className="font-mono ml-0.5">{intervention.error_code}</span>
+                  </Badge>
+                </div>
+              )}
             </div>
+
+            {intervention.diagnosis_notes && (
+              <div className="pt-2">
+                <p className="text-xs text-muted-foreground mb-1">
+                  Rapport de dépannage
+                </p>
+                <pre className="text-sm whitespace-pre-wrap font-sans bg-muted/40 rounded-md p-3 border border-border">
+                  {intervention.diagnosis_notes}
+                </pre>
+              </div>
+            )}
 
             {intervention.parts_replaced && (
               <div className="pt-2">

@@ -1394,12 +1394,125 @@ function SuitesSection({
           </>
         )}
         {(t === "repair" || t === "diagnostic") && (
-          <Button size="sm" variant="outline" onClick={() => onNavigate("/invoices/new")}>
+          <Button size="sm" variant="outline" onClick={openInvoiceDialog}>
             <Euro className="h-4 w-4" />
             Créer la facture
           </Button>
         )}
       </div>
     </Card>
+
+    {/* Dialog Facturer l'intervention */}
+    <Dialog open={invoiceOpen} onOpenChange={setInvoiceOpen}>
+      <DialogContent className="sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Facturer l'intervention</DialogTitle>
+          <DialogDescription>
+            Ajustez les lignes puis créez la facture liée à cette intervention.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-2 py-2">
+          <div className="grid grid-cols-12 gap-2 text-xs font-medium text-muted-foreground px-1">
+            <div className="col-span-5">Désignation</div>
+            <div className="col-span-2 text-right">Qté</div>
+            <div className="col-span-2 text-right">PU HT</div>
+            <div className="col-span-2 text-right">TVA</div>
+            <div className="col-span-1"></div>
+          </div>
+          {invoiceLines.map((line, idx) => (
+            <div key={idx} className="grid grid-cols-12 gap-2 items-center">
+              <Input
+                className="col-span-5 h-9"
+                value={line.label}
+                onChange={(e) => updateLine(idx, { label: e.target.value })}
+                placeholder="Désignation"
+              />
+              <Input
+                className="col-span-2 h-9 text-right font-mono"
+                type="number"
+                step="0.01"
+                value={line.qty}
+                onChange={(e) =>
+                  updateLine(idx, { qty: parseFloat(e.target.value) || 0 })
+                }
+              />
+              <Input
+                className="col-span-2 h-9 text-right font-mono"
+                type="number"
+                step="0.01"
+                value={line.unit_price_ht}
+                onChange={(e) =>
+                  updateLine(idx, {
+                    unit_price_ht: parseFloat(e.target.value) || 0,
+                  })
+                }
+              />
+              <Select
+                value={String(line.vat_rate)}
+                onValueChange={(v) =>
+                  updateLine(idx, { vat_rate: parseFloat(v) })
+                }
+              >
+                <SelectTrigger className="col-span-2 h-9">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5.5">5,5 %</SelectItem>
+                  <SelectItem value="10">10 %</SelectItem>
+                  <SelectItem value="20">20 %</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="col-span-1 h-9 w-9 text-destructive"
+                onClick={() => removeLine(idx)}
+                disabled={invoiceLines.length <= 1}
+              >
+                <XCircle className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={addLine}
+            className="mt-2"
+          >
+            + Ajouter une ligne
+          </Button>
+          <div className="flex items-center justify-between border-t pt-3 mt-3">
+            <span className="text-sm text-muted-foreground">Total TTC</span>
+            <span className="text-lg font-mono font-semibold">
+              {totalTtc.toLocaleString("fr-FR", {
+                style: "currency",
+                currency: "EUR",
+              })}
+            </span>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button
+            variant="outline"
+            onClick={() => setInvoiceOpen(false)}
+            disabled={invoiceSubmitting}
+          >
+            Annuler
+          </Button>
+          <Button
+            onClick={submitInvoice}
+            disabled={invoiceSubmitting || invoiceLines.length === 0}
+          >
+            {invoiceSubmitting ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Euro className="h-4 w-4" />
+            )}
+            Créer la facture
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }

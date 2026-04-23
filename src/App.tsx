@@ -33,6 +33,7 @@ import ResetPasswordPage from "./pages/auth/ResetPasswordPage";
 import OnboardingCompanyPage from "./pages/onboarding/OnboardingCompanyPage";
 import OnboardingProfilePage from "./pages/onboarding/OnboardingProfilePage";
 import ProjectCreate from "./pages/projects/ProjectCreate";
+import Installations from "./pages/Installations";
 import { PlaceholderPage } from "./components/ui/PlaceholderPage";
 
 const queryClient = new QueryClient();
@@ -102,7 +103,7 @@ const App = () => (
               <Route path="/planning" element={<Planning />} />
 
               {/* Installations */}
-              <Route path="/installations" element={<PlaceholderPage title="Parc installé" backTo="/dashboard" backLabel="Tableau de bord" />} />
+              <Route path="/installations" element={<Installations />} />
               <Route path="/installations/:id" element={<PlaceholderPage title="Détail installation" backTo="/installations" backLabel="Installations" />} />
 
               {/* Catalog */}

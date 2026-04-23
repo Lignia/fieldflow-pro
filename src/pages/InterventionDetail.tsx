@@ -1033,6 +1033,46 @@ function SuitesSection({ intervention, onNavigate, onToast }: SuitesSectionProps
         )}
         {(t === "installation" || t === "commissioning") && (
           <>
+          {t === "commissioning" && intervention.start_datetime && (
+            <div className="rounded-md border border-success/30 bg-success/5 p-4 space-y-2 w-full">
+              <p className="text-sm font-medium flex items-center gap-1.5">
+                <Zap className="h-4 w-4 text-success" />
+                Mise en service réalisée
+              </p>
+              <p className="text-sm">
+                <span className="text-muted-foreground">Date : </span>
+                <span className="font-mono">
+                  {format(new Date(intervention.start_datetime), "d MMMM yyyy", {
+                    locale: fr,
+                  })}
+                </span>
+              </p>
+              <div className="flex flex-wrap gap-2 pt-1">
+                {intervention.installation_id && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      onNavigate(`/installations/${intervention.installation_id}`)
+                    }
+                  >
+                    <Wrench className="h-4 w-4" />
+                    Voir l'installation dans le parc
+                  </Button>
+                )}
+                {intervention.project_id && (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => onNavigate(`/projects/${intervention.project_id}`)}
+                  >
+                    <FolderKanban className="h-4 w-4" />
+                    Voir le projet
+                  </Button>
+                )}
+              </div>
+            </div>
+          )}
             <Button size="sm" variant="outline" onClick={handleSoonV3}>
               <FileText className="h-4 w-4" />
               Créer le PV de réception

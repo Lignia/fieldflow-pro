@@ -295,6 +295,15 @@ export default function ServiceRequestCreate() {
     if (!category) e.category = "Choisissez une catégorie.";
     if (!notes.trim()) e.notes = "Décrivez le problème signalé.";
     if (contactEnabled && !body.trim()) e.body = "Ajoutez les notes de l'échange.";
+    // If customer has no installations and chose "describe", device_type is required
+    if (
+      selectedCustomer &&
+      installations.length === 0 &&
+      newInstallMode === "describe" &&
+      !deviceType.trim()
+    ) {
+      e.deviceType = "Renseignez le type d'appareil.";
+    }
     setErrors(e);
     return Object.keys(e).length === 0;
   }
@@ -314,10 +323,79 @@ export default function ServiceRequestCreate() {
     const categoryLabel =
       CATEGORY_OPTIONS.find((c) => c.value === category)?.label ?? category;
 
+    // Step 1 (optional): create installation in "describe" mode
+    let createdInstallationId: string | null = null;
+    if (
+      installations.length === 0 &&
+      newInstallMode === "describe" &&
+      deviceType.trim()
+    ) {
+      const today = new Date();
+      const todayIso = today.toISOString().slice(0, 10);
+
+      const addYears = (years: number) => {
+        const d = new Date(today);
+        d.setFullYear(d.getFullYear() + years);
+        return d.toISOString().slice(0, 10);
+      };
+
+      const installPayload: Record<string, unknown> = {
+        tenant_id: tenantId,
+        customer_id: selectedCustomer!.id,
+        device_type: deviceType.trim(),
+        brand: deviceBrand.trim() || null,
+        model: deviceModel.trim() || null,
+        serial_number: deviceSerial.trim() || null,
+        device_category: deviceCategory,
+        fuel_type: fuelType,
+        installed_by_self: false,
+        takeover_date: todayIso,
+        status: "draft",
+        origin: "manual_import",
+      };
+
+      if (selectedCatalogItem) {
+        installPayload.catalog_item_id = selectedCatalogItem.id;
+        if (selectedCatalogItem.warranty_years_manufacturer) {
+          installPayload.manufacturer_warranty_start = todayIso;
+          installPayload.manufacturer_warranty_end = addYears(
+            selectedCatalogItem.warranty_years_manufacturer,
+          );
+        }
+        if (selectedCatalogItem.warranty_years_installer) {
+          installPayload.service_warranty_start = todayIso;
+          installPayload.service_warranty_end = addYears(
+            selectedCatalogItem.warranty_years_installer,
+          );
+        }
+      }
+
+      const { data: inst, error: instErr } = await coreDb
+        .from("installations")
+        .insert(installPayload)
+        .select("id")
+        .single();
+
+      if (instErr || !inst) {
+        toast({
+          title: "Création installation impossible",
+          description: instErr?.message ?? "Erreur inconnue",
+          variant: "destructive",
+        });
+        setSubmitting(false);
+        return;
+      }
+      createdInstallationId = inst.id;
+    }
+
+    const finalInstallationId =
+      createdInstallationId ??
+      (installationId !== "none" ? installationId : null);
+
     const insertPayload = {
       tenant_id: tenantId,
       customer_id: selectedCustomer!.id,
-      installation_id: installationId !== "none" ? installationId : null,
+      installation_id: finalInstallationId,
       request_type: categoryLabel,
       request_category: category,
       priority,

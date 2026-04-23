@@ -16,6 +16,9 @@ import {
   Clock,
   Calendar,
   FolderKanban,
+  ClipboardList,
+  Hammer,
+  Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -383,12 +386,49 @@ export default function ProjectDetail() {
         <TabsContent value="interventions" className="space-y-3 mt-4">
           <div className="flex items-center justify-between">
             <h2 className="text-base font-semibold">Interventions</h2>
-            <div className="flex gap-2">
+            <div className="flex gap-2 flex-wrap justify-end">
               <Button variant="outline" size="sm" onClick={() => navigate(`/planning?project=${id}`)}>
                 <Calendar className="h-3.5 w-3.5 mr-1" /> Voir dans le planning
               </Button>
-              <Button size="sm" onClick={() => navigate(`/interventions/new?project=${id}`)}>
-                <Plus className="h-3.5 w-3.5 mr-1" /> Planifier une intervention
+              {(project.status === "estimate_sent" || project.status === "vt_planned") && (
+                <Button
+                  size="sm"
+                  onClick={() =>
+                    navigate(`/interventions/new?type=technical_survey&project_id=${project.id}`)
+                  }
+                >
+                  <ClipboardList className="h-3.5 w-3.5 mr-1" /> Planifier la visite technique
+                </Button>
+              )}
+              {(project.status === "installation_scheduled" ||
+                project.status === "material_received" ||
+                project.status === "deposit_paid" ||
+                project.status === "supplier_ordered") && (
+                <Button
+                  size="sm"
+                  onClick={() =>
+                    navigate(`/interventions/new?type=installation&project_id=${project.id}`)
+                  }
+                >
+                  <Hammer className="h-3.5 w-3.5 mr-1" /> Planifier la pose
+                </Button>
+              )}
+              {project.status === "mes_done" && (
+                <Button
+                  size="sm"
+                  onClick={() =>
+                    navigate(`/interventions/new?type=commissioning&project_id=${project.id}`)
+                  }
+                >
+                  <Zap className="h-3.5 w-3.5 mr-1" /> Planifier la mise en service
+                </Button>
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate(`/interventions/new?project_id=${project.id}`)}
+              >
+                <Plus className="h-3.5 w-3.5 mr-1" /> Autre intervention
               </Button>
             </div>
           </div>

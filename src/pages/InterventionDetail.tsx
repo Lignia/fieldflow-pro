@@ -333,7 +333,7 @@ export default function InterventionDetail() {
       serial_number: "",
       brand: intervention.brand ?? "",
       model: intervention.model ?? "",
-      fuel_type: intervention.fuel_type ?? "",
+      fuel_type: "",
       device_category: intervention.device_category ?? "",
       memo: "",
     });

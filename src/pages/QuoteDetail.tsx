@@ -538,7 +538,7 @@ export default function QuoteDetail() {
               onSend={() => transitionStatus("sent")}
               onSign={() => setShowSignConfirm(true)}
               onLost={() => transitionStatus("lost")}
-              onEdit={() => navigate(`/projects/${quote.project_id}/quotes/new`)}
+              onEdit={() => navigate(`/projects/${quote.project_id}/quotes/editor?quote_id=${quote.id}`)}
               onDelete={() => setShowDelete(true)}
               navigate={navigate}
             />

@@ -222,8 +222,8 @@ export function useQuoteDetail(quoteId: string | undefined): UseQuoteDetailRetur
         .eq("quote_id", quoteId)
         .maybeSingle();
 
-      const installationPromise = q.project_id && q.tenant_id
-        ? coreDb.from("installations").select("id, status, device_type").eq("project_id", q.project_id).eq("tenant_id", q.tenant_id).maybeSingle()
+      const installationPromise = q.installation_id
+        ? coreDb.from("installations").select("id, status, device_type").eq("id", q.installation_id).maybeSingle()
         : Promise.resolve({ data: null, error: null } as any);
 
       const surveyPromise = q.project_id && q.tenant_id && (q.quote_kind === "estimate" || q.quote_kind === "final")

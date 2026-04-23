@@ -517,7 +517,45 @@ export default function InterventionDetail() {
                   <span className="font-mono">{intervention.certificate_number}</span>
                 </div>
               )}
+              {intervention.sweep_type && (
+                <div>
+                  <span className="text-muted-foreground">Type : </span>
+                  <span className="font-medium">
+                    Ramonage {SWEEP_TYPE_LABELS[intervention.sweep_type] ?? intervention.sweep_type}
+                  </span>
+                </div>
+              )}
+              {intervention.flue_condition && FLUE_CONDITION_META[intervention.flue_condition] && (
+                <div className="pt-1">
+                  <Badge
+                    variant="outline"
+                    className={cn(
+                      "font-normal",
+                      FLUE_CONDITION_META[intervention.flue_condition].cls,
+                    )}
+                  >
+                    {FLUE_CONDITION_META[intervention.flue_condition].label}
+                  </Badge>
+                </div>
+              )}
             </div>
+
+            {intervention.parts_replaced && (
+              <div className="pt-2">
+                <p className="text-xs text-muted-foreground mb-1">Pièces remplacées</p>
+                <p className="text-sm whitespace-pre-wrap">
+                  {intervention.parts_replaced}
+                </p>
+              </div>
+            )}
+            {intervention.next_service_recommendation && (
+              <div className="pt-2">
+                <p className="text-xs text-muted-foreground mb-1">Recommandation</p>
+                <p className="text-sm whitespace-pre-wrap">
+                  {intervention.next_service_recommendation}
+                </p>
+              </div>
+            )}
 
             {intervention.internal_notes && (
               <div className="pt-2">

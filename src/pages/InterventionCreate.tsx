@@ -10,10 +10,13 @@ import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { coreDb, operationsDb } from "@/integrations/supabase/schema-clients";
@@ -23,15 +26,32 @@ import type {
   InterventionWorkstream,
 } from "@/hooks/useInterventions";
 
-const TYPE_OPTIONS: { value: InterventionType; label: string }[] = [
+const PROJECT_TYPE_OPTIONS: { value: InterventionType; label: string }[] = [
+  { value: "technical_survey", label: "Visite technique" },
+  { value: "installation", label: "Pose" },
+  { value: "commissioning", label: "Mise en service" },
+  { value: "commercial_visit", label: "Visite commerciale" },
+];
+
+const AFTERCARE_TYPE_OPTIONS: { value: InterventionType; label: string }[] = [
   { value: "sweep", label: "Ramonage" },
   { value: "annual_service", label: "Entretien annuel" },
   { value: "repair", label: "Dépannage" },
   { value: "diagnostic", label: "Diagnostic" },
-  { value: "commissioning", label: "Mise en service" },
-  { value: "installation", label: "Pose" },
-  { value: "technical_survey", label: "Visite technique" },
-  { value: "commercial_visit", label: "Visite commerciale" },
+];
+
+const SWEEP_TYPE_OPTIONS: { value: string; label: string }[] = [
+  { value: "simple", label: "Conduit simple" },
+  { value: "double", label: "Conduit double" },
+  { value: "tubing", label: "Tubage" },
+  { value: "desooting", label: "Débistrage" },
+];
+
+const FLUE_CONDITION_OPTIONS: { value: string; label: string }[] = [
+  { value: "good", label: "Bon" },
+  { value: "average", label: "Moyen" },
+  { value: "poor", label: "Mauvais" },
+  { value: "critical", label: "Critique — urgent" },
 ];
 
 const PROJECT_TYPES: InterventionType[] = [

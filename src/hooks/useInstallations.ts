@@ -15,7 +15,8 @@ export interface Installation {
   model: string | null;
   serial_number: string | null;
   commissioning_date: string | null;
-  warranty_end_date: string | null;
+  manufacturer_warranty_end: string | null;
+  service_warranty_end: string | null;
   last_sweep_date: string | null;
   next_sweep_date: string | null;
   last_service_date: string | null;
@@ -54,7 +55,7 @@ export function useInstallations(): UseInstallationsReturn {
       let query = coreDb
         .from("v_installations_with_customer")
         .select(
-          "id, status, device_type, device_category, fuel_type, brand, model, serial_number, commissioning_date, warranty_end_date, last_sweep_date, next_sweep_date, last_service_date, next_service_date, has_maintenance_contract, installed_by_self, takeover_date, customer_id, property_id, project_id, customer_name, address_line1, city"
+          "id, status, device_type, device_category, fuel_type, brand, model, serial_number, commissioning_date, manufacturer_warranty_end, service_warranty_end, last_sweep_date, next_sweep_date, last_service_date, next_service_date, has_maintenance_contract, installed_by_self, takeover_date, customer_id, property_id, project_id, customer_name, address_line1, city"
         )
         .order("next_sweep_date", { ascending: true, nullsFirst: false })
         .limit(200);

@@ -399,6 +399,7 @@ export default function InterventionDetail() {
     .join(", ");
 
   return (
+    <>
     <div className="space-y-6 max-w-4xl">
       {/* SECTION 1 — Header */}
       <div className="space-y-4">

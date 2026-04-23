@@ -53,6 +53,9 @@ export interface ProjectDetail {
   property: ProjectProperty;
   quotes: ProjectQuote[];
   invoices: ProjectInvoice[];
+  payload: Record<string, any>;
+  pipeline_value_ttc: number;
+  pipeline_value_source: string | null;
 }
 
 interface UseProjectDetailReturn {
@@ -109,6 +112,9 @@ export function useProjectDetail(projectId: string | undefined): UseProjectDetai
         closed_at: p.closed_at,
         created_at: p.created_at,
         modified_at: p.modified_at,
+        payload: (p.payload ?? {}) as Record<string, any>,
+        pipeline_value_ttc: Number(p.pipeline_value_ttc) || 0,
+        pipeline_value_source: p.pipeline_value_source ?? null,
         customer: {
           id: p.customer_id ?? "",
           name: p.customer_name ?? "Client inconnu",

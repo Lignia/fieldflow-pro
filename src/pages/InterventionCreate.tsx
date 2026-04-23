@@ -351,10 +351,6 @@ export default function InterventionCreate() {
       quote_needed: quoteNeeded,
       sweep_type: type === "sweep" && sweepType ? sweepType : null,
       flue_condition: type === "sweep" && flueCondition ? flueCondition : null,
-      parts_replaced:
-        type === "annual_service" && partsReplaced.trim()
-          ? partsReplaced.trim()
-          : null,
       next_service_recommendation:
         type === "annual_service" && nextServiceRecommendation.trim()
           ? nextServiceRecommendation.trim()

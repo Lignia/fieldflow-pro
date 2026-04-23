@@ -345,7 +345,12 @@ export default function ProjectDetail() {
         {/* ── Général ── */}
         <TabsContent value="general" className="space-y-4 mt-4">
           <Card className="p-4 sm:p-5">
-            <p className="text-xs font-medium text-muted-foreground mb-3">Cycle de vente</p>
+            <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
+              <p className="text-xs font-medium text-muted-foreground">Cycle de vente</p>
+              <p className="text-[11px] text-muted-foreground italic">
+                Avancez le statut via le menu « Changer le statut »
+              </p>
+            </div>
             <PipelineProgress status={project.status} />
           </Card>
 

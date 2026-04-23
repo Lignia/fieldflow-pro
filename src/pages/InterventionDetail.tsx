@@ -665,3 +665,152 @@ export default function InterventionDetail() {
     </div>
   );
 }
+
+// ============================================================
+// SuitesSection — actions de suite après intervention terminée
+// ============================================================
+interface SuitesSectionProps {
+  intervention: ReturnType<typeof useInterventionDetail>["intervention"];
+  onNavigate: (path: string) => void;
+  onToast: ReturnType<typeof useToast>["toast"];
+}
+
+function SuitesSection({ intervention, onNavigate, onToast }: SuitesSectionProps) {
+  if (!intervention) return null;
+
+  const t = intervention.intervention_type;
+
+  function handleCreateQuote() {
+    if (intervention?.project_id) {
+      onNavigate(`/projects/${intervention.project_id}?tab=devis`);
+    } else {
+      onToast({
+        title: "Projet requis",
+        description: "Créez d'abord un projet pour ce client.",
+      });
+    }
+  }
+
+  function handleSoonV3() {
+    onToast({ title: "Disponible prochainement — V3" });
+  }
+
+  return (
+    <Card className="p-6 space-y-4">
+      <div className="flex items-center gap-2">
+        <ScrollText className="h-4 w-4 text-muted-foreground" />
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+          Suites
+        </h2>
+      </div>
+
+      {intervention.followup_needed && (
+        <div className="rounded-md border border-orange-500/30 bg-orange-500/5 p-4 space-y-3">
+          <div className="flex items-start gap-2">
+            <ClipboardList className="h-4 w-4 mt-0.5 text-orange-600 dark:text-orange-400" />
+            <div className="flex-1">
+              <p className="text-sm font-medium">Suite nécessaire</p>
+              {intervention.followup_notes && (
+                <p className="text-sm text-muted-foreground whitespace-pre-wrap mt-1">
+                  {intervention.followup_notes}
+                </p>
+              )}
+            </div>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              const params = new URLSearchParams();
+              params.set("type", intervention.intervention_type);
+              if (intervention.installation_id) {
+                params.set("installation_id", intervention.installation_id);
+              }
+              onNavigate(`/interventions/new?${params.toString()}`);
+            }}
+          >
+            Planifier l'intervention suivante
+          </Button>
+        </div>
+      )}
+
+      {intervention.quote_needed && (
+        <div className="rounded-md border border-blue-500/30 bg-blue-500/5 p-4 space-y-3">
+          <div className="flex items-start gap-2">
+            <Euro className="h-4 w-4 mt-0.5 text-blue-600 dark:text-blue-400" />
+            <div className="flex-1">
+              <p className="text-sm font-medium">Devis à établir</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Un devis est nécessaire suite à cette intervention.
+              </p>
+            </div>
+          </div>
+          <Button size="sm" variant="outline" onClick={handleCreateQuote}>
+            Créer un devis
+          </Button>
+        </div>
+      )}
+
+      <div className="flex flex-wrap gap-2 pt-2 border-t">
+        {t === "sweep" && (
+          <>
+            <Button size="sm" variant="outline" onClick={handleSoonV3}>
+              <FileText className="h-4 w-4" />
+              Générer le certificat de ramonage
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => onNavigate("/invoices/new")}>
+              <Euro className="h-4 w-4" />
+              Créer la facture
+            </Button>
+          </>
+        )}
+        {t === "annual_service" && (
+          <Button size="sm" variant="outline" onClick={() => onNavigate("/invoices/new")}>
+            <Euro className="h-4 w-4" />
+            Créer la facture
+          </Button>
+        )}
+        {(t === "installation" || t === "commissioning") && (
+          <>
+            <Button size="sm" variant="outline" onClick={handleSoonV3}>
+              <FileText className="h-4 w-4" />
+              Créer le PV de réception
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => onNavigate("/invoices/new")}>
+              <Euro className="h-4 w-4" />
+              Créer la facture solde
+            </Button>
+          </>
+        )}
+        {t === "technical_survey" && (
+          <>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() =>
+                onNavigate(
+                  `/technical-surveys/new${
+                    intervention.project_id ? `?project=${intervention.project_id}` : ""
+                  }`,
+                )
+              }
+            >
+              <ClipboardList className="h-4 w-4" />
+              Créer le relevé technique
+            </Button>
+            <Button size="sm" variant="outline" onClick={handleCreateQuote}>
+              <Euro className="h-4 w-4" />
+              Créer le devis estimatif
+            </Button>
+          </>
+        )}
+        {(t === "repair" || t === "diagnostic") && (
+          <Button size="sm" variant="outline" onClick={() => onNavigate("/invoices/new")}>
+            <Euro className="h-4 w-4" />
+            Créer la facture
+          </Button>
+        )}
+      </div>
+    </Card>
+  );
+}

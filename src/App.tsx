@@ -105,6 +105,7 @@ const App = () => (
 
               {/* Installations */}
               <Route path="/installations" element={<Installations />} />
+              <Route path="/installations/new" element={<PlaceholderPage title="Nouvelle installation" backTo="/installations" backLabel="Parc installé" />} />
               <Route path="/installations/:id" element={<InstallationDetail />} />
 
               {/* Catalog */}

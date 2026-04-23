@@ -439,11 +439,22 @@ export default function InterventionCreate() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {TYPE_OPTIONS.map((o) => (
-                <SelectItem key={o.value} value={o.value}>
-                  {o.label}
-                </SelectItem>
-              ))}
+              <SelectGroup>
+                <SelectLabel>Projet</SelectLabel>
+                {PROJECT_TYPE_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+              <SelectGroup>
+                <SelectLabel>SAV & Récurrent</SelectLabel>
+                {AFTERCARE_TYPE_OPTIONS.map((o) => (
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
             </SelectContent>
           </Select>
         </div>

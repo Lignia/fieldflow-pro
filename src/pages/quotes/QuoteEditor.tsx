@@ -651,9 +651,11 @@ export default function QuoteEditor() {
             unit_price_ht: l._type === "item" ? (l as EditorItem).unit_price_ht : 0,
             vat_rate: l._type === "item" ? (l as EditorItem).vat_rate : 0,
             sort_order: l.sort_order,
-            metadata: l._type === "item" && (l as EditorItem).line_category
-              ? { line_category: (l as EditorItem).line_category }
-              : {},
+            line_category: l._type === "item" ? (l as EditorItem).line_category ?? null : null,
+            unit_cost_price: l._type === "item" ? (l as EditorItem).unit_cost_price ?? null : null,
+            brand: l._type === "item" ? (l as EditorItem).brand ?? null : null,
+            supplier_ref: l._type === "item" ? (l as EditorItem).supplier_ref ?? null : null,
+            metadata: {},
           }))
         );
         if (lineErr) throw lineErr;

@@ -787,7 +787,10 @@ export default function ProjectCreate() {
             {/* BLOC 2 — Logement */}
             {currentStep === 2 && (
               <section className="space-y-5">
-                <h2 className="text-lg font-semibold text-foreground">Le logement</h2>
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground">Parlez-moi de votre maison</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">Pour estimer la puissance nécessaire</p>
+                </div>
 
                 <div className="space-y-2">
                   <Label className="text-sm">Type *</Label>
@@ -807,7 +810,7 @@ export default function ProjectCreate() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-sm text-muted-foreground">Chauffage actuel</Label>
+                  <Label className="text-sm text-muted-foreground">Aujourd'hui vous chauffez avec :</Label>
                   <ToggleGroup
                     type="single"
                     value={currentHeating}
@@ -830,8 +833,31 @@ export default function ProjectCreate() {
                 </div>
 
                 <div className="space-y-2">
+                  <Label className="text-sm text-muted-foreground">Vous êtes souvent à la maison ?</Label>
+                  <ToggleGroup
+                    type="single"
+                    value={occupancyPattern}
+                    onValueChange={(v) => setOccupancyPattern(v ?? "")}
+                    className="grid grid-cols-3 gap-2"
+                  >
+                    <ToggleGroupItem value="often_absent" className="h-auto flex-col gap-1 py-2.5 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
+                      <span className="text-lg">🏢</span><span className="text-xs">Souvent absent en journée</span>
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="variable" className="h-auto flex-col gap-1 py-2.5 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
+                      <span className="text-lg">🏠</span><span className="text-xs">Présence variable</span>
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="often_home" className="h-auto flex-col gap-1 py-2.5 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
+                      <span className="text-lg">🛋️</span><span className="text-xs">Souvent à la maison</span>
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+                  {occupancyPattern === "often_absent" && (
+                    <p className="text-xs text-muted-foreground italic">💡 Un poêle programmable peut être plus adapté</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label className="text-sm">Surface à chauffer *</Label>
+                    <Label className="text-sm">Quelle surface voulez-vous chauffer ? *</Label>
                     <span className="text-sm font-mono font-semibold text-foreground">{surfaceM2} m²</span>
                   </div>
                   <Slider
@@ -852,24 +878,33 @@ export default function ProjectCreate() {
                     className="grid grid-cols-4 gap-2"
                   >
                     <ToggleGroupItem value="good" className="h-auto flex-col gap-1 py-2.5 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
-                      <span className="text-lg">✅</span><span className="text-xs">Bonne</span>
+                      <span className="text-lg">✅</span><span className="text-xs">Bien isolé</span>
                     </ToggleGroupItem>
                     <ToggleGroupItem value="average" className="h-auto flex-col gap-1 py-2.5 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
-                      <span className="text-lg">➖</span><span className="text-xs">Moyenne</span>
+                      <span className="text-lg">➖</span><span className="text-xs">Moyen</span>
                     </ToggleGroupItem>
                     <ToggleGroupItem value="poor" className="h-auto flex-col gap-1 py-2.5 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
-                      <span className="text-lg">❌</span><span className="text-xs">Faible</span>
+                      <span className="text-lg">❌</span><span className="text-xs">Mal isolé</span>
                     </ToggleGroupItem>
                     <ToggleGroupItem value="unknown" className="h-auto flex-col gap-1 py-2.5 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
-                      <span className="text-lg">❓</span><span className="text-xs">Inconnu</span>
+                      <span className="text-lg">❓</span><span className="text-xs">Je ne sais pas</span>
                     </ToggleGroupItem>
                   </ToggleGroup>
                 </div>
 
-                <div>
+                <div className="space-y-1.5">
                   <Badge className={cn("text-sm font-mono px-3 py-1", powerColor)} variant="outline">
                     ~{estimatedPower} kW indicatif
                   </Badge>
+                  <p className="text-xs text-muted-foreground">
+                    {estimatedPower < 5
+                      ? "Adapté à un petit espace ou un usage d'appoint"
+                      : estimatedPower < 9
+                      ? "Adapté à une pièce principale ou maison bien isolée"
+                      : estimatedPower < 14
+                      ? "Adapté à une grande surface ou logement moins isolé"
+                      : "À confirmer avec une visite technique"}
+                  </p>
                 </div>
 
                 <div className="flex justify-between pt-2">

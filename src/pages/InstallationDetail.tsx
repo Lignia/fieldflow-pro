@@ -403,7 +403,11 @@ export default function InstallationDetail() {
             variant="outline"
             size="sm"
             className="w-full"
-            onClick={() => navigate("/interventions/new")}
+            onClick={() =>
+              navigate(
+                `/interventions/new?type=sweep&installation_id=${installation.id}&return_to=${encodeURIComponent(`/installations/${installation.id}`)}`
+              )
+            }
           >
             <Calendar className="h-3.5 w-3.5 mr-2" />
             Planifier
@@ -435,7 +439,11 @@ export default function InstallationDetail() {
             variant="outline"
             size="sm"
             className="w-full"
-            onClick={() => navigate("/interventions/new")}
+            onClick={() =>
+              navigate(
+                `/interventions/new?type=annual_service&installation_id=${installation.id}&return_to=${encodeURIComponent(`/installations/${installation.id}`)}`
+              )
+            }
           >
             <Calendar className="h-3.5 w-3.5 mr-2" />
             Planifier

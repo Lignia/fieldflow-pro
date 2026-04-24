@@ -534,8 +534,10 @@ export default function ProjectDetail() {
               </Card>
             ) : (
               <div className="space-y-1.5">
-                {quotes.map((q) => (
-                  <Card key={q.id} className="p-3.5 cursor-pointer hover:border-accent/20 transition-colors" onClick={() => navigate(`/quotes/${q.id}`)}>
+                {quotes.map((q) => {
+                  const encodedReturn = encodeURIComponent(`/projects/${project.id}?tab=commercial`);
+                  return (
+                  <Card key={q.id} className="p-3.5 cursor-pointer hover:border-accent/20 transition-colors" onClick={() => navigate(`/quotes/${q.id}?return_to=${encodedReturn}`)}>
                     <div className="flex items-center gap-3 flex-wrap sm:flex-nowrap">
                       <span className="font-mono text-xs text-muted-foreground shrink-0">{q.quote_number}</span>
                       <StatusBadge status={q.quote_kind} type="quote_kind" size="sm" />
@@ -545,7 +547,8 @@ export default function ProjectDetail() {
                       <span className="text-xs text-muted-foreground shrink-0">{formatDateShort(q.quote_date)}</span>
                     </div>
                   </Card>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>

@@ -875,6 +875,28 @@ export default function QuoteEditor() {
           )}
 
           <div className="ml-auto flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handleDuplicate} disabled={duplicating || savingAll || !quote}>
+              {duplicating ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Copy className="h-3.5 w-3.5 mr-1" />}
+              <span className="hidden sm:inline">Dupliquer</span>
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" disabled={savingAll}>
+                  <BookOpen className="h-3.5 w-3.5 mr-1" />
+                  <span className="hidden sm:inline">Bibliothèque</span>
+                  <ChevronDown className="h-3.5 w-3.5 ml-1 opacity-60" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={() => setSaveToLibOpen(true)}
+                  disabled={itemRows.length === 0}
+                >
+                  <BookmarkPlus className="h-3.5 w-3.5 mr-2" />
+                  Enregistrer comme ouvrage
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button variant="outline" size="sm" onClick={() => handleSave(false)} disabled={savingAll}>
               {savingAll ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Save className="h-3.5 w-3.5 mr-1" />}
               Enregistrer

@@ -746,6 +746,78 @@ export default function QuoteEditor() {
     }
   }, [quote, tenantId, quoteDate, expiryDate, visitDate, startDate, rows, coreUser, projectInfo, navigate, projectId]);
 
+  // ─── Duplication ──────────────────────────────────────────────
+  const handleDuplicate = useCallback(async () => {
+    if (!quote || !tenantId || !coreUser) {
+      toast.error("Session non prête, réessayez dans un instant");
+      return;
+    }
+    setDuplicating(true);
+    try {
+      const { data, error } = await billingDb.rpc("duplicate_quote", {
+        p_quote_id: quote.id,
+        p_tenant_id: tenantId,
+        p_actor_id: coreUser.id,
+      });
+      if (error) throw error;
+      const result = data as {
+        success: boolean;
+        new_quote_id: string;
+        new_quote_number: string;
+        project_id: string | null;
+      };
+      toast.success(`Devis dupliqué : ${result.new_quote_number}`, {
+        description: "Ouverture du nouveau devis…",
+      });
+      const targetProject = result.project_id || projectId;
+      navigate(`/projects/${targetProject}/quotes/editor?id=${result.new_quote_id}`);
+    } catch (err: any) {
+      toast.error(err.message || "Erreur lors de la duplication");
+    } finally {
+      setDuplicating(false);
+    }
+  }, [quote, tenantId, coreUser, projectId, navigate]);
+
+  // ─── Save as bundle (bibliothèque) ────────────────────────────
+  const itemRows = useMemo(
+    () => rows.filter((r): r is EditorItem => r._type === "item"),
+    [rows],
+  );
+
+  const handleSaveToLibrary = useCallback(async () => {
+    if (!bundleName.trim() || !tenantId) return;
+    if (itemRows.length === 0) {
+      toast.error("Ajoutez au moins une ligne avant d'enregistrer");
+      return;
+    }
+    setSavingBundle(true);
+    try {
+      const { catalogDb } = await import("@/integrations/supabase/schema-clients");
+      const { error } = await catalogDb.rpc("save_lines_as_bundle", {
+        p_tenant_id: tenantId,
+        p_name: bundleName.trim(),
+        p_lines: itemRows.map((r) => ({
+          label: r.label,
+          qty: r.qty,
+          unit: r.unit,
+          unit_price_ht: r.unit_price_ht,
+          vat_rate: r.vat_rate,
+          line_category: r.line_category ?? null,
+        })) as any,
+        p_notes: bundleNotes.trim() || null,
+      });
+      if (error) throw error;
+      toast.success("Ouvrage enregistré dans votre catalogue", { description: bundleName });
+      setSaveToLibOpen(false);
+      setBundleName("");
+      setBundleNotes("");
+    } catch (err: any) {
+      toast.error(err.message || "Erreur lors de l'enregistrement");
+    } finally {
+      setSavingBundle(false);
+    }
+  }, [bundleName, bundleNotes, tenantId, itemRows]);
+
   // ─── Item numbering ───────────────────────────────────────────
   let itemCounter = 0;
 

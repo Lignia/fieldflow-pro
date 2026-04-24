@@ -311,6 +311,7 @@ export default function QuoteEditor() {
           address_line1: data.address_line1 || "",
           city: data.city || "",
           postal_code: data.postal_code || "",
+          flue_scenario: (data as any).payload?.flue_scenario ?? null,
         });
       }
     })();
@@ -331,6 +332,13 @@ export default function QuoteEditor() {
 
   // ─── Row management ───────────────────────────────────────────
   const addItem = useCallback((catalogItem?: CatalogItem) => {
+    let autoCategory: LineCategory | null = null;
+    if (catalogItem) {
+      const pt = (catalogItem as any).product_type;
+      if (pt === "service") autoCategory = "labor";
+      else if (pt === "appliance") autoCategory = "device";
+      else if (pt === "flue" || pt === "conduit") autoCategory = "flue";
+    }
     const newRow: EditorItem = {
       _type: "item", _key: nextKey(), line_type: "item",
       product_id: catalogItem?.id || null,
@@ -340,6 +348,7 @@ export default function QuoteEditor() {
       unit_price_ht: catalogItem?.unit_price_ht || 0,
       vat_rate: catalogItem ? suggestedVat(catalogItem.product_type) : 10,
       sort_order: rows.length,
+      line_category: autoCategory,
     };
     setRows((prev) => [...prev, newRow]);
   }, [rows.length]);

@@ -4,6 +4,7 @@ import {
   ArrowLeft, Plus, Trash2, Save, Send, Search, Loader2,
   MoreHorizontal, Copy, Type, Layers, FileText, Building2, MapPin,
   Calendar, ClipboardList, ArrowRight, Tag, Flame, Construction, Wrench,
+  ChevronDown, BookOpen, BookmarkPlus,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -28,6 +29,9 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
 
 // ─── Types ──────────────────────────────────────────────────────
 type UnitType = "u" | "m" | "m2" | "forfait" | "h";

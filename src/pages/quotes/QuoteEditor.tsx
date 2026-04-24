@@ -282,14 +282,14 @@ function ItemRow({ row, index, onChange, onDuplicate, onDelete }: {
         ? "text-warning"
         : "text-success";
   return (
-    <div className="grid grid-cols-[28px_minmax(0,1fr)_60px_72px_92px_72px_92px_92px_36px] gap-1.5 items-center px-3 py-1.5 hover:bg-muted/20 rounded transition-colors">
-      <span className="text-xs text-muted-foreground text-center tabular-nums">{index}</span>
+    <div className="grid grid-cols-[28px_minmax(0,1fr)_60px_72px_92px_72px_88px_110px_36px] gap-1.5 items-start px-3 py-2 hover:bg-muted/20 rounded transition-colors">
+      <span className="text-xs text-muted-foreground text-center tabular-nums pt-2">{index}</span>
       <div className="min-w-0 space-y-1">
         <Input
           value={row.label}
           onChange={(e) => onChange("label", e.target.value)}
           placeholder="Désignation"
-          className="h-8 text-sm"
+          className="h-8 text-sm font-medium"
         />
         <div className="flex items-center gap-1.5 flex-wrap">
           <CategoryPicker
@@ -303,40 +303,37 @@ function ItemRow({ row, index, onChange, onDuplicate, onDelete }: {
           )}
         </div>
       </div>
-      <Input type="number" min={0} step={0.01} value={row.qty || ""} onChange={(e) => onChange("qty", parseFloat(e.target.value) || 0)} className="h-8 text-sm text-right" />
+      <Input type="number" min={0} step={0.01} value={row.qty || ""} onChange={(e) => onChange("qty", parseFloat(e.target.value) || 0)} className="h-8 text-sm text-right mt-0" />
       <Select value={row.unit} onValueChange={(v) => onChange("unit", v)}>
-        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+        <SelectTrigger className="h-8 text-xs mt-0"><SelectValue /></SelectTrigger>
         <SelectContent>
           {(Object.entries(UNIT_LABELS) as [UnitType, string][]).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
         </SelectContent>
       </Select>
-      <Input type="number" min={0} step={0.01} value={row.unit_price_ht || ""} onChange={(e) => onChange("unit_price_ht", parseFloat(e.target.value) || 0)} className="h-8 text-sm text-right" placeholder="0.00" />
+      <Input type="number" min={0} step={0.01} value={row.unit_price_ht || ""} onChange={(e) => onChange("unit_price_ht", parseFloat(e.target.value) || 0)} className="h-8 text-sm text-right font-medium" placeholder="0.00" />
       <Input
         type="number" min={0} step={0.01}
         value={row.unit_cost_price ?? ""}
         onChange={(e) => onChange("unit_cost_price", e.target.value === "" ? null : parseFloat(e.target.value) || 0)}
-        className="h-8 text-sm text-right"
+        className="h-7 text-xs text-right text-muted-foreground bg-muted/20 border-dashed"
         placeholder="—"
-        title="Coût d'achat HT"
+        title="Coût d'achat HT (interne)"
       />
       <Select value={String(row.vat_rate)} onValueChange={(v) => onChange("vat_rate", parseFloat(v))}>
-        <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+        <SelectTrigger className="h-8 text-xs mt-0"><SelectValue /></SelectTrigger>
         <SelectContent>
           {VAT_RATES.map((r) => <SelectItem key={r} value={String(r)}>{r} %</SelectItem>)}
         </SelectContent>
       </Select>
-      <span className="text-right font-mono text-sm text-foreground tabular-nums">{fmt(totalHt)}</span>
-      <div className={`text-right font-mono text-xs leading-tight tabular-nums ${marginTone}`} title="Marge HT">
-        {hasCost ? (
-          <>
-            <div className="font-semibold">{fmt(margin)}</div>
-            <div className="text-[10px] opacity-80">{marginPct.toFixed(0)} %</div>
-          </>
-        ) : (
-          <span className="text-[10px]">—</span>
+      <div className="text-right pt-1">
+        <div className="font-mono text-sm font-semibold text-foreground tabular-nums">{fmt(totalHt)}</div>
+        {hasCost && (
+          <div className={`font-mono text-[10px] leading-tight tabular-nums ${marginTone}`} title="Marge HT (interne)">
+            Marge {fmt(margin)} ({marginPct.toFixed(0)} %)
+          </div>
         )}
       </div>
-      <RowMenu onDuplicate={onDuplicate} onDelete={onDelete} />
+      <div className="pt-0.5"><RowMenu onDuplicate={onDuplicate} onDelete={onDelete} /></div>
     </div>
   );
 }
@@ -761,7 +758,7 @@ export default function QuoteEditor() {
             </Button>
             <Button size="sm" onClick={() => handleSave(true)} disabled={savingAll}>
               {savingAll ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Send className="h-3.5 w-3.5 mr-1" />}
-              Enregistrer et finaliser
+              Envoyer au client
             </Button>
           </div>
         </div>
@@ -842,16 +839,15 @@ export default function QuoteEditor() {
           {/* ─── CANVAS ─────────────────────────────────────────── */}
           <Card className="overflow-x-auto overflow-hidden">
             {/* Column headers */}
-            <div className="hidden md:grid md:grid-cols-[28px_minmax(0,1fr)_60px_72px_92px_72px_92px_92px_36px] gap-1.5 px-3 py-2 bg-muted/30 border-b border-border text-xs font-medium text-muted-foreground">
+            <div className="hidden md:grid md:grid-cols-[28px_minmax(0,1fr)_60px_72px_92px_72px_88px_110px_36px] gap-1.5 px-3 py-2 bg-muted/30 border-b border-border text-xs font-medium text-muted-foreground">
               <span className="text-center">N°</span>
               <span>Désignation</span>
               <span className="text-right">Qté</span>
               <span>Unité</span>
               <span className="text-right">Vente HT</span>
-              <span className="text-right">Coût HT</span>
+              <span className="text-right opacity-60" title="Coût d'achat (interne)">Coût HT</span>
               <span>TVA</span>
               <span className="text-right">Total HT</span>
-              <span className="text-right">Marge</span>
               <span />
             </div>
 
@@ -953,40 +949,64 @@ export default function QuoteEditor() {
       {/* ─── STICKY FOOTER — Totals ─────────────────────────────── */}
       <footer className="sticky bottom-0 z-40 bg-card/95 backdrop-blur border-t border-border">
         <div className="max-w-6xl mx-auto px-4 py-3">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-6 text-sm flex-wrap">
-            <div>
-              <span className="text-muted-foreground">Total HT </span>
-              <span className="font-mono font-semibold text-foreground">{fmt(totals.totalHt)}</span>
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-3 md:gap-6 items-center">
+            {/* Bloc Client — visible sur le devis */}
+            <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1 text-sm">
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70 font-semibold">Client</span>
+              <div>
+                <span className="text-muted-foreground">Total HT </span>
+                <span className="font-mono font-semibold text-foreground">{fmt(totals.totalHt)}</span>
+              </div>
+              {Object.entries(totals.vatMap)
+                .sort(([a], [b]) => Number(a) - Number(b))
+                .map(([rate, amount]) => (
+                  <div key={rate} className="text-xs">
+                    <span className="text-muted-foreground">TVA {rate}% </span>
+                    <span className="font-mono text-foreground">{fmt(amount)}</span>
+                  </div>
+                ))}
+              <div>
+                <span className="text-muted-foreground">Total TTC </span>
+                <span className="font-mono font-bold text-base text-foreground">{fmt(totals.totalTtc)}</span>
+              </div>
             </div>
-            {Object.entries(totals.vatMap)
-              .sort(([a], [b]) => Number(a) - Number(b))
-              .map(([rate, amount]) => (
-                <div key={rate}>
-                  <span className="text-muted-foreground">TVA {rate}% </span>
-                  <span className="font-mono text-foreground">{fmt(amount)}</span>
-                </div>
-              ))}
-            <Separator orientation="vertical" className="h-6 hidden sm:block" />
-            <div>
-              <span className="text-muted-foreground">Total TTC </span>
-              <span className="font-mono font-bold text-base text-foreground">{fmt(totals.totalTtc)}</span>
-            </div>
-            {marginTotals.hasCost && (
-              <>
-                <Separator orientation="vertical" className="h-6 hidden sm:block" />
-                <div title={marginTotals.fullyCovered ? "Marge HT" : "Marge HT (lignes avec coût renseigné uniquement)"}>
-                  <span className="text-muted-foreground">Marge </span>
-                  <span className={`font-mono font-semibold ${marginTotals.margin < 0 ? "text-destructive" : marginTotals.pct < 15 ? "text-warning" : "text-success"}`}>
-                    {fmt(marginTotals.margin)}
-                    <span className="ml-1 text-xs opacity-80">({marginTotals.pct.toFixed(0)} %)</span>
-                  </span>
-                  {!marginTotals.fullyCovered && (
-                    <span className="ml-1 text-[10px] text-muted-foreground">*</span>
-                  )}
-                </div>
-              </>
-            )}
+
+            <Separator orientation="vertical" className="h-10 hidden md:block" />
+
+            {/* Bloc Artisan — interne, jamais affiché au client */}
+            <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1 text-sm md:justify-end">
+              <span
+                className="text-[10px] uppercase tracking-wider text-muted-foreground/70 font-semibold"
+                title="Information interne — non visible par le client"
+              >
+                Artisan
+              </span>
+              {marginTotals.hasCost ? (
+                <>
+                  <div className="text-xs">
+                    <span className="text-muted-foreground">Coût HT </span>
+                    <span className="font-mono text-foreground">{fmt(totals.totalHt - marginTotals.margin)}</span>
+                  </div>
+                  <div title={marginTotals.fullyCovered ? "Marge HT totale" : "Marge HT — calculée uniquement sur les lignes avec coût renseigné"}>
+                    <span className="text-muted-foreground">Marge </span>
+                    <span className={`font-mono font-semibold ${marginTotals.margin < 0 ? "text-destructive" : marginTotals.pct < 15 ? "text-warning" : "text-success"}`}>
+                      {fmt(marginTotals.margin)}
+                    </span>
+                    <span className={`ml-1 text-xs font-mono ${marginTotals.margin < 0 ? "text-destructive" : marginTotals.pct < 15 ? "text-warning" : "text-success"}`}>
+                      ({marginTotals.pct.toFixed(0)} %)
+                    </span>
+                    {!marginTotals.fullyCovered && (
+                      <span className="ml-1.5 text-[10px] text-warning" title="Coûts manquants sur certaines lignes">
+                        Marge partielle
+                      </span>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <span className="text-xs text-muted-foreground italic">
+                  Renseignez les coûts d'achat pour voir la marge
+                </span>
+              )}
             </div>
           </div>
         </div>

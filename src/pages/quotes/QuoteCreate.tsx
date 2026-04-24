@@ -33,6 +33,7 @@ import {
 import { StatusBadge } from "@/components/StatusBadge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { Badge } from "@/components/ui/badge";
 import {
   Popover,
   PopoverContent,
@@ -57,6 +58,23 @@ const KIND_LABELS: Record<string, string> = {
 };
 
 const VAT_RATES = [5.5, 10, 20];
+
+// ─── Line categories (local-only, persisted via direct UPDATE) ──
+type LineCategory = "device" | "flue" | "labor" | "option" | "misc";
+
+const LINE_CATEGORY_LABELS: Record<LineCategory, string> = {
+  device: "🔥 Appareil",
+  flue: "🏗️ Fumisterie",
+  labor: "🔧 Pose",
+  option: "⭐ Option",
+  misc: "📦 Divers",
+};
+
+const KIND_BADGE: Record<string, { variant: "default" | "secondary" | "outline"; label: string }> = {
+  estimate: { variant: "secondary", label: "📋 Estimatif" },
+  final: { variant: "default", label: "✅ Devis final" },
+  service: { variant: "outline", label: "🔧 SAV" },
+};
 
 function formatCurrency(n: number) {
   return n.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
@@ -123,9 +141,21 @@ function CatalogSearchPopover({
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="text-sm font-medium truncate">{item.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {item.sku} · TVA {item.vat_rate}%
-                  </p>
+                  <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
+                    {item.product_type === "service" && (
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
+                        Main d'œuvre
+                      </Badge>
+                    )}
+                    {item.product_type === "appliance" && (
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-4">
+                        Appareil
+                      </Badge>
+                    )}
+                    <span className="text-xs text-muted-foreground">
+                      {item.sku} · TVA {item.vat_rate}%
+                    </span>
+                  </div>
                 </div>
                 <span className="text-sm font-mono font-semibold shrink-0">
                   {formatCurrency(item.unit_price_ht)}
@@ -159,14 +189,18 @@ function LineRow({
   onUpdate,
   onDelete,
   disabled,
+  category,
+  onCategoryChange,
 }: {
   line: QuoteLine;
   onUpdate: (field: string, value: any) => void;
   onDelete: () => void;
   disabled: boolean;
+  category: LineCategory | null;
+  onCategoryChange: (value: LineCategory | null) => void;
 }) {
   return (
-    <div className="grid grid-cols-2 md:grid-cols-[24px_1fr_80px_100px_110px_100px_90px_40px] gap-2 items-start border rounded-lg p-3 md:border-muted/50 md:p-2 bg-card">
+    <div className="grid grid-cols-2 md:grid-cols-[24px_1fr_120px_80px_100px_110px_100px_90px_40px] gap-2 items-start border rounded-lg p-3 md:border-muted/50 md:p-2 bg-card">
       <div className="hidden md:flex items-center justify-center h-10 text-muted-foreground/40 cursor-grab">
         <GripVertical className="h-4 w-4" />
       </div>
@@ -177,6 +211,42 @@ function LineRow({
           onChange={(e) => onUpdate("label", e.target.value)}
           disabled={disabled}
         />
+        {/* Mobile: catégorie sous la désignation */}
+        <div className="md:hidden mt-2">
+          <Select
+            value={category ?? "__none"}
+            onValueChange={(v) => onCategoryChange(v === "__none" ? null : (v as LineCategory))}
+            disabled={disabled}
+          >
+            <SelectTrigger className="h-8 text-xs">
+              <SelectValue placeholder="—" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__none">—</SelectItem>
+              {(Object.entries(LINE_CATEGORY_LABELS) as [LineCategory, string][]).map(([k, v]) => (
+                <SelectItem key={k} value={k}>{v}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      {/* Desktop: catégorie en colonne dédiée */}
+      <div className="hidden md:block">
+        <Select
+          value={category ?? "__none"}
+          onValueChange={(v) => onCategoryChange(v === "__none" ? null : (v as LineCategory))}
+          disabled={disabled}
+        >
+          <SelectTrigger className="h-10">
+            <SelectValue placeholder="—" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="__none">—</SelectItem>
+            {(Object.entries(LINE_CATEGORY_LABELS) as [LineCategory, string][]).map(([k, v]) => (
+              <SelectItem key={k} value={k}>{v}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
       <Input
         type="number"
@@ -246,11 +316,36 @@ export default function QuoteCreate() {
   const { projectId } = useParams<{ projectId: string }>();
   const [searchParams] = useSearchParams();
   const quoteKind = searchParams.get("kind") || "estimate";
+  const rawReturnTo = searchParams.get("return_to");
+  const returnTo = rawReturnTo?.startsWith("/") ? rawReturnTo : null;
   const navigate = useNavigate();
   const { coreUser } = useCurrentUser();
   const { createQuote, addLine, updateLine, deleteLine, quote, lines, saving, error, setQuote } = useCreateQuote();
   const [initializing, setInitializing] = useState(true);
   const initRef = useRef(false);
+
+  // Project context (read-only side fetch, no hook touched)
+  const [projectContext, setProjectContext] = useState<{
+    customer_name: string;
+    address_line1: string;
+    city: string;
+    payload: Record<string, any>;
+  } | null>(null);
+
+  useEffect(() => {
+    if (!projectId) return;
+    coreDb
+      .from("v_projects_with_customer")
+      .select("customer_name, address_line1, city, payload")
+      .eq("id", projectId)
+      .single()
+      .then(({ data }) => {
+        if (data) setProjectContext(data as any);
+      });
+  }, [projectId]);
+
+  // Local-only category map: lineId → category (persisted via direct UPDATE)
+  const [categories, setCategories] = useState<Record<string, LineCategory | null>>({});
 
   // Initialize quote on mount with kind from URL
   useEffect(() => {
@@ -260,18 +355,48 @@ export default function QuoteCreate() {
   }, [projectId, createQuote, quoteKind]);
 
   // ─── Handlers ─────────────────────────────────────────────────
-  const handleCatalogSelect = (item: CatalogItem) => {
+  const handleCatalogSelect = async (item: CatalogItem) => {
     if (!quote) return;
-    addLine(quote.id, {
+    const linesBefore = lines.length;
+    await addLine(quote.id, {
       product_id: item.id,
       label: item.name,
       qty: 1,
       unit: item.unit,
       unit_price_ht: item.unit_price_ht,
       vat_rate: suggestedVat(item.product_type),
-      sort_order: lines.length,
+      sort_order: linesBefore,
     });
+    // Auto-map category from product_type (best-effort with available fields)
+    const autoCat: LineCategory | null =
+      item.product_type === "service" ? "labor" :
+      item.product_type === "appliance" ? "device" :
+      null;
+    if (autoCat) {
+      // We don't know the new line id synchronously; defer assignment via effect below
+      pendingAutoCatRef.current = { productId: item.id, category: autoCat };
+    }
   };
+
+  // Auto-assign category to newly inserted line when it appears in `lines`
+  const pendingAutoCatRef = useRef<{ productId: string; category: LineCategory } | null>(null);
+  useEffect(() => {
+    const pending = pendingAutoCatRef.current;
+    if (!pending) return;
+    const newLine = [...lines]
+      .reverse()
+      .find((l) => l.product_id === pending.productId && categories[l.id] === undefined);
+    if (newLine) {
+      setCategories((prev) => ({ ...prev, [newLine.id]: pending.category }));
+      // Persist
+      billingDb
+        .from("quote_lines")
+        .update({ line_category: pending.category })
+        .eq("id", newLine.id)
+        .then(() => {});
+      pendingAutoCatRef.current = null;
+    }
+  }, [lines, categories]);
 
   const handleFreeLine = () => {
     if (!quote) return;
@@ -294,6 +419,23 @@ export default function QuoteCreate() {
   const handleDeleteLine = (lineId: string) => {
     if (!quote) return;
     deleteLine(lineId, quote.id);
+    setCategories((prev) => {
+      const next = { ...prev };
+      delete next[lineId];
+      return next;
+    });
+  };
+
+  const handleCategoryChange = async (lineId: string, value: LineCategory | null) => {
+    setCategories((prev) => ({ ...prev, [lineId]: value }));
+    try {
+      await billingDb
+        .from("quote_lines")
+        .update({ line_category: value })
+        .eq("id", lineId);
+    } catch {
+      // silent — column may not exist yet; UI state already updated
+    }
   };
 
   const handleKindChange = async (kind: string) => {
@@ -312,7 +454,7 @@ export default function QuoteCreate() {
     const DEV_BYPASS = import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
     if (DEV_BYPASS) {
       toast.success("Devis envoyé (mode dev)");
-      navigate(`/projects/${projectId}`);
+      navigate(returnTo ?? `/projects/${projectId}`);
       return;
     }
     try {
@@ -327,7 +469,7 @@ export default function QuoteCreate() {
       });
       if (error) throw error;
       toast.success("Devis envoyé");
-      navigate(`/projects/${projectId}`);
+      navigate(returnTo ?? `/projects/${projectId}`);
     } catch (err: any) {
       toast.error(err.message || "Erreur lors de l'envoi");
     }
@@ -340,12 +482,21 @@ export default function QuoteCreate() {
     return acc;
   }, {});
 
+  // ─── Category breakdown (HT) ──────────────────────────────────
+  const categoryHT = lines.reduce<Partial<Record<LineCategory, number>>>((acc, l) => {
+    const cat = categories[l.id];
+    if (!cat) return acc;
+    acc[cat] = (acc[cat] || 0) + l.total_line_ht;
+    return acc;
+  }, {});
+  const hasAnyCategory = Object.keys(categoryHT).length > 0;
+
   // ─── Loading state ────────────────────────────────────────────
   if (initializing) {
     return (
       <div className="space-y-6 max-w-4xl">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate(`/projects/${projectId}`)}>
+          <Button variant="ghost" size="icon" onClick={() => navigate(returnTo ?? `/projects/${projectId}`)}>
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <Skeleton className="h-8 w-64" />
@@ -360,7 +511,7 @@ export default function QuoteCreate() {
   if (error && !quote) {
     return (
       <div className="space-y-6 max-w-4xl">
-        <Button variant="ghost" size="sm" onClick={() => navigate(`/projects/${projectId}`)}>
+        <Button variant="ghost" size="sm" onClick={() => navigate(returnTo ?? `/projects/${projectId}`)}>
           <ArrowLeft className="h-4 w-4 mr-1" />
           Retour au projet
         </Button>
@@ -376,11 +527,13 @@ export default function QuoteCreate() {
 
   if (!quote) return null;
 
+  const kindBadge = KIND_BADGE[quote.quote_kind] ?? KIND_BADGE.estimate;
+
   return (
     <div className="space-y-6 max-w-4xl pb-32">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" onClick={() => navigate(`/projects/${projectId}`)}>
+        <Button variant="ghost" size="icon" onClick={() => navigate(returnTo ?? `/projects/${projectId}`)}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div className="flex-1 min-w-0">
@@ -393,6 +546,40 @@ export default function QuoteCreate() {
           </p>
         </div>
       </div>
+
+      {/* Project context (read-only) */}
+      {projectContext && (
+        <Card className="bg-muted/30 border-muted">
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="min-w-0">
+                <p className="text-sm font-medium truncate">{projectContext.customer_name}</p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {projectContext.address_line1} · {projectContext.city}
+                </p>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <Badge variant={kindBadge.variant} className="text-xs">
+                  {kindBadge.label}
+                </Badge>
+                {projectContext.payload?.flue_scenario && (
+                  <Badge variant="outline" className="text-xs text-muted-foreground">
+                    {String(projectContext.payload.flue_scenario)}
+                  </Badge>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs"
+                  onClick={() => navigate(`/projects/${projectId}`)}
+                >
+                  Voir le projet →
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* General info card */}
       <Card>
@@ -436,9 +623,10 @@ export default function QuoteCreate() {
         <CardContent className="space-y-2">
           {/* Column headers (desktop) */}
           {lines.length > 0 && (
-            <div className="hidden md:grid md:grid-cols-[24px_1fr_80px_100px_110px_100px_90px_40px] gap-2 text-xs font-medium text-muted-foreground px-2">
+            <div className="hidden md:grid md:grid-cols-[24px_1fr_120px_80px_100px_110px_100px_90px_40px] gap-2 text-xs font-medium text-muted-foreground px-2">
               <span />
               <span>Désignation</span>
+              <span>Catégorie</span>
               <span>Qté</span>
               <span>Unité</span>
               <span>Prix HT</span>
@@ -467,6 +655,8 @@ export default function QuoteCreate() {
               onUpdate={(field, value) => handleUpdateLine(line, field, value)}
               onDelete={() => handleDeleteLine(line.id)}
               disabled={saving}
+              category={categories[line.id] ?? null}
+              onCategoryChange={(value) => handleCategoryChange(line.id, value)}
             />
           ))}
         </CardContent>
@@ -476,24 +666,39 @@ export default function QuoteCreate() {
       <div className="fixed bottom-0 left-0 right-0 bg-background/95 backdrop-blur border-t z-40">
         <div className="max-w-4xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           {/* Totals */}
-          <div className="flex items-center gap-6 text-sm">
-            <div>
-              <span className="text-muted-foreground">HT </span>
-              <span className="font-mono font-semibold">{formatCurrencyRound(quote.total_ht)}</span>
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-6 text-sm flex-wrap">
+              <div>
+                <span className="text-muted-foreground">HT </span>
+                <span className="font-mono font-semibold">{formatCurrencyRound(quote.total_ht)}</span>
+              </div>
+              {Object.entries(vatByRate)
+                .sort(([a], [b]) => Number(a) - Number(b))
+                .map(([rate, amount]) => (
+                  <div key={rate}>
+                    <span className="text-muted-foreground">TVA {rate}% </span>
+                    <span className="font-mono">{formatCurrencyRound(amount)}</span>
+                  </div>
+                ))}
+              <Separator orientation="vertical" className="h-6" />
+              <div>
+                <span className="text-muted-foreground">TTC </span>
+                <span className="font-mono font-bold text-base">{formatCurrencyRound(quote.total_ttc)}</span>
+              </div>
             </div>
-            {Object.entries(vatByRate)
-              .sort(([a], [b]) => Number(a) - Number(b))
-              .map(([rate, amount]) => (
-                <div key={rate}>
-                  <span className="text-muted-foreground">TVA {rate}% </span>
-                  <span className="font-mono">{formatCurrencyRound(amount)}</span>
-                </div>
-              ))}
-            <Separator orientation="vertical" className="h-6" />
-            <div>
-              <span className="text-muted-foreground">TTC </span>
-              <span className="font-mono font-bold text-base">{formatCurrencyRound(quote.total_ttc)}</span>
-            </div>
+            {hasAnyCategory && (
+              <div className="flex gap-3 text-xs text-muted-foreground mt-1 flex-wrap">
+                {categoryHT.device !== undefined && (
+                  <span>🔥 Appareil : <span className="font-mono">{formatCurrencyRound(categoryHT.device)}</span></span>
+                )}
+                {categoryHT.flue !== undefined && (
+                  <span>🏗️ Fumisterie : <span className="font-mono">{formatCurrencyRound(categoryHT.flue)}</span></span>
+                )}
+                {categoryHT.labor !== undefined && (
+                  <span>🔧 Pose : <span className="font-mono">{formatCurrencyRound(categoryHT.labor)}</span></span>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Actions */}
@@ -503,7 +708,7 @@ export default function QuoteCreate() {
               size="sm"
               onClick={() => {
                 toast.success("Devis enregistré");
-                navigate(`/projects/${projectId}`);
+                navigate(returnTo ?? `/projects/${projectId}`);
               }}
             >
               <Save className="h-3.5 w-3.5 mr-1" />

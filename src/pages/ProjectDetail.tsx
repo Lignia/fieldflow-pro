@@ -735,7 +735,7 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
             <>
               <Button
                 size="sm"
-                onClick={() => onNavigate(`/interventions/new?type=technical_survey&project_id=${project.id}`)}
+                onClick={() => onNavigate(`/interventions/new?type=technical_survey&project_id=${project.id}&return_to=${encodeURIComponent(`/projects/${project.id}`)}`)}
               >
                 <ClipboardList className="h-3.5 w-3.5 mr-1" /> Planifier la VT
               </Button>
@@ -885,7 +885,7 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
             <>
               <Button
                 size="sm"
-                onClick={() => onNavigate(`/interventions/new?type=installation&project_id=${project.id}`)}
+                onClick={() => onNavigate(`/interventions/new?type=installation&project_id=${project.id}&return_to=${encodeURIComponent(`/projects/${project.id}`)}`)}
               >
                 <Hammer className="h-3.5 w-3.5 mr-1" /> Planifier la pose
               </Button>
@@ -908,7 +908,7 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
             <>
               <Button
                 size="sm"
-                onClick={() => onNavigate(`/interventions/new?type=commissioning&project_id=${project.id}`)}
+                onClick={() => onNavigate(`/interventions/new?type=commissioning&project_id=${project.id}&return_to=${encodeURIComponent(`/projects/${project.id}`)}`)}
               >
                 <Zap className="h-3.5 w-3.5 mr-1" /> Planifier la mise en service
               </Button>

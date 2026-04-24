@@ -3,7 +3,7 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft, Plus, Trash2, Save, Send, Search, Loader2,
   MoreHorizontal, Copy, Type, Layers, FileText, Building2, MapPin,
-  Calendar, ClipboardList, ArrowRight, Tag,
+  Calendar, ClipboardList, ArrowRight, Tag, Flame, Construction, Wrench,
 } from "lucide-react";
 import { toast } from "sonner";
 

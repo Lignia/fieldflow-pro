@@ -698,9 +698,10 @@ export default function QuoteEditor() {
           {/* ─── CANVAS ─────────────────────────────────────────── */}
           <Card className="overflow-x-auto overflow-hidden">
             {/* Column headers */}
-            <div className="hidden md:grid md:grid-cols-[32px_1fr_72px_88px_100px_80px_96px_36px] gap-1.5 px-3 py-2 bg-muted/30 border-b border-border text-xs font-medium text-muted-foreground">
+            <div className="hidden md:grid md:grid-cols-[32px_1fr_120px_72px_88px_100px_80px_96px_36px] gap-1.5 px-3 py-2 bg-muted/30 border-b border-border text-xs font-medium text-muted-foreground">
               <span className="text-center">N°</span>
               <span>Désignation</span>
+              <span>Catégorie</span>
               <span className="text-right">Qté</span>
               <span>Unité</span>
               <span className="text-right">P.U. HT</span>
@@ -711,12 +712,15 @@ export default function QuoteEditor() {
 
             <div className="divide-y divide-border/50">
               {rows.length === 0 && (
-                <div className="py-16 text-center">
-                  <ClipboardList className="h-10 w-10 mx-auto text-muted-foreground/30 mb-4" />
-                  <p className="text-sm font-medium text-muted-foreground mb-1">Insérez une première ligne dans votre devis</p>
-                  <p className="text-xs text-muted-foreground mb-6">Articles du catalogue, sections ou texte libre</p>
-                  <div className="flex items-center justify-center gap-2">
-                    <Button variant="outline" size="sm" onClick={() => addItem()}><Plus className="h-3.5 w-3.5 mr-1" /> Nouvelle ligne</Button>
+                <div className="py-12 px-6 text-center border-2 border-dashed border-border/60 m-4 rounded-lg bg-muted/10">
+                  <ClipboardList className="h-10 w-10 mx-auto text-muted-foreground/40 mb-4" />
+                  <p className="text-sm font-semibold text-foreground mb-1">Commencez votre devis</p>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Structurez votre devis par <span className="font-medium text-foreground">🔥 Appareil</span> / <span className="font-medium text-foreground">🏗️ Fumisterie</span> / <span className="font-medium text-foreground">🔧 Pose</span>
+                  </p>
+                  <p className="text-xs text-muted-foreground mb-6">Catalogue, ligne libre, section ou texte explicatif</p>
+                  <div className="flex items-center justify-center gap-2 flex-wrap">
+                    <CatalogPopover onSelect={(item) => addItem(item)} onFreeLine={() => addItem()} />
                     <Button variant="outline" size="sm" onClick={addSection}><Layers className="h-3.5 w-3.5 mr-1" /> Section</Button>
                     <Button variant="outline" size="sm" onClick={addText}><Type className="h-3.5 w-3.5 mr-1" /> Texte</Button>
                   </div>

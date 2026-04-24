@@ -238,7 +238,8 @@ function CategoryPicker({ value, onChange }: { value: LineCategory | null | unde
         {value ? (
           <button
             type="button"
-            className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[11px] font-medium text-foreground hover:bg-muted transition-colors"
+            className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium transition-colors hover:opacity-80 ${CATEGORY_TONE[value]}`}
+            title="Modifier la catégorie"
           >
             <span className="truncate max-w-[110px]">{CATEGORY_LABELS[value]}</span>
           </button>

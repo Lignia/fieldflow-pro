@@ -590,7 +590,7 @@ export default function ProjectDetail() {
                 {(project.status === "estimate_sent" || project.status === "vt_planned") && (
                   <Button
                     size="sm"
-                    onClick={() => navigate(`/interventions/new?type=technical_survey&project_id=${project.id}`)}
+                    onClick={() => navigate(`/interventions/new?type=technical_survey&project_id=${project.id}&return_to=${encodeURIComponent(`/projects/${project.id}`)}`)}
                   >
                     <ClipboardList className="h-3.5 w-3.5 mr-1" /> Planifier la visite technique
                   </Button>
@@ -601,7 +601,7 @@ export default function ProjectDetail() {
                   project.status === "supplier_ordered") && (
                   <Button
                     size="sm"
-                    onClick={() => navigate(`/interventions/new?type=installation&project_id=${project.id}`)}
+                    onClick={() => navigate(`/interventions/new?type=installation&project_id=${project.id}&return_to=${encodeURIComponent(`/projects/${project.id}`)}`)}
                   >
                     <Hammer className="h-3.5 w-3.5 mr-1" /> Planifier la pose
                   </Button>
@@ -609,7 +609,7 @@ export default function ProjectDetail() {
                 {project.status === "mes_done" && (
                   <Button
                     size="sm"
-                    onClick={() => navigate(`/interventions/new?type=commissioning&project_id=${project.id}`)}
+                    onClick={() => navigate(`/interventions/new?type=commissioning&project_id=${project.id}&return_to=${encodeURIComponent(`/projects/${project.id}`)}`)}
                   >
                     <Zap className="h-3.5 w-3.5 mr-1" /> Planifier la mise en service
                   </Button>
@@ -617,7 +617,7 @@ export default function ProjectDetail() {
                 <Button
                   variant="outline"
                   size="sm"
-                  onClick={() => navigate(`/interventions/new?project_id=${project.id}`)}
+                  onClick={() => navigate(`/interventions/new?project_id=${project.id}&return_to=${encodeURIComponent(`/projects/${project.id}`)}`)}
                 >
                   <Plus className="h-3.5 w-3.5 mr-1" /> Autre intervention
                 </Button>
@@ -735,7 +735,7 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
             <>
               <Button
                 size="sm"
-                onClick={() => onNavigate(`/interventions/new?type=technical_survey&project_id=${project.id}`)}
+                onClick={() => onNavigate(`/interventions/new?type=technical_survey&project_id=${project.id}&return_to=${encodeURIComponent(`/projects/${project.id}`)}`)}
               >
                 <ClipboardList className="h-3.5 w-3.5 mr-1" /> Planifier la VT
               </Button>
@@ -885,7 +885,7 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
             <>
               <Button
                 size="sm"
-                onClick={() => onNavigate(`/interventions/new?type=installation&project_id=${project.id}`)}
+                onClick={() => onNavigate(`/interventions/new?type=installation&project_id=${project.id}&return_to=${encodeURIComponent(`/projects/${project.id}`)}`)}
               >
                 <Hammer className="h-3.5 w-3.5 mr-1" /> Planifier la pose
               </Button>
@@ -908,7 +908,7 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
             <>
               <Button
                 size="sm"
-                onClick={() => onNavigate(`/interventions/new?type=commissioning&project_id=${project.id}`)}
+                onClick={() => onNavigate(`/interventions/new?type=commissioning&project_id=${project.id}&return_to=${encodeURIComponent(`/projects/${project.id}`)}`)}
               >
                 <Zap className="h-3.5 w-3.5 mr-1" /> Planifier la mise en service
               </Button>

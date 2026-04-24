@@ -457,7 +457,16 @@ export default function ServiceRequestDetail() {
             <Button
               size="sm"
               variant="outline"
-              onClick={() => navigate("/interventions/new")}
+              onClick={() => {
+                const params = new URLSearchParams({
+                  service_request_id: request!.id,
+                  return_to: `/service-requests/${request!.id}`,
+                });
+                if (request!.installation_id) {
+                  params.set("installation_id", request!.installation_id);
+                }
+                navigate(`/interventions/new?${params.toString()}`);
+              }}
             >
               <CalendarPlus className="h-4 w-4" />
               Planifier une intervention

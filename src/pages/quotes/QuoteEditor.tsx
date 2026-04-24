@@ -82,6 +82,17 @@ const CATEGORY_LABELS: Record<LineCategory, string> = {
   misc: "📦 Divers",
 };
 
+// Tonalités sémantiques pour chaque catégorie (badge & header de groupe)
+const CATEGORY_TONE: Record<LineCategory, string> = {
+  device: "bg-warning/10 text-warning border-warning/20",
+  flue: "bg-info/10 text-info border-info/20",
+  labor: "bg-success/10 text-success border-success/20",
+  option: "bg-accent/10 text-accent border-accent/20",
+  misc: "bg-muted text-muted-foreground border-border",
+};
+
+const CATEGORY_ORDER: LineCategory[] = ["device", "flue", "labor", "option", "misc"];
+
 interface ProjectInfo {
   id: string;
   project_number: string;

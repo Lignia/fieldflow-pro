@@ -1025,13 +1025,13 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
   if (!content) return null;
 
   return (
-    <Card className="p-4 sm:p-5 border-accent/40 bg-accent/5">
+    <Card className="p-5 border-2 border-accent bg-accent/[0.08] shadow-sm">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="space-y-1 flex-1 min-w-0">
-          <p className="text-[10px] uppercase tracking-wider text-accent font-semibold">
+          <p className="text-xs uppercase tracking-wider text-accent font-bold">
             Action recommandée
           </p>
-          <h2 className="text-sm font-semibold">{content.title}</h2>
+          <h2 className="text-base font-semibold">{content.title}</h2>
           {content.note && (
             <p className="text-xs text-muted-foreground mt-1">{content.note}</p>
           )}

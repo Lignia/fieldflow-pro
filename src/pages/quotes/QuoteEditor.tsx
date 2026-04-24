@@ -509,7 +509,9 @@ export default function QuoteEditor() {
             unit_price_ht: l._type === "item" ? (l as EditorItem).unit_price_ht : 0,
             vat_rate: l._type === "item" ? (l as EditorItem).vat_rate : 0,
             sort_order: l.sort_order,
-            metadata: {},
+            metadata: l._type === "item" && (l as EditorItem).line_category
+              ? { line_category: (l as EditorItem).line_category }
+              : {},
           }))
         );
         if (lineErr) throw lineErr;

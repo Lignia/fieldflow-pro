@@ -435,17 +435,22 @@ export default function QuoteEditor() {
   }, [projectId, createQuote, quoteKind]);
 
   // ─── Row management ───────────────────────────────────────────
-  const addItem = useCallback(async (catalogItem?: CatalogItem) => {
-    let autoCategory: LineCategory | null = null;
+  const addItem = useCallback(async (
+    catalogItem?: CatalogItem,
+    forcedCategory?: LineCategory | null,
+  ) => {
+    let autoCategory: LineCategory | null = forcedCategory ?? null;
     let costPrice: number | null = null;
     let brand: string | null = null;
     let supplierRef: string | null = null;
 
     if (catalogItem) {
       const pt = (catalogItem as any).product_type;
-      if (pt === "service") autoCategory = "labor";
-      else if (pt === "appliance") autoCategory = "device";
-      else if (pt === "flue" || pt === "conduit") autoCategory = "flue";
+      if (!autoCategory) {
+        if (pt === "service") autoCategory = "labor";
+        else if (pt === "appliance") autoCategory = "device";
+        else if (pt === "flue" || pt === "conduit") autoCategory = "flue";
+      }
 
       // Fetch extended fields not exposed by useCatalogSearch
       if (!DEV_BYPASS) {

@@ -1214,6 +1214,71 @@ export default function QuoteEditor() {
           </div>
         </div>
       </footer>
+
+      {/* ─── DIALOG : Enregistrer comme ouvrage ─────────────────── */}
+      <Dialog open={saveToLibOpen} onOpenChange={setSaveToLibOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Enregistrer comme ouvrage</DialogTitle>
+            <DialogDescription>
+              Cet ouvrage sera disponible dans votre catalogue pour les prochains devis.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Nom de l'ouvrage *</Label>
+              <Input
+                value={bundleName}
+                onChange={(e) => setBundleName(e.target.value)}
+                placeholder="ex : Fumisterie complète 6 m granulés"
+                autoFocus
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs">Notes (optionnel)</Label>
+              <Textarea
+                value={bundleNotes}
+                onChange={(e) => setBundleNotes(e.target.value)}
+                placeholder="Conditions d'application, ajustements possibles…"
+                rows={2}
+              />
+            </div>
+
+            <Card className="bg-muted/30">
+              <CardContent className="p-3 text-xs text-muted-foreground space-y-0.5">
+                <p className="font-medium text-foreground mb-1">
+                  Lignes incluses ({itemRows.length}) :
+                </p>
+                {itemRows.slice(0, 4).map((r, i) => (
+                  <p key={i} className="truncate">
+                    • {r.label || "Sans désignation"} — {fmt(r.qty * r.unit_price_ht)}
+                  </p>
+                ))}
+                {itemRows.length > 4 && (
+                  <p>+ {itemRows.length - 4} autres lignes</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSaveToLibOpen(false)} disabled={savingBundle}>
+              Annuler
+            </Button>
+            <Button
+              onClick={handleSaveToLibrary}
+              disabled={!bundleName.trim() || savingBundle || itemRows.length === 0}
+            >
+              {savingBundle
+                ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+                : <Save className="h-3.5 w-3.5 mr-1" />}
+              Enregistrer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

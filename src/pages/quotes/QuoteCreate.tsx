@@ -646,14 +646,21 @@ export default function QuoteCreate() {
           )}
 
           {lines.length === 0 && (
-            <div className="py-12 text-center">
-              <Package className="h-8 w-8 mx-auto text-muted-foreground/30 mb-3" />
-              <p className="text-sm text-muted-foreground">
-                Aucune ligne pour l'instant
+            <div className="py-10 px-4 text-center border border-dashed rounded-lg bg-muted/20">
+              <Package className="h-10 w-10 mx-auto text-muted-foreground/40 mb-3" />
+              <p className="text-sm font-medium">Aucune ligne pour l'instant</p>
+              <p className="text-xs text-muted-foreground mt-1 mb-4">
+                Structurez votre devis par <span className="font-medium">🔥 Appareil</span> /{" "}
+                <span className="font-medium">🏗️ Fumisterie</span> /{" "}
+                <span className="font-medium">🔧 Pose</span>
               </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Ajoutez des articles depuis le catalogue ou créez une ligne libre
-              </p>
+              <div className="flex items-center justify-center gap-2 flex-wrap">
+                <CatalogSearchPopover onSelect={handleCatalogSelect} onFreeLine={handleFreeLine} />
+                <Button variant="ghost" size="sm" onClick={handleFreeLine}>
+                  <FilePlus2 className="h-3.5 w-3.5 mr-1" />
+                  Ajouter une ligne libre
+                </Button>
+              </div>
             </div>
           )}
 

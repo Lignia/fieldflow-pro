@@ -390,6 +390,11 @@ export default function QuoteEditor() {
   const [startDate, setStartDate] = useState("");
   const [initializing, setInitializing] = useState(true);
   const [savingAll, setSavingAll] = useState(false);
+  const [duplicating, setDuplicating] = useState(false);
+  const [saveToLibOpen, setSaveToLibOpen] = useState(false);
+  const [bundleName, setBundleName] = useState("");
+  const [bundleNotes, setBundleNotes] = useState("");
+  const [savingBundle, setSavingBundle] = useState(false);
   const initRef = useRef(false);
 
   // Load project info

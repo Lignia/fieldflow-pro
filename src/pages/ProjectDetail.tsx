@@ -724,6 +724,38 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
         };
 
       case "lead_qualified":
+      {
+        const hasEstimateSent = quotes.some(
+          (q) => q.quote_kind === "estimate" && q.quote_status === "sent",
+        );
+        if (hasEstimateSent) {
+          return {
+            title: "Estimatif envoyé — Planifier la visite technique",
+            actions: (
+              <>
+                <Button
+                  size="sm"
+                  onClick={() =>
+                    onNavigate(
+                      `/interventions/new?type=technical_survey&project_id=${project.id}&return_to=${encodeURIComponent(`/projects/${project.id}`)}`,
+                    )
+                  }
+                >
+                  <ClipboardList className="h-3.5 w-3.5 mr-1" /> Planifier la VT
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={transitioning}
+                  onClick={() => onTransition("estimate_sent", "Estimatif envoyé")}
+                >
+                  Confirmer statut <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                </Button>
+              </>
+            ),
+            note: "Un devis estimatif a déjà été envoyé.",
+          };
+        }
         return {
           title: "Étape suivante : créer le devis estimatif",
           actions: (
@@ -736,8 +768,44 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
           ),
           note: "Le statut passera à « Estimatif envoyé » après envoi du devis.",
         };
+      }
 
       case "estimate_sent":
+      {
+        const score =
+          typeof project.payload?.qualification_score === "number"
+            ? project.payload.qualification_score
+            : 0;
+        const flueKnown =
+          project.payload?.flue_existing !== "unknown" &&
+          project.payload?.flue_existing != null;
+        if (score >= 4 && flueKnown) {
+          return {
+            title: "Qualification solide — devis final possible",
+            actions: (
+              <>
+                <Button
+                  size="sm"
+                  onClick={() => onNavigate(`/projects/${project.id}/quotes/new?kind=final`)}
+                >
+                  <Plus className="h-3.5 w-3.5 mr-1" /> Créer le devis final
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    onNavigate(
+                      `/interventions/new?type=technical_survey&project_id=${project.id}&return_to=${encodeURIComponent(`/projects/${project.id}`)}`,
+                    )
+                  }
+                >
+                  <ClipboardList className="h-3.5 w-3.5 mr-1" /> Planifier la VT d'abord
+                </Button>
+              </>
+            ),
+            note: `Score ${score}/5 — fumisterie connue`,
+          };
+        }
         return {
           title: "Étape suivante : planifier la visite technique",
           actions: (
@@ -759,6 +827,7 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
             </>
           ),
         };
+      }
 
       case "vt_planned":
         return {

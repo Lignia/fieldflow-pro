@@ -775,7 +775,37 @@ export default function QuoteEditor() {
 
       {/* ─── STICKY FOOTER — Totals ─────────────────────────────── */}
       <footer className="sticky bottom-0 z-40 bg-card/95 backdrop-blur border-t border-border">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-4">
+        <div className="max-w-6xl mx-auto px-4 py-3 space-y-2">
+          {hasAnyCategory && (
+            <div className="flex items-center gap-3 text-xs flex-wrap">
+              {categorySubtotals.device !== undefined && (
+                <span className="px-2 py-1 rounded-md bg-warning/10 text-warning font-medium">
+                  🔥 Appareil : <span className="font-mono">{fmt(categorySubtotals.device)}</span>
+                </span>
+              )}
+              {categorySubtotals.flue !== undefined && (
+                <span className="px-2 py-1 rounded-md bg-info/10 text-info font-medium">
+                  🏗️ Fumisterie : <span className="font-mono">{fmt(categorySubtotals.flue)}</span>
+                </span>
+              )}
+              {categorySubtotals.labor !== undefined && (
+                <span className="px-2 py-1 rounded-md bg-success/10 text-success font-medium">
+                  🔧 Pose : <span className="font-mono">{fmt(categorySubtotals.labor)}</span>
+                </span>
+              )}
+              {categorySubtotals.option !== undefined && (
+                <span className="px-2 py-1 rounded-md bg-muted text-muted-foreground font-medium">
+                  ⭐ Option : <span className="font-mono">{fmt(categorySubtotals.option)}</span>
+                </span>
+              )}
+              {categorySubtotals.misc !== undefined && (
+                <span className="px-2 py-1 rounded-md bg-muted text-muted-foreground font-medium">
+                  📦 Divers : <span className="font-mono">{fmt(categorySubtotals.misc)}</span>
+                </span>
+              )}
+            </div>
+          )}
+          <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-6 text-sm flex-wrap">
             <div>
               <span className="text-muted-foreground">Total HT </span>
@@ -794,6 +824,7 @@ export default function QuoteEditor() {
               <span className="text-muted-foreground">Total TTC </span>
               <span className="font-mono font-bold text-base text-foreground">{fmt(totals.totalTtc)}</span>
             </div>
+          </div>
           </div>
         </div>
       </footer>

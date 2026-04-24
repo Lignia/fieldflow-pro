@@ -552,31 +552,37 @@ export default function QuoteCreate() {
 
       {/* Project context (read-only) */}
       {projectContext && (
-        <Card className="bg-muted/30 border-muted">
-          <CardContent className="p-3">
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <div className="min-w-0">
-                <p className="text-sm font-medium truncate">{projectContext.customer_name}</p>
-                <p className="text-xs text-muted-foreground truncate">
-                  {projectContext.address_line1} · {projectContext.city}
-                </p>
+        <Card className="bg-accent/5 border-accent/30 border-l-4 border-l-accent">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="h-10 w-10 rounded-full bg-accent/15 flex items-center justify-center shrink-0">
+                  <Building2 className="h-5 w-5 text-accent" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold truncate">{projectContext.customer_name}</p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {projectContext.address_line1} · {projectContext.city}
+                  </p>
+                </div>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
                 <Badge variant={kindBadge.variant} className="text-xs">
                   {kindBadge.label}
                 </Badge>
                 {projectContext.payload?.flue_scenario && (
-                  <Badge variant="outline" className="text-xs text-muted-foreground">
-                    {String(projectContext.payload.flue_scenario)}
+                  <Badge variant="outline" className="text-xs">
+                    🏗️ {String(projectContext.payload.flue_scenario)}
                   </Badge>
                 )}
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-xs"
+                  className="text-xs h-8"
                   onClick={() => navigate(`/projects/${projectId}`)}
                 >
-                  Voir le projet →
+                  Voir le projet
+                  <ArrowRight className="h-3.5 w-3.5 ml-1" />
                 </Button>
               </div>
             </div>

@@ -32,6 +32,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { CustomerBadge } from "@/components/CustomerBadge";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 

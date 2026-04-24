@@ -918,12 +918,12 @@ export default function ProjectCreate() {
             {currentStep === 3 && (
               <section className="space-y-5">
                 <div>
-                  <h2 className="text-lg font-semibold text-foreground">Le conduit</h2>
-                  <p className="text-xs text-muted-foreground mt-0.5">C'est ça qui détermine le prix final</p>
+                  <h2 className="text-lg font-semibold text-foreground">Ce qui existe déjà chez vous</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">C'est ce qui impacte le prix et la faisabilité</p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-sm">Conduit ? *</Label>
+                  <Label className="text-sm">Est-ce qu'il y a déjà un conduit ? *</Label>
                   <ToggleGroup
                     type="single"
                     value={flueExisting}
@@ -931,10 +931,10 @@ export default function ProjectCreate() {
                     className="grid grid-cols-3 gap-2"
                   >
                     <ToggleGroupItem value="yes" className="h-auto flex-col gap-1 py-3 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
-                      <span className="text-xl">✅</span><span className="text-xs font-medium">Conduit existant</span>
+                      <span className="text-xl">✅</span><span className="text-xs font-medium">Oui</span>
                     </ToggleGroupItem>
                     <ToggleGroupItem value="no" className="h-auto flex-col gap-1 py-3 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
-                      <span className="text-xl">❌</span><span className="text-xs font-medium">Pas de conduit</span>
+                      <span className="text-xl">❌</span><span className="text-xs font-medium">Non</span>
                     </ToggleGroupItem>
                     <ToggleGroupItem value="unknown" className="h-auto flex-col gap-1 py-3 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
                       <span className="text-xl">❓</span><span className="text-xs font-medium">Je ne sais pas</span>
@@ -945,7 +945,7 @@ export default function ProjectCreate() {
                 {flueExisting === "yes" && (
                   <>
                     <div className="space-y-2">
-                      <Label className="text-sm">Position *</Label>
+                      <Label className="text-sm">Il est positionné comment ? *</Label>
                       <ToggleGroup
                         type="single"
                         value={fluePosition}
@@ -953,15 +953,15 @@ export default function ProjectCreate() {
                         className="grid grid-cols-2 gap-2"
                       >
                         <ToggleGroupItem value="interior" className="h-auto flex-col gap-1 py-3 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
-                          <span className="text-lg">🏠</span><span className="text-xs">Intérieur</span>
+                          <span className="text-lg">🏠</span><span className="text-xs">À l'intérieur</span>
                         </ToggleGroupItem>
                         <ToggleGroupItem value="exterior" className="h-auto flex-col gap-1 py-3 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
-                          <span className="text-lg">🌳</span><span className="text-xs">Extérieur</span>
+                          <span className="text-lg">🌳</span><span className="text-xs">En façade extérieure</span>
                         </ToggleGroupItem>
                       </ToggleGroup>
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-sm text-muted-foreground">Complexité</Label>
+                      <Label className="text-sm text-muted-foreground">Il est plutôt :</Label>
                       <ToggleGroup
                         type="single"
                         value={flueComplexity}
@@ -969,13 +969,13 @@ export default function ProjectCreate() {
                         className="grid grid-cols-3 gap-2"
                       >
                         <ToggleGroupItem value="straight" className="h-auto flex-col gap-1 py-2.5 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
-                          <span className="text-lg">📏</span><span className="text-xs">Droit</span>
+                          <span className="text-lg">📏</span><span className="text-xs">Tout droit</span>
                         </ToggleGroupItem>
                         <ToggleGroupItem value="with_bends" className="h-auto flex-col gap-1 py-2.5 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
                           <span className="text-lg">🔄</span><span className="text-xs">Avec coudes</span>
                         </ToggleGroupItem>
                         <ToggleGroupItem value="unknown" className="h-auto flex-col gap-1 py-2.5 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
-                          <span className="text-lg">❓</span><span className="text-xs">Inconnu</span>
+                          <span className="text-lg">❓</span><span className="text-xs">Je ne sais pas</span>
                         </ToggleGroupItem>
                       </ToggleGroup>
                     </div>
@@ -985,7 +985,7 @@ export default function ProjectCreate() {
                 {flueExisting === "no" && (
                   <>
                     <div className="space-y-2">
-                      <Label className="text-sm">Sortie prévue *</Label>
+                      <Label className="text-sm">La sortie serait plutôt : *</Label>
                       <ToggleGroup
                         type="single"
                         value={flueExit}
@@ -993,18 +993,18 @@ export default function ProjectCreate() {
                         className="grid grid-cols-3 gap-2"
                       >
                         <ToggleGroupItem value="roof" className="h-auto flex-col gap-1 py-3 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
-                          <span className="text-lg">🏠</span><span className="text-xs">Toiture</span>
+                          <span className="text-lg">🏠</span><span className="text-xs">Par le toit</span>
                         </ToggleGroupItem>
                         <ToggleGroupItem value="facade" className="h-auto flex-col gap-1 py-3 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
-                          <span className="text-lg">🧱</span><span className="text-xs">Façade</span>
+                          <span className="text-lg">🧱</span><span className="text-xs">En façade</span>
                         </ToggleGroupItem>
                         <ToggleGroupItem value="unknown" className="h-auto flex-col gap-1 py-3 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
-                          <span className="text-lg">❓</span><span className="text-xs">Inconnu</span>
+                          <span className="text-lg">❓</span><span className="text-xs">Je ne sais pas</span>
                         </ToggleGroupItem>
                       </ToggleGroup>
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-sm text-muted-foreground">Niveau</Label>
+                      <Label className="text-sm text-muted-foreground">Le poêle serait installé :</Label>
                       <ToggleGroup
                         type="single"
                         value={flueLevel}
@@ -1012,10 +1012,10 @@ export default function ProjectCreate() {
                         className="grid grid-cols-2 gap-2"
                       >
                         <ToggleGroupItem value="ground" className="h-auto flex-col gap-1 py-2.5 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
-                          <span className="text-lg">🏠</span><span className="text-xs">RDC</span>
+                          <span className="text-lg">🏠</span><span className="text-xs">Au rez-de-chaussée</span>
                         </ToggleGroupItem>
                         <ToggleGroupItem value="upper" className="h-auto flex-col gap-1 py-2.5 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
-                          <span className="text-lg">🏢</span><span className="text-xs">Étage</span>
+                          <span className="text-lg">🏢</span><span className="text-xs">À l'étage</span>
                         </ToggleGroupItem>
                       </ToggleGroup>
                     </div>
@@ -1023,10 +1023,21 @@ export default function ProjectCreate() {
                 )}
 
                 {flueScenario && (
-                  <div>
+                  <div className="space-y-1.5">
                     <Badge className={cn("text-sm px-3 py-1", flueScenario.className)} variant="outline">
                       {flueScenario.label}
                     </Badge>
+                    <p className="text-xs text-muted-foreground">
+                      {flueScenario.label.startsWith("🟢")
+                        ? "Configuration favorable"
+                        : flueScenario.label.startsWith("🟡")
+                        ? "À confirmer lors de la visite technique"
+                        : flueScenario.label.startsWith("🟠")
+                        ? "Surcoût potentiel à évaluer"
+                        : flueScenario.label.startsWith("🔴")
+                        ? "Impact important sur le prix"
+                        : "À vérifier en visite technique"}
+                    </p>
                   </div>
                 )}
 

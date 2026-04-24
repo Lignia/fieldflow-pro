@@ -860,7 +860,7 @@ export default function InterventionCreate() {
       </Card>
 
       <div className="flex items-center justify-end gap-2">
-        <Button variant="outline" onClick={() => navigate("/interventions")}>
+        <Button variant="outline" onClick={() => navigate(returnTo ?? "/interventions")}>
           Annuler
         </Button>
         <Button onClick={handleSubmit} disabled={!canSubmit}>

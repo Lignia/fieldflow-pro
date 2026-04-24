@@ -464,7 +464,7 @@ export default function ServiceRequestCreate() {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => navigate("/service-requests")}
+          onClick={() => navigate(returnTo ?? "/service-requests")}
         >
           <ArrowLeft className="h-4 w-4" />
           Demandes SAV
@@ -868,7 +868,7 @@ export default function ServiceRequestCreate() {
       <div className="flex items-center justify-end gap-2">
         <Button
           variant="outline"
-          onClick={() => navigate("/service-requests")}
+          onClick={() => navigate(returnTo ?? "/service-requests")}
           disabled={submitting}
         >
           Annuler

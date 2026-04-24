@@ -548,7 +548,9 @@ export default function InstallationDetail() {
               variant="outline"
               size="sm"
               onClick={() =>
-                navigate(`/interventions/new?type=sweep&installation_id=${installation.id}`)
+                navigate(
+                  `/interventions/new?type=sweep&installation_id=${installation.id}&return_to=${encodeURIComponent(`/installations/${installation.id}`)}`,
+                )
               }
             >
               <Wrench className="h-3.5 w-3.5 mr-2" />
@@ -561,7 +563,7 @@ export default function InstallationDetail() {
                 size="sm"
                 onClick={() =>
                   navigate(
-                    `/interventions/new?type=annual_service&installation_id=${installation.id}`,
+                    `/interventions/new?type=annual_service&installation_id=${installation.id}&return_to=${encodeURIComponent(`/installations/${installation.id}`)}`,
                   )
                 }
               >
@@ -572,7 +574,11 @@ export default function InstallationDetail() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => navigate(`/service-requests/new`)}
+              onClick={() =>
+                navigate(
+                  `/service-requests/new?return_to=${encodeURIComponent(`/installations/${installation.id}`)}`,
+                )
+              }
             >
               <AlertTriangle className="h-3.5 w-3.5 mr-2" />
               Créer une demande SAV

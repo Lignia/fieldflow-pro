@@ -55,6 +55,9 @@ interface EditorItem {
   sort_order: number;
   line_type: "item";
   line_category?: LineCategory | null;
+  unit_cost_price?: number | null;
+  brand?: string | null;
+  supplier_ref?: string | null;
 }
 
 interface EditorText {
@@ -266,8 +269,20 @@ function ItemRow({ row, index, onChange, onDuplicate, onDelete }: {
   row: EditorItem; index: number; onChange: (field: string, value: any) => void; onDuplicate: () => void; onDelete: () => void;
 }) {
   const totalHt = row.qty * row.unit_price_ht;
+  const cost = row.unit_cost_price ?? 0;
+  const totalCost = row.qty * cost;
+  const margin = totalHt - totalCost;
+  const marginPct = totalHt > 0 ? (margin / totalHt) * 100 : 0;
+  const hasCost = row.unit_cost_price != null && row.unit_cost_price > 0;
+  const marginTone = !hasCost
+    ? "text-muted-foreground/60"
+    : margin < 0
+      ? "text-destructive"
+      : marginPct < 15
+        ? "text-warning"
+        : "text-success";
   return (
-    <div className="grid grid-cols-[32px_1fr_72px_88px_100px_80px_96px_36px] gap-1.5 items-center px-3 py-1.5 hover:bg-muted/20 rounded transition-colors">
+    <div className="grid grid-cols-[28px_minmax(0,1fr)_60px_72px_92px_72px_92px_92px_36px] gap-1.5 items-center px-3 py-1.5 hover:bg-muted/20 rounded transition-colors">
       <span className="text-xs text-muted-foreground text-center tabular-nums">{index}</span>
       <div className="min-w-0 space-y-1">
         <Input
@@ -276,10 +291,17 @@ function ItemRow({ row, index, onChange, onDuplicate, onDelete }: {
           placeholder="Désignation"
           className="h-8 text-sm"
         />
-        <CategoryPicker
-          value={row.line_category}
-          onChange={(v) => onChange("line_category", v)}
-        />
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <CategoryPicker
+            value={row.line_category}
+            onChange={(v) => onChange("line_category", v)}
+          />
+          {row.brand && (
+            <span className="text-[10px] text-muted-foreground truncate max-w-[140px]">
+              {row.brand}{row.supplier_ref ? ` · ${row.supplier_ref}` : ""}
+            </span>
+          )}
+        </div>
       </div>
       <Input type="number" min={0} step={0.01} value={row.qty || ""} onChange={(e) => onChange("qty", parseFloat(e.target.value) || 0)} className="h-8 text-sm text-right" />
       <Select value={row.unit} onValueChange={(v) => onChange("unit", v)}>
@@ -289,6 +311,14 @@ function ItemRow({ row, index, onChange, onDuplicate, onDelete }: {
         </SelectContent>
       </Select>
       <Input type="number" min={0} step={0.01} value={row.unit_price_ht || ""} onChange={(e) => onChange("unit_price_ht", parseFloat(e.target.value) || 0)} className="h-8 text-sm text-right" placeholder="0.00" />
+      <Input
+        type="number" min={0} step={0.01}
+        value={row.unit_cost_price ?? ""}
+        onChange={(e) => onChange("unit_cost_price", e.target.value === "" ? null : parseFloat(e.target.value) || 0)}
+        className="h-8 text-sm text-right"
+        placeholder="—"
+        title="Coût d'achat HT"
+      />
       <Select value={String(row.vat_rate)} onValueChange={(v) => onChange("vat_rate", parseFloat(v))}>
         <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
         <SelectContent>
@@ -296,6 +326,16 @@ function ItemRow({ row, index, onChange, onDuplicate, onDelete }: {
         </SelectContent>
       </Select>
       <span className="text-right font-mono text-sm text-foreground tabular-nums">{fmt(totalHt)}</span>
+      <div className={`text-right font-mono text-xs leading-tight tabular-nums ${marginTone}`} title="Marge HT">
+        {hasCost ? (
+          <>
+            <div className="font-semibold">{fmt(margin)}</div>
+            <div className="text-[10px] opacity-80">{marginPct.toFixed(0)} %</div>
+          </>
+        ) : (
+          <span className="text-[10px]">—</span>
+        )}
+      </div>
       <RowMenu onDuplicate={onDuplicate} onDelete={onDelete} />
     </div>
   );
@@ -386,14 +426,39 @@ export default function QuoteEditor() {
   }, [projectId, createQuote, quoteKind]);
 
   // ─── Row management ───────────────────────────────────────────
-  const addItem = useCallback((catalogItem?: CatalogItem) => {
+  const addItem = useCallback(async (catalogItem?: CatalogItem) => {
     let autoCategory: LineCategory | null = null;
+    let costPrice: number | null = null;
+    let brand: string | null = null;
+    let supplierRef: string | null = null;
+
     if (catalogItem) {
       const pt = (catalogItem as any).product_type;
       if (pt === "service") autoCategory = "labor";
       else if (pt === "appliance") autoCategory = "device";
       else if (pt === "flue" || pt === "conduit") autoCategory = "flue";
+
+      // Fetch extended fields not exposed by useCatalogSearch
+      if (!DEV_BYPASS) {
+        try {
+          const { data } = await (await import("@/integrations/supabase/schema-clients"))
+            .catalogDb
+            .from("catalog_items")
+            .select("cost_price, brand, supplier_ref, is_labor")
+            .eq("id", catalogItem.id)
+            .maybeSingle();
+          if (data) {
+            costPrice = (data as any).cost_price ?? null;
+            brand = (data as any).brand ?? null;
+            supplierRef = (data as any).supplier_ref ?? null;
+            if (!autoCategory && (data as any).is_labor) autoCategory = "labor";
+          }
+        } catch {
+          /* non-blocking */
+        }
+      }
     }
+
     const newRow: EditorItem = {
       _type: "item", _key: nextKey(), line_type: "item",
       product_id: catalogItem?.id || null,
@@ -404,6 +469,9 @@ export default function QuoteEditor() {
       vat_rate: catalogItem ? suggestedVat(catalogItem.product_type) : 10,
       sort_order: rows.length,
       line_category: autoCategory,
+      unit_cost_price: costPrice,
+      brand,
+      supplier_ref: supplierRef,
     };
     setRows((prev) => [...prev, newRow]);
   }, [rows.length]);
@@ -475,6 +543,25 @@ export default function QuoteEditor() {
   }, [rows]);
 
   const hasAnyCategory = Object.keys(categorySubtotals).length > 0;
+
+  // Margin totals (HT)
+  const marginTotals = useMemo(() => {
+    let sale = 0;
+    let cost = 0;
+    let coveredSale = 0; // sale where cost is known (>0)
+    for (const row of rows) {
+      if (row._type !== "item") continue;
+      const ht = row.qty * row.unit_price_ht;
+      sale += ht;
+      if (row.unit_cost_price != null && row.unit_cost_price > 0) {
+        cost += row.qty * row.unit_cost_price;
+        coveredSale += ht;
+      }
+    }
+    const margin = coveredSale - cost;
+    const pct = coveredSale > 0 ? (margin / coveredSale) * 100 : 0;
+    return { margin, pct, hasCost: cost > 0, fullyCovered: coveredSale === sale && sale > 0 };
+  }, [rows]);
 
   // ─── Save ─────────────────────────────────────────────────────
   const handleSave = useCallback(async (finalize = false) => {
@@ -564,9 +651,11 @@ export default function QuoteEditor() {
             unit_price_ht: l._type === "item" ? (l as EditorItem).unit_price_ht : 0,
             vat_rate: l._type === "item" ? (l as EditorItem).vat_rate : 0,
             sort_order: l.sort_order,
-            metadata: l._type === "item" && (l as EditorItem).line_category
-              ? { line_category: (l as EditorItem).line_category }
-              : {},
+            line_category: l._type === "item" ? (l as EditorItem).line_category ?? null : null,
+            unit_cost_price: l._type === "item" ? (l as EditorItem).unit_cost_price ?? null : null,
+            brand: l._type === "item" ? (l as EditorItem).brand ?? null : null,
+            supplier_ref: l._type === "item" ? (l as EditorItem).supplier_ref ?? null : null,
+            metadata: {},
           }))
         );
         if (lineErr) throw lineErr;
@@ -753,14 +842,16 @@ export default function QuoteEditor() {
           {/* ─── CANVAS ─────────────────────────────────────────── */}
           <Card className="overflow-x-auto overflow-hidden">
             {/* Column headers */}
-            <div className="hidden md:grid md:grid-cols-[32px_1fr_72px_88px_100px_80px_96px_36px] gap-1.5 px-3 py-2 bg-muted/30 border-b border-border text-xs font-medium text-muted-foreground">
+            <div className="hidden md:grid md:grid-cols-[28px_minmax(0,1fr)_60px_72px_92px_72px_92px_92px_36px] gap-1.5 px-3 py-2 bg-muted/30 border-b border-border text-xs font-medium text-muted-foreground">
               <span className="text-center">N°</span>
               <span>Désignation</span>
               <span className="text-right">Qté</span>
               <span>Unité</span>
-              <span className="text-right">P.U. HT</span>
+              <span className="text-right">Vente HT</span>
+              <span className="text-right">Coût HT</span>
               <span>TVA</span>
               <span className="text-right">Total HT</span>
+              <span className="text-right">Marge</span>
               <span />
             </div>
 
@@ -881,6 +972,21 @@ export default function QuoteEditor() {
               <span className="text-muted-foreground">Total TTC </span>
               <span className="font-mono font-bold text-base text-foreground">{fmt(totals.totalTtc)}</span>
             </div>
+            {marginTotals.hasCost && (
+              <>
+                <Separator orientation="vertical" className="h-6 hidden sm:block" />
+                <div title={marginTotals.fullyCovered ? "Marge HT" : "Marge HT (lignes avec coût renseigné uniquement)"}>
+                  <span className="text-muted-foreground">Marge </span>
+                  <span className={`font-mono font-semibold ${marginTotals.margin < 0 ? "text-destructive" : marginTotals.pct < 15 ? "text-warning" : "text-success"}`}>
+                    {fmt(marginTotals.margin)}
+                    <span className="ml-1 text-xs opacity-80">({marginTotals.pct.toFixed(0)} %)</span>
+                  </span>
+                  {!marginTotals.fullyCovered && (
+                    <span className="ml-1 text-[10px] text-muted-foreground">*</span>
+                  )}
+                </div>
+              </>
+            )}
             </div>
           </div>
         </div>

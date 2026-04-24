@@ -257,7 +257,7 @@ function QualificationCard({ payload }: { payload: Record<string, any> }) {
         {/* Col 3 — Fumisterie */}
         <div className="space-y-1.5">
           <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Fumisterie</p>
-          {flueScenario ? (
+          {flueScenario && payload.flue_existing !== "unknown" ? (
             <span className={cn(
               "inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium border",
               flueScenarioClass(flueScenario),
@@ -265,7 +265,12 @@ function QualificationCard({ payload }: { payload: Record<string, any> }) {
               {flueScenario}
             </span>
           ) : (
-            <p className="text-xs text-muted-foreground">—</p>
+            <Badge
+              variant="outline"
+              className="gap-1 text-[11px] bg-warning/10 text-warning border-warning/30"
+            >
+              ⚠ À vérifier en visite technique
+            </Badge>
           )}
           {budget && <p className="text-xs text-muted-foreground">Budget : {budget}</p>}
           {horizon && <p className="text-xs text-muted-foreground">Délai : {horizon}</p>}

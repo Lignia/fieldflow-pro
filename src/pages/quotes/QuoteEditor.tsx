@@ -426,14 +426,39 @@ export default function QuoteEditor() {
   }, [projectId, createQuote, quoteKind]);
 
   // ─── Row management ───────────────────────────────────────────
-  const addItem = useCallback((catalogItem?: CatalogItem) => {
+  const addItem = useCallback(async (catalogItem?: CatalogItem) => {
     let autoCategory: LineCategory | null = null;
+    let costPrice: number | null = null;
+    let brand: string | null = null;
+    let supplierRef: string | null = null;
+
     if (catalogItem) {
       const pt = (catalogItem as any).product_type;
       if (pt === "service") autoCategory = "labor";
       else if (pt === "appliance") autoCategory = "device";
       else if (pt === "flue" || pt === "conduit") autoCategory = "flue";
+
+      // Fetch extended fields not exposed by useCatalogSearch
+      if (!DEV_BYPASS) {
+        try {
+          const { data } = await (await import("@/integrations/supabase/schema-clients"))
+            .catalogDb
+            .from("catalog_items")
+            .select("cost_price, brand, supplier_ref, is_labor")
+            .eq("id", catalogItem.id)
+            .maybeSingle();
+          if (data) {
+            costPrice = (data as any).cost_price ?? null;
+            brand = (data as any).brand ?? null;
+            supplierRef = (data as any).supplier_ref ?? null;
+            if (!autoCategory && (data as any).is_labor) autoCategory = "labor";
+          }
+        } catch {
+          /* non-blocking */
+        }
+      }
     }
+
     const newRow: EditorItem = {
       _type: "item", _key: nextKey(), line_type: "item",
       product_id: catalogItem?.id || null,
@@ -444,6 +469,9 @@ export default function QuoteEditor() {
       vat_rate: catalogItem ? suggestedVat(catalogItem.product_type) : 10,
       sort_order: rows.length,
       line_category: autoCategory,
+      unit_cost_price: costPrice,
+      brand,
+      supplier_ref: supplierRef,
     };
     setRows((prev) => [...prev, newRow]);
   }, [rows.length]);
@@ -515,6 +543,25 @@ export default function QuoteEditor() {
   }, [rows]);
 
   const hasAnyCategory = Object.keys(categorySubtotals).length > 0;
+
+  // Margin totals (HT)
+  const marginTotals = useMemo(() => {
+    let sale = 0;
+    let cost = 0;
+    let coveredSale = 0; // sale where cost is known (>0)
+    for (const row of rows) {
+      if (row._type !== "item") continue;
+      const ht = row.qty * row.unit_price_ht;
+      sale += ht;
+      if (row.unit_cost_price != null && row.unit_cost_price > 0) {
+        cost += row.qty * row.unit_cost_price;
+        coveredSale += ht;
+      }
+    }
+    const margin = coveredSale - cost;
+    const pct = coveredSale > 0 ? (margin / coveredSale) * 100 : 0;
+    return { margin, pct, hasCost: cost > 0, fullyCovered: coveredSale === sale && sale > 0 };
+  }, [rows]);
 
   // ─── Save ─────────────────────────────────────────────────────
   const handleSave = useCallback(async (finalize = false) => {

@@ -684,37 +684,37 @@ export default function QuoteEditor() {
 
           {/* Client / Chantier info */}
           {projectInfo && (
-            <Card className="bg-accent/5 border-l-4 border-l-accent">
-              <CardContent className="p-4 flex flex-wrap items-center justify-between gap-3">
-                <div className="flex items-start gap-3 min-w-0">
-                  <Building2 className="h-5 w-5 text-accent shrink-0 mt-0.5" />
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-foreground truncate">{projectInfo.customer_name}</p>
-                    <p className="text-xs text-muted-foreground truncate">
-                      {projectInfo.address_line1} · {projectInfo.postal_code} {projectInfo.city}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Badge variant={quote.quote_kind === "final" ? "default" : quote.quote_kind === "service" ? "outline" : "secondary"}>
-                    {quote.quote_kind === "final" ? "✅ Devis final" : quote.quote_kind === "service" ? "🔧 SAV" : "📋 Estimatif"}
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-3 py-2 rounded-md border border-border bg-muted/20 text-sm">
+              <div className="flex items-center gap-2 min-w-0">
+                <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
+                <span className="font-medium text-foreground truncate">{projectInfo.customer_name}</span>
+              </div>
+              <span className="text-muted-foreground/40">·</span>
+              <div className="flex items-center gap-1.5 min-w-0 text-muted-foreground">
+                <MapPin className="h-3.5 w-3.5 shrink-0" />
+                <span className="text-xs truncate">
+                  {projectInfo.address_line1}, {projectInfo.postal_code} {projectInfo.city}
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 ml-auto flex-wrap">
+                <Badge variant={quote.quote_kind === "final" ? "default" : quote.quote_kind === "service" ? "outline" : "secondary"} className="text-[11px]">
+                  {quote.quote_kind === "final" ? "✅ Final" : quote.quote_kind === "service" ? "🔧 SAV" : "📋 Estimatif"}
+                </Badge>
+                {projectInfo.flue_scenario && (
+                  <Badge variant="outline" className="text-[11px] text-muted-foreground">
+                    🏗️ {projectInfo.flue_scenario}
                   </Badge>
-                  {projectInfo.flue_scenario && (
-                    <Badge variant="outline" className="text-xs text-muted-foreground">
-                      🏗️ {projectInfo.flue_scenario}
-                    </Badge>
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-xs"
-                    onClick={() => navigate(`/projects/${projectId}`)}
-                  >
-                    Voir le projet <ArrowRight className="h-3.5 w-3.5 ml-1" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                )}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-7 text-xs px-2"
+                  onClick={() => navigate(`/projects/${projectId}`)}
+                >
+                  Voir le projet <ArrowRight className="h-3 w-3 ml-1" />
+                </Button>
+              </div>
+            </div>
           )}
 
           {/* Dates */}
@@ -753,10 +753,9 @@ export default function QuoteEditor() {
           {/* ─── CANVAS ─────────────────────────────────────────── */}
           <Card className="overflow-x-auto overflow-hidden">
             {/* Column headers */}
-            <div className="hidden md:grid md:grid-cols-[32px_1fr_120px_72px_88px_100px_80px_96px_36px] gap-1.5 px-3 py-2 bg-muted/30 border-b border-border text-xs font-medium text-muted-foreground">
+            <div className="hidden md:grid md:grid-cols-[32px_1fr_72px_88px_100px_80px_96px_36px] gap-1.5 px-3 py-2 bg-muted/30 border-b border-border text-xs font-medium text-muted-foreground">
               <span className="text-center">N°</span>
               <span>Désignation</span>
-              <span>Catégorie</span>
               <span className="text-right">Qté</span>
               <span>Unité</span>
               <span className="text-right">P.U. HT</span>
@@ -767,17 +766,26 @@ export default function QuoteEditor() {
 
             <div className="divide-y divide-border/50">
               {rows.length === 0 && (
-                <div className="py-12 px-6 text-center border-2 border-dashed border-border/60 m-4 rounded-lg bg-muted/10">
+                <div className="py-14 px-6 text-center border-2 border-dashed border-border/60 m-4 rounded-lg bg-muted/10">
                   <ClipboardList className="h-10 w-10 mx-auto text-muted-foreground/40 mb-4" />
-                  <p className="text-sm font-semibold text-foreground mb-1">Commencez votre devis</p>
-                  <p className="text-xs text-muted-foreground mb-2">
-                    Structurez votre devis par <span className="font-medium text-foreground">🔥 Appareil</span> / <span className="font-medium text-foreground">🏗️ Fumisterie</span> / <span className="font-medium text-foreground">🔧 Pose</span>
+                  <p className="text-base font-semibold text-foreground mb-1">Commencez votre devis</p>
+                  <p className="text-xs text-muted-foreground mb-6">
+                    Structurez par <span className="font-medium text-foreground">🔥 Appareil</span> · <span className="font-medium text-foreground">🏗️ Fumisterie</span> · <span className="font-medium text-foreground">🔧 Pose</span>
                   </p>
-                  <p className="text-xs text-muted-foreground mb-6">Catalogue, ligne libre, section ou texte explicatif</p>
-                  <div className="flex items-center justify-center gap-2 flex-wrap">
-                    <CatalogPopover onSelect={(item) => addItem(item)} onFreeLine={() => addItem()} />
-                    <Button variant="outline" size="sm" onClick={addSection}><Layers className="h-3.5 w-3.5 mr-1" /> Section</Button>
-                    <Button variant="outline" size="sm" onClick={addText}><Type className="h-3.5 w-3.5 mr-1" /> Texte</Button>
+                  <div className="flex flex-col items-center gap-3">
+                    <CatalogPopover
+                      onSelect={(item) => addItem(item)}
+                      onFreeLine={() => addItem()}
+                      triggerLabel="Ajouter depuis le catalogue"
+                      triggerVariant="default"
+                    />
+                    <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
+                      <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => addItem()}>Ligne libre</Button>
+                      <span>·</span>
+                      <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={addSection}><Layers className="h-3 w-3 mr-1" />Section</Button>
+                      <span>·</span>
+                      <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={addText}><Type className="h-3 w-3 mr-1" />Texte</Button>
+                    </div>
                   </div>
                 </div>
               )}
@@ -825,43 +833,37 @@ export default function QuoteEditor() {
               </div>
             )}
           </Card>
+
+          {/* ─── Répartition du devis ─────────────────────────── */}
+          {hasAnyCategory && (
+            <Card>
+              <CardContent className="p-4">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">
+                  Répartition du devis (HT)
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+                  {(["device", "flue", "labor", "option", "misc"] as LineCategory[]).map((cat) => {
+                    const amount = categorySubtotals[cat];
+                    if (amount === undefined) return null;
+                    return (
+                      <div key={cat} className="flex flex-col gap-0.5 px-3 py-2 rounded-md border border-border bg-muted/20">
+                        <span className="text-xs text-muted-foreground">{CATEGORY_LABELS[cat]}</span>
+                        <span className="font-mono text-sm font-semibold text-foreground tabular-nums">{fmt(amount)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </main>
 
       {/* ─── STICKY FOOTER — Totals ─────────────────────────────── */}
       <footer className="sticky bottom-0 z-40 bg-card/95 backdrop-blur border-t border-border">
-        <div className="max-w-6xl mx-auto px-4 py-3 space-y-2">
-          {hasAnyCategory && (
-            <div className="flex items-center gap-3 text-xs flex-wrap">
-              {categorySubtotals.device !== undefined && (
-                <span className="px-2 py-1 rounded-md bg-warning/10 text-warning font-medium">
-                  🔥 Appareil : <span className="font-mono">{fmt(categorySubtotals.device)}</span>
-                </span>
-              )}
-              {categorySubtotals.flue !== undefined && (
-                <span className="px-2 py-1 rounded-md bg-info/10 text-info font-medium">
-                  🏗️ Fumisterie : <span className="font-mono">{fmt(categorySubtotals.flue)}</span>
-                </span>
-              )}
-              {categorySubtotals.labor !== undefined && (
-                <span className="px-2 py-1 rounded-md bg-success/10 text-success font-medium">
-                  🔧 Pose : <span className="font-mono">{fmt(categorySubtotals.labor)}</span>
-                </span>
-              )}
-              {categorySubtotals.option !== undefined && (
-                <span className="px-2 py-1 rounded-md bg-muted text-muted-foreground font-medium">
-                  ⭐ Option : <span className="font-mono">{fmt(categorySubtotals.option)}</span>
-                </span>
-              )}
-              {categorySubtotals.misc !== undefined && (
-                <span className="px-2 py-1 rounded-md bg-muted text-muted-foreground font-medium">
-                  📦 Divers : <span className="font-mono">{fmt(categorySubtotals.misc)}</span>
-                </span>
-              )}
-            </div>
-          )}
+        <div className="max-w-6xl mx-auto px-4 py-3">
           <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center gap-6 text-sm flex-wrap">
+            <div className="flex items-center gap-6 text-sm flex-wrap">
             <div>
               <span className="text-muted-foreground">Total HT </span>
               <span className="font-mono font-semibold text-foreground">{fmt(totals.totalHt)}</span>
@@ -879,7 +881,7 @@ export default function QuoteEditor() {
               <span className="text-muted-foreground">Total TTC </span>
               <span className="font-mono font-bold text-base text-foreground">{fmt(totals.totalTtc)}</span>
             </div>
-          </div>
+            </div>
           </div>
         </div>
       </footer>

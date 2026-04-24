@@ -1052,7 +1052,7 @@ export default function QuoteEditor() {
           <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-3 md:gap-6 items-center">
             {/* Bloc Client — visible sur le devis */}
             <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1 text-sm">
-              <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70 font-semibold">Client</span>
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70 font-semibold">💰 Client</span>
               <div>
                 <span className="text-muted-foreground">Total HT </span>
                 <span className="font-mono font-semibold text-foreground">{fmt(totals.totalHt)}</span>
@@ -1079,7 +1079,7 @@ export default function QuoteEditor() {
                 className="text-[10px] uppercase tracking-wider text-muted-foreground/70 font-semibold"
                 title="Information interne — non visible par le client"
               >
-                Artisan
+                📈 Rentabilité
               </span>
               {marginTotals.hasCost ? (
                 <>

@@ -10,6 +10,9 @@ import {
   Loader2,
   GripVertical,
   Package,
+  Building2,
+  ArrowRight,
+  FilePlus2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
@@ -549,31 +552,37 @@ export default function QuoteCreate() {
 
       {/* Project context (read-only) */}
       {projectContext && (
-        <Card className="bg-muted/30 border-muted">
-          <CardContent className="p-3">
-            <div className="flex items-center justify-between gap-3 flex-wrap">
-              <div className="min-w-0">
-                <p className="text-sm font-medium truncate">{projectContext.customer_name}</p>
-                <p className="text-xs text-muted-foreground truncate">
-                  {projectContext.address_line1} · {projectContext.city}
-                </p>
+        <Card className="bg-accent/5 border-accent/30 border-l-4 border-l-accent">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between gap-4 flex-wrap">
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="h-10 w-10 rounded-full bg-accent/15 flex items-center justify-center shrink-0">
+                  <Building2 className="h-5 w-5 text-accent" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold truncate">{projectContext.customer_name}</p>
+                  <p className="text-xs text-muted-foreground truncate">
+                    {projectContext.address_line1} · {projectContext.city}
+                  </p>
+                </div>
               </div>
               <div className="flex items-center gap-2 flex-wrap">
                 <Badge variant={kindBadge.variant} className="text-xs">
                   {kindBadge.label}
                 </Badge>
                 {projectContext.payload?.flue_scenario && (
-                  <Badge variant="outline" className="text-xs text-muted-foreground">
-                    {String(projectContext.payload.flue_scenario)}
+                  <Badge variant="outline" className="text-xs">
+                    🏗️ {String(projectContext.payload.flue_scenario)}
                   </Badge>
                 )}
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-xs"
+                  className="text-xs h-8"
                   onClick={() => navigate(`/projects/${projectId}`)}
                 >
-                  Voir le projet →
+                  Voir le projet
+                  <ArrowRight className="h-3.5 w-3.5 ml-1" />
                 </Button>
               </div>
             </div>
@@ -637,14 +646,21 @@ export default function QuoteCreate() {
           )}
 
           {lines.length === 0 && (
-            <div className="py-12 text-center">
-              <Package className="h-8 w-8 mx-auto text-muted-foreground/30 mb-3" />
-              <p className="text-sm text-muted-foreground">
-                Aucune ligne pour l'instant
+            <div className="py-10 px-4 text-center border border-dashed rounded-lg bg-muted/20">
+              <Package className="h-10 w-10 mx-auto text-muted-foreground/40 mb-3" />
+              <p className="text-sm font-medium">Aucune ligne pour l'instant</p>
+              <p className="text-xs text-muted-foreground mt-1 mb-4">
+                Structurez votre devis par <span className="font-medium">🔥 Appareil</span> /{" "}
+                <span className="font-medium">🏗️ Fumisterie</span> /{" "}
+                <span className="font-medium">🔧 Pose</span>
               </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Ajoutez des articles depuis le catalogue ou créez une ligne libre
-              </p>
+              <div className="flex items-center justify-center gap-2 flex-wrap">
+                <CatalogSearchPopover onSelect={handleCatalogSelect} onFreeLine={handleFreeLine} />
+                <Button variant="ghost" size="sm" onClick={handleFreeLine}>
+                  <FilePlus2 className="h-3.5 w-3.5 mr-1" />
+                  Ajouter une ligne libre
+                </Button>
+              </div>
             </div>
           )}
 
@@ -687,15 +703,36 @@ export default function QuoteCreate() {
               </div>
             </div>
             {hasAnyCategory && (
-              <div className="flex gap-3 text-xs text-muted-foreground mt-1 flex-wrap">
+              <div className="flex gap-2 text-xs mt-2 flex-wrap">
                 {categoryHT.device !== undefined && (
-                  <span>🔥 Appareil : <span className="font-mono">{formatCurrencyRound(categoryHT.device)}</span></span>
+                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-warning/10 text-warning-foreground border border-warning/20">
+                    🔥 <span className="font-medium">Appareil</span>
+                    <span className="font-mono font-semibold">{formatCurrencyRound(categoryHT.device)}</span>
+                  </span>
                 )}
                 {categoryHT.flue !== undefined && (
-                  <span>🏗️ Fumisterie : <span className="font-mono">{formatCurrencyRound(categoryHT.flue)}</span></span>
+                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-info/10 text-info border border-info/20">
+                    🏗️ <span className="font-medium">Fumisterie</span>
+                    <span className="font-mono font-semibold">{formatCurrencyRound(categoryHT.flue)}</span>
+                  </span>
                 )}
                 {categoryHT.labor !== undefined && (
-                  <span>🔧 Pose : <span className="font-mono">{formatCurrencyRound(categoryHT.labor)}</span></span>
+                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-success/10 text-success border border-success/20">
+                    🔧 <span className="font-medium">Pose</span>
+                    <span className="font-mono font-semibold">{formatCurrencyRound(categoryHT.labor)}</span>
+                  </span>
+                )}
+                {categoryHT.option !== undefined && (
+                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-accent/10 text-accent border border-accent/20">
+                    ⭐ <span className="font-medium">Option</span>
+                    <span className="font-mono font-semibold">{formatCurrencyRound(categoryHT.option)}</span>
+                  </span>
+                )}
+                {categoryHT.misc !== undefined && (
+                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted text-muted-foreground border">
+                    📦 <span className="font-medium">Divers</span>
+                    <span className="font-mono font-semibold">{formatCurrencyRound(categoryHT.misc)}</span>
+                  </span>
                 )}
               </div>
             )}

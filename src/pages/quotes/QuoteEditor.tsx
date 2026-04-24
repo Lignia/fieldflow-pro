@@ -558,6 +558,31 @@ export default function QuoteEditor() {
 
   const hasAnyCategory = Object.keys(categorySubtotals).length > 0;
 
+  // Mode "groupé par catégorie" : actif uniquement si pas de section utilisateur
+  // (sinon les sections sont déjà la structuration choisie)
+  const hasUserSections = useMemo(
+    () => rows.some((r) => r._type === "section"),
+    [rows],
+  );
+  const useCategoryGrouping = !hasUserSections && hasAnyCategory;
+
+  // Construction des groupes pour le rendu
+  const groupedRows = useMemo(() => {
+    if (!useCategoryGrouping) return null;
+    const groups: Record<LineCategory | "none", EditorRow[]> = {
+      device: [], flue: [], labor: [], option: [], misc: [], none: [],
+    };
+    for (const row of rows) {
+      if (row._type === "item") {
+        const cat = row.line_category ?? "none";
+        groups[cat].push(row);
+      } else {
+        groups.none.push(row);
+      }
+    }
+    return groups;
+  }, [rows, useCategoryGrouping]);
+
   // Margin totals (HT)
   const marginTotals = useMemo(() => {
     let sale = 0;

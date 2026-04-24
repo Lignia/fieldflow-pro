@@ -1172,144 +1172,71 @@ export default function ProjectCreate() {
                   </ToggleGroup>
                 </div>
 
-                {/* RÉSUMÉ */}
+                {/* RÉSUMÉ — narratif */}
                 <Card className="border-accent/30 bg-accent/[0.03]">
-                  <CardContent className="p-5 space-y-5">
-                    <div className="flex items-center justify-between gap-3">
-                      <p className="text-sm font-semibold text-foreground">Récapitulatif du projet</p>
+                  <CardContent className="p-5 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-semibold">Récapitulatif</p>
                       <Badge className={cn("text-xs", reliabilityBadge.className)} variant="outline">
                         {reliabilityBadge.label}
                       </Badge>
                     </div>
 
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {/* PROJET */}
-                      <div className="space-y-2">
-                        <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Projet</p>
-                        <dl className="space-y-1 text-sm">
-                          {projectType && (
-                            <div className="flex justify-between gap-3">
-                              <dt className="text-muted-foreground">Type</dt>
-                              <dd className="font-medium text-right">{label("projectType", projectType)}</dd>
-                            </div>
-                          )}
-                          {energyType && (
-                            <div className="flex justify-between gap-3">
-                              <dt className="text-muted-foreground">Énergie</dt>
-                              <dd className="font-medium text-right">{label("energyType", energyType)}</dd>
-                            </div>
-                          )}
-                          {usageType && (
-                            <div className="flex justify-between gap-3">
-                              <dt className="text-muted-foreground">Usage</dt>
-                              <dd className="font-medium text-right">{label("usageType", usageType)}</dd>
-                            </div>
-                          )}
-                          {firePreference && (
-                            <div className="flex justify-between gap-3">
-                              <dt className="text-muted-foreground">Préférence</dt>
-                              <dd className="font-medium text-right">{label("firePreference", firePreference)}</dd>
-                            </div>
-                          )}
-                        </dl>
+                    <div className="space-y-3 text-sm">
+                      <div className="space-y-0.5">
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Projet</p>
+                        <p className="font-medium">{projectPhrase}</p>
+                        {firePreference && (
+                          <p className="text-xs text-muted-foreground">
+                            Préférence : {label("firePreference", firePreference)}
+                          </p>
+                        )}
                       </div>
 
-                      {/* LOGEMENT */}
-                      <div className="space-y-2">
-                        <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Logement</p>
-                        <dl className="space-y-1 text-sm">
-                          {housingType && (
-                            <div className="flex justify-between gap-3">
-                              <dt className="text-muted-foreground">Type</dt>
-                              <dd className="font-medium text-right">{label("housingType", housingType)}</dd>
-                            </div>
-                          )}
-                          <div className="flex justify-between gap-3">
-                            <dt className="text-muted-foreground">Surface</dt>
-                            <dd className="font-medium text-right font-mono">{surfaceM2} m²</dd>
-                          </div>
-                          {insulation && (
-                            <div className="flex justify-between gap-3">
-                              <dt className="text-muted-foreground">Isolation</dt>
-                              <dd className="font-medium text-right">{label("insulation", insulation)}</dd>
-                            </div>
-                          )}
-                          {currentHeating && (
-                            <div className="flex justify-between gap-3">
-                              <dt className="text-muted-foreground">Chauffage actuel</dt>
-                              <dd className="font-medium text-right">{label("currentHeating", currentHeating)}</dd>
-                            </div>
-                          )}
-                          {occupancyPattern && (
-                            <div className="flex justify-between gap-3">
-                              <dt className="text-muted-foreground">Présence</dt>
-                              <dd className="font-medium text-right">{label("occupancyPattern", occupancyPattern)}</dd>
-                            </div>
-                          )}
-                          <div className="flex justify-between gap-3 pt-1 border-t border-border/40">
-                            <dt className="text-muted-foreground">Puissance indicative</dt>
-                            <dd className="font-mono font-semibold text-right">~{estimatedPower} kW</dd>
-                          </div>
-                        </dl>
+                      <div className="space-y-0.5 pt-2 border-t">
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Logement</p>
+                        <p className="font-medium">{logementPhrase}</p>
+                        {occupancyPattern && (
+                          <p className="text-xs text-muted-foreground">
+                            {label("occupancyPattern", occupancyPattern)}
+                          </p>
+                        )}
                       </div>
 
-                      {/* FUMISTERIE */}
-                      <div className="space-y-2">
-                        <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Fumisterie</p>
-                        <div className="space-y-2 text-sm">
-                          {flueScenario ? (
-                            <Badge variant="outline" className={cn("text-xs", flueScenario.className)}>
-                              {flueScenario.label}
-                            </Badge>
-                          ) : (
-                            <Badge variant="outline" className="text-xs bg-warning/10 text-warning border-warning/40">
-                              ⚠ À vérifier en visite technique
-                            </Badge>
-                          )}
-                          <dl className="space-y-1">
-                            {flueExisting && (
-                              <div className="flex justify-between gap-3">
-                                <dt className="text-muted-foreground">Conduit</dt>
-                                <dd className="font-medium text-right">{label("flueExisting", flueExisting)}</dd>
-                              </div>
-                            )}
-                            {fluePosition && (
-                              <div className="flex justify-between gap-3">
-                                <dt className="text-muted-foreground">Position</dt>
-                                <dd className="font-medium text-right">{label("fluePosition", fluePosition)}</dd>
-                              </div>
-                            )}
-                            {flueExit && (
-                              <div className="flex justify-between gap-3">
-                                <dt className="text-muted-foreground">Sortie</dt>
-                                <dd className="font-medium text-right">{label("flueExit", flueExit)}</dd>
-                              </div>
-                            )}
-                          </dl>
+                      <div className="space-y-0.5 pt-2 border-t">
+                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Fumisterie</p>
+                        <p className={cn(
+                          "font-medium",
+                          flueScenario?.label.startsWith("🔴")
+                            ? "text-destructive"
+                            : flueScenario?.label.startsWith("🟠")
+                            ? "text-warning"
+                            : "text-foreground"
+                        )}>{fluePhrase}</p>
+                      </div>
+
+                      {budget && (
+                        <div className="space-y-0.5 pt-2 border-t">
+                          <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Budget & délai</p>
+                          <p className="font-medium">
+                            {label("budget", budget)}
+                            {horizon && ` — ${label("horizon", horizon).toLowerCase()}`}
+                          </p>
                         </div>
-                      </div>
-
-                      {/* BUDGET & DÉLAI */}
-                      <div className="space-y-2">
-                        <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Budget & Délai</p>
-                        <dl className="space-y-1 text-sm">
-                          {budget && (
-                            <div className="flex justify-between gap-3">
-                              <dt className="text-muted-foreground">Budget</dt>
-                              <dd className="font-medium text-right">{label("budget", budget)}</dd>
-                            </div>
-                          )}
-                          {horizon && (
-                            <div className="flex justify-between gap-3">
-                              <dt className="text-muted-foreground">Délai</dt>
-                              <dd className="font-medium text-right">{label("horizon", horizon)}</dd>
-                            </div>
-                          )}
-                        </dl>
-                      </div>
+                      )}
                     </div>
 
-                    <div className="pt-3 border-t border-border/60">
+                    {(firePreference === "automation" || occupancyPattern === "often_absent")
+                      && energyType !== "wood" && (
+                      <div className="pt-3 border-t bg-muted/30 rounded-lg p-3">
+                        <p className="text-xs text-muted-foreground font-medium mb-1">💡 Recommandation</p>
+                        <p className="text-sm">
+                          Un poêle à granulés avec programmation semble adapté à votre mode de vie.
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="pt-3 border-t">
                       <p className="text-sm font-medium">
                         {qualificationScore >= 4
                           ? "✅ Qualification solide — estimatif exploitable"
@@ -1321,20 +1248,35 @@ export default function ProjectCreate() {
                   </CardContent>
                 </Card>
 
-                <div className="flex justify-between pt-2 pb-8">
+                <div className="flex flex-wrap items-center gap-3 pt-2 pb-8">
                   <Button variant="ghost" onClick={() => setCurrentStep(4)}>← Retour</Button>
+
+                  {/* CTA primaire — selon le score */}
                   <Button
                     size="lg"
                     disabled={userLoading || !tenantId || submitting || !canSubmit}
-                    onClick={handleSubmit}
-                    className="min-w-[220px]"
+                    onClick={() => handleSubmit(qualificationScore >= 3 ? "estimate" : "visit")}
+                    className="flex-1 min-w-[220px]"
                   >
                     {submitting
                       ? "Création en cours…"
-                      : qualificationScore >= 4
-                      ? "Créer le projet et préparer un devis"
-                      : "Créer le projet et planifier la visite"}
+                      : qualificationScore >= 3
+                      ? "Créer le projet et préparer un devis estimatif"
+                      : "Créer le projet et préparer la visite technique"}
                   </Button>
+
+                  {/* CTA secondaire — uniquement si score >= 3 */}
+                  {qualificationScore >= 3 && (
+                    <Button
+                      variant="outline"
+                      size="lg"
+                      disabled={userLoading || !tenantId || submitting || !canSubmit}
+                      onClick={() => handleSubmit("visit")}
+                      className="flex-1 min-w-[220px]"
+                    >
+                      Créer le projet et préparer la visite technique
+                    </Button>
+                  )}
                 </div>
               </section>
             )}

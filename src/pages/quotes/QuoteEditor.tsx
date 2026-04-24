@@ -842,14 +842,16 @@ export default function QuoteEditor() {
           {/* ─── CANVAS ─────────────────────────────────────────── */}
           <Card className="overflow-x-auto overflow-hidden">
             {/* Column headers */}
-            <div className="hidden md:grid md:grid-cols-[32px_1fr_72px_88px_100px_80px_96px_36px] gap-1.5 px-3 py-2 bg-muted/30 border-b border-border text-xs font-medium text-muted-foreground">
+            <div className="hidden md:grid md:grid-cols-[28px_minmax(0,1fr)_60px_72px_92px_72px_92px_92px_36px] gap-1.5 px-3 py-2 bg-muted/30 border-b border-border text-xs font-medium text-muted-foreground">
               <span className="text-center">N°</span>
               <span>Désignation</span>
               <span className="text-right">Qté</span>
               <span>Unité</span>
-              <span className="text-right">P.U. HT</span>
+              <span className="text-right">Vente HT</span>
+              <span className="text-right">Coût HT</span>
               <span>TVA</span>
               <span className="text-right">Total HT</span>
+              <span className="text-right">Marge</span>
               <span />
             </div>
 

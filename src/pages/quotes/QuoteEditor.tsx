@@ -209,9 +209,23 @@ function ItemRow({ row, index, onChange, onDuplicate, onDelete }: {
 }) {
   const totalHt = row.qty * row.unit_price_ht;
   return (
-    <div className="grid grid-cols-[32px_1fr_72px_88px_100px_80px_96px_36px] gap-1.5 items-center px-3 py-1.5 hover:bg-muted/20 rounded transition-colors">
+    <div className="grid grid-cols-[32px_1fr_120px_72px_88px_100px_80px_96px_36px] gap-1.5 items-center px-3 py-1.5 hover:bg-muted/20 rounded transition-colors">
       <span className="text-xs text-muted-foreground text-center tabular-nums">{index}</span>
       <Input value={row.label} onChange={(e) => onChange("label", e.target.value)} placeholder="Désignation" className="h-8 text-sm" />
+      <Select
+        value={row.line_category ?? "__none__"}
+        onValueChange={(v) => onChange("line_category", v === "__none__" ? null : v)}
+      >
+        <SelectTrigger className="h-8 text-xs">
+          <SelectValue placeholder="—" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="__none__">—</SelectItem>
+          {(Object.entries(CATEGORY_LABELS) as [LineCategory, string][]).map(([k, v]) => (
+            <SelectItem key={k} value={k}>{v}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       <Input type="number" min={0} step={0.01} value={row.qty || ""} onChange={(e) => onChange("qty", parseFloat(e.target.value) || 0)} className="h-8 text-sm text-right" />
       <Select value={row.unit} onValueChange={(v) => onChange("unit", v)}>
         <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>

@@ -509,9 +509,24 @@ export default function ProjectDetail() {
                 <FileText className="h-4 w-4 text-muted-foreground" />
                 Devis ({quotes.length})
               </h2>
-              <Button size="sm" onClick={() => navigate(`/projects/${project.id}/quotes/new?kind=estimate`)}>
-                <Plus className="h-3.5 w-3.5 mr-1" /> Nouveau devis
-              </Button>
+              {(() => {
+                const s = project.status;
+                if (s === "lead_new" || s === "lead_qualified") {
+                  return (
+                    <Button size="sm" onClick={() => navigate(`/projects/${project.id}/quotes/new?kind=estimate`)}>
+                      <Plus className="h-3.5 w-3.5 mr-1" /> Créer le devis estimatif
+                    </Button>
+                  );
+                }
+                if (s === "estimate_sent" || s === "vt_planned" || s === "vt_done" || s === "tech_review_done") {
+                  return (
+                    <Button size="sm" onClick={() => navigate(`/projects/${project.id}/quotes/new?kind=final`)}>
+                      <Plus className="h-3.5 w-3.5 mr-1" /> Créer le devis final
+                    </Button>
+                  );
+                }
+                return null;
+              })()}
             </div>
             {quotes.length === 0 ? (
               <Card className="p-6 text-center">

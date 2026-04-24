@@ -408,6 +408,19 @@ export default function QuoteEditor() {
     return map;
   }, [rows]);
 
+  // Category subtotals (HT) — only the 3 main displayable categories
+  const categorySubtotals = useMemo(() => {
+    const map: Partial<Record<LineCategory, number>> = {};
+    for (const row of rows) {
+      if (row._type !== "item" || !row.line_category) continue;
+      const ht = row.qty * row.unit_price_ht;
+      map[row.line_category] = (map[row.line_category] || 0) + ht;
+    }
+    return map;
+  }, [rows]);
+
+  const hasAnyCategory = Object.keys(categorySubtotals).length > 0;
+
   // ─── Save ─────────────────────────────────────────────────────
   const handleSave = useCallback(async (finalize = false) => {
     if (!quote || !tenantId) return;

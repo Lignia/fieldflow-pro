@@ -32,6 +32,7 @@ import { StatusBadge } from "@/components/StatusBadge";
 import { CustomerBadge } from "@/components/CustomerBadge";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
@@ -256,7 +257,7 @@ function QualificationCard({ payload }: { payload: Record<string, any> }) {
         {/* Col 3 — Fumisterie */}
         <div className="space-y-1.5">
           <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium">Fumisterie</p>
-          {flueScenario ? (
+          {flueScenario && payload.flue_existing !== "unknown" ? (
             <span className={cn(
               "inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium border",
               flueScenarioClass(flueScenario),
@@ -264,7 +265,12 @@ function QualificationCard({ payload }: { payload: Record<string, any> }) {
               {flueScenario}
             </span>
           ) : (
-            <p className="text-xs text-muted-foreground">—</p>
+            <Badge
+              variant="outline"
+              className="gap-1 text-[11px] bg-warning/10 text-warning border-warning/30"
+            >
+              ⚠ À vérifier en visite technique
+            </Badge>
           )}
           {budget && <p className="text-xs text-muted-foreground">Budget : {budget}</p>}
           {horizon && <p className="text-xs text-muted-foreground">Délai : {horizon}</p>}
@@ -718,6 +724,38 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
         };
 
       case "lead_qualified":
+      {
+        const hasEstimateSent = quotes.some(
+          (q) => q.quote_kind === "estimate" && q.quote_status === "sent",
+        );
+        if (hasEstimateSent) {
+          return {
+            title: "Estimatif envoyé — Planifier la visite technique",
+            actions: (
+              <>
+                <Button
+                  size="sm"
+                  onClick={() =>
+                    onNavigate(
+                      `/interventions/new?type=technical_survey&project_id=${project.id}&return_to=${encodeURIComponent(`/projects/${project.id}`)}`,
+                    )
+                  }
+                >
+                  <ClipboardList className="h-3.5 w-3.5 mr-1" /> Planifier la VT
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={transitioning}
+                  onClick={() => onTransition("estimate_sent", "Estimatif envoyé")}
+                >
+                  Confirmer statut <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                </Button>
+              </>
+            ),
+            note: "Un devis estimatif a déjà été envoyé.",
+          };
+        }
         return {
           title: "Étape suivante : créer le devis estimatif",
           actions: (
@@ -730,8 +768,44 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
           ),
           note: "Le statut passera à « Estimatif envoyé » après envoi du devis.",
         };
+      }
 
       case "estimate_sent":
+      {
+        const score =
+          typeof project.payload?.qualification_score === "number"
+            ? project.payload.qualification_score
+            : 0;
+        const flueKnown =
+          project.payload?.flue_existing !== "unknown" &&
+          project.payload?.flue_existing != null;
+        if (score >= 4 && flueKnown) {
+          return {
+            title: "Qualification solide — devis final possible",
+            actions: (
+              <>
+                <Button
+                  size="sm"
+                  onClick={() => onNavigate(`/projects/${project.id}/quotes/new?kind=final`)}
+                >
+                  <Plus className="h-3.5 w-3.5 mr-1" /> Créer le devis final
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    onNavigate(
+                      `/interventions/new?type=technical_survey&project_id=${project.id}&return_to=${encodeURIComponent(`/projects/${project.id}`)}`,
+                    )
+                  }
+                >
+                  <ClipboardList className="h-3.5 w-3.5 mr-1" /> Planifier la VT d'abord
+                </Button>
+              </>
+            ),
+            note: `Score ${score}/5 — fumisterie connue`,
+          };
+        }
         return {
           title: "Étape suivante : planifier la visite technique",
           actions: (
@@ -753,6 +827,7 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
             </>
           ),
         };
+      }
 
       case "vt_planned":
         return {
@@ -950,13 +1025,13 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
   if (!content) return null;
 
   return (
-    <Card className="p-4 sm:p-5 border-accent/40 bg-accent/5">
+    <Card className="p-5 border-2 border-accent bg-accent/[0.08] shadow-sm">
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="space-y-1 flex-1 min-w-0">
-          <p className="text-[10px] uppercase tracking-wider text-accent font-semibold">
+          <p className="text-xs uppercase tracking-wider text-accent font-bold">
             Action recommandée
           </p>
-          <h2 className="text-sm font-semibold">{content.title}</h2>
+          <h2 className="text-base font-semibold">{content.title}</h2>
           {content.note && (
             <p className="text-xs text-muted-foreground mt-1">{content.note}</p>
           )}

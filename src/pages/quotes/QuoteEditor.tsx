@@ -761,7 +761,7 @@ export default function QuoteEditor() {
             </Button>
             <Button size="sm" onClick={() => handleSave(true)} disabled={savingAll}>
               {savingAll ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Send className="h-3.5 w-3.5 mr-1" />}
-              Enregistrer et finaliser
+              Envoyer au client
             </Button>
           </div>
         </div>

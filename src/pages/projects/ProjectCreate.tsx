@@ -1072,10 +1072,12 @@ export default function ProjectCreate() {
             {/* BLOC 5 — Commercial */}
             {currentStep === 5 && (
               <section className="space-y-5">
-                <h2 className="text-lg font-semibold text-foreground">Budget & délai</h2>
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground">On se projette sur votre projet</h2>
+                </div>
 
                 <div className="space-y-2">
-                  <Label className="text-sm">Budget estimé *</Label>
+                  <Label className="text-sm">Vous aviez quel budget en tête ? *</Label>
                   <ToggleGroup
                     type="single"
                     value={budget}
@@ -1098,7 +1100,7 @@ export default function ProjectCreate() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-sm text-muted-foreground">Délai souhaité</Label>
+                  <Label className="text-sm text-muted-foreground">Vous souhaitez installer :</Label>
                   <ToggleGroup
                     type="single"
                     value={horizon}
@@ -1106,45 +1108,85 @@ export default function ProjectCreate() {
                     className="grid grid-cols-3 gap-2"
                   >
                     <ToggleGroupItem value="urgent" className="h-auto flex-col gap-1 py-3 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
-                      <span className="text-lg">⚡</span><span className="text-xs">&lt; 1 mois</span>
+                      <span className="text-lg">⚡</span><span className="text-xs">Rapidement</span>
                     </ToggleGroupItem>
                     <ToggleGroupItem value="lt_3months" className="h-auto flex-col gap-1 py-3 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
-                      <span className="text-lg">📅</span><span className="text-xs">1 à 3 mois</span>
+                      <span className="text-lg">📅</span><span className="text-xs">Dans les prochains mois</span>
                     </ToggleGroupItem>
                     <ToggleGroupItem value="gt_3months" className="h-auto flex-col gap-1 py-3 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
-                      <span className="text-lg">🗓️</span><span className="text-xs">+ 3 mois</span>
+                      <span className="text-lg">🗓️</span><span className="text-xs">Plus tard</span>
                     </ToggleGroupItem>
                   </ToggleGroup>
                 </div>
 
                 {/* RÉSUMÉ */}
-                <Card>
-                  <CardContent className="p-4 space-y-3">
+                <Card className="border-accent/30 bg-accent/[0.03]">
+                  <CardContent className="p-5 space-y-4">
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-semibold text-foreground">Synthèse</p>
+                      <p className="text-sm font-semibold text-foreground">Récapitulatif du projet</p>
                       <Badge className={cn("text-xs", reliabilityBadge.className)} variant="outline">
                         {reliabilityBadge.label}
                       </Badge>
                     </div>
-                    <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
-                      <SummaryRow label="Type" value={projectType} />
-                      <SummaryRow label="Énergie" value={energyType} />
-                      <SummaryRow label="Usage" value={usageType} />
-                      <SummaryRow label="Logement" value={housingType} />
-                      <SummaryRow label="Surface" value={`${surfaceM2} m²`} />
-                      <SummaryRow label="Isolation" value={insulation} />
-                      <SummaryRow label="Puissance" value={`~${estimatedPower} kW`} />
-                      <SummaryRow label="Conduit" value={flueExisting} />
-                      <SummaryRow label="Position" value={fluePosition || flueExit} />
-                      <SummaryRow label="Air" value={airInlet} />
-                      <SummaryRow label="VMC" value={vmc} />
-                      <SummaryRow label="Mur combustible" value={combustibleWall} />
-                      <SummaryRow label="Budget" value={budget} />
-                      <SummaryRow label="Délai" value={horizon} />
-                    </dl>
-                    <p className="text-xs text-muted-foreground pt-1 border-t">
-                      Score qualification : <span className="font-mono font-semibold text-foreground">{qualificationScore}/5</span>
-                    </p>
+
+                    <ul className="space-y-1.5 text-sm text-foreground">
+                      <li className="flex gap-2">
+                        <span className="text-muted-foreground shrink-0">•</span>
+                        <span>{label("projectType", projectType)}</span>
+                      </li>
+                      {energyType && (
+                        <li className="flex gap-2">
+                          <span className="text-muted-foreground shrink-0">•</span>
+                          <span>{label("energyType", energyType)}</span>
+                        </li>
+                      )}
+                      {usageType && (
+                        <li className="flex gap-2">
+                          <span className="text-muted-foreground shrink-0">•</span>
+                          <span>{label("usageType", usageType)}</span>
+                        </li>
+                      )}
+                      <li className="flex gap-2">
+                        <span className="text-muted-foreground shrink-0">•</span>
+                        <span>
+                          {label("housingType", housingType)}
+                          {` · ${surfaceM2} m²`}
+                          {insulation && ` · ${label("insulation", insulation).toLowerCase()}`}
+                        </span>
+                      </li>
+                      <li className="flex gap-2">
+                        <span className="text-muted-foreground shrink-0">•</span>
+                        <span>Puissance indicative : <span className="font-mono font-semibold">~{estimatedPower} kW</span></span>
+                      </li>
+                      {flueScenario && (
+                        <li className="flex gap-2">
+                          <span className="text-muted-foreground shrink-0">•</span>
+                          <span>{flueScenario.label.replace(/^[^\s]+\s/, "")}</span>
+                        </li>
+                      )}
+                      {budget && (
+                        <li className="flex gap-2">
+                          <span className="text-muted-foreground shrink-0">•</span>
+                          <span>Budget : {label("budget", budget)}</span>
+                        </li>
+                      )}
+                      {horizon && (
+                        <li className="flex gap-2">
+                          <span className="text-muted-foreground shrink-0">•</span>
+                          <span>Délai : {label("horizon", horizon).toLowerCase()}</span>
+                        </li>
+                      )}
+                    </ul>
+
+                    <div className="pt-3 border-t border-border/60">
+                      <p className="text-sm font-medium">
+                        {qualificationScore >= 4
+                          ? "✅ Qualification solide — estimatif exploitable"
+                          : qualificationScore >= 2
+                          ? "⚠️ Qualification partielle — visite technique recommandée"
+                          : "🔴 Informations insuffisantes — visite technique nécessaire"}
+                      </p>
+                    </div>
                   </CardContent>
                 </Card>
 
@@ -1154,9 +1196,13 @@ export default function ProjectCreate() {
                     size="lg"
                     disabled={userLoading || !tenantId || submitting || !canSubmit}
                     onClick={handleSubmit}
-                    className="min-w-[180px]"
+                    className="min-w-[220px]"
                   >
-                    {submitting ? "Création en cours…" : "Créer le projet"}
+                    {submitting
+                      ? "Création en cours…"
+                      : qualificationScore >= 4
+                      ? "Créer le projet et préparer un devis"
+                      : "Créer le projet et planifier la visite"}
                   </Button>
                 </div>
               </section>

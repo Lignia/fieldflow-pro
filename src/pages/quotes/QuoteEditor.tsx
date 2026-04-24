@@ -895,20 +895,32 @@ export default function QuoteEditor() {
 
             <div className="divide-y divide-border/50">
               {rows.length === 0 && (
-                <div className="py-14 px-6 text-center border-2 border-dashed border-border/60 m-4 rounded-lg bg-muted/10">
+                <div className="py-12 px-6 text-center m-4 rounded-lg bg-muted/10 border-2 border-dashed border-border/60">
                   <ClipboardList className="h-10 w-10 mx-auto text-muted-foreground/40 mb-4" />
                   <p className="text-base font-semibold text-foreground mb-1">Commencez votre devis</p>
                   <p className="text-xs text-muted-foreground mb-6">
                     Structurez par <span className="font-medium text-foreground">🔥 Appareil</span> · <span className="font-medium text-foreground">🏗️ Fumisterie</span> · <span className="font-medium text-foreground">🔧 Pose</span>
                   </p>
-                  <div className="flex flex-col items-center gap-3">
-                    <CatalogPopover
-                      onSelect={(item) => addItem(item)}
-                      onFreeLine={() => addItem()}
-                      triggerLabel="Ajouter depuis le catalogue"
-                      triggerVariant="default"
-                    />
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="flex flex-wrap items-center justify-center gap-2">
+                      <Button size="sm" variant="outline" className="border-warning/40 text-warning hover:bg-warning/10 hover:text-warning" onClick={() => addItem(undefined, "device")}>
+                        <Flame className="h-3.5 w-3.5 mr-1.5" /> Ajouter un appareil
+                      </Button>
+                      <Button size="sm" variant="outline" className="border-info/40 text-info hover:bg-info/10 hover:text-info" onClick={() => addItem(undefined, "flue")}>
+                        <Construction className="h-3.5 w-3.5 mr-1.5" /> Ajouter la fumisterie
+                      </Button>
+                      <Button size="sm" variant="outline" className="border-success/40 text-success hover:bg-success/10 hover:text-success" onClick={() => addItem(undefined, "labor")}>
+                        <Wrench className="h-3.5 w-3.5 mr-1.5" /> Ajouter la pose
+                      </Button>
+                    </div>
                     <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
+                      <CatalogPopover
+                        onSelect={(item) => addItem(item)}
+                        onFreeLine={() => addItem()}
+                        triggerLabel="Depuis le catalogue"
+                        triggerVariant="ghost"
+                      />
+                      <span>·</span>
                       <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => addItem()}>Ligne libre</Button>
                       <span>·</span>
                       <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={addSection}><Layers className="h-3 w-3 mr-1" />Section</Button>
@@ -919,44 +931,90 @@ export default function QuoteEditor() {
                 </div>
               )}
 
-              {rows.map((row) => {
-                if (row._type === "section") {
+              {rows.length > 0 && (() => {
+                // Helper de rendu d'une ligne (réutilisé en mode plat ou groupé)
+                const renderRow = (row: EditorRow) => {
+                  if (row._type === "section") {
+                    return (
+                      <SectionRow
+                        key={row._key} row={row}
+                        subtotal={sectionSubtotals[row._key] || 0}
+                        onChange={(label) => updateRow(row._key, "label", label)}
+                        onDuplicate={() => duplicateRow(row._key)}
+                        onDelete={() => deleteRow(row._key)}
+                      />
+                    );
+                  }
+                  if (row._type === "text") {
+                    return (
+                      <TextRow
+                        key={row._key} row={row}
+                        onChange={(label) => updateRow(row._key, "label", label)}
+                        onDuplicate={() => duplicateRow(row._key)}
+                        onDelete={() => deleteRow(row._key)}
+                      />
+                    );
+                  }
+                  itemCounter++;
                   return (
-                    <SectionRow
-                      key={row._key} row={row}
-                      subtotal={sectionSubtotals[row._key] || 0}
-                      onChange={(label) => updateRow(row._key, "label", label)}
+                    <ItemRow
+                      key={row._key} row={row} index={itemCounter}
+                      onChange={(field, value) => updateRow(row._key, field, value)}
                       onDuplicate={() => duplicateRow(row._key)}
                       onDelete={() => deleteRow(row._key)}
                     />
                   );
-                }
-                if (row._type === "text") {
+                };
+
+                // Mode groupé : un header par catégorie présente
+                if (useCategoryGrouping && groupedRows) {
                   return (
-                    <TextRow
-                      key={row._key} row={row}
-                      onChange={(label) => updateRow(row._key, "label", label)}
-                      onDuplicate={() => duplicateRow(row._key)}
-                      onDelete={() => deleteRow(row._key)}
-                    />
+                    <>
+                      {CATEGORY_ORDER.map((cat) => {
+                        const items = groupedRows[cat];
+                        if (!items || items.length === 0) return null;
+                        return (
+                          <div key={cat}>
+                            <div className={`flex items-center justify-between px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider border-l-2 ${CATEGORY_TONE[cat]}`}>
+                              <span>{CATEGORY_LABELS[cat]}</span>
+                              <span className="font-mono tabular-nums opacity-80">{fmt(categorySubtotals[cat] || 0)}</span>
+                            </div>
+                            {items.map(renderRow)}
+                          </div>
+                        );
+                      })}
+                      {groupedRows.none.length > 0 && (
+                        <div>
+                          <div className="flex items-center px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground border-l-2 border-border bg-muted/30">
+                            Autres
+                          </div>
+                          {groupedRows.none.map(renderRow)}
+                        </div>
+                      )}
+                    </>
                   );
                 }
-                itemCounter++;
-                return (
-                  <ItemRow
-                    key={row._key} row={row} index={itemCounter}
-                    onChange={(field, value) => updateRow(row._key, field, value)}
-                    onDuplicate={() => duplicateRow(row._key)}
-                    onDelete={() => deleteRow(row._key)}
-                  />
-                );
-              })}
+
+                // Mode plat (par défaut, ou si l'utilisateur a créé des sections)
+                return <>{rows.map(renderRow)}</>;
+              })()}
             </div>
 
             {/* Add buttons */}
             {rows.length > 0 && (
-              <div className="flex items-center gap-2 px-3 py-3 border-t border-border bg-muted/20">
-                <CatalogPopover onSelect={(item) => addItem(item)} onFreeLine={() => addItem()} />
+              <div className="flex flex-wrap items-center gap-2 px-3 py-3 border-t border-border bg-muted/20">
+                <Button size="sm" variant="outline" className="h-8 border-warning/40 text-warning hover:bg-warning/10 hover:text-warning" onClick={() => addItem(undefined, "device")}>
+                  <Flame className="h-3.5 w-3.5 mr-1" /> Appareil
+                </Button>
+                <Button size="sm" variant="outline" className="h-8 border-info/40 text-info hover:bg-info/10 hover:text-info" onClick={() => addItem(undefined, "flue")}>
+                  <Construction className="h-3.5 w-3.5 mr-1" /> Fumisterie
+                </Button>
+                <Button size="sm" variant="outline" className="h-8 border-success/40 text-success hover:bg-success/10 hover:text-success" onClick={() => addItem(undefined, "labor")}>
+                  <Wrench className="h-3.5 w-3.5 mr-1" /> Pose
+                </Button>
+                <Separator orientation="vertical" className="h-6 mx-1" />
+                <CatalogPopover onSelect={(item) => addItem(item)} onFreeLine={() => addItem()} triggerLabel="Catalogue" />
+                <Button variant="ghost" size="sm" onClick={() => addItem()}><Plus className="h-3.5 w-3.5 mr-1" /> Ligne libre</Button>
                 <Button variant="ghost" size="sm" onClick={addSection}><Layers className="h-3.5 w-3.5 mr-1" /> Section</Button>
                 <Button variant="ghost" size="sm" onClick={addText}><Type className="h-3.5 w-3.5 mr-1" /> Texte</Button>
               </div>

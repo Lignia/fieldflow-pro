@@ -421,6 +421,55 @@ export default function ProjectCreate() {
 
   const selectedProperty = properties.find((p) => p.id === selectedPropertyId) ?? null;
 
+  // --- Synthèse narrative (lecture humaine du récap) ---
+  function buildNarrative() {
+    const typeLabel = label("projectType", projectType);
+    const energyLabel = energyType && energyType !== "unknown"
+      ? label("energyType", energyType).toLowerCase()
+      : null;
+    const usageLabel = usageType
+      ? label("usageType", usageType).toLowerCase()
+      : null;
+
+    let projectPhrase = typeLabel;
+    if (energyLabel && usageLabel)
+      projectPhrase += ` avec un poêle à ${energyLabel} en ${usageLabel}`;
+    else if (energyLabel)
+      projectPhrase += ` avec un poêle à ${energyLabel}`;
+    else if (usageLabel)
+      projectPhrase += ` — usage ${usageLabel}`;
+
+    const housingLabel = housingType
+      ? label("housingType", housingType).toLowerCase()
+      : null;
+    let logementPhrase = housingLabel
+      ? `${housingLabel.charAt(0).toUpperCase() + housingLabel.slice(1)} de ${surfaceM2} m²`
+      : `${surfaceM2} m²`;
+    if (insulation && insulation !== "unknown")
+      logementPhrase += ` — ${label("insulation", insulation).toLowerCase()}`;
+    if (currentHeating)
+      logementPhrase += ` — chauffage actuel : ${label("currentHeating", currentHeating).toLowerCase()}`;
+    logementPhrase += ` — puissance estimée : ~${estimatedPower} kW`;
+
+    let fluePhrase = "";
+    if (flueScenario) {
+      fluePhrase = flueScenario.label.replace(/^[^\s]+\s/, "");
+      if (flueScenario.label.startsWith("🟢"))
+        fluePhrase += " — configuration favorable";
+      else if (flueScenario.label.startsWith("🔴"))
+        fluePhrase += " — impact sur le prix à confirmer";
+      else if (flueScenario.label.startsWith("🟠"))
+        fluePhrase += " — surcoût potentiel";
+      else if (flueScenario.label.startsWith("🟡"))
+        fluePhrase += " — à préciser en visite";
+    } else {
+      fluePhrase = "Fumisterie à évaluer lors de la visite technique";
+    }
+
+    return { projectPhrase, logementPhrase, fluePhrase };
+  }
+  const { projectPhrase, logementPhrase, fluePhrase } = buildNarrative();
+
   return (
     <div className="min-h-screen bg-background">
       <div className="mx-auto max-w-[680px] px-4 py-8 space-y-6">

@@ -145,12 +145,14 @@ export default function ProjectCreate() {
   const [projectType, setProjectType] = useState("");
   const [energyType, setEnergyType] = useState("");
   const [usageType, setUsageType] = useState("");
+  const [firePreference, setFirePreference] = useState("");
 
   // Bloc 2
   const [housingType, setHousingType] = useState("");
   const [currentHeating, setCurrentHeating] = useState("");
   const [surfaceM2, setSurfaceM2] = useState<number>(80);
   const [insulation, setInsulation] = useState("");
+  const [occupancyPattern, setOccupancyPattern] = useState("");
 
   // Bloc 3
   const [flueExisting, setFlueExisting] = useState("");

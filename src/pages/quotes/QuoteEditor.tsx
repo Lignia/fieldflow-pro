@@ -949,40 +949,64 @@ export default function QuoteEditor() {
       {/* ─── STICKY FOOTER — Totals ─────────────────────────────── */}
       <footer className="sticky bottom-0 z-40 bg-card/95 backdrop-blur border-t border-border">
         <div className="max-w-6xl mx-auto px-4 py-3">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-6 text-sm flex-wrap">
-            <div>
-              <span className="text-muted-foreground">Total HT </span>
-              <span className="font-mono font-semibold text-foreground">{fmt(totals.totalHt)}</span>
+          <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-3 md:gap-6 items-center">
+            {/* Bloc Client — visible sur le devis */}
+            <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1 text-sm">
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70 font-semibold">Client</span>
+              <div>
+                <span className="text-muted-foreground">Total HT </span>
+                <span className="font-mono font-semibold text-foreground">{fmt(totals.totalHt)}</span>
+              </div>
+              {Object.entries(totals.vatMap)
+                .sort(([a], [b]) => Number(a) - Number(b))
+                .map(([rate, amount]) => (
+                  <div key={rate} className="text-xs">
+                    <span className="text-muted-foreground">TVA {rate}% </span>
+                    <span className="font-mono text-foreground">{fmt(amount)}</span>
+                  </div>
+                ))}
+              <div>
+                <span className="text-muted-foreground">Total TTC </span>
+                <span className="font-mono font-bold text-base text-foreground">{fmt(totals.totalTtc)}</span>
+              </div>
             </div>
-            {Object.entries(totals.vatMap)
-              .sort(([a], [b]) => Number(a) - Number(b))
-              .map(([rate, amount]) => (
-                <div key={rate}>
-                  <span className="text-muted-foreground">TVA {rate}% </span>
-                  <span className="font-mono text-foreground">{fmt(amount)}</span>
-                </div>
-              ))}
-            <Separator orientation="vertical" className="h-6 hidden sm:block" />
-            <div>
-              <span className="text-muted-foreground">Total TTC </span>
-              <span className="font-mono font-bold text-base text-foreground">{fmt(totals.totalTtc)}</span>
-            </div>
-            {marginTotals.hasCost && (
-              <>
-                <Separator orientation="vertical" className="h-6 hidden sm:block" />
-                <div title={marginTotals.fullyCovered ? "Marge HT" : "Marge HT (lignes avec coût renseigné uniquement)"}>
-                  <span className="text-muted-foreground">Marge </span>
-                  <span className={`font-mono font-semibold ${marginTotals.margin < 0 ? "text-destructive" : marginTotals.pct < 15 ? "text-warning" : "text-success"}`}>
-                    {fmt(marginTotals.margin)}
-                    <span className="ml-1 text-xs opacity-80">({marginTotals.pct.toFixed(0)} %)</span>
-                  </span>
-                  {!marginTotals.fullyCovered && (
-                    <span className="ml-1 text-[10px] text-muted-foreground">*</span>
-                  )}
-                </div>
-              </>
-            )}
+
+            <Separator orientation="vertical" className="h-10 hidden md:block" />
+
+            {/* Bloc Artisan — interne, jamais affiché au client */}
+            <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1 text-sm md:justify-end">
+              <span
+                className="text-[10px] uppercase tracking-wider text-muted-foreground/70 font-semibold"
+                title="Information interne — non visible par le client"
+              >
+                Artisan
+              </span>
+              {marginTotals.hasCost ? (
+                <>
+                  <div className="text-xs">
+                    <span className="text-muted-foreground">Coût HT </span>
+                    <span className="font-mono text-foreground">{fmt(totals.totalHt - marginTotals.margin)}</span>
+                  </div>
+                  <div title={marginTotals.fullyCovered ? "Marge HT totale" : "Marge HT — calculée uniquement sur les lignes avec coût renseigné"}>
+                    <span className="text-muted-foreground">Marge </span>
+                    <span className={`font-mono font-semibold ${marginTotals.margin < 0 ? "text-destructive" : marginTotals.pct < 15 ? "text-warning" : "text-success"}`}>
+                      {fmt(marginTotals.margin)}
+                    </span>
+                    <span className={`ml-1 text-xs font-mono ${marginTotals.margin < 0 ? "text-destructive" : marginTotals.pct < 15 ? "text-warning" : "text-success"}`}>
+                      ({marginTotals.pct.toFixed(0)} %)
+                    </span>
+                    {!marginTotals.fullyCovered && (
+                      <span className="ml-1.5 text-[10px] text-warning" title="Coûts manquants sur certaines lignes">
+                        Marge partielle
+                      </span>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <span className="text-xs text-muted-foreground italic">
+                  Renseignez les coûts d'achat pour voir la marge
+                </span>
+              )}
             </div>
           </div>
         </div>

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { differenceInDays } from "date-fns";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -129,6 +129,9 @@ function getExpiryInfo(expiryDate: string, status: string) {
 export default function QuoteDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const rawReturnTo = searchParams.get("return_to");
+  const returnTo = rawReturnTo?.startsWith("/") ? rawReturnTo : null;
   const { coreUser } = useCurrentUser();
   const {
     quote, lines, activities, project,
@@ -182,7 +185,7 @@ export default function QuoteDetail() {
       return;
     }
     toast.success("Devis supprimé");
-    navigate("/quotes");
+    navigate(returnTo ?? "/quotes");
   }
 
   /* ── Loading ── */
@@ -207,7 +210,7 @@ export default function QuoteDetail() {
   if (!quote) {
     return (
       <div className="max-w-6xl mx-auto space-y-4">
-        <Button variant="ghost" size="sm" onClick={() => navigate("/quotes")}>
+        <Button variant="ghost" size="sm" onClick={() => navigate(returnTo ?? "/quotes")}>
           <ArrowLeft className="h-4 w-4 mr-1" />
           Devis
         </Button>
@@ -259,7 +262,7 @@ export default function QuoteDetail() {
       />
 
       {/* ── Back nav ── */}
-      <Button variant="ghost" size="sm" className="-ml-2" onClick={() => navigate("/quotes")}>
+      <Button variant="ghost" size="sm" className="-ml-2" onClick={() => navigate(returnTo ?? "/quotes")}>
         <ArrowLeft className="h-4 w-4 mr-1" />
         Devis
       </Button>

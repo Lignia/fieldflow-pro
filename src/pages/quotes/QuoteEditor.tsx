@@ -493,7 +493,7 @@ export default function QuoteEditor() {
           toast.success("Devis finalisé et envoyé");
         }
 
-        navigate(`/projects/${projectId}`);
+        navigate(`/projects/${projectId}?tab=commercial`);
       } else {
         toast.success("Devis enregistré");
       }
@@ -526,7 +526,7 @@ export default function QuoteEditor() {
         <Card className="p-8 text-center max-w-md">
           <p className="text-sm text-destructive mb-3">{hookError}</p>
           <div className="flex gap-2 justify-center">
-            <Button variant="outline" onClick={() => navigate(`/projects/${projectId}`)}>
+            <Button variant="outline" onClick={() => navigate(`/projects/${projectId}?tab=commercial`)}>
               <ArrowLeft className="h-4 w-4 mr-1" /> Retour
             </Button>
             <Button onClick={() => window.location.reload()}>Réessayer</Button>
@@ -545,7 +545,7 @@ export default function QuoteEditor() {
       {/* ─── HEADER ─────────────────────────────────────────────── */}
       <header className="sticky top-0 z-50 bg-card/95 backdrop-blur border-b border-border px-4 py-3">
         <div className="max-w-6xl mx-auto flex items-center gap-4">
-          <Button variant="ghost" size="sm" onClick={() => navigate(`/projects/${projectId}`)} className="shrink-0">
+          <Button variant="ghost" size="sm" onClick={() => navigate(`/projects/${projectId}?tab=commercial`)} className="shrink-0">
             <ArrowLeft className="h-4 w-4 mr-1" /> Retour au projet
           </Button>
 

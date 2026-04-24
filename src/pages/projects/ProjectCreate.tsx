@@ -392,6 +392,14 @@ export default function ProjectCreate() {
             qualification_score: qualificationScore,
             reliability_badge: reliabilityBadge.label,
             qualified_at: new Date().toISOString(),
+            fire_preference: firePreference || null,
+            occupancy_pattern: occupancyPattern || null,
+            surface_m2_source: "user",
+            surface_m2_confidence: insulation && insulation !== "unknown" ? "medium" : "low",
+            insulation_source: "user",
+            insulation_confidence: insulation && insulation !== "unknown" ? "medium" : "low",
+            current_heating_source: "user",
+            current_heating_confidence: currentHeating ? "medium" : "low",
           },
         })
         .select("id, project_number")

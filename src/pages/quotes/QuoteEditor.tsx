@@ -972,6 +972,21 @@ export default function QuoteEditor() {
               <span className="text-muted-foreground">Total TTC </span>
               <span className="font-mono font-bold text-base text-foreground">{fmt(totals.totalTtc)}</span>
             </div>
+            {marginTotals.hasCost && (
+              <>
+                <Separator orientation="vertical" className="h-6 hidden sm:block" />
+                <div title={marginTotals.fullyCovered ? "Marge HT" : "Marge HT (lignes avec coût renseigné uniquement)"}>
+                  <span className="text-muted-foreground">Marge </span>
+                  <span className={`font-mono font-semibold ${marginTotals.margin < 0 ? "text-destructive" : marginTotals.pct < 15 ? "text-warning" : "text-success"}`}>
+                    {fmt(marginTotals.margin)}
+                    <span className="ml-1 text-xs opacity-80">({marginTotals.pct.toFixed(0)} %)</span>
+                  </span>
+                  {!marginTotals.fullyCovered && (
+                    <span className="ml-1 text-[10px] text-muted-foreground">*</span>
+                  )}
+                </div>
+              </>
+            )}
             </div>
           </div>
         </div>

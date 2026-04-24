@@ -269,8 +269,20 @@ function ItemRow({ row, index, onChange, onDuplicate, onDelete }: {
   row: EditorItem; index: number; onChange: (field: string, value: any) => void; onDuplicate: () => void; onDelete: () => void;
 }) {
   const totalHt = row.qty * row.unit_price_ht;
+  const cost = row.unit_cost_price ?? 0;
+  const totalCost = row.qty * cost;
+  const margin = totalHt - totalCost;
+  const marginPct = totalHt > 0 ? (margin / totalHt) * 100 : 0;
+  const hasCost = row.unit_cost_price != null && row.unit_cost_price > 0;
+  const marginTone = !hasCost
+    ? "text-muted-foreground/60"
+    : margin < 0
+      ? "text-destructive"
+      : marginPct < 15
+        ? "text-warning"
+        : "text-success";
   return (
-    <div className="grid grid-cols-[32px_1fr_72px_88px_100px_80px_96px_36px] gap-1.5 items-center px-3 py-1.5 hover:bg-muted/20 rounded transition-colors">
+    <div className="grid grid-cols-[28px_minmax(0,1fr)_60px_72px_92px_72px_92px_92px_36px] gap-1.5 items-center px-3 py-1.5 hover:bg-muted/20 rounded transition-colors">
       <span className="text-xs text-muted-foreground text-center tabular-nums">{index}</span>
       <div className="min-w-0 space-y-1">
         <Input
@@ -279,10 +291,17 @@ function ItemRow({ row, index, onChange, onDuplicate, onDelete }: {
           placeholder="Désignation"
           className="h-8 text-sm"
         />
-        <CategoryPicker
-          value={row.line_category}
-          onChange={(v) => onChange("line_category", v)}
-        />
+        <div className="flex items-center gap-1.5 flex-wrap">
+          <CategoryPicker
+            value={row.line_category}
+            onChange={(v) => onChange("line_category", v)}
+          />
+          {row.brand && (
+            <span className="text-[10px] text-muted-foreground truncate max-w-[140px]">
+              {row.brand}{row.supplier_ref ? ` · ${row.supplier_ref}` : ""}
+            </span>
+          )}
+        </div>
       </div>
       <Input type="number" min={0} step={0.01} value={row.qty || ""} onChange={(e) => onChange("qty", parseFloat(e.target.value) || 0)} className="h-8 text-sm text-right" />
       <Select value={row.unit} onValueChange={(v) => onChange("unit", v)}>
@@ -292,6 +311,14 @@ function ItemRow({ row, index, onChange, onDuplicate, onDelete }: {
         </SelectContent>
       </Select>
       <Input type="number" min={0} step={0.01} value={row.unit_price_ht || ""} onChange={(e) => onChange("unit_price_ht", parseFloat(e.target.value) || 0)} className="h-8 text-sm text-right" placeholder="0.00" />
+      <Input
+        type="number" min={0} step={0.01}
+        value={row.unit_cost_price ?? ""}
+        onChange={(e) => onChange("unit_cost_price", e.target.value === "" ? null : parseFloat(e.target.value) || 0)}
+        className="h-8 text-sm text-right"
+        placeholder="—"
+        title="Coût d'achat HT"
+      />
       <Select value={String(row.vat_rate)} onValueChange={(v) => onChange("vat_rate", parseFloat(v))}>
         <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
         <SelectContent>
@@ -299,6 +326,16 @@ function ItemRow({ row, index, onChange, onDuplicate, onDelete }: {
         </SelectContent>
       </Select>
       <span className="text-right font-mono text-sm text-foreground tabular-nums">{fmt(totalHt)}</span>
+      <div className={`text-right font-mono text-xs leading-tight tabular-nums ${marginTone}`} title="Marge HT">
+        {hasCost ? (
+          <>
+            <div className="font-semibold">{fmt(margin)}</div>
+            <div className="text-[10px] opacity-80">{marginPct.toFixed(0)} %</div>
+          </>
+        ) : (
+          <span className="text-[10px]">—</span>
+        )}
+      </div>
       <RowMenu onDuplicate={onDuplicate} onDelete={onDelete} />
     </div>
   );

@@ -121,7 +121,19 @@ function fmt(n: number) {
 }
 
 // ─── Catalog Search Popover ─────────────────────────────────────
-function CatalogPopover({ onSelect, onFreeLine }: { onSelect: (item: CatalogItem) => void; onFreeLine: () => void }) {
+function CatalogPopover({
+  onSelect,
+  onFreeLine,
+  triggerLabel = "Nouvelle ligne",
+  triggerVariant = "outline",
+  triggerSize = "sm",
+}: {
+  onSelect: (item: CatalogItem) => void;
+  onFreeLine: () => void;
+  triggerLabel?: string;
+  triggerVariant?: "default" | "outline" | "ghost" | "secondary";
+  triggerSize?: "sm" | "default" | "lg";
+}) {
   const [open, setOpen] = useState(false);
   const [term, setTerm] = useState("");
   const { results, loading } = useCatalogSearch(term);
@@ -129,8 +141,8 @@ function CatalogPopover({ onSelect, onFreeLine }: { onSelect: (item: CatalogItem
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Plus className="h-3.5 w-3.5 mr-1" /> Nouvelle ligne
+        <Button variant={triggerVariant} size={triggerSize}>
+          <Plus className="h-3.5 w-3.5 mr-1.5" /> {triggerLabel}
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-96 p-0" align="start">

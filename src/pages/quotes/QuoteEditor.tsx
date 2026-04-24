@@ -55,6 +55,9 @@ interface EditorItem {
   sort_order: number;
   line_type: "item";
   line_category?: LineCategory | null;
+  unit_cost_price?: number | null;
+  brand?: string | null;
+  supplier_ref?: string | null;
 }
 
 interface EditorText {

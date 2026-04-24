@@ -3,7 +3,7 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft, Plus, Trash2, Save, Send, Search, Loader2,
   MoreHorizontal, Copy, Type, Layers, FileText, Building2, MapPin,
-  Calendar, ClipboardList, ArrowRight, Tag,
+  Calendar, ClipboardList, ArrowRight, Tag, Flame, Construction, Wrench,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -81,6 +81,17 @@ const CATEGORY_LABELS: Record<LineCategory, string> = {
   option: "⭐ Option",
   misc: "📦 Divers",
 };
+
+// Tonalités sémantiques pour chaque catégorie (badge & header de groupe)
+const CATEGORY_TONE: Record<LineCategory, string> = {
+  device: "bg-warning/10 text-warning border-warning/20",
+  flue: "bg-info/10 text-info border-info/20",
+  labor: "bg-success/10 text-success border-success/20",
+  option: "bg-accent/10 text-accent border-accent/20",
+  misc: "bg-muted text-muted-foreground border-border",
+};
+
+const CATEGORY_ORDER: LineCategory[] = ["device", "flue", "labor", "option", "misc"];
 
 interface ProjectInfo {
   id: string;
@@ -227,7 +238,8 @@ function CategoryPicker({ value, onChange }: { value: LineCategory | null | unde
         {value ? (
           <button
             type="button"
-            className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[11px] font-medium text-foreground hover:bg-muted transition-colors"
+            className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[11px] font-medium transition-colors hover:opacity-80 ${CATEGORY_TONE[value]}`}
+            title="Modifier la catégorie"
           >
             <span className="truncate max-w-[110px]">{CATEGORY_LABELS[value]}</span>
           </button>
@@ -423,17 +435,22 @@ export default function QuoteEditor() {
   }, [projectId, createQuote, quoteKind]);
 
   // ─── Row management ───────────────────────────────────────────
-  const addItem = useCallback(async (catalogItem?: CatalogItem) => {
-    let autoCategory: LineCategory | null = null;
+  const addItem = useCallback(async (
+    catalogItem?: CatalogItem,
+    forcedCategory?: LineCategory | null,
+  ) => {
+    let autoCategory: LineCategory | null = forcedCategory ?? null;
     let costPrice: number | null = null;
     let brand: string | null = null;
     let supplierRef: string | null = null;
 
     if (catalogItem) {
       const pt = (catalogItem as any).product_type;
-      if (pt === "service") autoCategory = "labor";
-      else if (pt === "appliance") autoCategory = "device";
-      else if (pt === "flue" || pt === "conduit") autoCategory = "flue";
+      if (!autoCategory) {
+        if (pt === "service") autoCategory = "labor";
+        else if (pt === "appliance") autoCategory = "device";
+        else if (pt === "flue" || pt === "conduit") autoCategory = "flue";
+      }
 
       // Fetch extended fields not exposed by useCatalogSearch
       if (!DEV_BYPASS) {
@@ -540,6 +557,31 @@ export default function QuoteEditor() {
   }, [rows]);
 
   const hasAnyCategory = Object.keys(categorySubtotals).length > 0;
+
+  // Mode "groupé par catégorie" : actif uniquement si pas de section utilisateur
+  // (sinon les sections sont déjà la structuration choisie)
+  const hasUserSections = useMemo(
+    () => rows.some((r) => r._type === "section"),
+    [rows],
+  );
+  const useCategoryGrouping = !hasUserSections && hasAnyCategory;
+
+  // Construction des groupes pour le rendu
+  const groupedRows = useMemo(() => {
+    if (!useCategoryGrouping) return null;
+    const groups: Record<LineCategory | "none", EditorRow[]> = {
+      device: [], flue: [], labor: [], option: [], misc: [], none: [],
+    };
+    for (const row of rows) {
+      if (row._type === "item") {
+        const cat = row.line_category ?? "none";
+        groups[cat].push(row);
+      } else {
+        groups.none.push(row);
+      }
+    }
+    return groups;
+  }, [rows, useCategoryGrouping]);
 
   // Margin totals (HT)
   const marginTotals = useMemo(() => {
@@ -853,20 +895,32 @@ export default function QuoteEditor() {
 
             <div className="divide-y divide-border/50">
               {rows.length === 0 && (
-                <div className="py-14 px-6 text-center border-2 border-dashed border-border/60 m-4 rounded-lg bg-muted/10">
+                <div className="py-12 px-6 text-center m-4 rounded-lg bg-muted/10 border-2 border-dashed border-border/60">
                   <ClipboardList className="h-10 w-10 mx-auto text-muted-foreground/40 mb-4" />
                   <p className="text-base font-semibold text-foreground mb-1">Commencez votre devis</p>
                   <p className="text-xs text-muted-foreground mb-6">
                     Structurez par <span className="font-medium text-foreground">🔥 Appareil</span> · <span className="font-medium text-foreground">🏗️ Fumisterie</span> · <span className="font-medium text-foreground">🔧 Pose</span>
                   </p>
-                  <div className="flex flex-col items-center gap-3">
-                    <CatalogPopover
-                      onSelect={(item) => addItem(item)}
-                      onFreeLine={() => addItem()}
-                      triggerLabel="Ajouter depuis le catalogue"
-                      triggerVariant="default"
-                    />
+                  <div className="flex flex-col items-center gap-4">
+                    <div className="flex flex-wrap items-center justify-center gap-2">
+                      <Button size="sm" variant="outline" className="border-warning/40 text-warning hover:bg-warning/10 hover:text-warning" onClick={() => addItem(undefined, "device")}>
+                        <Flame className="h-3.5 w-3.5 mr-1.5" /> Ajouter un appareil
+                      </Button>
+                      <Button size="sm" variant="outline" className="border-info/40 text-info hover:bg-info/10 hover:text-info" onClick={() => addItem(undefined, "flue")}>
+                        <Construction className="h-3.5 w-3.5 mr-1.5" /> Ajouter la fumisterie
+                      </Button>
+                      <Button size="sm" variant="outline" className="border-success/40 text-success hover:bg-success/10 hover:text-success" onClick={() => addItem(undefined, "labor")}>
+                        <Wrench className="h-3.5 w-3.5 mr-1.5" /> Ajouter la pose
+                      </Button>
+                    </div>
                     <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
+                      <CatalogPopover
+                        onSelect={(item) => addItem(item)}
+                        onFreeLine={() => addItem()}
+                        triggerLabel="Depuis le catalogue"
+                        triggerVariant="ghost"
+                      />
+                      <span>·</span>
                       <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => addItem()}>Ligne libre</Button>
                       <span>·</span>
                       <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={addSection}><Layers className="h-3 w-3 mr-1" />Section</Button>
@@ -877,44 +931,90 @@ export default function QuoteEditor() {
                 </div>
               )}
 
-              {rows.map((row) => {
-                if (row._type === "section") {
+              {rows.length > 0 && (() => {
+                // Helper de rendu d'une ligne (réutilisé en mode plat ou groupé)
+                const renderRow = (row: EditorRow) => {
+                  if (row._type === "section") {
+                    return (
+                      <SectionRow
+                        key={row._key} row={row}
+                        subtotal={sectionSubtotals[row._key] || 0}
+                        onChange={(label) => updateRow(row._key, "label", label)}
+                        onDuplicate={() => duplicateRow(row._key)}
+                        onDelete={() => deleteRow(row._key)}
+                      />
+                    );
+                  }
+                  if (row._type === "text") {
+                    return (
+                      <TextRow
+                        key={row._key} row={row}
+                        onChange={(label) => updateRow(row._key, "label", label)}
+                        onDuplicate={() => duplicateRow(row._key)}
+                        onDelete={() => deleteRow(row._key)}
+                      />
+                    );
+                  }
+                  itemCounter++;
                   return (
-                    <SectionRow
-                      key={row._key} row={row}
-                      subtotal={sectionSubtotals[row._key] || 0}
-                      onChange={(label) => updateRow(row._key, "label", label)}
+                    <ItemRow
+                      key={row._key} row={row} index={itemCounter}
+                      onChange={(field, value) => updateRow(row._key, field, value)}
                       onDuplicate={() => duplicateRow(row._key)}
                       onDelete={() => deleteRow(row._key)}
                     />
                   );
-                }
-                if (row._type === "text") {
+                };
+
+                // Mode groupé : un header par catégorie présente
+                if (useCategoryGrouping && groupedRows) {
                   return (
-                    <TextRow
-                      key={row._key} row={row}
-                      onChange={(label) => updateRow(row._key, "label", label)}
-                      onDuplicate={() => duplicateRow(row._key)}
-                      onDelete={() => deleteRow(row._key)}
-                    />
+                    <>
+                      {CATEGORY_ORDER.map((cat) => {
+                        const items = groupedRows[cat];
+                        if (!items || items.length === 0) return null;
+                        return (
+                          <div key={cat}>
+                            <div className={`flex items-center justify-between px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider border-l-2 ${CATEGORY_TONE[cat]}`}>
+                              <span>{CATEGORY_LABELS[cat]}</span>
+                              <span className="font-mono tabular-nums opacity-80">{fmt(categorySubtotals[cat] || 0)}</span>
+                            </div>
+                            {items.map(renderRow)}
+                          </div>
+                        );
+                      })}
+                      {groupedRows.none.length > 0 && (
+                        <div>
+                          <div className="flex items-center px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground border-l-2 border-border bg-muted/30">
+                            Autres
+                          </div>
+                          {groupedRows.none.map(renderRow)}
+                        </div>
+                      )}
+                    </>
                   );
                 }
-                itemCounter++;
-                return (
-                  <ItemRow
-                    key={row._key} row={row} index={itemCounter}
-                    onChange={(field, value) => updateRow(row._key, field, value)}
-                    onDuplicate={() => duplicateRow(row._key)}
-                    onDelete={() => deleteRow(row._key)}
-                  />
-                );
-              })}
+
+                // Mode plat (par défaut, ou si l'utilisateur a créé des sections)
+                return <>{rows.map(renderRow)}</>;
+              })()}
             </div>
 
             {/* Add buttons */}
             {rows.length > 0 && (
-              <div className="flex items-center gap-2 px-3 py-3 border-t border-border bg-muted/20">
-                <CatalogPopover onSelect={(item) => addItem(item)} onFreeLine={() => addItem()} />
+              <div className="flex flex-wrap items-center gap-2 px-3 py-3 border-t border-border bg-muted/20">
+                <Button size="sm" variant="outline" className="h-8 border-warning/40 text-warning hover:bg-warning/10 hover:text-warning" onClick={() => addItem(undefined, "device")}>
+                  <Flame className="h-3.5 w-3.5 mr-1" /> Appareil
+                </Button>
+                <Button size="sm" variant="outline" className="h-8 border-info/40 text-info hover:bg-info/10 hover:text-info" onClick={() => addItem(undefined, "flue")}>
+                  <Construction className="h-3.5 w-3.5 mr-1" /> Fumisterie
+                </Button>
+                <Button size="sm" variant="outline" className="h-8 border-success/40 text-success hover:bg-success/10 hover:text-success" onClick={() => addItem(undefined, "labor")}>
+                  <Wrench className="h-3.5 w-3.5 mr-1" /> Pose
+                </Button>
+                <Separator orientation="vertical" className="h-6 mx-1" />
+                <CatalogPopover onSelect={(item) => addItem(item)} onFreeLine={() => addItem()} triggerLabel="Catalogue" />
+                <Button variant="ghost" size="sm" onClick={() => addItem()}><Plus className="h-3.5 w-3.5 mr-1" /> Ligne libre</Button>
                 <Button variant="ghost" size="sm" onClick={addSection}><Layers className="h-3.5 w-3.5 mr-1" /> Section</Button>
                 <Button variant="ghost" size="sm" onClick={addText}><Type className="h-3.5 w-3.5 mr-1" /> Texte</Button>
               </div>
@@ -952,7 +1052,7 @@ export default function QuoteEditor() {
           <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-3 md:gap-6 items-center">
             {/* Bloc Client — visible sur le devis */}
             <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1 text-sm">
-              <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70 font-semibold">Client</span>
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70 font-semibold">💰 Client</span>
               <div>
                 <span className="text-muted-foreground">Total HT </span>
                 <span className="font-mono font-semibold text-foreground">{fmt(totals.totalHt)}</span>
@@ -979,7 +1079,7 @@ export default function QuoteEditor() {
                 className="text-[10px] uppercase tracking-wider text-muted-foreground/70 font-semibold"
                 title="Information interne — non visible par le client"
               >
-                Artisan
+                📈 Rentabilité
               </span>
               {marginTotals.hasCost ? (
                 <>

@@ -703,15 +703,36 @@ export default function QuoteCreate() {
               </div>
             </div>
             {hasAnyCategory && (
-              <div className="flex gap-3 text-xs text-muted-foreground mt-1 flex-wrap">
+              <div className="flex gap-2 text-xs mt-2 flex-wrap">
                 {categoryHT.device !== undefined && (
-                  <span>🔥 Appareil : <span className="font-mono">{formatCurrencyRound(categoryHT.device)}</span></span>
+                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-warning/10 text-warning-foreground border border-warning/20">
+                    🔥 <span className="font-medium">Appareil</span>
+                    <span className="font-mono font-semibold">{formatCurrencyRound(categoryHT.device)}</span>
+                  </span>
                 )}
                 {categoryHT.flue !== undefined && (
-                  <span>🏗️ Fumisterie : <span className="font-mono">{formatCurrencyRound(categoryHT.flue)}</span></span>
+                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-info/10 text-info border border-info/20">
+                    🏗️ <span className="font-medium">Fumisterie</span>
+                    <span className="font-mono font-semibold">{formatCurrencyRound(categoryHT.flue)}</span>
+                  </span>
                 )}
                 {categoryHT.labor !== undefined && (
-                  <span>🔧 Pose : <span className="font-mono">{formatCurrencyRound(categoryHT.labor)}</span></span>
+                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-success/10 text-success border border-success/20">
+                    🔧 <span className="font-medium">Pose</span>
+                    <span className="font-mono font-semibold">{formatCurrencyRound(categoryHT.labor)}</span>
+                  </span>
+                )}
+                {categoryHT.option !== undefined && (
+                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-accent/10 text-accent border border-accent/20">
+                    ⭐ <span className="font-medium">Option</span>
+                    <span className="font-mono font-semibold">{formatCurrencyRound(categoryHT.option)}</span>
+                  </span>
+                )}
+                {categoryHT.misc !== undefined && (
+                  <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted text-muted-foreground border">
+                    📦 <span className="font-medium">Divers</span>
+                    <span className="font-mono font-semibold">{formatCurrencyRound(categoryHT.misc)}</span>
+                  </span>
                 )}
               </div>
             )}

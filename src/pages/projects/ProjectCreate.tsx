@@ -35,6 +35,83 @@ const TOTAL_STEPS = 5;
 
 type YesNoUnknown = "" | "yes" | "no" | "unknown";
 
+// --- Mapping labels lisibles pour la synthèse (n'altère pas les valeurs stockées) ---
+const LABELS: Record<string, Record<string, string>> = {
+  projectType: {
+    installation_neuve: "Première installation",
+    remplacement: "Remplacement",
+    renovation: "Rénovation",
+    construction: "Construction neuve",
+    secondary: "Résidence secondaire",
+  },
+  energyType: {
+    wood: "Bois",
+    pellet: "Granulés",
+    unknown: "À déterminer",
+  },
+  usageType: {
+    main: "Chauffage principal",
+    secondary: "Chauffage d'appoint",
+    comfort: "Confort / plaisir",
+  },
+  housingType: {
+    house: "Maison",
+    apartment: "Appartement",
+  },
+  currentHeating: {
+    electric: "Électrique",
+    gas: "Gaz",
+    oil: "Fioul",
+    other: "Autre",
+  },
+  insulation: {
+    good: "Bien isolé",
+    average: "Isolation moyenne",
+    poor: "Mal isolé",
+    unknown: "Isolation inconnue",
+  },
+  flueExisting: {
+    yes: "Conduit existant",
+    no: "Création de conduit",
+    unknown: "Conduit à vérifier",
+  },
+  fluePosition: {
+    interior: "Conduit intérieur",
+    exterior: "Conduit extérieur",
+  },
+  flueExit: {
+    roof: "Sortie toiture",
+    facade: "Sortie façade",
+    unknown: "Sortie à définir",
+  },
+  budget: {
+    lt_5k: "Moins de 5 000 €",
+    "5k_10k": "5 000 – 10 000 €",
+    gt_10k: "Plus de 10 000 €",
+    unknown: "Budget à définir",
+  },
+  horizon: {
+    urgent: "Rapidement (< 1 mois)",
+    lt_3months: "Dans les prochains mois",
+    gt_3months: "Plus tard",
+  },
+  firePreference: {
+    ritual: "Plaisir du feu",
+    automation: "Autonomie / programmation",
+    both: "Plaisir et autonomie",
+  },
+  occupancyPattern: {
+    often_absent: "Souvent absent en journée",
+    variable: "Présence variable",
+    often_home: "Souvent à la maison",
+  },
+};
+
+function label(group: string, value: string | null | undefined): string {
+  if (!value) return "—";
+  return LABELS[group]?.[value] ?? value;
+}
+
 export default function ProjectCreate() {
   const { tenantId, loading: userLoading } = useCurrentUser();
   const navigate = useNavigate();

@@ -35,6 +35,83 @@ const TOTAL_STEPS = 5;
 
 type YesNoUnknown = "" | "yes" | "no" | "unknown";
 
+// --- Mapping labels lisibles pour la synthèse (n'altère pas les valeurs stockées) ---
+const LABELS: Record<string, Record<string, string>> = {
+  projectType: {
+    installation_neuve: "Première installation",
+    remplacement: "Remplacement",
+    renovation: "Rénovation",
+    construction: "Construction neuve",
+    secondary: "Résidence secondaire",
+  },
+  energyType: {
+    wood: "Bois",
+    pellet: "Granulés",
+    unknown: "À déterminer",
+  },
+  usageType: {
+    main: "Chauffage principal",
+    secondary: "Chauffage d'appoint",
+    comfort: "Confort / plaisir",
+  },
+  housingType: {
+    house: "Maison",
+    apartment: "Appartement",
+  },
+  currentHeating: {
+    electric: "Électrique",
+    gas: "Gaz",
+    oil: "Fioul",
+    other: "Autre",
+  },
+  insulation: {
+    good: "Bien isolé",
+    average: "Isolation moyenne",
+    poor: "Mal isolé",
+    unknown: "Isolation inconnue",
+  },
+  flueExisting: {
+    yes: "Conduit existant",
+    no: "Création de conduit",
+    unknown: "Conduit à vérifier",
+  },
+  fluePosition: {
+    interior: "Conduit intérieur",
+    exterior: "Conduit extérieur",
+  },
+  flueExit: {
+    roof: "Sortie toiture",
+    facade: "Sortie façade",
+    unknown: "Sortie à définir",
+  },
+  budget: {
+    lt_5k: "Moins de 5 000 €",
+    "5k_10k": "5 000 – 10 000 €",
+    gt_10k: "Plus de 10 000 €",
+    unknown: "Budget à définir",
+  },
+  horizon: {
+    urgent: "Rapidement (< 1 mois)",
+    lt_3months: "Dans les prochains mois",
+    gt_3months: "Plus tard",
+  },
+  firePreference: {
+    ritual: "Plaisir du feu",
+    automation: "Autonomie / programmation",
+    both: "Plaisir et autonomie",
+  },
+  occupancyPattern: {
+    often_absent: "Souvent absent en journée",
+    variable: "Présence variable",
+    often_home: "Souvent à la maison",
+  },
+};
+
+function label(group: string, value: string | null | undefined): string {
+  if (!value) return "—";
+  return LABELS[group]?.[value] ?? value;
+}
+
 export default function ProjectCreate() {
   const { tenantId, loading: userLoading } = useCurrentUser();
   const navigate = useNavigate();
@@ -68,12 +145,14 @@ export default function ProjectCreate() {
   const [projectType, setProjectType] = useState("");
   const [energyType, setEnergyType] = useState("");
   const [usageType, setUsageType] = useState("");
+  const [firePreference, setFirePreference] = useState("");
 
   // Bloc 2
   const [housingType, setHousingType] = useState("");
   const [currentHeating, setCurrentHeating] = useState("");
   const [surfaceM2, setSurfaceM2] = useState<number>(80);
   const [insulation, setInsulation] = useState("");
+  const [occupancyPattern, setOccupancyPattern] = useState("");
 
   // Bloc 3
   const [flueExisting, setFlueExisting] = useState("");
@@ -313,6 +392,14 @@ export default function ProjectCreate() {
             qualification_score: qualificationScore,
             reliability_badge: reliabilityBadge.label,
             qualified_at: new Date().toISOString(),
+            fire_preference: firePreference || null,
+            occupancy_pattern: occupancyPattern || null,
+            surface_m2_source: "user",
+            surface_m2_confidence: insulation && insulation !== "unknown" ? "medium" : "low",
+            insulation_source: "user",
+            insulation_confidence: insulation && insulation !== "unknown" ? "medium" : "low",
+            current_heating_source: "user",
+            current_heating_confidence: currentHeating ? "medium" : "low",
           },
         })
         .select("id, project_number")
@@ -581,20 +668,21 @@ export default function ProjectCreate() {
             {currentStep === 1 && (
               <section className="space-y-5">
                 <div>
-                  <h2 className="text-lg font-semibold text-foreground">Quel est le projet ?</h2>
+                  <h2 className="text-lg font-semibold text-foreground">Parlez-moi de votre projet</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">Pour orienter le bon appareil</p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-sm">Type de projet *</Label>
+                  <Label className="text-sm">Vous êtes dans quel cas ? *</Label>
                   <ToggleGroup
                     type="single"
                     value={projectType}
                     onValueChange={(v) => v && setProjectType(v)}
-                    className="grid grid-cols-3 gap-2"
+                    className="grid grid-cols-3 gap-2 sm:grid-cols-5"
                   >
                     <ToggleGroupItem value="installation_neuve" className="h-auto flex-col gap-1 py-3 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
                       <span className="text-xl">🔨</span>
-                      <span className="text-xs font-medium">Installation neuve</span>
+                      <span className="text-xs font-medium">Première installation</span>
                     </ToggleGroupItem>
                     <ToggleGroupItem value="remplacement" className="h-auto flex-col gap-1 py-3 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
                       <span className="text-xl">🔄</span>
@@ -603,6 +691,14 @@ export default function ProjectCreate() {
                     <ToggleGroupItem value="renovation" className="h-auto flex-col gap-1 py-3 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
                       <span className="text-xl">🏠</span>
                       <span className="text-xs font-medium">Rénovation</span>
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="construction" className="h-auto flex-col gap-1 py-3 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
+                      <span className="text-xl">🏗️</span>
+                      <span className="text-xs font-medium">Construction neuve</span>
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="secondary" className="h-auto flex-col gap-1 py-3 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
+                      <span className="text-xl">🌿</span>
+                      <span className="text-xs font-medium">Résidence secondaire</span>
                     </ToggleGroupItem>
                   </ToggleGroup>
                 </div>
@@ -647,6 +743,41 @@ export default function ProjectCreate() {
                   </ToggleGroup>
                 </div>
 
+                <div className="space-y-2">
+                  <Label className="text-sm text-muted-foreground">Vous préférez plutôt ?</Label>
+                  <ToggleGroup
+                    type="single"
+                    value={firePreference}
+                    onValueChange={(v) => setFirePreference(v ?? "")}
+                    className="grid grid-cols-3 gap-2"
+                  >
+                    <ToggleGroupItem value="ritual" className="h-auto flex-col gap-1 py-3 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
+                      <span className="text-lg">🪵</span>
+                      <span className="text-xs font-medium">Le plaisir du feu</span>
+                      <span className="text-[10px] text-muted-foreground">Bûches, flammes, rituel</span>
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="automation" className="h-auto flex-col gap-1 py-3 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
+                      <span className="text-lg">🤖</span>
+                      <span className="text-xs font-medium">L'autonomie</span>
+                      <span className="text-[10px] text-muted-foreground">Programmation, confort</span>
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="both" className="h-auto flex-col gap-1 py-3 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
+                      <span className="text-lg">⚖️</span>
+                      <span className="text-xs font-medium">Les deux</span>
+                      <span className="text-[10px] text-muted-foreground">Plaisir et simplicité</span>
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+                  {firePreference === "ritual" && (
+                    <Badge variant="outline" className="bg-success/10 text-success border-success/30 text-xs">🪵 Bois recommandé</Badge>
+                  )}
+                  {firePreference === "automation" && (
+                    <Badge variant="outline" className="bg-success/10 text-success border-success/30 text-xs">🤖 Granulés recommandés</Badge>
+                  )}
+                  {firePreference === "both" && (
+                    <Badge variant="outline" className="bg-accent/10 text-accent border-accent/30 text-xs">⚖️ Bois ou granulés possibles</Badge>
+                  )}
+                </div>
+
                 <div className="flex justify-end pt-2">
                   <Button onClick={() => setCurrentStep(2)} disabled={!canNext1}>Suivant →</Button>
                 </div>
@@ -656,7 +787,10 @@ export default function ProjectCreate() {
             {/* BLOC 2 — Logement */}
             {currentStep === 2 && (
               <section className="space-y-5">
-                <h2 className="text-lg font-semibold text-foreground">Le logement</h2>
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground">Parlez-moi de votre maison</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">Pour estimer la puissance nécessaire</p>
+                </div>
 
                 <div className="space-y-2">
                   <Label className="text-sm">Type *</Label>
@@ -676,7 +810,7 @@ export default function ProjectCreate() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-sm text-muted-foreground">Chauffage actuel</Label>
+                  <Label className="text-sm text-muted-foreground">Aujourd'hui vous chauffez avec :</Label>
                   <ToggleGroup
                     type="single"
                     value={currentHeating}
@@ -699,8 +833,31 @@ export default function ProjectCreate() {
                 </div>
 
                 <div className="space-y-2">
+                  <Label className="text-sm text-muted-foreground">Vous êtes souvent à la maison ?</Label>
+                  <ToggleGroup
+                    type="single"
+                    value={occupancyPattern}
+                    onValueChange={(v) => setOccupancyPattern(v ?? "")}
+                    className="grid grid-cols-3 gap-2"
+                  >
+                    <ToggleGroupItem value="often_absent" className="h-auto flex-col gap-1 py-2.5 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
+                      <span className="text-lg">🏢</span><span className="text-xs">Souvent absent en journée</span>
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="variable" className="h-auto flex-col gap-1 py-2.5 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
+                      <span className="text-lg">🏠</span><span className="text-xs">Présence variable</span>
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="often_home" className="h-auto flex-col gap-1 py-2.5 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
+                      <span className="text-lg">🛋️</span><span className="text-xs">Souvent à la maison</span>
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+                  {occupancyPattern === "often_absent" && (
+                    <p className="text-xs text-muted-foreground italic">💡 Un poêle programmable peut être plus adapté</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label className="text-sm">Surface à chauffer *</Label>
+                    <Label className="text-sm">Quelle surface voulez-vous chauffer ? *</Label>
                     <span className="text-sm font-mono font-semibold text-foreground">{surfaceM2} m²</span>
                   </div>
                   <Slider
@@ -721,24 +878,33 @@ export default function ProjectCreate() {
                     className="grid grid-cols-4 gap-2"
                   >
                     <ToggleGroupItem value="good" className="h-auto flex-col gap-1 py-2.5 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
-                      <span className="text-lg">✅</span><span className="text-xs">Bonne</span>
+                      <span className="text-lg">✅</span><span className="text-xs">Bien isolé</span>
                     </ToggleGroupItem>
                     <ToggleGroupItem value="average" className="h-auto flex-col gap-1 py-2.5 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
-                      <span className="text-lg">➖</span><span className="text-xs">Moyenne</span>
+                      <span className="text-lg">➖</span><span className="text-xs">Moyen</span>
                     </ToggleGroupItem>
                     <ToggleGroupItem value="poor" className="h-auto flex-col gap-1 py-2.5 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
-                      <span className="text-lg">❌</span><span className="text-xs">Faible</span>
+                      <span className="text-lg">❌</span><span className="text-xs">Mal isolé</span>
                     </ToggleGroupItem>
                     <ToggleGroupItem value="unknown" className="h-auto flex-col gap-1 py-2.5 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
-                      <span className="text-lg">❓</span><span className="text-xs">Inconnu</span>
+                      <span className="text-lg">❓</span><span className="text-xs">Je ne sais pas</span>
                     </ToggleGroupItem>
                   </ToggleGroup>
                 </div>
 
-                <div>
+                <div className="space-y-1.5">
                   <Badge className={cn("text-sm font-mono px-3 py-1", powerColor)} variant="outline">
                     ~{estimatedPower} kW indicatif
                   </Badge>
+                  <p className="text-xs text-muted-foreground">
+                    {estimatedPower < 5
+                      ? "Adapté à un petit espace ou un usage d'appoint"
+                      : estimatedPower < 9
+                      ? "Adapté à une pièce principale ou maison bien isolée"
+                      : estimatedPower < 14
+                      ? "Adapté à une grande surface ou logement moins isolé"
+                      : "À confirmer avec une visite technique"}
+                  </p>
                 </div>
 
                 <div className="flex justify-between pt-2">
@@ -752,12 +918,12 @@ export default function ProjectCreate() {
             {currentStep === 3 && (
               <section className="space-y-5">
                 <div>
-                  <h2 className="text-lg font-semibold text-foreground">Le conduit</h2>
-                  <p className="text-xs text-muted-foreground mt-0.5">C'est ça qui détermine le prix final</p>
+                  <h2 className="text-lg font-semibold text-foreground">Ce qui existe déjà chez vous</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">C'est ce qui impacte le prix et la faisabilité</p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-sm">Conduit ? *</Label>
+                  <Label className="text-sm">Est-ce qu'il y a déjà un conduit ? *</Label>
                   <ToggleGroup
                     type="single"
                     value={flueExisting}
@@ -765,10 +931,10 @@ export default function ProjectCreate() {
                     className="grid grid-cols-3 gap-2"
                   >
                     <ToggleGroupItem value="yes" className="h-auto flex-col gap-1 py-3 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
-                      <span className="text-xl">✅</span><span className="text-xs font-medium">Conduit existant</span>
+                      <span className="text-xl">✅</span><span className="text-xs font-medium">Oui</span>
                     </ToggleGroupItem>
                     <ToggleGroupItem value="no" className="h-auto flex-col gap-1 py-3 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
-                      <span className="text-xl">❌</span><span className="text-xs font-medium">Pas de conduit</span>
+                      <span className="text-xl">❌</span><span className="text-xs font-medium">Non</span>
                     </ToggleGroupItem>
                     <ToggleGroupItem value="unknown" className="h-auto flex-col gap-1 py-3 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
                       <span className="text-xl">❓</span><span className="text-xs font-medium">Je ne sais pas</span>
@@ -779,7 +945,7 @@ export default function ProjectCreate() {
                 {flueExisting === "yes" && (
                   <>
                     <div className="space-y-2">
-                      <Label className="text-sm">Position *</Label>
+                      <Label className="text-sm">Il est positionné comment ? *</Label>
                       <ToggleGroup
                         type="single"
                         value={fluePosition}
@@ -787,15 +953,15 @@ export default function ProjectCreate() {
                         className="grid grid-cols-2 gap-2"
                       >
                         <ToggleGroupItem value="interior" className="h-auto flex-col gap-1 py-3 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
-                          <span className="text-lg">🏠</span><span className="text-xs">Intérieur</span>
+                          <span className="text-lg">🏠</span><span className="text-xs">À l'intérieur</span>
                         </ToggleGroupItem>
                         <ToggleGroupItem value="exterior" className="h-auto flex-col gap-1 py-3 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
-                          <span className="text-lg">🌳</span><span className="text-xs">Extérieur</span>
+                          <span className="text-lg">🌳</span><span className="text-xs">En façade extérieure</span>
                         </ToggleGroupItem>
                       </ToggleGroup>
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-sm text-muted-foreground">Complexité</Label>
+                      <Label className="text-sm text-muted-foreground">Il est plutôt :</Label>
                       <ToggleGroup
                         type="single"
                         value={flueComplexity}
@@ -803,13 +969,13 @@ export default function ProjectCreate() {
                         className="grid grid-cols-3 gap-2"
                       >
                         <ToggleGroupItem value="straight" className="h-auto flex-col gap-1 py-2.5 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
-                          <span className="text-lg">📏</span><span className="text-xs">Droit</span>
+                          <span className="text-lg">📏</span><span className="text-xs">Tout droit</span>
                         </ToggleGroupItem>
                         <ToggleGroupItem value="with_bends" className="h-auto flex-col gap-1 py-2.5 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
                           <span className="text-lg">🔄</span><span className="text-xs">Avec coudes</span>
                         </ToggleGroupItem>
                         <ToggleGroupItem value="unknown" className="h-auto flex-col gap-1 py-2.5 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
-                          <span className="text-lg">❓</span><span className="text-xs">Inconnu</span>
+                          <span className="text-lg">❓</span><span className="text-xs">Je ne sais pas</span>
                         </ToggleGroupItem>
                       </ToggleGroup>
                     </div>
@@ -819,7 +985,7 @@ export default function ProjectCreate() {
                 {flueExisting === "no" && (
                   <>
                     <div className="space-y-2">
-                      <Label className="text-sm">Sortie prévue *</Label>
+                      <Label className="text-sm">La sortie serait plutôt : *</Label>
                       <ToggleGroup
                         type="single"
                         value={flueExit}
@@ -827,18 +993,18 @@ export default function ProjectCreate() {
                         className="grid grid-cols-3 gap-2"
                       >
                         <ToggleGroupItem value="roof" className="h-auto flex-col gap-1 py-3 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
-                          <span className="text-lg">🏠</span><span className="text-xs">Toiture</span>
+                          <span className="text-lg">🏠</span><span className="text-xs">Par le toit</span>
                         </ToggleGroupItem>
                         <ToggleGroupItem value="facade" className="h-auto flex-col gap-1 py-3 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
-                          <span className="text-lg">🧱</span><span className="text-xs">Façade</span>
+                          <span className="text-lg">🧱</span><span className="text-xs">En façade</span>
                         </ToggleGroupItem>
                         <ToggleGroupItem value="unknown" className="h-auto flex-col gap-1 py-3 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
-                          <span className="text-lg">❓</span><span className="text-xs">Inconnu</span>
+                          <span className="text-lg">❓</span><span className="text-xs">Je ne sais pas</span>
                         </ToggleGroupItem>
                       </ToggleGroup>
                     </div>
                     <div className="space-y-2">
-                      <Label className="text-sm text-muted-foreground">Niveau</Label>
+                      <Label className="text-sm text-muted-foreground">Le poêle serait installé :</Label>
                       <ToggleGroup
                         type="single"
                         value={flueLevel}
@@ -846,10 +1012,10 @@ export default function ProjectCreate() {
                         className="grid grid-cols-2 gap-2"
                       >
                         <ToggleGroupItem value="ground" className="h-auto flex-col gap-1 py-2.5 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
-                          <span className="text-lg">🏠</span><span className="text-xs">RDC</span>
+                          <span className="text-lg">🏠</span><span className="text-xs">Au rez-de-chaussée</span>
                         </ToggleGroupItem>
                         <ToggleGroupItem value="upper" className="h-auto flex-col gap-1 py-2.5 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
-                          <span className="text-lg">🏢</span><span className="text-xs">Étage</span>
+                          <span className="text-lg">🏢</span><span className="text-xs">À l'étage</span>
                         </ToggleGroupItem>
                       </ToggleGroup>
                     </div>
@@ -857,10 +1023,21 @@ export default function ProjectCreate() {
                 )}
 
                 {flueScenario && (
-                  <div>
+                  <div className="space-y-1.5">
                     <Badge className={cn("text-sm px-3 py-1", flueScenario.className)} variant="outline">
                       {flueScenario.label}
                     </Badge>
+                    <p className="text-xs text-muted-foreground">
+                      {flueScenario.label.startsWith("🟢")
+                        ? "Configuration favorable"
+                        : flueScenario.label.startsWith("🟡")
+                        ? "À confirmer lors de la visite technique"
+                        : flueScenario.label.startsWith("🟠")
+                        ? "Surcoût potentiel à évaluer"
+                        : flueScenario.label.startsWith("🔴")
+                        ? "Impact important sur le prix"
+                        : "À vérifier en visite technique"}
+                    </p>
                   </div>
                 )}
 
@@ -875,14 +1052,14 @@ export default function ProjectCreate() {
             {currentStep === 4 && (
               <section className="space-y-5">
                 <div>
-                  <h2 className="text-lg font-semibold text-foreground">Contraintes techniques</h2>
-                  <p className="text-xs text-muted-foreground mt-0.5">Pour anticiper la visite</p>
+                  <h2 className="text-lg font-semibold text-foreground">Quelques points techniques rapides</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">Pour anticiper la visite et éviter les surprises</p>
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-3">
-                  <ConstraintCard icon="🌬️" label="Arrivée d'air existante ?" value={airInlet} onChange={setAirInlet} />
-                  <ConstraintCard icon="🔄" label="VMC présente ?" value={vmc} onChange={setVmc} />
-                  <ConstraintCard icon="🧱" label="Mur de support combustible ?" hint="(bois, lambris, bardage…)" value={combustibleWall} onChange={setCombustibleWall} />
+                  <ConstraintCard icon="🌬️" label="L'air arrive facilement dans la pièce ?" hint="Grille ou arrivée d'air existante" value={airInlet} onChange={setAirInlet} />
+                  <ConstraintCard icon="🔄" label="Il y a une VMC ?" hint="Ventilation mécanique du logement" value={vmc} onChange={setVmc} />
+                  <ConstraintCard icon="🧱" label="Le mur derrière est en bois ou fragile ?" hint="Lambris, bardage, bois massif…" value={combustibleWall} onChange={setCombustibleWall} />
                 </div>
 
                 <div className="flex justify-between pt-2">
@@ -895,10 +1072,12 @@ export default function ProjectCreate() {
             {/* BLOC 5 — Commercial */}
             {currentStep === 5 && (
               <section className="space-y-5">
-                <h2 className="text-lg font-semibold text-foreground">Budget & délai</h2>
+                <div>
+                  <h2 className="text-lg font-semibold text-foreground">On se projette sur votre projet</h2>
+                </div>
 
                 <div className="space-y-2">
-                  <Label className="text-sm">Budget estimé *</Label>
+                  <Label className="text-sm">Vous aviez quel budget en tête ? *</Label>
                   <ToggleGroup
                     type="single"
                     value={budget}
@@ -921,7 +1100,7 @@ export default function ProjectCreate() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-sm text-muted-foreground">Délai souhaité</Label>
+                  <Label className="text-sm text-muted-foreground">Vous souhaitez installer :</Label>
                   <ToggleGroup
                     type="single"
                     value={horizon}
@@ -929,45 +1108,85 @@ export default function ProjectCreate() {
                     className="grid grid-cols-3 gap-2"
                   >
                     <ToggleGroupItem value="urgent" className="h-auto flex-col gap-1 py-3 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
-                      <span className="text-lg">⚡</span><span className="text-xs">&lt; 1 mois</span>
+                      <span className="text-lg">⚡</span><span className="text-xs">Rapidement</span>
                     </ToggleGroupItem>
                     <ToggleGroupItem value="lt_3months" className="h-auto flex-col gap-1 py-3 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
-                      <span className="text-lg">📅</span><span className="text-xs">1 à 3 mois</span>
+                      <span className="text-lg">📅</span><span className="text-xs">Dans les prochains mois</span>
                     </ToggleGroupItem>
                     <ToggleGroupItem value="gt_3months" className="h-auto flex-col gap-1 py-3 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
-                      <span className="text-lg">🗓️</span><span className="text-xs">+ 3 mois</span>
+                      <span className="text-lg">🗓️</span><span className="text-xs">Plus tard</span>
                     </ToggleGroupItem>
                   </ToggleGroup>
                 </div>
 
                 {/* RÉSUMÉ */}
-                <Card>
-                  <CardContent className="p-4 space-y-3">
+                <Card className="border-accent/30 bg-accent/[0.03]">
+                  <CardContent className="p-5 space-y-4">
                     <div className="flex items-center justify-between">
-                      <p className="text-sm font-semibold text-foreground">Synthèse</p>
+                      <p className="text-sm font-semibold text-foreground">Récapitulatif du projet</p>
                       <Badge className={cn("text-xs", reliabilityBadge.className)} variant="outline">
                         {reliabilityBadge.label}
                       </Badge>
                     </div>
-                    <dl className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs">
-                      <SummaryRow label="Type" value={projectType} />
-                      <SummaryRow label="Énergie" value={energyType} />
-                      <SummaryRow label="Usage" value={usageType} />
-                      <SummaryRow label="Logement" value={housingType} />
-                      <SummaryRow label="Surface" value={`${surfaceM2} m²`} />
-                      <SummaryRow label="Isolation" value={insulation} />
-                      <SummaryRow label="Puissance" value={`~${estimatedPower} kW`} />
-                      <SummaryRow label="Conduit" value={flueExisting} />
-                      <SummaryRow label="Position" value={fluePosition || flueExit} />
-                      <SummaryRow label="Air" value={airInlet} />
-                      <SummaryRow label="VMC" value={vmc} />
-                      <SummaryRow label="Mur combustible" value={combustibleWall} />
-                      <SummaryRow label="Budget" value={budget} />
-                      <SummaryRow label="Délai" value={horizon} />
-                    </dl>
-                    <p className="text-xs text-muted-foreground pt-1 border-t">
-                      Score qualification : <span className="font-mono font-semibold text-foreground">{qualificationScore}/5</span>
-                    </p>
+
+                    <ul className="space-y-1.5 text-sm text-foreground">
+                      <li className="flex gap-2">
+                        <span className="text-muted-foreground shrink-0">•</span>
+                        <span>{label("projectType", projectType)}</span>
+                      </li>
+                      {energyType && (
+                        <li className="flex gap-2">
+                          <span className="text-muted-foreground shrink-0">•</span>
+                          <span>{label("energyType", energyType)}</span>
+                        </li>
+                      )}
+                      {usageType && (
+                        <li className="flex gap-2">
+                          <span className="text-muted-foreground shrink-0">•</span>
+                          <span>{label("usageType", usageType)}</span>
+                        </li>
+                      )}
+                      <li className="flex gap-2">
+                        <span className="text-muted-foreground shrink-0">•</span>
+                        <span>
+                          {label("housingType", housingType)}
+                          {` · ${surfaceM2} m²`}
+                          {insulation && ` · ${label("insulation", insulation).toLowerCase()}`}
+                        </span>
+                      </li>
+                      <li className="flex gap-2">
+                        <span className="text-muted-foreground shrink-0">•</span>
+                        <span>Puissance indicative : <span className="font-mono font-semibold">~{estimatedPower} kW</span></span>
+                      </li>
+                      {flueScenario && (
+                        <li className="flex gap-2">
+                          <span className="text-muted-foreground shrink-0">•</span>
+                          <span>{flueScenario.label.replace(/^[^\s]+\s/, "")}</span>
+                        </li>
+                      )}
+                      {budget && (
+                        <li className="flex gap-2">
+                          <span className="text-muted-foreground shrink-0">•</span>
+                          <span>Budget : {label("budget", budget)}</span>
+                        </li>
+                      )}
+                      {horizon && (
+                        <li className="flex gap-2">
+                          <span className="text-muted-foreground shrink-0">•</span>
+                          <span>Délai : {label("horizon", horizon).toLowerCase()}</span>
+                        </li>
+                      )}
+                    </ul>
+
+                    <div className="pt-3 border-t border-border/60">
+                      <p className="text-sm font-medium">
+                        {qualificationScore >= 4
+                          ? "✅ Qualification solide — estimatif exploitable"
+                          : qualificationScore >= 2
+                          ? "⚠️ Qualification partielle — visite technique recommandée"
+                          : "🔴 Informations insuffisantes — visite technique nécessaire"}
+                      </p>
+                    </div>
                   </CardContent>
                 </Card>
 
@@ -977,9 +1196,13 @@ export default function ProjectCreate() {
                     size="lg"
                     disabled={userLoading || !tenantId || submitting || !canSubmit}
                     onClick={handleSubmit}
-                    className="min-w-[180px]"
+                    className="min-w-[220px]"
                   >
-                    {submitting ? "Création en cours…" : "Créer le projet"}
+                    {submitting
+                      ? "Création en cours…"
+                      : qualificationScore >= 4
+                      ? "Créer le projet et préparer un devis"
+                      : "Créer le projet et planifier la visite"}
                   </Button>
                 </div>
               </section>

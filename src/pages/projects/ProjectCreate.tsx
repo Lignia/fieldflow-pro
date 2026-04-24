@@ -1052,14 +1052,14 @@ export default function ProjectCreate() {
             {currentStep === 4 && (
               <section className="space-y-5">
                 <div>
-                  <h2 className="text-lg font-semibold text-foreground">Contraintes techniques</h2>
-                  <p className="text-xs text-muted-foreground mt-0.5">Pour anticiper la visite</p>
+                  <h2 className="text-lg font-semibold text-foreground">Quelques points techniques rapides</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">Pour anticiper la visite et éviter les surprises</p>
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-3">
-                  <ConstraintCard icon="🌬️" label="Arrivée d'air existante ?" value={airInlet} onChange={setAirInlet} />
-                  <ConstraintCard icon="🔄" label="VMC présente ?" value={vmc} onChange={setVmc} />
-                  <ConstraintCard icon="🧱" label="Mur de support combustible ?" hint="(bois, lambris, bardage…)" value={combustibleWall} onChange={setCombustibleWall} />
+                  <ConstraintCard icon="🌬️" label="L'air arrive facilement dans la pièce ?" hint="Grille ou arrivée d'air existante" value={airInlet} onChange={setAirInlet} />
+                  <ConstraintCard icon="🔄" label="Il y a une VMC ?" hint="Ventilation mécanique du logement" value={vmc} onChange={setVmc} />
+                  <ConstraintCard icon="🧱" label="Le mur derrière est en bois ou fragile ?" hint="Lambris, bardage, bois massif…" value={combustibleWall} onChange={setCombustibleWall} />
                 </div>
 
                 <div className="flex justify-between pt-2">

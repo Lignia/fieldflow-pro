@@ -629,27 +629,37 @@ export default function QuoteEditor() {
 
           {/* Client / Chantier info */}
           {projectInfo && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card>
-                <CardContent className="p-4 flex items-start gap-3">
+            <Card className="bg-accent/5 border-l-4 border-l-accent">
+              <CardContent className="p-4 flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-start gap-3 min-w-0">
                   <Building2 className="h-5 w-5 text-accent shrink-0 mt-0.5" />
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-foreground">{projectInfo.customer_name}</p>
-                    {projectInfo.customer_email && <p className="text-xs text-muted-foreground">{projectInfo.customer_email}</p>}
-                    {projectInfo.customer_phone && <p className="text-xs text-muted-foreground">{projectInfo.customer_phone}</p>}
+                    <p className="text-sm font-semibold text-foreground truncate">{projectInfo.customer_name}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {projectInfo.address_line1} · {projectInfo.postal_code} {projectInfo.city}
+                    </p>
                   </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4 flex items-start gap-3">
-                  <MapPin className="h-5 w-5 text-accent shrink-0 mt-0.5" />
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-foreground">{projectInfo.address_line1}</p>
-                    <p className="text-xs text-muted-foreground">{projectInfo.postal_code} {projectInfo.city}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge variant={quote.quote_kind === "final" ? "default" : quote.quote_kind === "service" ? "outline" : "secondary"}>
+                    {quote.quote_kind === "final" ? "✅ Devis final" : quote.quote_kind === "service" ? "🔧 SAV" : "📋 Estimatif"}
+                  </Badge>
+                  {projectInfo.flue_scenario && (
+                    <Badge variant="outline" className="text-xs text-muted-foreground">
+                      🏗️ {projectInfo.flue_scenario}
+                    </Badge>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs"
+                    onClick={() => navigate(`/projects/${projectId}`)}
+                  >
+                    Voir le projet <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           )}
 
           {/* Dates */}

@@ -347,7 +347,7 @@ export default function ProjectCreate() {
   const canSubmit = canNext1 && canNext2 && canNext3 && !!budget;
 
   // --- Submit project ---
-  const handleSubmit = async () => {
+  const handleSubmit = async (intent: "estimate" | "visit" = "estimate") => {
     const newErrors: typeof errors = {};
     if (!selectedCustomer) newErrors.customer = "Veuillez sélectionner un client.";
     if (!selectedPropertyId) newErrors.property = "Veuillez sélectionner une adresse.";
@@ -407,7 +407,11 @@ export default function ProjectCreate() {
 
       if (error) throw error;
       toast.success(`Projet ${data.project_number} créé`);
-      navigate(`/projects/${data.id}`);
+      if (intent === "estimate") {
+        navigate(`/projects/${data.id}?tab=commercial`);
+      } else {
+        navigate(`/projects/${data.id}`);
+      }
     } catch (e: any) {
       toast.error("Erreur lors de la création du projet", { description: e.message });
     } finally {

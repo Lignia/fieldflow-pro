@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Search, X, Loader2, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -98,8 +98,13 @@ function customerDisplay(c: CustomerLite): string {
 
 export default function ServiceRequestCreate() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { toast } = useToast();
   const { tenantId } = useCurrentUser();
+
+  // Sécurité : startsWith("/") empêche les redirections vers des URLs externes
+  const rawReturnTo = searchParams.get("return_to");
+  const returnTo = rawReturnTo?.startsWith("/") ? rawReturnTo : null;
 
   // Customer search
   const [customerSearch, setCustomerSearch] = useState("");
@@ -448,7 +453,7 @@ export default function ServiceRequestCreate() {
       title: "Demande SAV créée",
       description: "Vous accédez à la fiche.",
     });
-    navigate(`/service-requests/${created.id}`);
+    navigate(returnTo ?? `/service-requests/${created.id}`);
   }
 
   const isCallEvent = eventType.endsWith("_call");

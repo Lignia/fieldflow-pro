@@ -136,6 +136,10 @@ export default function InterventionCreate() {
   const qpInstallationId = searchParams.get("installation_id");
   const qpServiceRequestId = searchParams.get("service_request_id");
 
+  // Sécurité : startsWith("/") empêche les redirections vers des URLs externes
+  const rawReturnTo = searchParams.get("return_to");
+  const returnTo = rawReturnTo?.startsWith("/") ? rawReturnTo : null;
+
   // Form state
   const [type, setType] = useState<InterventionType>(qpType ?? "sweep");
   const [startAt, setStartAt] = useState("");
@@ -436,7 +440,7 @@ export default function InterventionCreate() {
     }
 
     toast({ title: "Intervention créée" });
-    navigate(`/interventions/${data.id}`);
+    navigate(returnTo ?? `/interventions/${data.id}`);
   }
 
   return (
@@ -445,7 +449,7 @@ export default function InterventionCreate() {
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => navigate("/interventions")}
+          onClick={() => navigate(returnTo ?? "/interventions")}
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>

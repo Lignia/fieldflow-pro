@@ -3,7 +3,7 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft, Plus, Trash2, Save, Send, Search, Loader2,
   MoreHorizontal, Copy, Type, Layers, FileText, Building2, MapPin,
-  Calendar, ClipboardList,
+  Calendar, ClipboardList, ArrowRight, Tag,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -54,6 +54,7 @@ interface EditorItem {
   vat_rate: number;
   sort_order: number;
   line_type: "item";
+  line_category?: LineCategory | null;
 }
 
 interface EditorText {
@@ -68,6 +69,16 @@ interface EditorText {
 
 type EditorRow = EditorSection | EditorItem | EditorText;
 
+type LineCategory = "device" | "flue" | "labor" | "option" | "misc";
+
+const CATEGORY_LABELS: Record<LineCategory, string> = {
+  device: "🔥 Appareil",
+  flue: "🏗️ Fumisterie",
+  labor: "🔧 Pose",
+  option: "⭐ Option",
+  misc: "📦 Divers",
+};
+
 interface ProjectInfo {
   id: string;
   project_number: string;
@@ -79,6 +90,7 @@ interface ProjectInfo {
   address_line1: string;
   city: string;
   postal_code: string;
+  flue_scenario?: string | null;
 }
 
 // ─── Constants ──────────────────────────────────────────────────

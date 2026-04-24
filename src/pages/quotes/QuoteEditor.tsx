@@ -4,6 +4,7 @@ import {
   ArrowLeft, Plus, Trash2, Save, Send, Search, Loader2,
   MoreHorizontal, Copy, Type, Layers, FileText, Building2, MapPin,
   Calendar, ClipboardList, ArrowRight, Tag, Flame, Construction, Wrench,
+  ChevronDown, BookOpen, BookmarkPlus,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -28,6 +29,9 @@ import {
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
+} from "@/components/ui/dialog";
 
 // ─── Types ──────────────────────────────────────────────────────
 type UnitType = "u" | "m" | "m2" | "forfait" | "h";
@@ -386,6 +390,11 @@ export default function QuoteEditor() {
   const [startDate, setStartDate] = useState("");
   const [initializing, setInitializing] = useState(true);
   const [savingAll, setSavingAll] = useState(false);
+  const [duplicating, setDuplicating] = useState(false);
+  const [saveToLibOpen, setSaveToLibOpen] = useState(false);
+  const [bundleName, setBundleName] = useState("");
+  const [bundleNotes, setBundleNotes] = useState("");
+  const [savingBundle, setSavingBundle] = useState(false);
   const initRef = useRef(false);
 
   // Load project info
@@ -737,6 +746,78 @@ export default function QuoteEditor() {
     }
   }, [quote, tenantId, quoteDate, expiryDate, visitDate, startDate, rows, coreUser, projectInfo, navigate, projectId]);
 
+  // ─── Duplication ──────────────────────────────────────────────
+  const handleDuplicate = useCallback(async () => {
+    if (!quote || !tenantId || !coreUser) {
+      toast.error("Session non prête, réessayez dans un instant");
+      return;
+    }
+    setDuplicating(true);
+    try {
+      const { data, error } = await billingDb.rpc("duplicate_quote", {
+        p_quote_id: quote.id,
+        p_tenant_id: tenantId,
+        p_actor_id: coreUser.id,
+      });
+      if (error) throw error;
+      const result = data as {
+        success: boolean;
+        new_quote_id: string;
+        new_quote_number: string;
+        project_id: string | null;
+      };
+      toast.success(`Devis dupliqué : ${result.new_quote_number}`, {
+        description: "Ouverture du nouveau devis…",
+      });
+      const targetProject = result.project_id || projectId;
+      navigate(`/projects/${targetProject}/quotes/editor?id=${result.new_quote_id}`);
+    } catch (err: any) {
+      toast.error(err.message || "Erreur lors de la duplication");
+    } finally {
+      setDuplicating(false);
+    }
+  }, [quote, tenantId, coreUser, projectId, navigate]);
+
+  // ─── Save as bundle (bibliothèque) ────────────────────────────
+  const itemRows = useMemo(
+    () => rows.filter((r): r is EditorItem => r._type === "item"),
+    [rows],
+  );
+
+  const handleSaveToLibrary = useCallback(async () => {
+    if (!bundleName.trim() || !tenantId) return;
+    if (itemRows.length === 0) {
+      toast.error("Ajoutez au moins une ligne avant d'enregistrer");
+      return;
+    }
+    setSavingBundle(true);
+    try {
+      const { catalogDb } = await import("@/integrations/supabase/schema-clients");
+      const { error } = await catalogDb.rpc("save_lines_as_bundle", {
+        p_tenant_id: tenantId,
+        p_name: bundleName.trim(),
+        p_lines: itemRows.map((r) => ({
+          label: r.label,
+          qty: r.qty,
+          unit: r.unit,
+          unit_price_ht: r.unit_price_ht,
+          vat_rate: r.vat_rate,
+          line_category: r.line_category ?? null,
+        })) as any,
+        p_notes: bundleNotes.trim() || null,
+      });
+      if (error) throw error;
+      toast.success("Ouvrage enregistré dans votre catalogue", { description: bundleName });
+      setSaveToLibOpen(false);
+      setBundleName("");
+      setBundleNotes("");
+    } catch (err: any) {
+      toast.error(err.message || "Erreur lors de l'enregistrement");
+    } finally {
+      setSavingBundle(false);
+    }
+  }, [bundleName, bundleNotes, tenantId, itemRows]);
+
   // ─── Item numbering ───────────────────────────────────────────
   let itemCounter = 0;
 
@@ -794,6 +875,28 @@ export default function QuoteEditor() {
           )}
 
           <div className="ml-auto flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handleDuplicate} disabled={duplicating || savingAll || !quote}>
+              {duplicating ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Copy className="h-3.5 w-3.5 mr-1" />}
+              <span className="hidden sm:inline">Dupliquer</span>
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm" disabled={savingAll}>
+                  <BookOpen className="h-3.5 w-3.5 mr-1" />
+                  <span className="hidden sm:inline">Bibliothèque</span>
+                  <ChevronDown className="h-3.5 w-3.5 ml-1 opacity-60" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={() => setSaveToLibOpen(true)}
+                  disabled={itemRows.length === 0}
+                >
+                  <BookmarkPlus className="h-3.5 w-3.5 mr-2" />
+                  Enregistrer comme ouvrage
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             <Button variant="outline" size="sm" onClick={() => handleSave(false)} disabled={savingAll}>
               {savingAll ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Save className="h-3.5 w-3.5 mr-1" />}
               Enregistrer
@@ -1111,6 +1214,71 @@ export default function QuoteEditor() {
           </div>
         </div>
       </footer>
+
+      {/* ─── DIALOG : Enregistrer comme ouvrage ─────────────────── */}
+      <Dialog open={saveToLibOpen} onOpenChange={setSaveToLibOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Enregistrer comme ouvrage</DialogTitle>
+            <DialogDescription>
+              Cet ouvrage sera disponible dans votre catalogue pour les prochains devis.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Nom de l'ouvrage *</Label>
+              <Input
+                value={bundleName}
+                onChange={(e) => setBundleName(e.target.value)}
+                placeholder="ex : Fumisterie complète 6 m granulés"
+                autoFocus
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-xs">Notes (optionnel)</Label>
+              <Textarea
+                value={bundleNotes}
+                onChange={(e) => setBundleNotes(e.target.value)}
+                placeholder="Conditions d'application, ajustements possibles…"
+                rows={2}
+              />
+            </div>
+
+            <Card className="bg-muted/30">
+              <CardContent className="p-3 text-xs text-muted-foreground space-y-0.5">
+                <p className="font-medium text-foreground mb-1">
+                  Lignes incluses ({itemRows.length}) :
+                </p>
+                {itemRows.slice(0, 4).map((r, i) => (
+                  <p key={i} className="truncate">
+                    • {r.label || "Sans désignation"} — {fmt(r.qty * r.unit_price_ht)}
+                  </p>
+                ))}
+                {itemRows.length > 4 && (
+                  <p>+ {itemRows.length - 4} autres lignes</p>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSaveToLibOpen(false)} disabled={savingBundle}>
+              Annuler
+            </Button>
+            <Button
+              onClick={handleSaveToLibrary}
+              disabled={!bundleName.trim() || savingBundle || itemRows.length === 0}
+            >
+              {savingBundle
+                ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+                : <Save className="h-3.5 w-3.5 mr-1" />}
+              Enregistrer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

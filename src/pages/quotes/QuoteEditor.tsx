@@ -215,29 +215,72 @@ function SectionRow({ row, subtotal, onChange, onDuplicate, onDelete }: {
   );
 }
 
+// ─── Category Picker (compact, discret) ─────────────────────────
+function CategoryPicker({ value, onChange }: { value: LineCategory | null | undefined; onChange: (v: LineCategory | null) => void }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        {value ? (
+          <button
+            type="button"
+            className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[11px] font-medium text-foreground hover:bg-muted transition-colors"
+          >
+            <span className="truncate max-w-[110px]">{CATEGORY_LABELS[value]}</span>
+          </button>
+        ) : (
+          <button
+            type="button"
+            className="inline-flex items-center gap-1 rounded-full border border-dashed border-border px-2 py-0.5 text-[11px] text-muted-foreground hover:text-foreground hover:border-foreground/40 transition-colors"
+            title="Catégoriser cette ligne"
+          >
+            <Tag className="h-3 w-3" /> Catégorie
+          </button>
+        )}
+      </PopoverTrigger>
+      <PopoverContent className="w-44 p-1" align="start">
+        <button
+          type="button"
+          onClick={() => { onChange(null); setOpen(false); }}
+          className="w-full text-left px-2 py-1.5 text-xs rounded hover:bg-muted text-muted-foreground"
+        >
+          — Aucune
+        </button>
+        {(Object.entries(CATEGORY_LABELS) as [LineCategory, string][]).map(([k, v]) => (
+          <button
+            key={k}
+            type="button"
+            onClick={() => { onChange(k); setOpen(false); }}
+            className={`w-full text-left px-2 py-1.5 text-xs rounded hover:bg-muted ${value === k ? "bg-accent/10 text-foreground font-medium" : "text-foreground"}`}
+          >
+            {v}
+          </button>
+        ))}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
 // ─── Item Row ───────────────────────────────────────────────────
 function ItemRow({ row, index, onChange, onDuplicate, onDelete }: {
   row: EditorItem; index: number; onChange: (field: string, value: any) => void; onDuplicate: () => void; onDelete: () => void;
 }) {
   const totalHt = row.qty * row.unit_price_ht;
   return (
-    <div className="grid grid-cols-[32px_1fr_120px_72px_88px_100px_80px_96px_36px] gap-1.5 items-center px-3 py-1.5 hover:bg-muted/20 rounded transition-colors">
+    <div className="grid grid-cols-[32px_1fr_72px_88px_100px_80px_96px_36px] gap-1.5 items-center px-3 py-1.5 hover:bg-muted/20 rounded transition-colors">
       <span className="text-xs text-muted-foreground text-center tabular-nums">{index}</span>
-      <Input value={row.label} onChange={(e) => onChange("label", e.target.value)} placeholder="Désignation" className="h-8 text-sm" />
-      <Select
-        value={row.line_category ?? "__none__"}
-        onValueChange={(v) => onChange("line_category", v === "__none__" ? null : v)}
-      >
-        <SelectTrigger className="h-8 text-xs">
-          <SelectValue placeholder="—" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="__none__">—</SelectItem>
-          {(Object.entries(CATEGORY_LABELS) as [LineCategory, string][]).map(([k, v]) => (
-            <SelectItem key={k} value={k}>{v}</SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <div className="min-w-0 space-y-1">
+        <Input
+          value={row.label}
+          onChange={(e) => onChange("label", e.target.value)}
+          placeholder="Désignation"
+          className="h-8 text-sm"
+        />
+        <CategoryPicker
+          value={row.line_category}
+          onChange={(v) => onChange("line_category", v)}
+        />
+      </div>
       <Input type="number" min={0} step={0.01} value={row.qty || ""} onChange={(e) => onChange("qty", parseFloat(e.target.value) || 0)} className="h-8 text-sm text-right" />
       <Select value={row.unit} onValueChange={(v) => onChange("unit", v)}>
         <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>

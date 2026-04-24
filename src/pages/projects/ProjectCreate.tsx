@@ -1121,62 +1121,140 @@ export default function ProjectCreate() {
 
                 {/* RÉSUMÉ */}
                 <Card className="border-accent/30 bg-accent/[0.03]">
-                  <CardContent className="p-5 space-y-4">
-                    <div className="flex items-center justify-between">
+                  <CardContent className="p-5 space-y-5">
+                    <div className="flex items-center justify-between gap-3">
                       <p className="text-sm font-semibold text-foreground">Récapitulatif du projet</p>
                       <Badge className={cn("text-xs", reliabilityBadge.className)} variant="outline">
                         {reliabilityBadge.label}
                       </Badge>
                     </div>
 
-                    <ul className="space-y-1.5 text-sm text-foreground">
-                      <li className="flex gap-2">
-                        <span className="text-muted-foreground shrink-0">•</span>
-                        <span>{label("projectType", projectType)}</span>
-                      </li>
-                      {energyType && (
-                        <li className="flex gap-2">
-                          <span className="text-muted-foreground shrink-0">•</span>
-                          <span>{label("energyType", energyType)}</span>
-                        </li>
-                      )}
-                      {usageType && (
-                        <li className="flex gap-2">
-                          <span className="text-muted-foreground shrink-0">•</span>
-                          <span>{label("usageType", usageType)}</span>
-                        </li>
-                      )}
-                      <li className="flex gap-2">
-                        <span className="text-muted-foreground shrink-0">•</span>
-                        <span>
-                          {label("housingType", housingType)}
-                          {` · ${surfaceM2} m²`}
-                          {insulation && ` · ${label("insulation", insulation).toLowerCase()}`}
-                        </span>
-                      </li>
-                      <li className="flex gap-2">
-                        <span className="text-muted-foreground shrink-0">•</span>
-                        <span>Puissance indicative : <span className="font-mono font-semibold">~{estimatedPower} kW</span></span>
-                      </li>
-                      {flueScenario && (
-                        <li className="flex gap-2">
-                          <span className="text-muted-foreground shrink-0">•</span>
-                          <span>{flueScenario.label.replace(/^[^\s]+\s/, "")}</span>
-                        </li>
-                      )}
-                      {budget && (
-                        <li className="flex gap-2">
-                          <span className="text-muted-foreground shrink-0">•</span>
-                          <span>Budget : {label("budget", budget)}</span>
-                        </li>
-                      )}
-                      {horizon && (
-                        <li className="flex gap-2">
-                          <span className="text-muted-foreground shrink-0">•</span>
-                          <span>Délai : {label("horizon", horizon).toLowerCase()}</span>
-                        </li>
-                      )}
-                    </ul>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* PROJET */}
+                      <div className="space-y-2">
+                        <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Projet</p>
+                        <dl className="space-y-1 text-sm">
+                          {projectType && (
+                            <div className="flex justify-between gap-3">
+                              <dt className="text-muted-foreground">Type</dt>
+                              <dd className="font-medium text-right">{label("projectType", projectType)}</dd>
+                            </div>
+                          )}
+                          {energyType && (
+                            <div className="flex justify-between gap-3">
+                              <dt className="text-muted-foreground">Énergie</dt>
+                              <dd className="font-medium text-right">{label("energyType", energyType)}</dd>
+                            </div>
+                          )}
+                          {usageType && (
+                            <div className="flex justify-between gap-3">
+                              <dt className="text-muted-foreground">Usage</dt>
+                              <dd className="font-medium text-right">{label("usageType", usageType)}</dd>
+                            </div>
+                          )}
+                          {firePreference && (
+                            <div className="flex justify-between gap-3">
+                              <dt className="text-muted-foreground">Préférence</dt>
+                              <dd className="font-medium text-right">{label("firePreference", firePreference)}</dd>
+                            </div>
+                          )}
+                        </dl>
+                      </div>
+
+                      {/* LOGEMENT */}
+                      <div className="space-y-2">
+                        <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Logement</p>
+                        <dl className="space-y-1 text-sm">
+                          {housingType && (
+                            <div className="flex justify-between gap-3">
+                              <dt className="text-muted-foreground">Type</dt>
+                              <dd className="font-medium text-right">{label("housingType", housingType)}</dd>
+                            </div>
+                          )}
+                          <div className="flex justify-between gap-3">
+                            <dt className="text-muted-foreground">Surface</dt>
+                            <dd className="font-medium text-right font-mono">{surfaceM2} m²</dd>
+                          </div>
+                          {insulation && (
+                            <div className="flex justify-between gap-3">
+                              <dt className="text-muted-foreground">Isolation</dt>
+                              <dd className="font-medium text-right">{label("insulation", insulation)}</dd>
+                            </div>
+                          )}
+                          {currentHeating && (
+                            <div className="flex justify-between gap-3">
+                              <dt className="text-muted-foreground">Chauffage actuel</dt>
+                              <dd className="font-medium text-right">{label("currentHeating", currentHeating)}</dd>
+                            </div>
+                          )}
+                          {occupancyPattern && (
+                            <div className="flex justify-between gap-3">
+                              <dt className="text-muted-foreground">Présence</dt>
+                              <dd className="font-medium text-right">{label("occupancyPattern", occupancyPattern)}</dd>
+                            </div>
+                          )}
+                          <div className="flex justify-between gap-3 pt-1 border-t border-border/40">
+                            <dt className="text-muted-foreground">Puissance indicative</dt>
+                            <dd className="font-mono font-semibold text-right">~{estimatedPower} kW</dd>
+                          </div>
+                        </dl>
+                      </div>
+
+                      {/* FUMISTERIE */}
+                      <div className="space-y-2">
+                        <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Fumisterie</p>
+                        <div className="space-y-2 text-sm">
+                          {flueScenario ? (
+                            <Badge variant="outline" className={cn("text-xs", flueScenario.className)}>
+                              {flueScenario.label}
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-xs bg-warning/10 text-warning border-warning/40">
+                              ⚠ À vérifier en visite technique
+                            </Badge>
+                          )}
+                          <dl className="space-y-1">
+                            {flueExisting && (
+                              <div className="flex justify-between gap-3">
+                                <dt className="text-muted-foreground">Conduit</dt>
+                                <dd className="font-medium text-right">{label("flueExisting", flueExisting)}</dd>
+                              </div>
+                            )}
+                            {fluePosition && (
+                              <div className="flex justify-between gap-3">
+                                <dt className="text-muted-foreground">Position</dt>
+                                <dd className="font-medium text-right">{label("fluePosition", fluePosition)}</dd>
+                              </div>
+                            )}
+                            {flueExit && (
+                              <div className="flex justify-between gap-3">
+                                <dt className="text-muted-foreground">Sortie</dt>
+                                <dd className="font-medium text-right">{label("flueExit", flueExit)}</dd>
+                              </div>
+                            )}
+                          </dl>
+                        </div>
+                      </div>
+
+                      {/* BUDGET & DÉLAI */}
+                      <div className="space-y-2">
+                        <p className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold">Budget & Délai</p>
+                        <dl className="space-y-1 text-sm">
+                          {budget && (
+                            <div className="flex justify-between gap-3">
+                              <dt className="text-muted-foreground">Budget</dt>
+                              <dd className="font-medium text-right">{label("budget", budget)}</dd>
+                            </div>
+                          )}
+                          {horizon && (
+                            <div className="flex justify-between gap-3">
+                              <dt className="text-muted-foreground">Délai</dt>
+                              <dd className="font-medium text-right">{label("horizon", horizon)}</dd>
+                            </div>
+                          )}
+                        </dl>
+                      </div>
+                    </div>
 
                     <div className="pt-3 border-t border-border/60">
                       <p className="text-sm font-medium">
@@ -1261,11 +1339,3 @@ function ConstraintCard({
   );
 }
 
-function SummaryRow({ label, value }: { label: string; value: string | null | undefined }) {
-  return (
-    <>
-      <dt className="text-muted-foreground">{label}</dt>
-      <dd className="font-medium text-foreground truncate">{value || "—"}</dd>
-    </>
-  );
-}

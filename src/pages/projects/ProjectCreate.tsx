@@ -668,20 +668,21 @@ export default function ProjectCreate() {
             {currentStep === 1 && (
               <section className="space-y-5">
                 <div>
-                  <h2 className="text-lg font-semibold text-foreground">Quel est le projet ?</h2>
+                  <h2 className="text-lg font-semibold text-foreground">Parlez-moi de votre projet</h2>
+                  <p className="text-xs text-muted-foreground mt-0.5">Pour orienter le bon appareil</p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label className="text-sm">Type de projet *</Label>
+                  <Label className="text-sm">Vous êtes dans quel cas ? *</Label>
                   <ToggleGroup
                     type="single"
                     value={projectType}
                     onValueChange={(v) => v && setProjectType(v)}
-                    className="grid grid-cols-3 gap-2"
+                    className="grid grid-cols-3 gap-2 sm:grid-cols-5"
                   >
                     <ToggleGroupItem value="installation_neuve" className="h-auto flex-col gap-1 py-3 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
                       <span className="text-xl">🔨</span>
-                      <span className="text-xs font-medium">Installation neuve</span>
+                      <span className="text-xs font-medium">Première installation</span>
                     </ToggleGroupItem>
                     <ToggleGroupItem value="remplacement" className="h-auto flex-col gap-1 py-3 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
                       <span className="text-xl">🔄</span>
@@ -690,6 +691,14 @@ export default function ProjectCreate() {
                     <ToggleGroupItem value="renovation" className="h-auto flex-col gap-1 py-3 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
                       <span className="text-xl">🏠</span>
                       <span className="text-xs font-medium">Rénovation</span>
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="construction" className="h-auto flex-col gap-1 py-3 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
+                      <span className="text-xl">🏗️</span>
+                      <span className="text-xs font-medium">Construction neuve</span>
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="secondary" className="h-auto flex-col gap-1 py-3 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
+                      <span className="text-xl">🌿</span>
+                      <span className="text-xs font-medium">Résidence secondaire</span>
                     </ToggleGroupItem>
                   </ToggleGroup>
                 </div>
@@ -732,6 +741,41 @@ export default function ProjectCreate() {
                       <span className="text-lg">✨</span><span className="text-xs">Confort</span>
                     </ToggleGroupItem>
                   </ToggleGroup>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm text-muted-foreground">Vous préférez plutôt ?</Label>
+                  <ToggleGroup
+                    type="single"
+                    value={firePreference}
+                    onValueChange={(v) => setFirePreference(v ?? "")}
+                    className="grid grid-cols-3 gap-2"
+                  >
+                    <ToggleGroupItem value="ritual" className="h-auto flex-col gap-1 py-3 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
+                      <span className="text-lg">🪵</span>
+                      <span className="text-xs font-medium">Le plaisir du feu</span>
+                      <span className="text-[10px] text-muted-foreground">Bûches, flammes, rituel</span>
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="automation" className="h-auto flex-col gap-1 py-3 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
+                      <span className="text-lg">🤖</span>
+                      <span className="text-xs font-medium">L'autonomie</span>
+                      <span className="text-[10px] text-muted-foreground">Programmation, confort</span>
+                    </ToggleGroupItem>
+                    <ToggleGroupItem value="both" className="h-auto flex-col gap-1 py-3 data-[state=on]:bg-accent/10 data-[state=on]:border-accent data-[state=on]:text-accent border">
+                      <span className="text-lg">⚖️</span>
+                      <span className="text-xs font-medium">Les deux</span>
+                      <span className="text-[10px] text-muted-foreground">Plaisir et simplicité</span>
+                    </ToggleGroupItem>
+                  </ToggleGroup>
+                  {firePreference === "ritual" && (
+                    <Badge variant="outline" className="bg-success/10 text-success border-success/30 text-xs">🪵 Bois recommandé</Badge>
+                  )}
+                  {firePreference === "automation" && (
+                    <Badge variant="outline" className="bg-success/10 text-success border-success/30 text-xs">🤖 Granulés recommandés</Badge>
+                  )}
+                  {firePreference === "both" && (
+                    <Badge variant="outline" className="bg-accent/10 text-accent border-accent/30 text-xs">⚖️ Bois ou granulés possibles</Badge>
+                  )}
                 </div>
 
                 <div className="flex justify-end pt-2">

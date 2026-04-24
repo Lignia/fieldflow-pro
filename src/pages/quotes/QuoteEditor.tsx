@@ -3,7 +3,7 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft, Plus, Trash2, Save, Send, Search, Loader2,
   MoreHorizontal, Copy, Type, Layers, FileText, Building2, MapPin,
-  Calendar, ClipboardList,
+  Calendar, ClipboardList, ArrowRight, Tag,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -54,6 +54,7 @@ interface EditorItem {
   vat_rate: number;
   sort_order: number;
   line_type: "item";
+  line_category?: LineCategory | null;
 }
 
 interface EditorText {
@@ -68,6 +69,16 @@ interface EditorText {
 
 type EditorRow = EditorSection | EditorItem | EditorText;
 
+type LineCategory = "device" | "flue" | "labor" | "option" | "misc";
+
+const CATEGORY_LABELS: Record<LineCategory, string> = {
+  device: "🔥 Appareil",
+  flue: "🏗️ Fumisterie",
+  labor: "🔧 Pose",
+  option: "⭐ Option",
+  misc: "📦 Divers",
+};
+
 interface ProjectInfo {
   id: string;
   project_number: string;
@@ -79,6 +90,7 @@ interface ProjectInfo {
   address_line1: string;
   city: string;
   postal_code: string;
+  flue_scenario?: string | null;
 }
 
 // ─── Constants ──────────────────────────────────────────────────
@@ -197,9 +209,23 @@ function ItemRow({ row, index, onChange, onDuplicate, onDelete }: {
 }) {
   const totalHt = row.qty * row.unit_price_ht;
   return (
-    <div className="grid grid-cols-[32px_1fr_72px_88px_100px_80px_96px_36px] gap-1.5 items-center px-3 py-1.5 hover:bg-muted/20 rounded transition-colors">
+    <div className="grid grid-cols-[32px_1fr_120px_72px_88px_100px_80px_96px_36px] gap-1.5 items-center px-3 py-1.5 hover:bg-muted/20 rounded transition-colors">
       <span className="text-xs text-muted-foreground text-center tabular-nums">{index}</span>
       <Input value={row.label} onChange={(e) => onChange("label", e.target.value)} placeholder="Désignation" className="h-8 text-sm" />
+      <Select
+        value={row.line_category ?? "__none__"}
+        onValueChange={(v) => onChange("line_category", v === "__none__" ? null : v)}
+      >
+        <SelectTrigger className="h-8 text-xs">
+          <SelectValue placeholder="—" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="__none__">—</SelectItem>
+          {(Object.entries(CATEGORY_LABELS) as [LineCategory, string][]).map(([k, v]) => (
+            <SelectItem key={k} value={k}>{v}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
       <Input type="number" min={0} step={0.01} value={row.qty || ""} onChange={(e) => onChange("qty", parseFloat(e.target.value) || 0)} className="h-8 text-sm text-right" />
       <Select value={row.unit} onValueChange={(v) => onChange("unit", v)}>
         <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
@@ -285,6 +311,7 @@ export default function QuoteEditor() {
           address_line1: data.address_line1 || "",
           city: data.city || "",
           postal_code: data.postal_code || "",
+          flue_scenario: (data as any).payload?.flue_scenario ?? null,
         });
       }
     })();
@@ -305,6 +332,13 @@ export default function QuoteEditor() {
 
   // ─── Row management ───────────────────────────────────────────
   const addItem = useCallback((catalogItem?: CatalogItem) => {
+    let autoCategory: LineCategory | null = null;
+    if (catalogItem) {
+      const pt = (catalogItem as any).product_type;
+      if (pt === "service") autoCategory = "labor";
+      else if (pt === "appliance") autoCategory = "device";
+      else if (pt === "flue" || pt === "conduit") autoCategory = "flue";
+    }
     const newRow: EditorItem = {
       _type: "item", _key: nextKey(), line_type: "item",
       product_id: catalogItem?.id || null,
@@ -314,6 +348,7 @@ export default function QuoteEditor() {
       unit_price_ht: catalogItem?.unit_price_ht || 0,
       vat_rate: catalogItem ? suggestedVat(catalogItem.product_type) : 10,
       sort_order: rows.length,
+      line_category: autoCategory,
     };
     setRows((prev) => [...prev, newRow]);
   }, [rows.length]);
@@ -372,6 +407,19 @@ export default function QuoteEditor() {
     }
     return map;
   }, [rows]);
+
+  // Category subtotals (HT) — only the 3 main displayable categories
+  const categorySubtotals = useMemo(() => {
+    const map: Partial<Record<LineCategory, number>> = {};
+    for (const row of rows) {
+      if (row._type !== "item" || !row.line_category) continue;
+      const ht = row.qty * row.unit_price_ht;
+      map[row.line_category] = (map[row.line_category] || 0) + ht;
+    }
+    return map;
+  }, [rows]);
+
+  const hasAnyCategory = Object.keys(categorySubtotals).length > 0;
 
   // ─── Save ─────────────────────────────────────────────────────
   const handleSave = useCallback(async (finalize = false) => {
@@ -461,7 +509,9 @@ export default function QuoteEditor() {
             unit_price_ht: l._type === "item" ? (l as EditorItem).unit_price_ht : 0,
             vat_rate: l._type === "item" ? (l as EditorItem).vat_rate : 0,
             sort_order: l.sort_order,
-            metadata: {},
+            metadata: l._type === "item" && (l as EditorItem).line_category
+              ? { line_category: (l as EditorItem).line_category }
+              : {},
           }))
         );
         if (lineErr) throw lineErr;
@@ -579,27 +629,37 @@ export default function QuoteEditor() {
 
           {/* Client / Chantier info */}
           {projectInfo && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Card>
-                <CardContent className="p-4 flex items-start gap-3">
+            <Card className="bg-accent/5 border-l-4 border-l-accent">
+              <CardContent className="p-4 flex flex-wrap items-center justify-between gap-3">
+                <div className="flex items-start gap-3 min-w-0">
                   <Building2 className="h-5 w-5 text-accent shrink-0 mt-0.5" />
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-foreground">{projectInfo.customer_name}</p>
-                    {projectInfo.customer_email && <p className="text-xs text-muted-foreground">{projectInfo.customer_email}</p>}
-                    {projectInfo.customer_phone && <p className="text-xs text-muted-foreground">{projectInfo.customer_phone}</p>}
+                    <p className="text-sm font-semibold text-foreground truncate">{projectInfo.customer_name}</p>
+                    <p className="text-xs text-muted-foreground truncate">
+                      {projectInfo.address_line1} · {projectInfo.postal_code} {projectInfo.city}
+                    </p>
                   </div>
-                </CardContent>
-              </Card>
-              <Card>
-                <CardContent className="p-4 flex items-start gap-3">
-                  <MapPin className="h-5 w-5 text-accent shrink-0 mt-0.5" />
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-foreground">{projectInfo.address_line1}</p>
-                    <p className="text-xs text-muted-foreground">{projectInfo.postal_code} {projectInfo.city}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <Badge variant={quote.quote_kind === "final" ? "default" : quote.quote_kind === "service" ? "outline" : "secondary"}>
+                    {quote.quote_kind === "final" ? "✅ Devis final" : quote.quote_kind === "service" ? "🔧 SAV" : "📋 Estimatif"}
+                  </Badge>
+                  {projectInfo.flue_scenario && (
+                    <Badge variant="outline" className="text-xs text-muted-foreground">
+                      🏗️ {projectInfo.flue_scenario}
+                    </Badge>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs"
+                    onClick={() => navigate(`/projects/${projectId}`)}
+                  >
+                    Voir le projet <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           )}
 
           {/* Dates */}
@@ -638,9 +698,10 @@ export default function QuoteEditor() {
           {/* ─── CANVAS ─────────────────────────────────────────── */}
           <Card className="overflow-x-auto overflow-hidden">
             {/* Column headers */}
-            <div className="hidden md:grid md:grid-cols-[32px_1fr_72px_88px_100px_80px_96px_36px] gap-1.5 px-3 py-2 bg-muted/30 border-b border-border text-xs font-medium text-muted-foreground">
+            <div className="hidden md:grid md:grid-cols-[32px_1fr_120px_72px_88px_100px_80px_96px_36px] gap-1.5 px-3 py-2 bg-muted/30 border-b border-border text-xs font-medium text-muted-foreground">
               <span className="text-center">N°</span>
               <span>Désignation</span>
+              <span>Catégorie</span>
               <span className="text-right">Qté</span>
               <span>Unité</span>
               <span className="text-right">P.U. HT</span>
@@ -651,12 +712,15 @@ export default function QuoteEditor() {
 
             <div className="divide-y divide-border/50">
               {rows.length === 0 && (
-                <div className="py-16 text-center">
-                  <ClipboardList className="h-10 w-10 mx-auto text-muted-foreground/30 mb-4" />
-                  <p className="text-sm font-medium text-muted-foreground mb-1">Insérez une première ligne dans votre devis</p>
-                  <p className="text-xs text-muted-foreground mb-6">Articles du catalogue, sections ou texte libre</p>
-                  <div className="flex items-center justify-center gap-2">
-                    <Button variant="outline" size="sm" onClick={() => addItem()}><Plus className="h-3.5 w-3.5 mr-1" /> Nouvelle ligne</Button>
+                <div className="py-12 px-6 text-center border-2 border-dashed border-border/60 m-4 rounded-lg bg-muted/10">
+                  <ClipboardList className="h-10 w-10 mx-auto text-muted-foreground/40 mb-4" />
+                  <p className="text-sm font-semibold text-foreground mb-1">Commencez votre devis</p>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Structurez votre devis par <span className="font-medium text-foreground">🔥 Appareil</span> / <span className="font-medium text-foreground">🏗️ Fumisterie</span> / <span className="font-medium text-foreground">🔧 Pose</span>
+                  </p>
+                  <p className="text-xs text-muted-foreground mb-6">Catalogue, ligne libre, section ou texte explicatif</p>
+                  <div className="flex items-center justify-center gap-2 flex-wrap">
+                    <CatalogPopover onSelect={(item) => addItem(item)} onFreeLine={() => addItem()} />
                     <Button variant="outline" size="sm" onClick={addSection}><Layers className="h-3.5 w-3.5 mr-1" /> Section</Button>
                     <Button variant="outline" size="sm" onClick={addText}><Type className="h-3.5 w-3.5 mr-1" /> Texte</Button>
                   </div>
@@ -711,7 +775,37 @@ export default function QuoteEditor() {
 
       {/* ─── STICKY FOOTER — Totals ─────────────────────────────── */}
       <footer className="sticky bottom-0 z-40 bg-card/95 backdrop-blur border-t border-border">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex flex-wrap items-center justify-between gap-4">
+        <div className="max-w-6xl mx-auto px-4 py-3 space-y-2">
+          {hasAnyCategory && (
+            <div className="flex items-center gap-3 text-xs flex-wrap">
+              {categorySubtotals.device !== undefined && (
+                <span className="px-2 py-1 rounded-md bg-warning/10 text-warning font-medium">
+                  🔥 Appareil : <span className="font-mono">{fmt(categorySubtotals.device)}</span>
+                </span>
+              )}
+              {categorySubtotals.flue !== undefined && (
+                <span className="px-2 py-1 rounded-md bg-info/10 text-info font-medium">
+                  🏗️ Fumisterie : <span className="font-mono">{fmt(categorySubtotals.flue)}</span>
+                </span>
+              )}
+              {categorySubtotals.labor !== undefined && (
+                <span className="px-2 py-1 rounded-md bg-success/10 text-success font-medium">
+                  🔧 Pose : <span className="font-mono">{fmt(categorySubtotals.labor)}</span>
+                </span>
+              )}
+              {categorySubtotals.option !== undefined && (
+                <span className="px-2 py-1 rounded-md bg-muted text-muted-foreground font-medium">
+                  ⭐ Option : <span className="font-mono">{fmt(categorySubtotals.option)}</span>
+                </span>
+              )}
+              {categorySubtotals.misc !== undefined && (
+                <span className="px-2 py-1 rounded-md bg-muted text-muted-foreground font-medium">
+                  📦 Divers : <span className="font-mono">{fmt(categorySubtotals.misc)}</span>
+                </span>
+              )}
+            </div>
+          )}
+          <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-6 text-sm flex-wrap">
             <div>
               <span className="text-muted-foreground">Total HT </span>
@@ -730,6 +824,7 @@ export default function QuoteEditor() {
               <span className="text-muted-foreground">Total TTC </span>
               <span className="font-mono font-bold text-base text-foreground">{fmt(totals.totalTtc)}</span>
             </div>
+          </div>
           </div>
         </div>
       </footer>

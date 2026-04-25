@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { useCatalog, CatalogItem, NewItem } from "@/hooks/useCatalog";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,7 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ItemFormModal } from "@/components/catalog/ItemFormModal";
 import { CatalogFormModal } from "@/components/catalog/CatalogFormModal";
-import { Plus, Search, Pencil, Package, BookOpen, FolderOpen } from "lucide-react";
+import { Plus, Search, Pencil, Package, BookOpen, FolderOpen, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 const TYPE_BADGES: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
@@ -42,6 +43,7 @@ export default function Catalog() {
   } = useCatalog();
 
   const { tenantId, loading: userLoading } = useCurrentUser();
+  const navigate = useNavigate();
 
   const [search, setSearch] = useState("");
   const [itemModalOpen, setItemModalOpen] = useState(false);
@@ -123,6 +125,10 @@ export default function Catalog() {
             {catalogs.length} catalogue{catalogs.length !== 1 ? "s" : ""} · {items.length} produit{items.length !== 1 ? "s" : ""}
           </p>
         </div>
+        <Button variant="outline" size="sm" onClick={() => navigate("/catalog/import")}>
+          <Upload className="h-3.5 w-3.5 mr-1" />
+          Importer un fournisseur
+        </Button>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">

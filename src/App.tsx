@@ -23,6 +23,7 @@ import QuoteDetail from "./pages/QuoteDetail";
 import Invoices from "./pages/Invoices";
 import ServiceRequests from "./pages/ServiceRequests";
 import Catalog from "./pages/Catalog";
+import CatalogImport from "./pages/catalog/CatalogImport";
 import NotFound from "./pages/NotFound";
 import IconShowcase from "./pages/IconShowcase";
 import DesignSystem from "./pages/DesignSystem";
@@ -115,6 +116,7 @@ const App = () => (
 
               {/* Catalog */}
               <Route path="/catalog" element={<Catalog />} />
+              <Route path="/catalog/import" element={<CatalogImport />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />

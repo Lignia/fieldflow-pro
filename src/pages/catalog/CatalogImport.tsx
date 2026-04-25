@@ -1,9 +1,10 @@
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { ArrowLeft, Upload, FileText, X, Loader2, CheckCircle2, Info } from "lucide-react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
+import { catalogDb } from "@/integrations/supabase/schema-clients";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -43,33 +44,33 @@ interface ImportResult {
   error?: string;
 }
 
+interface SupplierBrand {
+  name: string;
+  brand_type: string;
+}
+
 const TYPE_OPTIONS: Record<
   CatalogType,
   {
     label: string;
-    placeholder: string;
-    helpTitle: string;
-    helpBody: string;
-    formatDetail: string;
+    brandsHint: string;
+    accordionTitle: string;
+    accordionBody: string;
   }
 > = {
   fumisterie: {
-    label: "Fumisterie — Joncoux, Poujoulat, Tubest, Jeremias, Dinak, Modinox…",
-    placeholder: "Joncoux, Poujoulat, Schiedel…",
-    helpTitle: "Tarif fournisseur fumisterie",
-    helpBody:
-      "Importez un tarif fournisseur avec références, désignations, familles et prix remisés. Le prix remisé sera utilisé comme coût d'achat.",
-    formatDetail:
-      "Fichier TSV exporté depuis votre ERP fournisseur (SAP, Sage…). Colonnes attendues : Code EAN · Référence · Code article · Désignation · Famille · Prix remisé. Le prix remisé est votre prix d'achat net.",
+    label: "Fumisterie",
+    brandsHint: "Joncoux, Poujoulat, Tubest, Jeremias, Dinak…",
+    accordionTitle: "Quel fichier utiliser ?",
+    accordionBody:
+      "C'est le fichier .txt ou .tsv que votre commercial vous envoie par email. Colonnes utilisées : Code EAN · Référence · Désignation · Famille · Prix tarif · Prix remisé. Le prix tarif = votre prix de vente. Le prix remisé = votre coût d'achat.",
   },
   appareils: {
-    label: "Appareils — poêles, inserts, granulés, bois…",
-    placeholder: "Jotul, RIKA, MCZ, Harman…",
-    helpTitle: "Catalogue d'appareils",
-    helpBody:
-      "Importez un catalogue d'appareils avec puissance, rendement, Etas, émissions, norme et PV d'essai.",
-    formatDetail:
-      "Fichier CSV avec colonnes dans l'ordre : Marque · Modèle · Type appareil · Combustible · Puissance (kW) · Rendement (%) · Etas (%) · CO · COV · Poussières · NOx · PM+COV · N° PV d'essai · Norme · Laboratoire. Compatible avec l'export flammeverte.org.",
+    label: "Appareils",
+    brandsHint: "Jotul, RIKA, MCZ, Piazzetta, Godin, Invicta…",
+    accordionTitle: "Quel fichier utiliser ?",
+    accordionBody:
+      "Exportez la liste depuis flammeverte.org (Rechercher → exporter en CSV). Colonnes : Marque · Modèle · Type · Combustible · Puissance · Rendement · Etas · Émissions · N° PV d'essai · Norme · Laboratoire.",
   },
 };
 
@@ -85,14 +86,35 @@ export default function CatalogImport() {
 
   const [catalogType, setCatalogType] = useState<CatalogType>("fumisterie");
   const [supplierName, setSupplierName] = useState("");
-  const [marginPct, setMarginPct] = useState<number>(30);
+  const [customSupplierName, setCustomSupplierName] = useState("");
+  const [brands, setBrands] = useState<SupplierBrand[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [importing, setImporting] = useState(false);
   const [result, setResult] = useState<ImportResult | null>(null);
 
   const config = useMemo(() => TYPE_OPTIONS[catalogType], [catalogType]);
-  const isAppliances = catalogType === "appareils";
+
+  useEffect(() => {
+    catalogDb
+      .from("supplier_brands")
+      .select("name, brand_type")
+      .eq("is_active", true)
+      .order("name")
+      .then(({ data }: { data: SupplierBrand[] | null }) =>
+        setBrands(data ?? []),
+      );
+  }, []);
+
+  const filteredBrands = useMemo(() => {
+    const target = catalogType;
+    return brands.filter(
+      (b) => b.brand_type === target || b.brand_type === "both",
+    );
+  }, [brands, catalogType]);
+
+  const effectiveSupplierName =
+    supplierName === "__autre__" ? customSupplierName.trim() : supplierName.trim();
 
   const handleFile = (file: File | null) => {
     setSelectedFile(file);
@@ -107,7 +129,7 @@ export default function CatalogImport() {
   };
 
   const handleImport = async () => {
-    if (!supplierName.trim() || !selectedFile) return;
+    if (!effectiveSupplierName || !selectedFile) return;
     setImporting(true);
     setResult(null);
     try {
@@ -122,14 +144,25 @@ export default function CatalogImport() {
       const formData = new FormData();
       formData.append("file", selectedFile);
 
+      const supabaseUrl =
+        (supabase as any).supabaseUrl ||
+        import.meta.env.VITE_SUPABASE_URL;
+
+      console.log("Import URL:", supabaseUrl);
+      console.log(
+        "Fichier:",
+        selectedFile?.name,
+        selectedFile?.size,
+        "octets",
+      );
+
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/import-catalog`,
+        `${supabaseUrl}/functions/v1/import-catalog`,
         {
           method: "POST",
           headers: {
             Authorization: `Bearer ${session.access_token}`,
-            "x-supplier-name": supplierName.trim(),
-            "x-margin-pct": marginPct.toString(),
+            "x-supplier-name": effectiveSupplierName,
             "x-catalog-type": catalogType,
           },
           body: formData,
@@ -154,7 +187,17 @@ export default function CatalogImport() {
     }
   };
 
-  const canImport = !!supplierName.trim() && !!selectedFile && !importing;
+  const canImport = !!effectiveSupplierName && !!selectedFile && !importing;
+
+  const ctaLabel = importing
+    ? "Import en cours…"
+    : !effectiveSupplierName && !selectedFile
+    ? "Importer le catalogue"
+    : effectiveSupplierName && !selectedFile
+    ? "Sélectionnez un fichier pour continuer"
+    : !effectiveSupplierName && selectedFile
+    ? "Sélectionnez une marque"
+    : "Lancer l'import";
 
   return (
     <div className="max-w-3xl mx-auto p-4 md:p-6 space-y-6">
@@ -167,10 +210,10 @@ export default function CatalogImport() {
         </Button>
         <div>
           <h1 className="text-2xl font-bold text-foreground">
-            Importer un catalogue fournisseur
+            Importer un catalogue
           </h1>
           <p className="text-sm text-muted-foreground mt-1">
-            Ajoutez vos tarifs fumisterie ou vos appareils pour accélérer la création des devis.
+            Importez votre tarif fournisseur pour retrouver tous vos articles dans l'éditeur de devis.
           </p>
         </div>
       </div>
@@ -181,33 +224,25 @@ export default function CatalogImport() {
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
               <CheckCircle2 className="h-5 w-5 text-success" />
-              <CardTitle className="text-base">Import terminé</CardTitle>
+              <CardTitle className="text-base">Import terminé ✅</CardTitle>
             </div>
-            <CardDescription>
-              Les articles sont maintenant disponibles dans l'éditeur de devis.
-            </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-3 gap-3">
-              <div className="rounded-md border bg-card p-3">
-                <p className="text-xs text-muted-foreground">Ajoutés</p>
-                <p className="font-mono text-xl font-semibold text-foreground">
-                  {result.inserted ?? 0}
-                </p>
-              </div>
-              <div className="rounded-md border bg-card p-3">
-                <p className="text-xs text-muted-foreground">Mis à jour</p>
-                <p className="font-mono text-xl font-semibold text-foreground">
-                  {result.updated ?? 0}
-                </p>
-              </div>
-              <div className="rounded-md border bg-card p-3">
-                <p className="text-xs text-muted-foreground">Ignorés</p>
-                <p className="font-mono text-xl font-semibold text-muted-foreground">
-                  {result.skipped ?? 0}
-                </p>
-              </div>
-            </div>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-foreground">
+              <span className="font-mono font-semibold">{result.inserted ?? 0}</span>{" "}
+              article{(result.inserted ?? 0) !== 1 ? "s" : ""} ajouté{(result.inserted ?? 0) !== 1 ? "s" : ""}
+            </p>
+            {(result.updated ?? 0) > 0 && (
+              <p className="text-sm text-foreground">
+                <span className="font-mono font-semibold">{result.updated}</span>{" "}
+                article{result.updated !== 1 ? "s" : ""} mis à jour
+              </p>
+            )}
+            {(result.skipped ?? 0) > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {result.skipped} ligne{result.skipped !== 1 ? "s" : ""} ignorée{result.skipped !== 1 ? "s" : ""} (prix à zéro ou désignation vide)
+              </p>
+            )}
             {result.supplier && (
               <p className="text-sm text-muted-foreground">
                 Fournisseur : <span className="font-medium text-foreground">{result.supplier}</span>
@@ -224,7 +259,7 @@ export default function CatalogImport() {
                   setSelectedFile(null);
                 }}
               >
-                Nouvel import
+                Importer un autre fichier
               </Button>
             </div>
           </CardContent>
@@ -234,9 +269,9 @@ export default function CatalogImport() {
       {/* Main form */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Paramètres d'import</CardTitle>
+          <CardTitle className="text-lg">Votre fichier fournisseur</CardTitle>
           <CardDescription>
-            Sélectionnez le type de catalogue puis chargez votre fichier fournisseur.
+            Sélectionnez le type, puis chargez votre fichier.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5">
@@ -247,6 +282,8 @@ export default function CatalogImport() {
               value={catalogType}
               onValueChange={(v) => {
                 setCatalogType(v as CatalogType);
+                setSupplierName("");
+                setCustomSupplierName("");
                 setResult(null);
               }}
             >
@@ -254,42 +291,37 @@ export default function CatalogImport() {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="fumisterie">{TYPE_OPTIONS.fumisterie.label}</SelectItem>
-                <SelectItem value="appareils">{TYPE_OPTIONS.appareils.label}</SelectItem>
+                <SelectItem value="fumisterie">Fumisterie</SelectItem>
+                <SelectItem value="appareils">Appareils</SelectItem>
               </SelectContent>
             </Select>
+            <p className="text-xs text-muted-foreground">{config.brandsHint}</p>
           </div>
 
-          {/* Supplier name */}
+          {/* Supplier brand */}
           <div className="space-y-2">
-            <Label htmlFor="supplier">Nom du fournisseur</Label>
-            <Input
-              id="supplier"
-              value={supplierName}
-              onChange={(e) => setSupplierName(e.target.value)}
-              placeholder={config.placeholder}
-            />
-          </div>
-
-          {/* Margin */}
-          <div className="space-y-2">
-            <Label htmlFor="margin">Votre marge %</Label>
-            <Input
-              id="margin"
-              type="number"
-              min={0}
-              max={100}
-              value={marginPct}
-              onChange={(e) => setMarginPct(Number(e.target.value) || 0)}
-              disabled={isAppliances}
-              className="max-w-[160px] font-mono"
-            />
-            <p className="text-xs text-muted-foreground">
-              Prix vente = coût × (1 + marge%)
-              {isAppliances && (
-                <span className="ml-1 text-muted-foreground/70">(ignoré pour les appareils)</span>
-              )}
-            </p>
+            <Label htmlFor="supplier">Marque / Fournisseur</Label>
+            <Select value={supplierName} onValueChange={setSupplierName}>
+              <SelectTrigger id="supplier">
+                <SelectValue placeholder="Sélectionner…" />
+              </SelectTrigger>
+              <SelectContent>
+                {filteredBrands.map((b) => (
+                  <SelectItem key={b.name} value={b.name}>
+                    {b.name}
+                  </SelectItem>
+                ))}
+                <SelectItem value="__autre__">Autre (saisie libre)</SelectItem>
+              </SelectContent>
+            </Select>
+            {supplierName === "__autre__" && (
+              <Input
+                value={customSupplierName}
+                onChange={(e) => setCustomSupplierName(e.target.value)}
+                placeholder="Nom du fournisseur"
+                className="mt-2"
+              />
+            )}
           </div>
 
           <Separator />
@@ -322,10 +354,13 @@ export default function CatalogImport() {
               >
                 <Upload className="h-8 w-8 mx-auto text-muted-foreground mb-3" />
                 <p className="text-sm font-medium text-foreground">
-                  Glissez votre fichier ici ou cliquez pour sélectionner
+                  Déposez votre fichier ici
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">
-                  Formats acceptés : .tsv · .csv · .txt
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  ou cliquez pour sélectionner
+                </p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Formats : .tsv · .csv · .txt (le fichier de votre commercial est souvent un .txt)
                 </p>
               </div>
             ) : (
@@ -371,12 +406,12 @@ export default function CatalogImport() {
               {importing ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  Import en cours…
+                  {ctaLabel}
                 </>
               ) : (
                 <>
                   <Upload className="h-4 w-4 mr-2" />
-                  Importer le catalogue
+                  {ctaLabel}
                 </>
               )}
             </Button>
@@ -384,27 +419,13 @@ export default function CatalogImport() {
         </CardContent>
       </Card>
 
-      {/* Help block — context-aware */}
-      <Alert>
-        <Info className="h-4 w-4" />
-        <AlertTitle className="flex items-center gap-2">
-          {config.helpTitle}
-          <Badge variant="secondary" className="font-mono text-[10px]">
-            {isAppliances ? ".csv" : ".tsv"}
-          </Badge>
-        </AlertTitle>
-        <AlertDescription className="mt-1">
-          {config.helpBody}
-        </AlertDescription>
-      </Alert>
-
       <Accordion type="single" collapsible className="rounded-lg border bg-card px-4">
         <AccordionItem value="format" className="border-b-0">
           <AccordionTrigger className="text-sm font-medium">
-            Format de fichier attendu
+            {config.accordionTitle}
           </AccordionTrigger>
           <AccordionContent className="text-sm text-muted-foreground leading-relaxed">
-            {config.formatDetail}
+            {config.accordionBody}
           </AccordionContent>
         </AccordionItem>
       </Accordion>

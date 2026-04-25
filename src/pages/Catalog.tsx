@@ -22,11 +22,6 @@ const TYPE_BADGES: Record<string, { label: string; variant: "default" | "seconda
   consumable: { label: "Consommable", variant: "destructive" },
 };
 
-const CATALOG_TYPE_LABELS: Record<string, string> = {
-  internal: "Interne",
-  supplier: "Fournisseur",
-};
-
 function formatCurrency(amount: number): string {
   return Math.round(amount).toLocaleString("fr-FR") + " €";
 }
@@ -122,12 +117,12 @@ export default function Catalog() {
         <div>
           <h1 className="text-2xl font-bold text-foreground">Catalogue</h1>
           <p className="text-sm text-muted-foreground mt-1">
-            {catalogs.length} catalogue{catalogs.length !== 1 ? "s" : ""} · {items.length} produit{items.length !== 1 ? "s" : ""}
+            {catalogs.length} catalogue{catalogs.length !== 1 ? "s" : ""} · {items.length} article{items.length !== 1 ? "s" : ""} importé{items.length !== 1 ? "s" : ""}
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={() => navigate("/catalog/import")}>
           <Upload className="h-3.5 w-3.5 mr-1" />
-          Importer un fournisseur
+          Importer un catalogue
         </Button>
       </div>
 
@@ -165,9 +160,11 @@ export default function Catalog() {
                 >
                   <div className="flex items-center justify-between">
                     <span className="font-medium text-sm text-foreground">{cat.name}</span>
-                    <Badge variant={cat.catalog_type === "internal" ? "default" : "secondary"} className="text-[10px] px-1.5 py-0">
-                      {CATALOG_TYPE_LABELS[cat.catalog_type] || cat.catalog_type}
-                    </Badge>
+                    {cat.catalog_type === "supplier" && (
+                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                        {cat.name}
+                      </Badge>
+                    )}
                   </div>
                   {cat.tenant_id === null && (
                     <span className="text-[11px] text-muted-foreground">Catalogue global · lecture seule</span>
@@ -194,7 +191,9 @@ export default function Catalog() {
                   <div>
                     <CardTitle className="text-lg">{selectedCatalog.name}</CardTitle>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {filteredItems.length} produit{filteredItems.length !== 1 ? "s" : ""}
+                      {selectedCatalog.catalog_type === "supplier"
+                        ? `${filteredItems.length} article${filteredItems.length !== 1 ? "s" : ""}`
+                        : `${filteredItems.length} produit${filteredItems.length !== 1 ? "s" : ""}`}
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
@@ -207,7 +206,12 @@ export default function Catalog() {
                         className="pl-9 w-48"
                       />
                     </div>
-                    {!isGlobalCatalog && (
+                    {!isGlobalCatalog && selectedCatalog.catalog_type === "supplier" && filteredItems.length > 0 && (
+                      <Button size="sm" variant="outline" onClick={() => navigate("/catalog/import")}>
+                        <Upload className="h-4 w-4 mr-1" /> Mettre à jour le tarif
+                      </Button>
+                    )}
+                    {!isGlobalCatalog && selectedCatalog.catalog_type !== "supplier" && (
                       <Button size="sm" onClick={handleAddItem}>
                         <Plus className="h-4 w-4 mr-1" /> Ajouter
                       </Button>
@@ -226,13 +230,31 @@ export default function Catalog() {
                 ) : filteredItems.length === 0 ? (
                   <div className="py-12 text-center">
                     <Package className="h-10 w-10 mx-auto text-muted-foreground/30 mb-3" />
-                    <p className="text-sm text-muted-foreground">
-                      {search ? "Aucun produit trouvé" : "Aucun produit dans ce catalogue"}
-                    </p>
-                    {!search && !isGlobalCatalog && (
-                      <Button size="sm" variant="outline" className="mt-3" onClick={handleAddItem}>
-                        Ajouter un produit
-                      </Button>
+                    {search ? (
+                      <p className="text-sm text-muted-foreground">Aucun résultat</p>
+                    ) : selectedCatalog.catalog_type === "supplier" ? (
+                      <>
+                        <p className="text-sm text-muted-foreground">Aucun article importé</p>
+                        {!isGlobalCatalog && (
+                          <>
+                            <Button size="sm" className="mt-3" onClick={() => navigate("/catalog/import")}>
+                              <Upload className="h-4 w-4 mr-1" /> Importer les articles
+                            </Button>
+                            <p className="text-xs text-muted-foreground mt-2">
+                              Chargez votre tarif fournisseur (.tsv, .txt)
+                            </p>
+                          </>
+                        )}
+                      </>
+                    ) : (
+                      <>
+                        <p className="text-sm text-muted-foreground">Aucun produit dans ce catalogue</p>
+                        {!isGlobalCatalog && (
+                          <Button size="sm" variant="outline" className="mt-3" onClick={handleAddItem}>
+                            Ajouter un produit
+                          </Button>
+                        )}
+                      </>
                     )}
                   </div>
                 ) : (

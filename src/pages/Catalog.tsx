@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { useCatalog, CatalogItem, NewItem } from "@/hooks/useCatalog";
+import { useCatalog, Catalog as CatalogType, CatalogItem, NewItem } from "@/hooks/useCatalog";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,14 +12,86 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { ItemFormModal } from "@/components/catalog/ItemFormModal";
 import { CatalogFormModal } from "@/components/catalog/CatalogFormModal";
-import { Plus, Search, Pencil, Package, BookOpen, FolderOpen, Upload } from "lucide-react";
+import {
+  Plus, Search, Pencil, Trash2, Package, BookOpen, FolderOpen, Upload,
+  MoreVertical, Factory, Wrench, Boxes, Layers, Flame,
+} from "lucide-react";
+import {
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem,
+  DropdownMenuSeparator, DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 
-const TYPE_BADGES: Record<string, { label: string; variant: "default" | "secondary" | "outline" | "destructive" }> = {
-  appliance: { label: "Appareil", variant: "default" },
-  part: { label: "Pièce", variant: "secondary" },
-  service: { label: "Appareil", variant: "outline" },
-  consumable: { label: "Consommable", variant: "destructive" },
+/**
+ * Mapping produit → libellé + couleur sémantique.
+ * Les classes restent neutres (tokens du design system).
+ */
+const PRODUCT_TYPE_META: Record<
+  string,
+  { label: string; emoji: string; className: string }
+> = {
+  appliance: { label: "Appareil", emoji: "🔥", className: "bg-info/15 text-info border-info/30" },
+  part: { label: "Pièce", emoji: "🏗️", className: "bg-muted text-foreground border-border" },
+  service: { label: "Prestation", emoji: "🔧", className: "bg-success/15 text-success border-success/30" },
+  consumable: { label: "Consommable", emoji: "📦", className: "bg-warning/15 text-warning border-warning/30" },
+};
+
+/**
+ * Type métier dérivé du nom + catalog_type.
+ * La base ne stocke que internal/supplier — on regroupe visuellement.
+ */
+type CatalogKind = "internal" | "supplier" | "bundle" | "consumable";
+
+function getCatalogKind(cat: CatalogType): CatalogKind {
+  const n = (cat.name || "").toLowerCase();
+  if (cat.catalog_type === "supplier") return "supplier";
+  if (n.includes("ouvrage") || n.includes("pack") || n.includes("lot")) return "bundle";
+  if (n.includes("consommable") || n.includes("petit matériel")) return "consumable";
+  return "internal";
+}
+
+const KIND_META: Record<
+  CatalogKind,
+  {
+    label: string;
+    badgeClass: string;
+    sectionTitle: string;
+    sectionIcon: typeof Package;
+    emptyHint: string;
+  }
+> = {
+  internal: {
+    label: "Interne",
+    badgeClass: "bg-muted text-muted-foreground border-border",
+    sectionTitle: "Catalogue interne",
+    sectionIcon: Package,
+    emptyHint: "Vos produits, prestations et tarifs maison.",
+  },
+  supplier: {
+    label: "Fournisseur",
+    badgeClass: "bg-info/15 text-info border-info/30",
+    sectionTitle: "Catalogues fournisseurs",
+    sectionIcon: Factory,
+    emptyHint: "Importez vos tarifs Joncoux, Poujoulat, Tubest…",
+  },
+  bundle: {
+    label: "Ouvrage",
+    badgeClass: "bg-success/15 text-success border-success/30",
+    sectionTitle: "Ouvrages (lots pré-chiffrés)",
+    sectionIcon: Layers,
+    emptyHint: "Regroupez vos prestations récurrentes en un seul lot.",
+  },
+  consumable: {
+    label: "Consommables",
+    badgeClass: "bg-warning/15 text-warning border-warning/30",
+    sectionTitle: "Consommables",
+    sectionIcon: Wrench,
+    emptyHint: "Visserie, joints, petits éléments récurrents.",
+  },
 };
 
 function formatCurrency(amount: number): string {
@@ -34,7 +106,8 @@ export default function Catalog() {
   const {
     catalogs, items, selectedCatalogId, selectedCatalog, isGlobalCatalog,
     setSelectedCatalogId, loading, itemsLoading,
-    createCatalog, createItem, updateItem, toggleItem,
+    createCatalog, createItem, updateItem, toggleItem, deleteItem,
+    renameCatalog, deleteCatalog,
   } = useCatalog();
 
   const { tenantId, loading: userLoading } = useCurrentUser();
@@ -44,6 +117,23 @@ export default function Catalog() {
   const [itemModalOpen, setItemModalOpen] = useState(false);
   const [catalogModalOpen, setCatalogModalOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<CatalogItem | null>(null);
+  const [renamingCatalog, setRenamingCatalog] = useState<CatalogType | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [catalogToDelete, setCatalogToDelete] = useState<CatalogType | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<CatalogItem | null>(null);
+
+  // Catalogues groupés par type métier
+  const groupedCatalogs = useMemo(() => {
+    const groups: Record<CatalogKind, CatalogType[]> = {
+      internal: [], supplier: [], bundle: [], consumable: [],
+    };
+    for (const c of catalogs) groups[getCatalogKind(c)].push(c);
+    return groups;
+  }, [catalogs]);
+
+  const selectedKind: CatalogKind | null = selectedCatalog
+    ? getCatalogKind(selectedCatalog)
+    : null;
 
   const filteredItems = useMemo(() => {
     if (!search) return items;
@@ -83,8 +173,45 @@ export default function Catalog() {
   const handleToggle = async (itemId: string, active: boolean) => {
     try {
       await toggleItem(itemId, active);
+      toast.success(active ? "Produit activé" : "Produit désactivé");
     } catch {
       toast.error("Erreur lors de la mise à jour");
+    }
+  };
+
+  const handleDeleteItem = async () => {
+    if (!itemToDelete) return;
+    try {
+      await deleteItem(itemToDelete.id);
+      toast.success("Produit supprimé");
+    } catch {
+      toast.error("Suppression impossible");
+    } finally {
+      setItemToDelete(null);
+    }
+  };
+
+  const handleRenameCatalog = async () => {
+    if (!renamingCatalog || !renameValue.trim()) return;
+    try {
+      await renameCatalog(renamingCatalog.id, renameValue.trim());
+      toast.success("Catalogue renommé");
+      setRenamingCatalog(null);
+      setRenameValue("");
+    } catch {
+      toast.error("Renommage impossible");
+    }
+  };
+
+  const handleDeleteCatalog = async () => {
+    if (!catalogToDelete) return;
+    try {
+      await deleteCatalog(catalogToDelete.id);
+      toast.success("Catalogue supprimé");
+    } catch {
+      toast.error("Suppression impossible (catalogue non vide ou protégé)");
+    } finally {
+      setCatalogToDelete(null);
     }
   };
 
@@ -96,6 +223,29 @@ export default function Catalog() {
   const handleAddItem = () => {
     setEditingItem(null);
     setItemModalOpen(true);
+  };
+
+  // CTA contextuel selon le type de catalogue
+  const renderPrimaryCta = (kind: CatalogKind) => {
+    if (isGlobalCatalog) return null;
+    if (kind === "supplier") {
+      return (
+        <Button size="sm" variant="outline" onClick={() => navigate("/catalog/import")}>
+          <Upload className="h-4 w-4 mr-1" />
+          {filteredItems.length > 0 ? "Mettre à jour le tarif" : "Importer des articles"}
+        </Button>
+      );
+    }
+    const labels: Record<Exclude<CatalogKind, "supplier">, string> = {
+      internal: "Ajouter un produit",
+      bundle: "Créer un ouvrage",
+      consumable: "Ajouter un consommable",
+    };
+    return (
+      <Button size="sm" onClick={handleAddItem}>
+        <Plus className="h-4 w-4 mr-1" /> {labels[kind]}
+      </Button>
+    );
   };
 
   if (loading) {
@@ -110,15 +260,21 @@ export default function Catalog() {
     );
   }
 
+  const totalCatalogs = catalogs.length;
+  const headerSubtitle =
+    totalCatalogs === 0
+      ? "Aucun catalogue"
+      : items.length === 0
+      ? `${totalCatalogs} catalogue${totalCatalogs > 1 ? "s" : ""} · aucun article importé`
+      : `${totalCatalogs} catalogue${totalCatalogs > 1 ? "s" : ""}`;
+
   return (
     <div className="p-4 md:p-6 space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-foreground">Catalogue</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            {catalogs.length} catalogue{catalogs.length !== 1 ? "s" : ""} · {items.length} article{items.length !== 1 ? "s" : ""} importé{items.length !== 1 ? "s" : ""}
-          </p>
+          <p className="text-sm text-muted-foreground mt-1">{headerSubtitle}</p>
         </div>
         <Button variant="outline" size="sm" onClick={() => navigate("/catalog/import")}>
           <Upload className="h-3.5 w-3.5 mr-1" />
@@ -147,37 +303,97 @@ export default function Catalog() {
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-1.5">
-              {catalogs.map((cat) => (
-                <button
-                  key={cat.id}
-                  onClick={() => setSelectedCatalogId(cat.id)}
-                  className={`w-full text-left rounded-lg border px-4 py-3 transition-colors ${
-                    selectedCatalogId === cat.id
-                      ? "border-accent bg-accent/10 shadow-sm"
-                      : "border-border bg-card hover:bg-muted/50"
-                  }`}
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium text-sm text-foreground">{cat.name}</span>
-                    {cat.catalog_type === "supplier" && (
-                      <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                        {cat.name}
-                      </Badge>
-                    )}
+            <div className="space-y-5">
+              {(["internal", "supplier", "bundle", "consumable"] as CatalogKind[]).map((kind) => {
+                const list = groupedCatalogs[kind];
+                if (list.length === 0) return null;
+                const meta = KIND_META[kind];
+                const SectionIcon = meta.sectionIcon;
+                return (
+                  <div key={kind} className="space-y-1.5">
+                    <div className="flex items-center gap-1.5 px-1">
+                      <SectionIcon className="h-3.5 w-3.5 text-muted-foreground" />
+                      <h3 className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wide">
+                        {meta.sectionTitle}
+                      </h3>
+                    </div>
+                    {list.map((cat) => {
+                      const isSelected = selectedCatalogId === cat.id;
+                      const isReadOnly = cat.tenant_id === null;
+                      return (
+                        <div
+                          key={cat.id}
+                          className={`group relative rounded-lg border transition-colors ${
+                            isSelected
+                              ? "border-accent bg-accent/10 shadow-sm"
+                              : "border-border bg-card hover:bg-muted/50"
+                          }`}
+                        >
+                          <button
+                            onClick={() => setSelectedCatalogId(cat.id)}
+                            className="w-full text-left px-3 py-2.5 pr-9"
+                          >
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="font-medium text-sm text-foreground truncate">
+                                {cat.name}
+                              </span>
+                              <Badge
+                                variant="outline"
+                                className={`text-[10px] px-1.5 py-0 shrink-0 ${meta.badgeClass}`}
+                              >
+                                {meta.label}
+                              </Badge>
+                            </div>
+                            {isReadOnly && (
+                              <span className="text-[11px] text-muted-foreground">
+                                Catalogue global · lecture seule
+                              </span>
+                            )}
+                          </button>
+                          {!isReadOnly && (
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="absolute right-1 top-1.5 h-7 w-7 opacity-60 hover:opacity-100"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <MoreVertical className="h-3.5 w-3.5" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-44">
+                                <DropdownMenuItem
+                                  onClick={() => {
+                                    setRenamingCatalog(cat);
+                                    setRenameValue(cat.name);
+                                  }}
+                                >
+                                  <Pencil className="h-3.5 w-3.5 mr-2" /> Renommer
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-destructive focus:text-destructive"
+                                  onClick={() => setCatalogToDelete(cat)}
+                                >
+                                  <Trash2 className="h-3.5 w-3.5 mr-2" /> Supprimer
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
-                  {cat.tenant_id === null && (
-                    <span className="text-[11px] text-muted-foreground">Catalogue global · lecture seule</span>
-                  )}
-                </button>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
 
         {/* Right column — Items */}
         <div className="lg:col-span-8 xl:col-span-9">
-          {!selectedCatalog ? (
+          {!selectedCatalog || !selectedKind ? (
             <Card className="border-dashed">
               <CardContent className="py-16 text-center">
                 <FolderOpen className="h-12 w-12 mx-auto text-muted-foreground/30 mb-4" />
@@ -189,9 +405,17 @@ export default function Catalog() {
               <CardHeader className="pb-3">
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                   <div>
-                    <CardTitle className="text-lg">{selectedCatalog.name}</CardTitle>
+                    <div className="flex items-center gap-2">
+                      <CardTitle className="text-lg">{selectedCatalog.name}</CardTitle>
+                      <Badge
+                        variant="outline"
+                        className={`text-[10px] px-1.5 py-0 ${KIND_META[selectedKind].badgeClass}`}
+                      >
+                        {KIND_META[selectedKind].label}
+                      </Badge>
+                    </div>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {selectedCatalog.catalog_type === "supplier"
+                      {selectedKind === "supplier"
                         ? `${filteredItems.length} article${filteredItems.length !== 1 ? "s" : ""}`
                         : `${filteredItems.length} produit${filteredItems.length !== 1 ? "s" : ""}`}
                     </p>
@@ -206,16 +430,7 @@ export default function Catalog() {
                         className="pl-9 w-48"
                       />
                     </div>
-                    {!isGlobalCatalog && selectedCatalog.catalog_type === "supplier" && filteredItems.length > 0 && (
-                      <Button size="sm" variant="outline" onClick={() => navigate("/catalog/import")}>
-                        <Upload className="h-4 w-4 mr-1" /> Mettre à jour le tarif
-                      </Button>
-                    )}
-                    {!isGlobalCatalog && selectedCatalog.catalog_type !== "supplier" && (
-                      <Button size="sm" onClick={handleAddItem}>
-                        <Plus className="h-4 w-4 mr-1" /> Ajouter
-                      </Button>
-                    )}
+                    {filteredItems.length > 0 && renderPrimaryCta(selectedKind)}
                   </div>
                 </div>
               </CardHeader>
@@ -229,31 +444,18 @@ export default function Catalog() {
                   </div>
                 ) : filteredItems.length === 0 ? (
                   <div className="py-12 text-center">
-                    <Package className="h-10 w-10 mx-auto text-muted-foreground/30 mb-3" />
+                    <Flame className="h-10 w-10 mx-auto text-muted-foreground/30 mb-3" />
                     {search ? (
                       <p className="text-sm text-muted-foreground">Aucun résultat</p>
-                    ) : selectedCatalog.catalog_type === "supplier" ? (
-                      <>
-                        <p className="text-sm text-muted-foreground">Aucun article importé</p>
-                        {!isGlobalCatalog && (
-                          <>
-                            <Button size="sm" className="mt-3" onClick={() => navigate("/catalog/import")}>
-                              <Upload className="h-4 w-4 mr-1" /> Importer les articles
-                            </Button>
-                            <p className="text-xs text-muted-foreground mt-2">
-                              Chargez votre tarif fournisseur (.tsv, .txt)
-                            </p>
-                          </>
-                        )}
-                      </>
                     ) : (
                       <>
-                        <p className="text-sm text-muted-foreground">Aucun produit dans ce catalogue</p>
-                        {!isGlobalCatalog && (
-                          <Button size="sm" variant="outline" className="mt-3" onClick={handleAddItem}>
-                            Ajouter un produit
-                          </Button>
-                        )}
+                        <p className="text-sm text-muted-foreground">
+                          {selectedKind === "supplier" ? "Aucun article importé" : "Aucun produit dans ce catalogue"}
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {KIND_META[selectedKind].emptyHint}
+                        </p>
+                        <div className="mt-3">{renderPrimaryCta(selectedKind)}</div>
                       </>
                     )}
                   </div>
@@ -265,20 +467,26 @@ export default function Catalog() {
                           <TableHead>Désignation</TableHead>
                           <TableHead className="hidden md:table-cell">Réf.</TableHead>
                           <TableHead>Type</TableHead>
+                          <TableHead className="text-right hidden lg:table-cell">Coût HT</TableHead>
                           <TableHead className="text-right">Prix HT</TableHead>
                           <TableHead className="text-right hidden sm:table-cell">TVA</TableHead>
                           <TableHead className="hidden sm:table-cell">Unité</TableHead>
                           {!isGlobalCatalog && (
                             <>
                               <TableHead className="text-center">Actif</TableHead>
-                              <TableHead className="w-10" />
+                              <TableHead className="w-20" />
                             </>
                           )}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {filteredItems.map((item) => {
-                          const typeBadge = TYPE_BADGES[item.product_type] || { label: item.product_type, variant: "secondary" as const };
+                          const typeMeta =
+                            PRODUCT_TYPE_META[item.product_type] ?? {
+                              label: item.product_type,
+                              emoji: "•",
+                              className: "bg-muted text-foreground border-border",
+                            };
                           return (
                             <TableRow key={item.id} className="group">
                               <TableCell>
@@ -295,20 +503,15 @@ export default function Catalog() {
                                 )}
                               </TableCell>
                               <TableCell>
-                                <Badge
-                                  variant={typeBadge.variant}
-                                  className={`text-[10px] ${
-                                    item.product_type === "appliance"
-                                      ? "bg-info/15 text-info border-info/30"
-                                      : item.product_type === "service"
-                                      ? "bg-success/15 text-success border-success/30"
-                                      : item.product_type === "consumable"
-                                      ? "bg-warning/15 text-warning border-warning/30"
-                                      : ""
-                                  }`}
-                                >
-                                  {item.product_type === "appliance" ? "Appareil" : item.product_type === "part" ? "Pièce" : item.product_type === "service" ? "Prestation" : "Consommable"}
+                                <Badge variant="outline" className={`text-[10px] ${typeMeta.className}`}>
+                                  <span className="mr-1">{typeMeta.emoji}</span>
+                                  {typeMeta.label}
                                 </Badge>
+                              </TableCell>
+                              <TableCell className="text-right font-mono text-xs text-muted-foreground hidden lg:table-cell">
+                                {item.cost_price != null && item.cost_price > 0
+                                  ? formatCurrency(item.cost_price)
+                                  : <span className="text-muted-foreground/40">—</span>}
                               </TableCell>
                               <TableCell className="text-right font-mono text-sm">
                                 {formatCurrency(item.unit_price_ht)}
@@ -326,19 +529,34 @@ export default function Catalog() {
                                     />
                                   </TableCell>
                                   <TableCell>
-                                    <Tooltip>
-                                      <TooltipTrigger asChild>
-                                        <Button
-                                          size="icon"
-                                          variant="ghost"
-                                          className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                                          onClick={() => handleEdit(item)}
-                                        >
-                                          <Pencil className="h-3.5 w-3.5" />
-                                        </Button>
-                                      </TooltipTrigger>
-                                      <TooltipContent>Modifier</TooltipContent>
-                                    </Tooltip>
+                                    <div className="flex items-center justify-end gap-0.5">
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button
+                                            size="icon"
+                                            variant="ghost"
+                                            className="h-7 w-7 opacity-60 group-hover:opacity-100 transition-opacity"
+                                            onClick={() => handleEdit(item)}
+                                          >
+                                            <Pencil className="h-3.5 w-3.5" />
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>Modifier</TooltipContent>
+                                      </Tooltip>
+                                      <Tooltip>
+                                        <TooltipTrigger asChild>
+                                          <Button
+                                            size="icon"
+                                            variant="ghost"
+                                            className="h-7 w-7 opacity-60 group-hover:opacity-100 hover:text-destructive transition-opacity"
+                                            onClick={() => setItemToDelete(item)}
+                                          >
+                                            <Trash2 className="h-3.5 w-3.5" />
+                                          </Button>
+                                        </TooltipTrigger>
+                                        <TooltipContent>Supprimer</TooltipContent>
+                                      </Tooltip>
+                                    </div>
                                   </TableCell>
                                 </>
                               )}
@@ -363,6 +581,73 @@ export default function Catalog() {
         onSave={handleSaveItem}
         editItem={editingItem}
       />
+
+      {/* Renommer un catalogue */}
+      <AlertDialog open={!!renamingCatalog} onOpenChange={(o) => !o && setRenamingCatalog(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Renommer le catalogue</AlertDialogTitle>
+            <AlertDialogDescription>
+              Choisissez un nouveau nom pour ce catalogue.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Input
+            value={renameValue}
+            onChange={(e) => setRenameValue(e.target.value)}
+            placeholder="Nom du catalogue"
+            autoFocus
+          />
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={handleRenameCatalog} disabled={!renameValue.trim()}>
+              Renommer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Supprimer un catalogue */}
+      <AlertDialog open={!!catalogToDelete} onOpenChange={(o) => !o && setCatalogToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer ce catalogue ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              <strong>{catalogToDelete?.name}</strong> et tous ses articles seront définitivement supprimés.
+              Cette action est irréversible.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteCatalog}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Supprimer un produit */}
+      <AlertDialog open={!!itemToDelete} onOpenChange={(o) => !o && setItemToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer ce produit ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              <strong>{itemToDelete?.name}</strong> sera définitivement supprimé du catalogue.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteItem}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

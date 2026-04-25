@@ -16,6 +16,7 @@ export interface CatalogItem {
   sku: string | null;
   description: string | null;
   unit_price_ht: number;
+  cost_price: number | null;
   vat_rate: number;
   unit: string;
   product_type: string;
@@ -28,6 +29,7 @@ export interface NewItem {
   sku?: string;
   description?: string;
   unit_price_ht: number;
+  cost_price?: number | null;
   vat_rate: number;
   unit: string;
   product_type: string;
@@ -68,7 +70,7 @@ export function useCatalog() {
         .from("catalog_items")
         .select(`
           id, name, sku, description,
-          unit_price_ht, vat_rate,
+          unit_price_ht, cost_price, vat_rate,
           unit, product_type, is_active,
           catalog:catalog_id (id, name)
         `)
@@ -113,6 +115,7 @@ export function useCatalog() {
         sku: item.sku || null,
         description: item.description || null,
         unit_price_ht: item.unit_price_ht,
+        cost_price: item.cost_price ?? null,
         vat_rate: item.vat_rate,
         unit: item.unit,
         product_type: item.product_type,
@@ -120,7 +123,7 @@ export function useCatalog() {
       })
       .select(`
         id, name, sku, description,
-        unit_price_ht, vat_rate,
+        unit_price_ht, cost_price, vat_rate,
         unit, product_type, is_active,
         catalog:catalog_id (id, name)
       `)
@@ -148,6 +151,38 @@ export function useCatalog() {
     if (selectedCatalogId) fetchItems(selectedCatalogId);
   };
 
+  const deleteItem = async (itemId: string) => {
+    const { error: err } = await catalogDb
+      .from("catalog_items")
+      .delete()
+      .eq("id", itemId);
+    if (err) throw err;
+    setItems((prev) => prev.filter((i) => i.id !== itemId));
+  };
+
+  const renameCatalog = async (catalogId: string, newName: string) => {
+    const { error: err } = await catalogDb
+      .from("catalogs")
+      .update({ name: newName })
+      .eq("id", catalogId);
+    if (err) throw err;
+    setCatalogs((prev) =>
+      prev.map((c) => (c.id === catalogId ? { ...c, name: newName } : c)),
+    );
+  };
+
+  const deleteCatalog = async (catalogId: string) => {
+    const { error: err } = await catalogDb
+      .from("catalogs")
+      .delete()
+      .eq("id", catalogId);
+    if (err) throw err;
+    setCatalogs((prev) => prev.filter((c) => c.id !== catalogId));
+    if (selectedCatalogId === catalogId) {
+      setSelectedCatalogId(null);
+    }
+  };
+
   const selectedCatalog = catalogs.find((c) => c.id === selectedCatalogId) || null;
   const isGlobalCatalog = selectedCatalog?.tenant_id === null;
 
@@ -165,6 +200,9 @@ export function useCatalog() {
     createItem,
     updateItem,
     toggleItem,
+    deleteItem,
+    renameCatalog,
+    deleteCatalog,
     refetch: fetchCatalogs,
   };
 }

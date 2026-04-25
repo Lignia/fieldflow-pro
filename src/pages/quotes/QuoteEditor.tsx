@@ -301,11 +301,23 @@ function ItemRow({ row, index, onChange, onDuplicate, onDelete }: {
     <div className="grid grid-cols-[28px_minmax(0,1fr)_60px_72px_92px_72px_88px_110px_36px] gap-1.5 items-start px-3 py-2 hover:bg-muted/20 rounded transition-colors">
       <span className="text-xs text-muted-foreground text-center tabular-nums pt-2">{index}</span>
       <div className="min-w-0 space-y-1">
-        <Input
+        <Textarea
           value={row.label}
           onChange={(e) => onChange("label", e.target.value)}
-          placeholder="Désignation"
-          className="h-8 text-sm font-medium"
+          placeholder="Désignation — collez ici une référence longue si besoin"
+          rows={1}
+          className="min-h-[32px] resize-none text-sm font-medium leading-snug px-2 py-1.5 overflow-hidden"
+          ref={(el) => {
+            if (el) {
+              el.style.height = "auto";
+              el.style.height = el.scrollHeight + "px";
+            }
+          }}
+          onInput={(e) => {
+            const el = e.currentTarget;
+            el.style.height = "auto";
+            el.style.height = el.scrollHeight + "px";
+          }}
         />
         <div className="flex items-center gap-1.5 flex-wrap">
           <CategoryPicker

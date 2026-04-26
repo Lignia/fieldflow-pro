@@ -348,8 +348,12 @@ export default function Catalog() {
                                 {meta.label}
                               </Badge>
                             </div>
+                            <span className="text-[11px] text-muted-foreground">
+                              {(cat.items_count ?? 0).toLocaleString("fr-FR")} article
+                              {(cat.items_count ?? 0) > 1 ? "s" : ""}
+                            </span>
                             {isReadOnly && (
-                              <span className="text-[11px] text-muted-foreground">
+                              <span className="text-[11px] text-muted-foreground block">
                                 Catalogue global · lecture seule
                               </span>
                             )}

@@ -8,6 +8,7 @@ export interface Catalog {
   catalog_type: string;
   is_active: boolean;
   tenant_id: string | null;
+  items_count?: number;
 }
 
 export interface CatalogItem {
@@ -49,12 +50,26 @@ export function useCatalog() {
     try {
       const { data, error: err } = await catalogDb
         .from("catalogs")
-        .select("id, name, catalog_type, is_active, tenant_id")
+        .select("id, name, catalog_type, is_active, tenant_id, catalog_items(count)")
         .order("created_at", { ascending: true });
       if (err) throw err;
-      setCatalogs((data as Catalog[]) || []);
-      if (data && data.length > 0 && !selectedCatalogId) {
-        setSelectedCatalogId(data[0].id);
+      const normalized: Catalog[] = (data || []).map((c: any) => ({
+        id: c.id,
+        name: c.name,
+        catalog_type: c.catalog_type,
+        is_active: c.is_active,
+        tenant_id: c.tenant_id,
+        items_count: Array.isArray(c.catalog_items) && c.catalog_items[0]
+          ? Number(c.catalog_items[0].count) || 0
+          : 0,
+      }));
+      setCatalogs(normalized);
+      if (normalized.length > 0 && !selectedCatalogId) {
+        // Auto-sélection : le catalogue le plus rempli, sinon le premier
+        const richest = [...normalized].sort(
+          (a, b) => (b.items_count ?? 0) - (a.items_count ?? 0),
+        )[0];
+        setSelectedCatalogId(richest.id);
       }
     } catch (e: any) {
       setError(e.message || "Erreur de chargement");
@@ -75,8 +90,9 @@ export function useCatalog() {
           catalog:catalog_id (id, name)
         `)
         .eq("catalog_id", catalogId)
-        .eq("is_active", true)
-        .order("name", { ascending: true });
+        .order("is_active", { ascending: false })
+        .order("name", { ascending: true })
+        .limit(5000);
       if (err) throw err;
       setItems((data as CatalogItem[]) || []);
     } catch (e: any) {

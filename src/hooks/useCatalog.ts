@@ -186,14 +186,22 @@ export function useCatalog() {
   };
 
   const deleteCatalog = async (catalogId: string) => {
-    const { error: err } = await catalogDb
-      .from("catalogs")
-      .delete()
-      .eq("id", catalogId);
+    const { error: err } = await catalogDb.rpc("delete_catalog_with_items", {
+      p_catalog_id: catalogId,
+    });
     if (err) throw err;
-    setCatalogs((prev) => prev.filter((c) => c.id !== catalogId));
+
+    const remaining = catalogs.filter((c) => c.id !== catalogId);
+    setCatalogs(remaining);
+
     if (selectedCatalogId === catalogId) {
-      setSelectedCatalogId(null);
+      const next = remaining.length > 0
+        ? [...remaining].sort(
+            (a, b) => (b.items_count ?? 0) - (a.items_count ?? 0),
+          )[0]
+        : null;
+      setSelectedCatalogId(next ? next.id : null);
+      if (!next) setItems([]);
     }
   };
 

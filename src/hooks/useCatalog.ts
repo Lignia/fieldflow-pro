@@ -22,7 +22,7 @@ export interface CatalogItem {
   unit: string;
   product_type: string;
   is_active: boolean;
-  catalog: { id: string; name: string } | null;
+  catalog?: { id: string; name: string } | null;
 }
 
 export interface NewItem {
@@ -86,8 +86,7 @@ export function useCatalog() {
         .select(`
           id, name, sku, description,
           unit_price_ht, cost_price, vat_rate,
-          unit, product_type, is_active,
-          catalog:catalog_id (id, name)
+          unit, product_type, is_active
         `)
         .eq("catalog_id", catalogId)
         .order("is_active", { ascending: false })
@@ -140,8 +139,7 @@ export function useCatalog() {
       .select(`
         id, name, sku, description,
         unit_price_ht, cost_price, vat_rate,
-        unit, product_type, is_active,
-        catalog:catalog_id (id, name)
+        unit, product_type, is_active
       `)
       .single();
     if (err) throw err;

@@ -261,12 +261,16 @@ export default function Catalog() {
   }
 
   const totalCatalogs = catalogs.length;
+  const totalItemsAcrossCatalogs = catalogs.reduce(
+    (acc, c) => acc + (c.items_count ?? 0),
+    0,
+  );
   const headerSubtitle =
     totalCatalogs === 0
       ? "Aucun catalogue"
-      : items.length === 0
+      : totalItemsAcrossCatalogs === 0
       ? `${totalCatalogs} catalogue${totalCatalogs > 1 ? "s" : ""} · aucun article importé`
-      : `${totalCatalogs} catalogue${totalCatalogs > 1 ? "s" : ""}`;
+      : `${totalCatalogs} catalogue${totalCatalogs > 1 ? "s" : ""} · ${totalItemsAcrossCatalogs.toLocaleString("fr-FR")} article${totalItemsAcrossCatalogs > 1 ? "s" : ""}`;
 
   return (
     <div className="p-4 md:p-6 space-y-6">
@@ -344,8 +348,12 @@ export default function Catalog() {
                                 {meta.label}
                               </Badge>
                             </div>
+                            <span className="text-[11px] text-muted-foreground">
+                              {(cat.items_count ?? 0).toLocaleString("fr-FR")} article
+                              {(cat.items_count ?? 0) > 1 ? "s" : ""}
+                            </span>
                             {isReadOnly && (
-                              <span className="text-[11px] text-muted-foreground">
+                              <span className="text-[11px] text-muted-foreground block">
                                 Catalogue global · lecture seule
                               </span>
                             )}
@@ -488,9 +496,22 @@ export default function Catalog() {
                               className: "bg-muted text-foreground border-border",
                             };
                           return (
-                            <TableRow key={item.id} className="group">
+                            <TableRow
+                              key={item.id}
+                              className={`group ${item.is_active ? "" : "opacity-60"}`}
+                            >
                               <TableCell>
-                                <span className="font-medium text-foreground">{item.name}</span>
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium text-foreground">{item.name}</span>
+                                  {!item.is_active && (
+                                    <Badge
+                                      variant="outline"
+                                      className="text-[10px] px-1.5 py-0 bg-muted text-muted-foreground border-border"
+                                    >
+                                      Inactif
+                                    </Badge>
+                                  )}
+                                </div>
                                 {item.description && (
                                   <p className="text-xs text-muted-foreground line-clamp-1 mt-0.5">{item.description}</p>
                                 )}

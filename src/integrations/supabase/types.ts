@@ -20,7 +20,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      import_supplier_items: {
+        Args: {
+          p_items: Json
+          p_margin_pct?: number
+          p_supplier_name: string
+          p_tenant_id: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never

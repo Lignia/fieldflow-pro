@@ -261,12 +261,16 @@ export default function Catalog() {
   }
 
   const totalCatalogs = catalogs.length;
+  const totalItemsAcrossCatalogs = catalogs.reduce(
+    (acc, c) => acc + (c.items_count ?? 0),
+    0,
+  );
   const headerSubtitle =
     totalCatalogs === 0
       ? "Aucun catalogue"
-      : items.length === 0
+      : totalItemsAcrossCatalogs === 0
       ? `${totalCatalogs} catalogue${totalCatalogs > 1 ? "s" : ""} · aucun article importé`
-      : `${totalCatalogs} catalogue${totalCatalogs > 1 ? "s" : ""}`;
+      : `${totalCatalogs} catalogue${totalCatalogs > 1 ? "s" : ""} · ${totalItemsAcrossCatalogs.toLocaleString("fr-FR")} article${totalItemsAcrossCatalogs > 1 ? "s" : ""}`;
 
   return (
     <div className="p-4 md:p-6 space-y-6">

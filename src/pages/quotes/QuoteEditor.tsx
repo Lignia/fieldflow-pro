@@ -127,6 +127,24 @@ const KIND_LABELS: Record<string, string> = {
   estimate: "Estimatif", final: "Définitif", service: "SAV",
 };
 
+/**
+ * Règle d'affichage obligatoire d'une ligne de devis :
+ *   display_label = customer_label
+ *               ?? normalized_label_snapshot
+ *               ?? raw_label_snapshot
+ * On ne lit JAMAIS catalog_items.name côté UI — uniquement les snapshots.
+ */
+function resolveDisplayLabel(row: EditorItem): string {
+  return (
+    (row.customer_label && row.customer_label.trim()) ||
+    (row.normalized_label_snapshot && row.normalized_label_snapshot.trim()) ||
+    (row.raw_label_snapshot && row.raw_label_snapshot.trim()) ||
+    row.label ||
+    ""
+  );
+}
+};
+
 const VAT_RATES = [5.5, 10, 20];
 
 const STATUS_LABELS: Record<string, { label: string; className: string }> = {

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useCatalog, Catalog as CatalogType, CatalogItem, NewItem } from "@/hooks/useCatalog";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
@@ -106,6 +106,7 @@ export default function Catalog() {
   const {
     catalogs, items, selectedCatalogId, selectedCatalog, isGlobalCatalog,
     setSelectedCatalogId, loading, itemsLoading,
+    hasMore, loadingMore, loadMoreItems,
     createCatalog, createItem, updateItem, toggleItem, deleteItem,
     renameCatalog, deleteCatalog,
   } = useCatalog();
@@ -141,9 +142,26 @@ export default function Catalog() {
     return items.filter(
       (i) =>
         i.name.toLowerCase().includes(lower) ||
-        (i.sku && i.sku.toLowerCase().includes(lower))
+        (i.sku && i.sku.toLowerCase().includes(lower)) ||
+        (i.description && i.description.toLowerCase().includes(lower)) ||
+        ((i as any).supplier_ref && String((i as any).supplier_ref).toLowerCase().includes(lower))
     );
   }, [items, search]);
+
+  // Infinite scroll sentinel
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el || !hasMore || search) return; // pause infinite scroll on local filter
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) loadMoreItems();
+      },
+      { rootMargin: "200px" },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [hasMore, loadMoreItems, search, items.length]);
 
   const handleSaveCatalog = async (name: string, catalogType: string) => {
     try {

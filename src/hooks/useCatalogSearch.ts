@@ -10,6 +10,14 @@ export interface CatalogItem {
   unit: string;
   product_type: string;
   description: string | null;
+  // Snapshot source fields (immutable supplier data + normalization)
+  supplier_ref?: string | null;
+  supplier_name?: string | null;
+  brand?: string | null;
+  cost_price?: number | null;
+  is_labor?: boolean | null;
+  normalized_name?: string | null;
+  product_kind?: string | null;
 }
 
 export function useCatalogSearch(term: string) {
@@ -29,13 +37,61 @@ export function useCatalogSearch(term: string) {
       setLoading(true);
 
       try {
-        const { data } = await catalogDb
-          .from("catalog_items")
-          .select("id, name, sku, unit_price_ht, vat_rate, unit, product_type, description")
-          .ilike("name", `%${term}%`)
-          .eq("is_active", true)
-          .limit(8);
-        setResults((data as CatalogItem[]) || []);
+        const cols =
+          "id, name, sku, unit_price_ht, vat_rate, unit, product_type, description, " +
+          "supplier_ref, supplier_name, brand, cost_price, is_labor, " +
+          "normalized_name, product_kind";
+
+        // 1) Full-text search via search_vector (websearch syntax)
+        const ftQuery = term
+          .trim()
+          .split(/\s+/)
+          .filter(Boolean)
+          .map((t) => t.replace(/[:&|!()'"\\]/g, ""))
+          .filter(Boolean)
+          .join(" & ");
+
+        let merged: CatalogItem[] = [];
+        if (ftQuery) {
+          const { data: ftData } = await catalogDb
+            .from("catalog_items")
+            .select(cols)
+            .eq("is_active", true)
+            .textSearch("search_vector", ftQuery, { config: "french" })
+            .limit(12);
+          if (ftData) merged = ftData as CatalogItem[];
+        }
+
+        // 2) Fallback ilike on multiple columns (covers SKUs, codes, refs, keywords)
+        if (merged.length < 8) {
+          const escaped = term.replace(/[%_,]/g, " ").trim();
+          const pattern = `%${escaped}%`;
+          const { data: ilikeData } = await catalogDb
+            .from("catalog_items")
+            .select(cols)
+            .eq("is_active", true)
+            .or(
+              [
+                `name.ilike.${pattern}`,
+                `sku.ilike.${pattern}`,
+                `supplier_ref.ilike.${pattern}`,
+                `search_keywords.ilike.${pattern}`,
+                `normalized_name.ilike.${pattern}`,
+              ].join(",")
+            )
+            .limit(12);
+          if (ilikeData) {
+            const seen = new Set(merged.map((r) => r.id));
+            for (const r of ilikeData as CatalogItem[]) {
+              if (!seen.has(r.id)) {
+                merged.push(r);
+                seen.add(r.id);
+              }
+            }
+          }
+        }
+
+        setResults(merged.slice(0, 12));
       } catch {
         setResults([]);
       } finally {

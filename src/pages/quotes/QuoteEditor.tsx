@@ -761,7 +761,10 @@ export default function QuoteEditor() {
             section_id: (l as any).section_id || null,
             line_type: l._type === "item" ? "item" : "text",
             product_id: l._type === "item" ? (l as EditorItem).product_id || null : null,
-            label: l.label,
+            // label = display_label calculé (customer ?? normalized ?? raw)
+            label: l._type === "item"
+              ? resolveDisplayLabel(l as EditorItem)
+              : l.label,
             qty: l._type === "item" ? (l as EditorItem).qty : 0,
             unit: l._type === "item" ? (l as EditorItem).unit : "u",
             unit_price_ht: l._type === "item" ? (l as EditorItem).unit_price_ht : 0,
@@ -771,6 +774,14 @@ export default function QuoteEditor() {
             unit_cost_price: l._type === "item" ? (l as EditorItem).unit_cost_price ?? null : null,
             brand: l._type === "item" ? (l as EditorItem).brand ?? null : null,
             supplier_ref: l._type === "item" ? (l as EditorItem).supplier_ref ?? null : null,
+            // ─── Snapshots immutables (source de vérité du devis) ───
+            supplier_ref_snapshot: l._type === "item" ? (l as EditorItem).supplier_ref_snapshot ?? null : null,
+            supplier_sku_snapshot: l._type === "item" ? (l as EditorItem).supplier_sku_snapshot ?? null : null,
+            supplier_name_snapshot: l._type === "item" ? (l as EditorItem).supplier_name_snapshot ?? null : null,
+            raw_label_snapshot: l._type === "item" ? (l as EditorItem).raw_label_snapshot ?? null : null,
+            normalized_label_snapshot: l._type === "item" ? (l as EditorItem).normalized_label_snapshot ?? null : null,
+            customer_label: l._type === "item" ? (l as EditorItem).customer_label ?? null : null,
+            display_label: l._type === "item" ? resolveDisplayLabel(l as EditorItem) : null,
             metadata: {},
           }))
         );

@@ -143,7 +143,6 @@ function resolveDisplayLabel(row: EditorItem): string {
     ""
   );
 }
-};
 
 const VAT_RATES = [5.5, 10, 20];
 

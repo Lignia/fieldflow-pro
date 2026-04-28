@@ -488,6 +488,10 @@ export default function QuoteEditor() {
     let costPrice: number | null = null;
     let brand: string | null = null;
     let supplierRef: string | null = null;
+    let supplierName: string | null = null;
+    let normalizedName: string | null = null;
+    let supplierSku: string | null = null;
+    let rawLabel: string | null = catalogItem?.name ?? null;
 
     if (catalogItem) {
       const pt = (catalogItem as any).product_type;
@@ -497,19 +501,34 @@ export default function QuoteEditor() {
         else if (pt === "flue" || pt === "conduit") autoCategory = "flue";
       }
 
-      // Fetch extended fields not exposed by useCatalogSearch
+      // Pré-remplissage à partir des champs déjà exposés par useCatalogSearch
+      costPrice = (catalogItem as any).cost_price ?? null;
+      brand = (catalogItem as any).brand ?? null;
+      supplierRef = (catalogItem as any).supplier_ref ?? null;
+      supplierName = (catalogItem as any).supplier_name ?? null;
+      normalizedName = (catalogItem as any).normalized_name ?? null;
+      supplierSku = catalogItem.sku ?? null;
+
+      // Sécurité : aller chercher en base les champs source garantis
+      // (immuables) pour figer un snapshot fiable.
       if (!DEV_BYPASS) {
         try {
           const { data } = await (await import("@/integrations/supabase/schema-clients"))
             .catalogDb
             .from("catalog_items")
-            .select("cost_price, brand, supplier_ref, is_labor")
+            .select(
+              "name, sku, cost_price, brand, supplier_ref, supplier_name, normalized_name, is_labor",
+            )
             .eq("id", catalogItem.id)
             .maybeSingle();
           if (data) {
             costPrice = (data as any).cost_price ?? null;
             brand = (data as any).brand ?? null;
             supplierRef = (data as any).supplier_ref ?? null;
+            supplierName = (data as any).supplier_name ?? null;
+            normalizedName = (data as any).normalized_name ?? null;
+            supplierSku = (data as any).sku ?? supplierSku;
+            rawLabel = (data as any).name ?? rawLabel;
             if (!autoCategory && (data as any).is_labor) autoCategory = "labor";
           }
         } catch {
@@ -518,10 +537,16 @@ export default function QuoteEditor() {
       }
     }
 
+    // display_label initial = customer_label ?? normalized ?? raw
+    const initialLabel =
+      (normalizedName && normalizedName.trim()) ||
+      (rawLabel && rawLabel.trim()) ||
+      "";
+
     const newRow: EditorItem = {
       _type: "item", _key: nextKey(), line_type: "item",
       product_id: catalogItem?.id || null,
-      label: catalogItem?.name || "",
+      label: initialLabel,
       qty: 1,
       unit: catalogItem?.unit || "u",
       unit_price_ht: catalogItem?.unit_price_ht || 0,
@@ -531,6 +556,13 @@ export default function QuoteEditor() {
       unit_cost_price: costPrice,
       brand,
       supplier_ref: supplierRef,
+      // ─── Snapshots figés (indépendants du catalogue après création) ───
+      supplier_ref_snapshot: supplierRef,
+      supplier_sku_snapshot: supplierSku,
+      supplier_name_snapshot: supplierName,
+      raw_label_snapshot: rawLabel,
+      normalized_label_snapshot: normalizedName,
+      customer_label: null,
     };
     setRows((prev) => [...prev, newRow]);
   }, [rows.length]);

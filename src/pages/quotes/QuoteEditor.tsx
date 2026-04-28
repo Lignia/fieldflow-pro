@@ -62,6 +62,13 @@ interface EditorItem {
   unit_cost_price?: number | null;
   brand?: string | null;
   supplier_ref?: string | null;
+  // ─── Snapshots immutables (figés à l'ajout depuis le catalogue) ───
+  supplier_ref_snapshot?: string | null;
+  supplier_sku_snapshot?: string | null;
+  supplier_name_snapshot?: string | null;
+  raw_label_snapshot?: string | null;
+  normalized_label_snapshot?: string | null;
+  customer_label?: string | null;
 }
 
 interface EditorText {

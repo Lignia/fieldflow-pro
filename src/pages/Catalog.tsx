@@ -606,6 +606,15 @@ export default function Catalog() {
                     </Table>
                   </div>
                 )}
+                {!itemsLoading && filteredItems.length > 0 && (
+                  <div ref={sentinelRef} className="py-4 text-center text-xs text-muted-foreground">
+                    {loadingMore
+                      ? "Chargement…"
+                      : hasMore && !search
+                        ? "Faites défiler pour charger plus"
+                        : `${items.length} article${items.length > 1 ? "s" : ""} chargé${items.length > 1 ? "s" : ""}`}
+                  </div>
+                )}
               </CardContent>
             </Card>
           )}

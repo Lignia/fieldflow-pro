@@ -62,6 +62,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 /* ── Helpers ── */
 
@@ -175,6 +176,7 @@ export default function QuoteDetail() {
   const {
     quote, lines, activities, project,
     depositInvoice, installation, technicalSurvey,
+    sections, displayTotalHt, displayTotalTtc,
     loading, error, refetch,
   } = useQuoteDetail(id);
   const [showDelete, setShowDelete] = useState(false);
@@ -273,6 +275,19 @@ export default function QuoteDetail() {
     return acc;
   }, {});
 
+  /* ── Garde-fous ── */
+  const canSend = lines.length > 0 && displayTotalHt > 0;
+  const isDesynced = lines.length === 0 && quote.total_ht > 0;
+
+  /* ── Regroupement par sections ── */
+  const linesBySection = new Map<string | null, typeof lines>();
+  for (const l of lines) {
+    const key = l.section_id ?? null;
+    if (!linesBySection.has(key)) linesBySection.set(key, []);
+    linesBySection.get(key)!.push(l);
+  }
+  const orphanLines = linesBySection.get(null) ?? [];
+
   /* ── Google Maps link ── */
   const mapsUrl = property
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
@@ -305,6 +320,15 @@ export default function QuoteDetail() {
         <ArrowLeft className="h-4 w-4 mr-1" />
         Devis
       </Button>
+
+      {/* ── Alerte désynchronisation totaux/lignes ── */}
+      {isDesynced && (
+        <Alert variant="destructive" className="mb-2">
+          <AlertDescription>
+            Totaux désynchronisés — les lignes ont été supprimées. Rééditez le devis pour corriger.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* ══ 2-COLUMN LAYOUT ══ */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -372,7 +396,11 @@ export default function QuoteDetail() {
                     </Button>
                   </span>
                 </TooltipTrigger>
-                <TooltipContent>Disponible prochainement</TooltipContent>
+                <TooltipContent>
+                  {!canSend
+                    ? "Ajoutez au moins une ligne pour pouvoir dupliquer ce devis"
+                    : "Disponible prochainement"}
+                </TooltipContent>
               </Tooltip>
             </div>
 
@@ -471,9 +499,20 @@ export default function QuoteDetail() {
             </h2>
 
             {lines.length === 0 ? (
-              <Card className="p-8 text-center">
-                <p className="text-sm text-muted-foreground">Aucune ligne</p>
-              </Card>
+              <div className="py-12 text-center border-2 border-dashed border-border rounded-lg mx-4">
+                <p className="text-muted-foreground mb-4">
+                  Ce devis ne contient aucune ligne
+                </p>
+                {quote.project_id && (
+                  <Button
+                    onClick={() =>
+                      navigate(`/projects/${quote.project_id}/quotes/editor?quote_id=${quote.id}`)
+                    }
+                  >
+                    Ajouter des lignes
+                  </Button>
+                )}
+              </div>
             ) : (
               <Card className="overflow-hidden">
                 <div className="overflow-x-auto">
@@ -489,40 +528,47 @@ export default function QuoteDetail() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {lines.map((line) => (
-                        <TableRow key={line.id}>
-                          <TableCell>
-                            <p className="font-medium text-sm">
-                              {line.display_label ?? line.customer_label ?? line.normalized_label_snapshot ?? line.raw_label_snapshot ?? line.label}
-                            </p>
-                            {(() => {
-                              const badges = buildLineBadges(line);
-                              if (badges.length === 0) return null;
-                              return (
-                                <div className="mt-1 flex flex-wrap gap-1">
-                                  {badges.map((b, i) => (
-                                    <span
-                                      key={i}
-                                      className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground"
-                                    >
-                                      {b}
-                                    </span>
-                                  ))}
-                                </div>
-                              );
-                            })()}
-                          </TableCell>
-                          <TableCell className="text-right font-mono text-sm">{line.qty}</TableCell>
-                          <TableCell className="text-right text-sm text-muted-foreground">
-                            {line.unit ? UNIT_LABELS[line.unit] ?? line.unit : "—"}
-                          </TableCell>
-                          <TableCell className="text-right font-mono text-sm">{fmt(line.unit_price_ht)}</TableCell>
-                          <TableCell className="text-right text-sm text-muted-foreground">
-                            {line.vat_rate.toLocaleString("fr-FR")}%
-                          </TableCell>
-                          <TableCell className="text-right font-mono text-sm font-semibold">{fmt(line.total_line_ht)}</TableCell>
-                        </TableRow>
-                      ))}
+                      {sections.length > 0 ? (
+                        <>
+                          {sections.map((section) => {
+                            const sectionLines = linesBySection.get(section.id) ?? [];
+                            if (sectionLines.length === 0) return null;
+                            const sectionTotal = sectionLines.reduce((s, l) => s + l.total_line_ht, 0);
+                            return (
+                              <>
+                                <TableRow key={`sec-${section.id}`} className="bg-muted/40 hover:bg-muted/40">
+                                  <TableCell colSpan={5} className="font-semibold text-sm py-2">
+                                    {section.label}
+                                  </TableCell>
+                                  <TableCell className="text-right font-mono font-semibold text-sm py-2">
+                                    {fmt(sectionTotal)}
+                                  </TableCell>
+                                </TableRow>
+                                {sectionLines.map((line) => (
+                                  <LineRow key={line.id} line={line} />
+                                ))}
+                              </>
+                            );
+                          })}
+                          {orphanLines.length > 0 && (
+                            <>
+                              <TableRow key="sec-others" className="bg-muted/40 hover:bg-muted/40">
+                                <TableCell colSpan={5} className="font-semibold text-sm py-2">
+                                  Autres
+                                </TableCell>
+                                <TableCell className="text-right font-mono font-semibold text-sm py-2">
+                                  {fmt(orphanLines.reduce((s, l) => s + l.total_line_ht, 0))}
+                                </TableCell>
+                              </TableRow>
+                              {orphanLines.map((line) => (
+                                <LineRow key={line.id} line={line} />
+                              ))}
+                            </>
+                          )}
+                        </>
+                      ) : (
+                        lines.map((line) => <LineRow key={line.id} line={line} />)
+                      )}
                     </TableBody>
                   </Table>
                 </div>
@@ -535,7 +581,7 @@ export default function QuoteDetail() {
             <div className="flex flex-col items-end gap-2 text-sm">
               <div className="flex items-center justify-between w-full max-w-sm">
                 <span className="text-muted-foreground">Total HT</span>
-                <span className="font-mono font-medium">{fmt(quote.total_ht)}</span>
+                <span className="font-mono font-medium">{fmt(displayTotalHt)}</span>
               </div>
               {Object.entries(vatGroups)
                 .sort(([a], [b]) => Number(a) - Number(b))
@@ -548,7 +594,7 @@ export default function QuoteDetail() {
               <Separator className="my-1 max-w-sm w-full" />
               <div className="flex items-center justify-between w-full max-w-sm">
                 <span className="font-semibold text-base">Total TTC</span>
-                <span className="font-mono font-bold text-lg">{fmt(quote.total_ttc)}</span>
+                <span className="font-mono font-bold text-lg">{fmt(displayTotalTtc)}</span>
               </div>
             </div>
           </Card>
@@ -595,6 +641,7 @@ export default function QuoteDetail() {
               expiry={expiry}
               transitioning={transitioning}
               signing={signing}
+              canSend={canSend}
               onSend={() => transitionStatus("sent")}
               onSign={() => setShowSignConfirm(true)}
               onLost={() => transitionStatus("lost")}
@@ -697,12 +744,18 @@ export default function QuoteDetail() {
             <div className="space-y-2">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="outline" size="sm" className="w-full justify-start" disabled>
-                    <FileDown className="h-3.5 w-3.5 mr-2" />
-                    Générer PDF
-                  </Button>
+                  <span tabIndex={0} className="w-full">
+                    <Button variant="outline" size="sm" className="w-full justify-start" disabled>
+                      <FileDown className="h-3.5 w-3.5 mr-2" />
+                      Générer PDF
+                    </Button>
+                  </span>
                 </TooltipTrigger>
-                <TooltipContent>Disponible prochainement</TooltipContent>
+                <TooltipContent>
+                  {!canSend
+                    ? "Ajoutez au moins une ligne pour pouvoir générer le PDF"
+                    : "Disponible prochainement"}
+                </TooltipContent>
               </Tooltip>
               {depositInvoice && (
                 <Button
@@ -728,7 +781,7 @@ export default function QuoteDetail() {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Total HT</span>
-                  <span className="font-mono font-medium">{fmt(quote.total_ht)}</span>
+                  <span className="font-mono font-medium">{fmt(displayTotalHt)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Coût estimé</span>
@@ -819,7 +872,7 @@ function SignDialog({ open, onOpenChange, signing, onConfirm }: {
 }
 
 /* ── Duplicate button (reusable) ── */
-function DuplicateButton() {
+function DuplicateButton({ canSend = true }: { canSend?: boolean }) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -830,8 +883,65 @@ function DuplicateButton() {
           </Button>
         </span>
       </TooltipTrigger>
-      <TooltipContent>Disponible prochainement</TooltipContent>
+      <TooltipContent>
+        {!canSend
+          ? "Ajoutez au moins une ligne pour pouvoir dupliquer ce devis"
+          : "Disponible prochainement"}
+      </TooltipContent>
     </Tooltip>
+  );
+}
+
+/* ── Line row (réutilisable, avec ou sans section) ── */
+function LineRow({ line }: { line: import("@/hooks/useQuoteDetail").QuoteLine }) {
+  const isNote = line.line_type !== "item";
+  const title =
+    line.customer_label ??
+    line.display_label ??
+    line.normalized_label_snapshot ??
+    line.raw_label_snapshot ??
+    line.label;
+  const badges = buildLineBadges(line);
+
+  if (isNote) {
+    return (
+      <TableRow className="bg-muted/20 hover:bg-muted/20">
+        <TableCell colSpan={6} className="text-sm italic text-muted-foreground">
+          {title}
+        </TableCell>
+      </TableRow>
+    );
+  }
+
+  return (
+    <TableRow>
+      <TableCell>
+        <p className="font-medium text-sm">{title}</p>
+        {badges.length > 0 && (
+          <div className="mt-1 flex flex-wrap gap-1">
+            {badges.map((b, i) => (
+              <span
+                key={i}
+                className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground"
+              >
+                {b}
+              </span>
+            ))}
+          </div>
+        )}
+      </TableCell>
+      <TableCell className="text-right font-mono text-sm">{line.qty}</TableCell>
+      <TableCell className="text-right text-sm text-muted-foreground">
+        {line.unit ? UNIT_LABELS[line.unit] ?? line.unit : "—"}
+      </TableCell>
+      <TableCell className="text-right font-mono text-sm">{fmt(line.unit_price_ht)}</TableCell>
+      <TableCell className="text-right text-sm text-muted-foreground">
+        {line.vat_rate.toLocaleString("fr-FR")}%
+      </TableCell>
+      <TableCell className="text-right font-mono text-sm font-semibold">
+        {fmt(line.total_line_ht)}
+      </TableCell>
+    </TableRow>
   );
 }
 
@@ -869,6 +979,7 @@ interface ActionsBlocProps {
   expiry: ReturnType<typeof getExpiryInfo>;
   transitioning: boolean;
   signing: boolean;
+  canSend: boolean;
   onSend: () => void;
   onSign: () => void;
   onLost: () => void;
@@ -879,10 +990,58 @@ interface ActionsBlocProps {
 
 function ActionsBloc({
   quote, project, depositInvoice, expiry,
-  transitioning, signing,
+  transitioning, signing, canSend,
   onSend, onSign, onLost, onEdit, onDelete, navigate,
 }: ActionsBlocProps) {
   const { quote_kind: kind, quote_status: status, project_id, service_request_id } = quote;
+  const sendTooltip = "Ajoutez au moins une ligne pour pouvoir envoyer ce devis";
+  const signTooltip = "Ajoutez au moins une ligne pour pouvoir signer ce devis";
+
+  const SendBtn = () =>
+    canSend ? (
+      <Button size="sm" className="w-full" disabled={transitioning} onClick={onSend}>
+        <Send className="h-3.5 w-3.5 mr-1" />
+        Envoyer
+      </Button>
+    ) : (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span tabIndex={0} className="w-full">
+            <Button size="sm" className="w-full" disabled>
+              <Send className="h-3.5 w-3.5 mr-1" />
+              Envoyer
+            </Button>
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>{sendTooltip}</TooltipContent>
+      </Tooltip>
+    );
+
+  const SignBtn = () =>
+    canSend ? (
+      <Button
+        variant="success"
+        size="sm"
+        className="w-full"
+        disabled={transitioning || signing}
+        onClick={onSign}
+      >
+        <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+        Marquer comme signé
+      </Button>
+    ) : (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span tabIndex={0} className="w-full">
+            <Button variant="success" size="sm" className="w-full" disabled>
+              <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+              Marquer comme signé
+            </Button>
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>{signTooltip}</TooltipContent>
+      </Tooltip>
+    );
 
   /* CAS 6 — Service / SAV */
   if (kind === "service") {
@@ -902,17 +1061,14 @@ function ActionsBloc({
         )}
         {status === "draft" && (
           <>
-            <Button size="sm" className="w-full" disabled={transitioning} onClick={onSend}>
-              <Send className="h-3.5 w-3.5 mr-1" />
-              Envoyer
-            </Button>
+            <SendBtn />
             <Button variant="outline" size="sm" className="w-full" onClick={onEdit}>
               <Pencil className="h-3.5 w-3.5 mr-1" />
               Modifier
             </Button>
           </>
         )}
-        <DuplicateButton />
+        <DuplicateButton canSend={canSend} />
       </div>
     );
   }
@@ -921,15 +1077,12 @@ function ActionsBloc({
   if (kind === "estimate" && status === "draft") {
     return (
       <div className="space-y-2">
-        <Button size="sm" className="w-full" disabled={transitioning} onClick={onSend}>
-          <Send className="h-3.5 w-3.5 mr-1" />
-          Envoyer
-        </Button>
+        <SendBtn />
         <Button variant="outline" size="sm" className="w-full" onClick={onEdit}>
           <Pencil className="h-3.5 w-3.5 mr-1" />
           Modifier
         </Button>
-        <DuplicateButton />
+        <DuplicateButton canSend={canSend} />
         <Button variant="outline" size="sm" className="w-full" disabled={transitioning} onClick={onLost}>
           <XCircle className="h-3.5 w-3.5 mr-1" />
           Marquer perdu
@@ -942,15 +1095,12 @@ function ActionsBloc({
   if (kind === "final" && status === "draft") {
     return (
       <div className="space-y-2">
-        <Button size="sm" className="w-full" disabled={transitioning} onClick={onSend}>
-          <Send className="h-3.5 w-3.5 mr-1" />
-          Envoyer
-        </Button>
+        <SendBtn />
         <Button variant="outline" size="sm" className="w-full" onClick={onEdit}>
           <Pencil className="h-3.5 w-3.5 mr-1" />
           Modifier
         </Button>
-        <DuplicateButton />
+        <DuplicateButton canSend={canSend} />
       </div>
     );
   }
@@ -971,7 +1121,7 @@ function ActionsBloc({
             Recréer un devis estimatif
           </Button>
         )}
-        <DuplicateButton />
+        <DuplicateButton canSend={canSend} />
         <Button variant="outline" size="sm" className="w-full" disabled={transitioning} onClick={onLost}>
           <XCircle className="h-3.5 w-3.5 mr-1" />
           Marquer perdu
@@ -997,7 +1147,7 @@ function ActionsBloc({
           <Pencil className="h-3.5 w-3.5 mr-1" />
           Modifier
         </Button>
-        <DuplicateButton />
+        <DuplicateButton canSend={canSend} />
         <Button variant="outline" size="sm" className="w-full" disabled={transitioning} onClick={onLost}>
           <XCircle className="h-3.5 w-3.5 mr-1" />
           Marquer perdu
@@ -1022,7 +1172,7 @@ function ActionsBloc({
             Recréer un devis final
           </Button>
         )}
-        <DuplicateButton />
+        <DuplicateButton canSend={canSend} />
       </div>
     );
   }
@@ -1031,21 +1181,12 @@ function ActionsBloc({
   if (kind === "final" && status === "sent") {
     return (
       <div className="space-y-2">
-        <Button
-          variant="success"
-          size="sm"
-          className="w-full"
-          disabled={transitioning || signing}
-          onClick={onSign}
-        >
-          <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
-          Marquer comme signé
-        </Button>
+        <SignBtn />
         <Button variant="outline" size="sm" className="w-full" onClick={onEdit}>
           <Pencil className="h-3.5 w-3.5 mr-1" />
           Modifier
         </Button>
-        <DuplicateButton />
+        <DuplicateButton canSend={canSend} />
       </div>
     );
   }
@@ -1070,7 +1211,7 @@ function ActionsBloc({
             Ouvrir le projet
           </Button>
         )}
-        <DuplicateButton />
+        <DuplicateButton canSend={canSend} />
       </div>
     );
   }
@@ -1087,7 +1228,7 @@ function ActionsBloc({
           Ouvrir le projet
         </Button>
       )}
-      <DuplicateButton />
+      <DuplicateButton canSend={canSend} />
     </div>
   );
 }

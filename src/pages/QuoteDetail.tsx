@@ -709,6 +709,8 @@ export default function QuoteDetail() {
               transitioning={transitioning}
               signing={signing}
               canSend={canSend}
+              hasNegativeMargin={hasNegativeMargin}
+              onShowNegativeMarginDialog={() => setShowNegativeMarginDialog(true)}
               onSend={() => transitionStatus("sent")}
               onSign={() => setShowSignConfirm(true)}
               onLost={() => transitionStatus("lost")}
@@ -1125,6 +1127,8 @@ interface ActionsBlocProps {
   transitioning: boolean;
   signing: boolean;
   canSend: boolean;
+  hasNegativeMargin: boolean;
+  onShowNegativeMarginDialog: () => void;
   onSend: () => void;
   onSign: () => void;
   onLost: () => void;
@@ -1136,6 +1140,7 @@ interface ActionsBlocProps {
 function ActionsBloc({
   quote, project, depositInvoice, expiry,
   transitioning, signing, canSend,
+  hasNegativeMargin, onShowNegativeMarginDialog,
   onSend, onSign, onLost, onEdit, onDelete, navigate,
 }: ActionsBlocProps) {
   const { quote_kind: kind, quote_status: status, project_id, service_request_id } = quote;
@@ -1144,7 +1149,18 @@ function ActionsBloc({
 
   const SendBtn = () =>
     canSend ? (
-      <Button size="sm" className="w-full" disabled={transitioning} onClick={onSend}>
+      <Button
+        size="sm"
+        className="w-full"
+        disabled={transitioning}
+        onClick={() => {
+          if (hasNegativeMargin) {
+            onShowNegativeMarginDialog();
+          } else {
+            onSend();
+          }
+        }}
+      >
         <Send className="h-3.5 w-3.5 mr-1" />
         Envoyer
       </Button>

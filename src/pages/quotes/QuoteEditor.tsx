@@ -179,7 +179,26 @@ function CatalogPopover({
 }) {
   const [open, setOpen] = useState(false);
   const [term, setTerm] = useState("");
-  const { results, loading } = useCatalogSearch(term);
+  const [includeLowPriority, setIncludeLowPriority] = useState(false);
+  const [activeSuppliers, setActiveSuppliers] = useState<string[] | null>(null);
+  const [availableSuppliers, setAvailableSuppliers] = useState<string[]>([]);
+  const { tenantId } = useCurrentUser();
+  const { results, loading } = useCatalogSearch(term, activeSuppliers, includeLowPriority);
+
+  useEffect(() => {
+    if (!tenantId) return;
+    catalogDb
+      .from("catalog_items")
+      .select("supplier_name")
+      .eq("is_active", true)
+      .not("supplier_name", "is", null)
+      .then(({ data }: { data: { supplier_name: string | null }[] | null }) => {
+        const unique = [
+          ...new Set((data ?? []).map((r) => r.supplier_name).filter(Boolean) as string[]),
+        ];
+        setAvailableSuppliers(unique);
+      });
+  }, [tenantId]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -189,10 +208,50 @@ function CatalogPopover({
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-96 p-0" align="start">
-        <div className="p-3 border-b border-border">
+        <div className="p-3 border-b border-border space-y-2">
+          {availableSuppliers.length > 1 && (
+            <div className="flex flex-wrap gap-1">
+              {availableSuppliers.map((supplier) => {
+                const isActive = !activeSuppliers || activeSuppliers.includes(supplier);
+                return (
+                  <button
+                    key={supplier}
+                    type="button"
+                    onClick={() => {
+                      if (!activeSuppliers) {
+                        setActiveSuppliers(availableSuppliers.filter((s) => s !== supplier));
+                      } else if (activeSuppliers.includes(supplier)) {
+                        const next = activeSuppliers.filter((s) => s !== supplier);
+                        setActiveSuppliers(next.length === 0 ? null : next);
+                      } else {
+                        const next = [...activeSuppliers, supplier];
+                        setActiveSuppliers(
+                          next.length === availableSuppliers.length ? null : next,
+                        );
+                      }
+                    }}
+                    className={cn(
+                      "text-[10px] px-2 py-0.5 rounded-full border transition-colors",
+                      isActive
+                        ? "bg-primary/10 border-primary/30 text-primary"
+                        : "bg-muted border-border text-muted-foreground",
+                    )}
+                  >
+                    {supplier}
+                  </button>
+                );
+              })}
+            </div>
+          )}
           <div className="relative">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Rechercher dans le catalogue…" value={term} onChange={(e) => setTerm(e.target.value)} className="pl-9" autoFocus />
+            <Input
+              placeholder="Référence, désignation ou diamètre (ex: 80/130)"
+              value={term}
+              onChange={(e) => setTerm(e.target.value)}
+              className="pl-9"
+              autoFocus
+            />
           </div>
         </div>
         <div className="max-h-64 overflow-y-auto">
@@ -200,17 +259,68 @@ function CatalogPopover({
           {!loading && term.length >= 2 && results.length === 0 && (
             <div className="p-4 text-center text-sm text-muted-foreground">Aucun résultat</div>
           )}
-          {results.map((item) => (
-            <button key={item.id} className="w-full text-left px-3 py-2.5 hover:bg-accent/10 transition-colors border-b border-border last:border-b-0" onClick={() => { onSelect(item); setOpen(false); setTerm(""); }}>
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="text-sm font-medium truncate text-foreground">{item.name}</p>
-                  <p className="text-xs text-muted-foreground">{item.sku} · TVA {item.vat_rate}%</p>
-                </div>
-                <span className="text-sm font-mono font-semibold shrink-0 text-foreground">{fmt(item.unit_price_ht)}</span>
-              </div>
+          {results.map((item) => {
+            const badges = [
+              item.diameter_outer_mm
+                ? `Ø${item.diameter_inner_mm}/${item.diameter_outer_mm}`
+                : item.diameter_inner_mm
+                  ? `Ø${item.diameter_inner_mm}`
+                  : null,
+              item.angle_deg ? `${item.angle_deg}°` : null,
+              item.length_mm ? `${item.length_mm}mm` : null,
+              item.supplier_range ?? null,
+            ].filter(Boolean) as string[];
+            const meta = [item.supplier_name, item.sku ?? item.supplier_ref]
+              .filter(Boolean)
+              .join(" · ");
+            return (
+              <button
+                key={item.id}
+                className="w-full text-left px-3 py-2.5 hover:bg-accent/10 transition-colors border-b border-border last:border-b-0"
+                onClick={() => { onSelect(item); setOpen(false); setTerm(""); }}
+              >
+                <p className="text-sm font-medium text-foreground leading-snug">
+                  {item.normalized_name ?? item.name}
+                </p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {meta}
+                  {meta ? " · " : ""}
+                  {item.unit_price_ht.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} € HT
+                </p>
+                {badges.length > 0 && (
+                  <div className="flex flex-wrap gap-1 mt-1">
+                    {badges.map((b) => (
+                      <Badge
+                        key={b}
+                        variant="outline"
+                        className="text-[9px] px-1 py-0 h-4 bg-muted/30"
+                      >
+                        {b}
+                      </Badge>
+                    ))}
+                  </div>
+                )}
+              </button>
+            );
+          })}
+          {results.length >= 12 && !includeLowPriority && (
+            <button
+              type="button"
+              className="text-xs text-muted-foreground hover:text-foreground w-full py-2 border-t text-center"
+              onClick={() => setIncludeLowPriority(true)}
+            >
+              Afficher les familles secondaires (gaz, ventilation…)
             </button>
-          ))}
+          )}
+          {includeLowPriority && (
+            <button
+              type="button"
+              className="text-xs text-muted-foreground hover:text-foreground w-full py-2 border-t text-center"
+              onClick={() => setIncludeLowPriority(false)}
+            >
+              Masquer les familles secondaires
+            </button>
+          )}
         </div>
         <div className="p-2 border-t border-border">
           <Button variant="ghost" size="sm" className="w-full text-xs" onClick={() => { onFreeLine(); setOpen(false); setTerm(""); }}>

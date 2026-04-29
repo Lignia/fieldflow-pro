@@ -29,6 +29,15 @@ export type Database = {
         }
         Returns: Json
       }
+      replace_quote_lines: {
+        Args: {
+          p_lines?: Json
+          p_quote_id: string
+          p_sections?: Json
+          p_tenant_id: string
+        }
+        Returns: Json
+      }
       search_quote_items: {
         Args: {
           p_active_supplier_names?: string[]
@@ -56,7 +65,6 @@ export type Database = {
           product_type: string
           search_score: number
           sku: string
-          sku_code: string
           supplier_name: string
           supplier_range: string
           supplier_ref: string

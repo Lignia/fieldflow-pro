@@ -22,8 +22,16 @@ export interface QuoteLine {
   sort_order: number;
   product_id: string | null;
   metadata: Record<string, unknown> | null;
+  // Type & catégorisation
+  line_type: string;
+  line_category: string | null;
+  section_id: string | null;
+  // Coût & marque
+  unit_cost_price: number | null;
+  brand: string | null;
   // Snapshots fournisseur (immuables)
   supplier_ref_snapshot: string | null;
+  supplier_sku_snapshot: string | null;
   supplier_name_snapshot: string | null;
   raw_label_snapshot: string | null;
   normalized_label_snapshot: string | null;
@@ -36,6 +44,12 @@ export interface QuoteLine {
   diameter_outer_mm: number | null;
   length_mm: number | null;
   angle_deg: number | null;
+}
+
+export interface QuoteSection {
+  id: string;
+  label: string;
+  sort_order: number;
 }
 
 export interface QuoteDetailCustomer {
@@ -109,11 +123,15 @@ export interface QuoteDetailData {
 interface UseQuoteDetailReturn {
   quote: QuoteDetailData | null;
   lines: QuoteLine[];
+  sections: QuoteSection[];
   activities: QuoteActivity[];
   project: QuoteDetailProject | null;
   depositInvoice: QuoteDepositInvoice | null;
   installation: QuoteInstallation | null;
   technicalSurvey: QuoteTechnicalSurvey | null;
+  computedTotalHt: number;
+  displayTotalHt: number;
+  displayTotalTtc: number;
   loading: boolean;
   error: string | null;
   refetch: () => void;
@@ -122,6 +140,7 @@ interface UseQuoteDetailReturn {
 export function useQuoteDetail(quoteId: string | undefined): UseQuoteDetailReturn {
   const [quote, setQuote] = useState<QuoteDetailData | null>(null);
   const [lines, setLines] = useState<QuoteLine[]>([]);
+  const [sections, setSections] = useState<QuoteSection[]>([]);
   const [activities, setActivities] = useState<QuoteActivity[]>([]);
   const [project, setProject] = useState<QuoteDetailProject | null>(null);
   const [depositInvoice, setDepositInvoice] = useState<QuoteDepositInvoice | null>(null);
@@ -136,7 +155,7 @@ export function useQuoteDetail(quoteId: string | undefined): UseQuoteDetailRetur
     setError(null);
 
     try {
-      const [quoteRes, linesRes, activitiesRes] = await Promise.all([
+      const [quoteRes, linesRes, sectionsRes, activitiesRes] = await Promise.all([
         billingDb
           .from("v_quotes_with_customer")
           .select("*")
@@ -145,7 +164,13 @@ export function useQuoteDetail(quoteId: string | undefined): UseQuoteDetailRetur
 
         billingDb
           .from("quote_lines")
-          .select("id, label, qty, unit, unit_price_ht, vat_rate, total_line_ht, sort_order, product_id, metadata, supplier_ref_snapshot, supplier_name_snapshot, raw_label_snapshot, normalized_label_snapshot, customer_label, display_label, product_kind, supplier_range, diameter_inner_mm, diameter_outer_mm, length_mm, angle_deg")
+          .select("id, label, qty, unit, unit_price_ht, vat_rate, total_line_ht, sort_order, product_id, metadata, line_type, line_category, section_id, unit_cost_price, brand, supplier_ref_snapshot, supplier_sku_snapshot, supplier_name_snapshot, raw_label_snapshot, normalized_label_snapshot, customer_label, display_label, product_kind, supplier_range, diameter_inner_mm, diameter_outer_mm, length_mm, angle_deg")
+          .eq("quote_id", quoteId)
+          .order("sort_order", { ascending: true }),
+
+        billingDb
+          .from("quote_sections")
+          .select("id, label, sort_order")
           .eq("quote_id", quoteId)
           .order("sort_order", { ascending: true }),
 
@@ -212,7 +237,13 @@ export function useQuoteDetail(quoteId: string | undefined): UseQuoteDetailRetur
           sort_order: l.sort_order,
           metadata: l.metadata,
           product_id: l.product_id ?? null,
+          line_type: l.line_type ?? "item",
+          line_category: l.line_category ?? null,
+          section_id: l.section_id ?? null,
+          unit_cost_price: l.unit_cost_price != null ? Number(l.unit_cost_price) : null,
+          brand: l.brand ?? null,
           supplier_ref_snapshot: l.supplier_ref_snapshot ?? null,
+          supplier_sku_snapshot: l.supplier_sku_snapshot ?? null,
           supplier_name_snapshot: l.supplier_name_snapshot ?? null,
           raw_label_snapshot: l.raw_label_snapshot ?? null,
           normalized_label_snapshot: l.normalized_label_snapshot ?? null,
@@ -224,6 +255,14 @@ export function useQuoteDetail(quoteId: string | undefined): UseQuoteDetailRetur
           diameter_outer_mm: l.diameter_outer_mm != null ? Number(l.diameter_outer_mm) : null,
           length_mm: l.length_mm != null ? Number(l.length_mm) : null,
           angle_deg: l.angle_deg != null ? Number(l.angle_deg) : null,
+        }))
+      );
+
+      setSections(
+        (sectionsRes.data ?? []).map((s: any) => ({
+          id: s.id,
+          label: s.label,
+          sort_order: Number(s.sort_order) || 0,
         }))
       );
 
@@ -296,5 +335,34 @@ export function useQuoteDetail(quoteId: string | undefined): UseQuoteDetailRetur
     fetchQuote();
   }, [fetchQuote]);
 
-  return { quote, lines, activities, project, depositInvoice, installation, technicalSurvey, loading, error, refetch: fetchQuote };
+  const itemLines = lines.filter((l) => l.line_type === "item");
+  const computedTotalHt = itemLines.reduce(
+    (s, l) => s + l.qty * l.unit_price_ht,
+    0,
+  );
+  const displayTotalHt = lines.length === 0 ? 0 : computedTotalHt;
+  const displayTotalTtc =
+    lines.length === 0
+      ? 0
+      : itemLines.reduce(
+          (s, l) => s + l.qty * l.unit_price_ht * (1 + l.vat_rate / 100),
+          0,
+        );
+
+  return {
+    quote,
+    lines,
+    sections,
+    activities,
+    project,
+    depositInvoice,
+    installation,
+    technicalSurvey,
+    computedTotalHt,
+    displayTotalHt,
+    displayTotalTtc,
+    loading,
+    error,
+    refetch: fetchQuote,
+  };
 }

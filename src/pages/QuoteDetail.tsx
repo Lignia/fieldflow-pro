@@ -62,6 +62,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 /* ── Helpers ── */
 
@@ -175,6 +176,7 @@ export default function QuoteDetail() {
   const {
     quote, lines, activities, project,
     depositInvoice, installation, technicalSurvey,
+    sections, displayTotalHt, displayTotalTtc,
     loading, error, refetch,
   } = useQuoteDetail(id);
   const [showDelete, setShowDelete] = useState(false);
@@ -272,6 +274,19 @@ export default function QuoteDetail() {
     acc[l.vat_rate] += l.total_line_ht * (l.vat_rate / 100);
     return acc;
   }, {});
+
+  /* ── Garde-fous ── */
+  const canSend = lines.length > 0 && displayTotalHt > 0;
+  const isDesynced = lines.length === 0 && quote.total_ht > 0;
+
+  /* ── Regroupement par sections ── */
+  const linesBySection = new Map<string | null, typeof lines>();
+  for (const l of lines) {
+    const key = l.section_id ?? null;
+    if (!linesBySection.has(key)) linesBySection.set(key, []);
+    linesBySection.get(key)!.push(l);
+  }
+  const orphanLines = linesBySection.get(null) ?? [];
 
   /* ── Google Maps link ── */
   const mapsUrl = property

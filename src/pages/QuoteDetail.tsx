@@ -979,6 +979,7 @@ interface ActionsBlocProps {
   expiry: ReturnType<typeof getExpiryInfo>;
   transitioning: boolean;
   signing: boolean;
+  canSend: boolean;
   onSend: () => void;
   onSign: () => void;
   onLost: () => void;
@@ -989,10 +990,58 @@ interface ActionsBlocProps {
 
 function ActionsBloc({
   quote, project, depositInvoice, expiry,
-  transitioning, signing,
+  transitioning, signing, canSend,
   onSend, onSign, onLost, onEdit, onDelete, navigate,
 }: ActionsBlocProps) {
   const { quote_kind: kind, quote_status: status, project_id, service_request_id } = quote;
+  const sendTooltip = "Ajoutez au moins une ligne pour pouvoir envoyer ce devis";
+  const signTooltip = "Ajoutez au moins une ligne pour pouvoir signer ce devis";
+
+  const SendBtn = () =>
+    canSend ? (
+      <Button size="sm" className="w-full" disabled={transitioning} onClick={onSend}>
+        <Send className="h-3.5 w-3.5 mr-1" />
+        Envoyer
+      </Button>
+    ) : (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span tabIndex={0} className="w-full">
+            <Button size="sm" className="w-full" disabled>
+              <Send className="h-3.5 w-3.5 mr-1" />
+              Envoyer
+            </Button>
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>{sendTooltip}</TooltipContent>
+      </Tooltip>
+    );
+
+  const SignBtn = () =>
+    canSend ? (
+      <Button
+        variant="success"
+        size="sm"
+        className="w-full"
+        disabled={transitioning || signing}
+        onClick={onSign}
+      >
+        <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+        Marquer comme signé
+      </Button>
+    ) : (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span tabIndex={0} className="w-full">
+            <Button variant="success" size="sm" className="w-full" disabled>
+              <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+              Marquer comme signé
+            </Button>
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>{signTooltip}</TooltipContent>
+      </Tooltip>
+    );
 
   /* CAS 6 — Service / SAV */
   if (kind === "service") {
@@ -1012,17 +1061,14 @@ function ActionsBloc({
         )}
         {status === "draft" && (
           <>
-            <Button size="sm" className="w-full" disabled={transitioning} onClick={onSend}>
-              <Send className="h-3.5 w-3.5 mr-1" />
-              Envoyer
-            </Button>
+            <SendBtn />
             <Button variant="outline" size="sm" className="w-full" onClick={onEdit}>
               <Pencil className="h-3.5 w-3.5 mr-1" />
               Modifier
             </Button>
           </>
         )}
-        <DuplicateButton />
+        <DuplicateButton canSend={canSend} />
       </div>
     );
   }
@@ -1031,15 +1077,12 @@ function ActionsBloc({
   if (kind === "estimate" && status === "draft") {
     return (
       <div className="space-y-2">
-        <Button size="sm" className="w-full" disabled={transitioning} onClick={onSend}>
-          <Send className="h-3.5 w-3.5 mr-1" />
-          Envoyer
-        </Button>
+        <SendBtn />
         <Button variant="outline" size="sm" className="w-full" onClick={onEdit}>
           <Pencil className="h-3.5 w-3.5 mr-1" />
           Modifier
         </Button>
-        <DuplicateButton />
+        <DuplicateButton canSend={canSend} />
         <Button variant="outline" size="sm" className="w-full" disabled={transitioning} onClick={onLost}>
           <XCircle className="h-3.5 w-3.5 mr-1" />
           Marquer perdu
@@ -1052,15 +1095,12 @@ function ActionsBloc({
   if (kind === "final" && status === "draft") {
     return (
       <div className="space-y-2">
-        <Button size="sm" className="w-full" disabled={transitioning} onClick={onSend}>
-          <Send className="h-3.5 w-3.5 mr-1" />
-          Envoyer
-        </Button>
+        <SendBtn />
         <Button variant="outline" size="sm" className="w-full" onClick={onEdit}>
           <Pencil className="h-3.5 w-3.5 mr-1" />
           Modifier
         </Button>
-        <DuplicateButton />
+        <DuplicateButton canSend={canSend} />
       </div>
     );
   }
@@ -1081,7 +1121,7 @@ function ActionsBloc({
             Recréer un devis estimatif
           </Button>
         )}
-        <DuplicateButton />
+        <DuplicateButton canSend={canSend} />
         <Button variant="outline" size="sm" className="w-full" disabled={transitioning} onClick={onLost}>
           <XCircle className="h-3.5 w-3.5 mr-1" />
           Marquer perdu
@@ -1107,7 +1147,7 @@ function ActionsBloc({
           <Pencil className="h-3.5 w-3.5 mr-1" />
           Modifier
         </Button>
-        <DuplicateButton />
+        <DuplicateButton canSend={canSend} />
         <Button variant="outline" size="sm" className="w-full" disabled={transitioning} onClick={onLost}>
           <XCircle className="h-3.5 w-3.5 mr-1" />
           Marquer perdu
@@ -1132,7 +1172,7 @@ function ActionsBloc({
             Recréer un devis final
           </Button>
         )}
-        <DuplicateButton />
+        <DuplicateButton canSend={canSend} />
       </div>
     );
   }
@@ -1141,21 +1181,12 @@ function ActionsBloc({
   if (kind === "final" && status === "sent") {
     return (
       <div className="space-y-2">
-        <Button
-          variant="success"
-          size="sm"
-          className="w-full"
-          disabled={transitioning || signing}
-          onClick={onSign}
-        >
-          <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
-          Marquer comme signé
-        </Button>
+        <SignBtn />
         <Button variant="outline" size="sm" className="w-full" onClick={onEdit}>
           <Pencil className="h-3.5 w-3.5 mr-1" />
           Modifier
         </Button>
-        <DuplicateButton />
+        <DuplicateButton canSend={canSend} />
       </div>
     );
   }
@@ -1180,7 +1211,7 @@ function ActionsBloc({
             Ouvrir le projet
           </Button>
         )}
-        <DuplicateButton />
+        <DuplicateButton canSend={canSend} />
       </div>
     );
   }
@@ -1197,7 +1228,7 @@ function ActionsBloc({
           Ouvrir le projet
         </Button>
       )}
-      <DuplicateButton />
+      <DuplicateButton canSend={canSend} />
     </div>
   );
 }

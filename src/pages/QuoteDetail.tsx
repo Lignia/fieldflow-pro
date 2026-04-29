@@ -77,6 +77,45 @@ function fmtDateFull(d: string): string {
   return format(new Date(d), "d MMMM yyyy 'à' HH'h'mm", { locale: fr });
 }
 
+/* ── Normalisation badges ── */
+
+function buildLineBadges(line: {
+  product_kind: string | null;
+  supplier_range: string | null;
+  diameter_inner_mm: number | null;
+  diameter_outer_mm: number | null;
+  length_mm: number | null;
+  angle_deg: number | null;
+}): string[] {
+  const badges: string[] = [];
+
+  // Diamètre : Ø80/125 si double paroi, sinon Ø80
+  if (line.diameter_inner_mm && line.diameter_outer_mm) {
+    badges.push(`Ø${line.diameter_inner_mm}/${line.diameter_outer_mm}`);
+  } else if (line.diameter_inner_mm) {
+    badges.push(`Ø${line.diameter_inner_mm}`);
+  } else if (line.diameter_outer_mm) {
+    badges.push(`Ø${line.diameter_outer_mm}`);
+  }
+
+  // Angle (coude)
+  if (line.angle_deg) {
+    badges.push(`Coude ${line.angle_deg}°`);
+  }
+
+  // Longueur (tube)
+  if (line.length_mm) {
+    badges.push(`Tube ${line.length_mm}mm`);
+  }
+
+  // Gamme fournisseur
+  if (line.supplier_range) {
+    badges.push(line.supplier_range);
+  }
+
+  return badges;
+}
+
 /* ── Status / Kind config ── */
 
 const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
@@ -453,7 +492,25 @@ export default function QuoteDetail() {
                       {lines.map((line) => (
                         <TableRow key={line.id}>
                           <TableCell>
-                            <p className="font-medium text-sm">{line.label}</p>
+                            <p className="font-medium text-sm">
+                              {line.display_label ?? line.customer_label ?? line.normalized_label_snapshot ?? line.raw_label_snapshot ?? line.label}
+                            </p>
+                            {(() => {
+                              const badges = buildLineBadges(line);
+                              if (badges.length === 0) return null;
+                              return (
+                                <div className="mt-1 flex flex-wrap gap-1">
+                                  {badges.map((b, i) => (
+                                    <span
+                                      key={i}
+                                      className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground"
+                                    >
+                                      {b}
+                                    </span>
+                                  ))}
+                                </div>
+                              );
+                            })()}
                           </TableCell>
                           <TableCell className="text-right font-mono text-sm">{line.qty}</TableCell>
                           <TableCell className="text-right text-sm text-muted-foreground">

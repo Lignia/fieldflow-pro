@@ -938,41 +938,83 @@ function DuplicateButton({ canSend = true }: { canSend?: boolean }) {
 }
 
 /* ── Line row (réutilisable, avec ou sans section) ── */
-function LineRow({ line }: { line: import("@/hooks/useQuoteDetail").QuoteLine }) {
+function LineRow({
+  line,
+  showCostCols,
+}: {
+  line: import("@/hooks/useQuoteDetail").QuoteLine;
+  showCostCols: boolean;
+}) {
   const isNote = line.line_type !== "item";
-  const title =
-    line.customer_label ??
-    line.display_label ??
-    line.normalized_label_snapshot ??
-    line.raw_label_snapshot ??
-    line.label;
-  const badges = buildLineBadges(line);
+  const totalCols = 6 + (showCostCols ? 2 : 0);
 
   if (isNote) {
     return (
       <TableRow className="bg-muted/20 hover:bg-muted/20">
-        <TableCell colSpan={6} className="text-sm italic text-muted-foreground">
-          {title}
+        <TableCell
+          colSpan={totalCols}
+          className="px-3 py-1.5 text-sm italic text-muted-foreground"
+        >
+          {line.label}
         </TableCell>
       </TableRow>
     );
   }
 
+  // Niveau 1 — titre client
+  const title =
+    line.customer_label ??
+    line.display_label ??
+    line.normalized_label_snapshot ??
+    line.label;
+
+  // Niveau 2 — détails techniques (interne)
+  const techParts: string[] = [];
+  const supplierLine = [
+    line.supplier_name_snapshot,
+    line.supplier_sku_snapshot ?? line.supplier_ref_snapshot,
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  if (supplierLine) techParts.push(supplierLine);
+
+  if (line.diameter_inner_mm && line.diameter_outer_mm)
+    techParts.push(`Ø${line.diameter_inner_mm}/${line.diameter_outer_mm}`);
+  else if (line.diameter_inner_mm) techParts.push(`Ø${line.diameter_inner_mm}`);
+  else if (line.diameter_outer_mm) techParts.push(`Ø${line.diameter_outer_mm}`);
+
+  if (line.angle_deg) techParts.push(`${line.angle_deg}°`);
+  if (line.length_mm) techParts.push(`${line.length_mm}mm`);
+  if (line.supplier_range) techParts.push(`gamme : ${line.supplier_range}`);
+
+  const hasTech =
+    !!line.supplier_name_snapshot ||
+    !!line.supplier_sku_snapshot ||
+    !!line.supplier_ref_snapshot ||
+    !!line.diameter_inner_mm ||
+    !!line.diameter_outer_mm ||
+    !!line.angle_deg ||
+    !!line.length_mm ||
+    !!line.supplier_range;
+
+  // Coût / marge ligne
+  const costLine = (line.unit_cost_price ?? 0) * line.qty;
+  const marginEur = line.total_line_ht - costLine;
+  const marginPct = line.total_line_ht > 0 ? (marginEur / line.total_line_ht) * 100 : 0;
+
   return (
     <TableRow>
       <TableCell>
         <p className="font-medium text-sm">{title}</p>
-        {badges.length > 0 && (
-          <div className="mt-1 flex flex-wrap gap-1">
-            {badges.map((b, i) => (
-              <span
-                key={i}
-                className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground"
-              >
-                {b}
-              </span>
-            ))}
-          </div>
+        {hasTech && (
+          <Collapsible>
+            <CollapsibleTrigger className="mt-1 text-xs text-muted-foreground hover:text-foreground hover:underline">
+              Détails techniques
+            </CollapsibleTrigger>
+            <CollapsibleContent className="mt-1 font-mono text-xs text-muted-foreground">
+              {techParts.join(" · ")}
+            </CollapsibleContent>
+          </Collapsible>
         )}
       </TableCell>
       <TableCell className="text-right font-mono text-sm">{line.qty}</TableCell>
@@ -986,7 +1028,36 @@ function LineRow({ line }: { line: import("@/hooks/useQuoteDetail").QuoteLine })
       <TableCell className="text-right font-mono text-sm font-semibold">
         {fmt(line.total_line_ht)}
       </TableCell>
+      {showCostCols && (
+        <>
+          <TableCell className="text-right font-mono text-xs text-muted-foreground">
+            {(line.unit_cost_price ?? 0) > 0 ? fmt(costLine) : "—"}
+          </TableCell>
+          <TableCell className="text-right">
+            {(line.unit_cost_price ?? 0) > 0 ? (
+              <MarginBadge pct={marginPct} eur={marginEur} />
+            ) : (
+              <span className="text-xs text-muted-foreground">—</span>
+            )}
+          </TableCell>
+        </>
+      )}
     </TableRow>
+  );
+}
+
+/* ── Margin badge (interne) ── */
+function MarginBadge({ pct, eur }: { pct: number; eur: number }) {
+  const cls =
+    pct >= 25
+      ? "text-success"
+      : pct >= 10
+        ? "text-warning"
+        : "text-destructive";
+  return (
+    <Badge variant="outline" className={`${cls} font-mono text-xs`}>
+      {pct.toFixed(0)}% · {fmt(eur)}
+    </Badge>
   );
 }
 

@@ -77,6 +77,45 @@ function fmtDateFull(d: string): string {
   return format(new Date(d), "d MMMM yyyy 'à' HH'h'mm", { locale: fr });
 }
 
+/* ── Normalisation badges ── */
+
+function buildLineBadges(line: {
+  product_kind: string | null;
+  supplier_range: string | null;
+  diameter_inner_mm: number | null;
+  diameter_outer_mm: number | null;
+  length_mm: number | null;
+  angle_deg: number | null;
+}): string[] {
+  const badges: string[] = [];
+
+  // Diamètre : Ø80/125 si double paroi, sinon Ø80
+  if (line.diameter_inner_mm && line.diameter_outer_mm) {
+    badges.push(`Ø${line.diameter_inner_mm}/${line.diameter_outer_mm}`);
+  } else if (line.diameter_inner_mm) {
+    badges.push(`Ø${line.diameter_inner_mm}`);
+  } else if (line.diameter_outer_mm) {
+    badges.push(`Ø${line.diameter_outer_mm}`);
+  }
+
+  // Angle (coude)
+  if (line.angle_deg) {
+    badges.push(`Coude ${line.angle_deg}°`);
+  }
+
+  // Longueur (tube)
+  if (line.length_mm) {
+    badges.push(`Tube ${line.length_mm}mm`);
+  }
+
+  // Gamme fournisseur
+  if (line.supplier_range) {
+    badges.push(line.supplier_range);
+  }
+
+  return badges;
+}
+
 /* ── Status / Kind config ── */
 
 const STATUS_CONFIG: Record<string, { label: string; className: string }> = {

@@ -29,6 +29,41 @@ export type Database = {
         }
         Returns: Json
       }
+      search_quote_items: {
+        Args: {
+          p_active_supplier_names?: string[]
+          p_include_low_priority?: boolean
+          p_limit?: number
+          p_query: string
+          p_quote_context?: string
+          p_tenant_id: string
+        }
+        Returns: {
+          angle_deg: number
+          boost_score: number
+          cost_price: number
+          default_visible: boolean
+          diameter_inner_mm: number
+          diameter_outer_mm: number
+          finish_color: string
+          id: string
+          length_mm: number
+          name: string
+          normalization_confidence: number
+          normalization_status: string
+          normalized_name: string
+          product_kind: string
+          search_score: number
+          sku: string
+          supplier_name: string
+          supplier_range: string
+          supplier_ref: string
+          technology_type: string
+          unit: string
+          unit_price_ht: number
+          vat_rate: number
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

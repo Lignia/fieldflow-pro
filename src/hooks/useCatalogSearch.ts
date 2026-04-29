@@ -1,99 +1,112 @@
 import { useState, useEffect, useRef } from "react";
 import { catalogDb } from "@/integrations/supabase/schema-clients";
+import { useCurrentUser } from "@/hooks/useCurrentUser";
 
-export interface CatalogItem {
+export interface CatalogSearchResult {
   id: string;
   name: string;
-  sku: string;
+  normalized_name: string | null;
+  sku: string | null;
+  supplier_ref: string | null;
+  supplier_name: string | null;
+  supplier_range: string | null;
+  product_kind: string | null;
+  technology_type: string | null;
+  diameter_inner_mm: number | null;
+  diameter_outer_mm: number | null;
+  length_mm: number | null;
+  angle_deg: number | null;
+  finish_color: string | null;
   unit_price_ht: number;
+  cost_price: number | null;
   vat_rate: number;
   unit: string;
-  product_type: string;
-  description: string | null;
-  // Snapshot source fields (immutable supplier data + normalization)
-  supplier_ref?: string | null;
-  supplier_name?: string | null;
-  brand?: string | null;
-  cost_price?: number | null;
-  is_labor?: boolean | null;
-  normalized_name?: string | null;
-  product_kind?: string | null;
+  normalization_status: string | null;
+  search_score: number;
+  boost_score: number;
+  default_visible: boolean;
 }
 
-export function useCatalogSearch(term: string) {
+// Compat: QuoteEditor importe encore CatalogItem
+export type CatalogItem = CatalogSearchResult & {
+  product_type: string;
+  description: string | null;
+  brand: string | null;
+  is_labor: boolean | null;
+};
+
+export function useCatalogSearch(
+  term: string,
+  activeSuppliers: string[] | null = null,
+  includeLowPriority = false,
+) {
   const [results, setResults] = useState<CatalogItem[]>([]);
   const [loading, setLoading] = useState(false);
   const timerRef = useRef<ReturnType<typeof setTimeout>>();
+  const { tenantId } = useCurrentUser();
 
   useEffect(() => {
     if (timerRef.current) clearTimeout(timerRef.current);
 
-    if (!term || term.length < 2) {
+    if (!term || term.trim().length < 2) {
       setResults([]);
       return;
     }
 
     timerRef.current = setTimeout(async () => {
       setLoading(true);
-
       try {
-        const cols =
-          "id, name, sku, unit_price_ht, vat_rate, unit, product_type, description, " +
-          "supplier_ref, supplier_name, brand, cost_price, is_labor, " +
-          "normalized_name, product_kind";
+        const { data, error } = await catalogDb.rpc("search_quote_items", {
+          p_tenant_id: tenantId,
+          p_query: term.trim(),
+          p_active_supplier_names: activeSuppliers,
+          p_quote_context: "fumisterie",
+          p_include_low_priority: includeLowPriority,
+          p_limit: 12,
+        });
 
-        // 1) Full-text search via search_vector (websearch syntax)
-        const ftQuery = term
-          .trim()
-          .split(/\s+/)
-          .filter(Boolean)
-          .map((t) => t.replace(/[:&|!()'"\\]/g, ""))
-          .filter(Boolean)
-          .join(" & ");
+        if (error) throw error;
 
-        let merged: CatalogItem[] = [];
-        if (ftQuery) {
-          const { data: ftData } = await catalogDb
-            .from("catalog_items")
-            .select(cols)
-            .eq("is_active", true)
-            .textSearch("search_vector", ftQuery, { config: "french" })
-            .limit(12);
-          if (ftData) merged = ftData as CatalogItem[];
-        }
+        const items = ((data as any[]) ?? []).map((r) => ({
+          ...r,
+          product_type: r.product_type ?? "part",
+          description: null,
+          brand: r.supplier_name ?? null,
+          is_labor: r.product_kind === "labor",
+        })) as CatalogItem[];
 
-        // 2) Fallback ilike on multiple columns (covers SKUs, codes, refs, keywords)
-        if (merged.length < 8) {
-          const escaped = term.replace(/[%_,]/g, " ").trim();
-          const pattern = `%${escaped}%`;
-          const { data: ilikeData } = await catalogDb
+        setResults(items);
+      } catch {
+        // Fallback FTS + ilike si la RPC échoue
+        try {
+          const cols =
+            "id, name, sku, unit_price_ht, vat_rate, unit, " +
+            "product_type, description, supplier_ref, supplier_name, " +
+            "brand, cost_price, is_labor, normalized_name, product_kind";
+          const escaped = term.trim().replace(/[%_]/g, " ");
+          const { data } = await catalogDb
             .from("catalog_items")
             .select(cols)
             .eq("is_active", true)
             .or(
-              [
-                `name.ilike.${pattern}`,
-                `sku.ilike.${pattern}`,
-                `supplier_ref.ilike.${pattern}`,
-                `search_keywords.ilike.${pattern}`,
-                `normalized_name.ilike.${pattern}`,
-              ].join(",")
+              `name.ilike.%${escaped}%,sku.ilike.%${escaped}%,` +
+                `supplier_ref.ilike.%${escaped}%,` +
+                `search_keywords.ilike.%${escaped}%,` +
+                `normalized_name.ilike.%${escaped}%`,
             )
             .limit(12);
-          if (ilikeData) {
-            const seen = new Set(merged.map((r) => r.id));
-            for (const r of ilikeData as CatalogItem[]) {
-              if (!seen.has(r.id)) {
-                merged.push(r);
-                seen.add(r.id);
-              }
-            }
-          }
-        }
 
-        setResults(merged.slice(0, 12));
-      } catch {
-        setResults([]);
+          setResults(
+            (((data ?? []) as any[]).map((r) => ({
+              ...r,
+              search_score: 50,
+              boost_score: 0,
+              default_visible: true,
+            })) as CatalogItem[]),
+          );
+        } catch {
+          setResults([]);
+        }
       } finally {
         setLoading(false);
       }
@@ -102,7 +115,7 @@ export function useCatalogSearch(term: string) {
     return () => {
       if (timerRef.current) clearTimeout(timerRef.current);
     };
-  }, [term]);
+  }, [term, activeSuppliers, includeLowPriority, tenantId]);
 
   return { results, loading };
 }

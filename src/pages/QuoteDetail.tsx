@@ -284,6 +284,13 @@ export default function QuoteDetail() {
   const canSend = lines.length > 0 && displayTotalHt > 0;
   const isDesynced = lines.length === 0 && quote.total_ht > 0;
 
+  /* ── Warnings métier ── */
+  const hasDeviceOrFlue = lines.some((l) =>
+    ["device", "flue"].includes(l.line_category ?? ""),
+  );
+  const hasLabor = lines.some((l) => l.line_category === "labor");
+  const showLaborWarning = hasDeviceOrFlue && !hasLabor && lines.length > 0;
+
   /* ── Regroupement par sections ── */
   const linesBySection = new Map<string | null, typeof lines>();
   for (const l of lines) {
@@ -343,6 +350,16 @@ export default function QuoteDetail() {
         <Alert variant="destructive" className="mb-2">
           <AlertDescription>
             Totaux désynchronisés — les lignes ont été supprimées. Rééditez le devis pour corriger.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* ── Warning main d'œuvre manquante ── */}
+      {showLaborWarning && (
+        <Alert className="mb-2 border-warning/40 bg-warning/10 text-warning">
+          <AlertDescription>
+            Ce devis contient un appareil ou de la fumisterie sans ligne de pose.
+            Vérifiez l'éligibilité TVA réduite / RGE avant d'envoyer.
           </AlertDescription>
         </Alert>
       )}

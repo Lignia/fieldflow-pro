@@ -492,7 +492,25 @@ export default function QuoteDetail() {
                       {lines.map((line) => (
                         <TableRow key={line.id}>
                           <TableCell>
-                            <p className="font-medium text-sm">{line.label}</p>
+                            <p className="font-medium text-sm">
+                              {line.display_label ?? line.customer_label ?? line.normalized_label_snapshot ?? line.raw_label_snapshot ?? line.label}
+                            </p>
+                            {(() => {
+                              const badges = buildLineBadges(line);
+                              if (badges.length === 0) return null;
+                              return (
+                                <div className="mt-1 flex flex-wrap gap-1">
+                                  {badges.map((b, i) => (
+                                    <span
+                                      key={i}
+                                      className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground"
+                                    >
+                                      {b}
+                                    </span>
+                                  ))}
+                                </div>
+                              );
+                            })()}
                           </TableCell>
                           <TableCell className="text-right font-mono text-sm">{line.qty}</TableCell>
                           <TableCell className="text-right text-sm text-muted-foreground">

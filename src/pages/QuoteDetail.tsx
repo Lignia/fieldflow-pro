@@ -186,6 +186,7 @@ export default function QuoteDetail() {
   } = useQuoteDetail(id);
   const [showDelete, setShowDelete] = useState(false);
   const [showSignConfirm, setShowSignConfirm] = useState(false);
+  const [showNegativeMarginDialog, setShowNegativeMarginDialog] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
   const { signQuote, signing, error: signError } = useSignQuote();
 
@@ -312,6 +313,10 @@ export default function QuoteDetail() {
   const totalMarginPct = totalSale > 0 ? (totalMarginEur / totalSale) * 100 : 0;
   const totalCols = 6 + (showCostCols ? 2 : 0);
 
+  /* ── Marge négative (à perte) ── */
+  const hasNegativeMargin =
+    totalCost > 0 && displayTotalHt - totalCost < 0;
+
   /* ── Google Maps link ── */
   const mapsUrl = property
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
@@ -338,6 +343,32 @@ export default function QuoteDetail() {
           }
         }}
       />
+
+      <AlertDialog
+        open={showNegativeMarginDialog}
+        onOpenChange={setShowNegativeMarginDialog}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>⚠️ Devis à perte</AlertDialogTitle>
+            <AlertDialogDescription>
+              Ce devis génère une marge négative. Vérifiez les coûts d'achat avant d'envoyer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Corriger le devis</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                setShowNegativeMarginDialog(false);
+                transitionStatus("sent");
+              }}
+            >
+              Envoyer quand même
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* ── Back nav ── */}
       <Button variant="ghost" size="sm" className="-ml-2" onClick={() => navigate(returnTo ?? "/quotes")}>
@@ -704,6 +735,8 @@ export default function QuoteDetail() {
               transitioning={transitioning}
               signing={signing}
               canSend={canSend}
+              hasNegativeMargin={hasNegativeMargin}
+              onShowNegativeMarginDialog={() => setShowNegativeMarginDialog(true)}
               onSend={() => transitionStatus("sent")}
               onSign={() => setShowSignConfirm(true)}
               onLost={() => transitionStatus("lost")}
@@ -1120,6 +1153,8 @@ interface ActionsBlocProps {
   transitioning: boolean;
   signing: boolean;
   canSend: boolean;
+  hasNegativeMargin: boolean;
+  onShowNegativeMarginDialog: () => void;
   onSend: () => void;
   onSign: () => void;
   onLost: () => void;
@@ -1131,6 +1166,7 @@ interface ActionsBlocProps {
 function ActionsBloc({
   quote, project, depositInvoice, expiry,
   transitioning, signing, canSend,
+  hasNegativeMargin, onShowNegativeMarginDialog,
   onSend, onSign, onLost, onEdit, onDelete, navigate,
 }: ActionsBlocProps) {
   const { quote_kind: kind, quote_status: status, project_id, service_request_id } = quote;
@@ -1139,7 +1175,18 @@ function ActionsBloc({
 
   const SendBtn = () =>
     canSend ? (
-      <Button size="sm" className="w-full" disabled={transitioning} onClick={onSend}>
+      <Button
+        size="sm"
+        className="w-full"
+        disabled={transitioning}
+        onClick={() => {
+          if (hasNegativeMargin) {
+            onShowNegativeMarginDialog();
+          } else {
+            onSend();
+          }
+        }}
+      >
         <Send className="h-3.5 w-3.5 mr-1" />
         Envoyer
       </Button>

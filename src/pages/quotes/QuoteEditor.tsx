@@ -823,88 +823,67 @@ export default function QuoteEditor() {
         },
       }).eq("id", quote.id);
 
-      // Delete existing sections & lines for this quote
-      await billingDb.from("quote_lines").delete().eq("quote_id", quote.id);
-      await billingDb.from("quote_sections").delete().eq("quote_id", quote.id);
-
-      // Insert sections
-      const sectionRows = rows.filter((r): r is EditorSection => r._type === "section");
-      const sectionIdMap: Record<string, string> = {};
-
-      if (sectionRows.length > 0) {
-        const { data: insertedSections } = await billingDb.from("quote_sections").insert(
-          sectionRows.map((s) => ({
-            tenant_id: tenantId, quote_id: quote.id, label: s.label, sort_order: s.sort_order,
-          }))
-        ).select("id");
-
-        if (insertedSections) {
-          sectionRows.forEach((s, i) => {
-            if (insertedSections[i]) sectionIdMap[s._key] = insertedSections[i].id;
-          });
-        }
-      }
-
-      // Bug 3 — global sort_order counter across all row types
       // Re-assign sort_order globally based on display order
       let globalOrder = 0;
       const reorderedRows = rows.map((r) => ({ ...r, sort_order: globalOrder++ }));
 
-      // Update section sort_orders in the map
-      const reorderedSections = reorderedRows.filter((r): r is EditorSection => r._type === "section");
-      // Re-map section keys (sections were already inserted with old sort_order, but we used the row-level one)
-      // Actually we need to update the inserted sections' sort_order — but since we just inserted them above,
-      // let's just make sure we used the right sort_order. The insert already happened, so let's update:
-      for (const s of reorderedSections) {
-        const dbId = sectionIdMap[s._key];
-        if (dbId) {
-          await billingDb.from("quote_sections").update({ sort_order: s.sort_order }).eq("id", dbId);
+      const sectionRows = reorderedRows.filter(
+        (r): r is EditorSection => r._type === "section",
+      );
+
+      // Map each line to its current section_key (parcours top→bottom)
+      let currentSectionKey: string | null = null;
+      const lineRows: Array<(EditorItem | EditorText) & { section_key: string | null }> = [];
+      for (const row of reorderedRows) {
+        if (row._type === "section") {
+          currentSectionKey = row._key;
+        } else {
+          lineRows.push({ ...(row as EditorItem | EditorText), section_key: currentSectionKey });
         }
       }
 
-      // Figure out which section each line belongs to
-      let currentSectionKey: string | null = null;
-      const lineRows: (EditorItem | EditorText)[] = [];
-      for (const row of reorderedRows) {
-        if (row._type === "section") { currentSectionKey = row._key; }
-        else { lineRows.push({ ...row, section_id: currentSectionKey ? sectionIdMap[currentSectionKey] || null : null } as any); }
-      }
-
-      // Insert lines
-      if (lineRows.length > 0) {
-        const { error: lineErr } = await billingDb.from("quote_lines").insert(
-          lineRows.map((l) => ({
-            tenant_id: tenantId,
-            quote_id: quote.id,
-            section_id: (l as any).section_id || null,
-            line_type: l._type === "item" ? "item" : "text",
-            product_id: l._type === "item" ? (l as EditorItem).product_id || null : null,
-            // label = display_label calculé (customer ?? normalized ?? raw)
-            label: l._type === "item"
+      const { error: saveErr } = await billingDb.rpc("replace_quote_lines", {
+        p_quote_id: quote.id,
+        p_tenant_id: tenantId,
+        p_sections: sectionRows.map((s) => ({
+          _key: s._key,
+          label: s.label,
+          sort_order: s.sort_order,
+        })),
+        p_lines: lineRows.map((l) => ({
+          section_key: l.section_key ?? null,
+          line_type: l._type === "item" ? "item" : "text",
+          product_id: l._type === "item" ? (l as EditorItem).product_id ?? null : null,
+          label:
+            l._type === "item"
               ? resolveDisplayLabel(l as EditorItem)
               : l.label,
-            qty: l._type === "item" ? (l as EditorItem).qty : 0,
-            unit: l._type === "item" ? (l as EditorItem).unit : "u",
-            unit_price_ht: l._type === "item" ? (l as EditorItem).unit_price_ht : 0,
-            vat_rate: l._type === "item" ? (l as EditorItem).vat_rate : 0,
-            sort_order: l.sort_order,
-            line_category: l._type === "item" ? (l as EditorItem).line_category ?? null : null,
-            unit_cost_price: l._type === "item" ? (l as EditorItem).unit_cost_price ?? null : null,
-            brand: l._type === "item" ? (l as EditorItem).brand ?? null : null,
-            supplier_ref: l._type === "item" ? (l as EditorItem).supplier_ref ?? null : null,
-            // ─── Snapshots immutables (source de vérité du devis) ───
-            supplier_ref_snapshot: l._type === "item" ? (l as EditorItem).supplier_ref_snapshot ?? null : null,
-            supplier_sku_snapshot: l._type === "item" ? (l as EditorItem).supplier_sku_snapshot ?? null : null,
-            supplier_name_snapshot: l._type === "item" ? (l as EditorItem).supplier_name_snapshot ?? null : null,
-            raw_label_snapshot: l._type === "item" ? (l as EditorItem).raw_label_snapshot ?? null : null,
-            normalized_label_snapshot: l._type === "item" ? (l as EditorItem).normalized_label_snapshot ?? null : null,
-            customer_label: l._type === "item" ? (l as EditorItem).customer_label ?? null : null,
-            display_label: l._type === "item" ? resolveDisplayLabel(l as EditorItem) : null,
-            metadata: {},
-          }))
-        );
-        if (lineErr) throw lineErr;
-      }
+          qty: l._type === "item" ? (l as EditorItem).qty : 0,
+          unit: l._type === "item" ? (l as EditorItem).unit : "u",
+          unit_price_ht: l._type === "item" ? (l as EditorItem).unit_price_ht : 0,
+          vat_rate: l._type === "item" ? (l as EditorItem).vat_rate : 0,
+          sort_order: l.sort_order,
+          line_category: l._type === "item" ? (l as EditorItem).line_category ?? null : null,
+          unit_cost_price: l._type === "item" ? (l as EditorItem).unit_cost_price ?? null : null,
+          brand: l._type === "item" ? (l as EditorItem).brand ?? null : null,
+          supplier_ref: l._type === "item" ? (l as EditorItem).supplier_ref ?? null : null,
+          supplier_ref_snapshot:
+            l._type === "item" ? (l as EditorItem).supplier_ref_snapshot ?? null : null,
+          supplier_sku_snapshot:
+            l._type === "item" ? (l as EditorItem).supplier_sku_snapshot ?? null : null,
+          supplier_name_snapshot:
+            l._type === "item" ? (l as EditorItem).supplier_name_snapshot ?? null : null,
+          raw_label_snapshot:
+            l._type === "item" ? (l as EditorItem).raw_label_snapshot ?? null : null,
+          normalized_label_snapshot:
+            l._type === "item" ? (l as EditorItem).normalized_label_snapshot ?? null : null,
+          customer_label: l._type === "item" ? (l as EditorItem).customer_label ?? null : null,
+          display_label:
+            l._type === "item" ? resolveDisplayLabel(l as EditorItem) : null,
+          metadata: {},
+        })),
+      });
+      if (saveErr) throw saveErr;
 
       if (finalize) {
         // Transition to sent

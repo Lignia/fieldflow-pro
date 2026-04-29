@@ -1022,7 +1022,14 @@ function LineRow({
   return (
     <TableRow>
       <TableCell>
-        <p className="font-medium text-sm">{title}</p>
+        <p className="font-medium text-sm">
+          {title}
+          {line.unit_price_ht === 0 && line.line_type === "item" && (
+            <Badge variant="outline" className="text-warning text-[9px] ml-1">
+              Prix à 0 €
+            </Badge>
+          )}
+        </p>
         {hasTech && (
           <Collapsible>
             <CollapsibleTrigger className="mt-1 text-xs text-muted-foreground hover:text-foreground hover:underline">

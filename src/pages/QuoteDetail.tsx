@@ -495,9 +495,20 @@ export default function QuoteDetail() {
             </h2>
 
             {lines.length === 0 ? (
-              <Card className="p-8 text-center">
-                <p className="text-sm text-muted-foreground">Aucune ligne</p>
-              </Card>
+              <div className="py-12 text-center border-2 border-dashed border-border rounded-lg mx-4">
+                <p className="text-muted-foreground mb-4">
+                  Ce devis ne contient aucune ligne
+                </p>
+                {quote.project_id && (
+                  <Button
+                    onClick={() =>
+                      navigate(`/projects/${quote.project_id}/quotes/editor?quote_id=${quote.id}`)
+                    }
+                  >
+                    Ajouter des lignes
+                  </Button>
+                )}
+              </div>
             ) : (
               <Card className="overflow-hidden">
                 <div className="overflow-x-auto">
@@ -513,40 +524,47 @@ export default function QuoteDetail() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {lines.map((line) => (
-                        <TableRow key={line.id}>
-                          <TableCell>
-                            <p className="font-medium text-sm">
-                              {line.display_label ?? line.customer_label ?? line.normalized_label_snapshot ?? line.raw_label_snapshot ?? line.label}
-                            </p>
-                            {(() => {
-                              const badges = buildLineBadges(line);
-                              if (badges.length === 0) return null;
-                              return (
-                                <div className="mt-1 flex flex-wrap gap-1">
-                                  {badges.map((b, i) => (
-                                    <span
-                                      key={i}
-                                      className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground"
-                                    >
-                                      {b}
-                                    </span>
-                                  ))}
-                                </div>
-                              );
-                            })()}
-                          </TableCell>
-                          <TableCell className="text-right font-mono text-sm">{line.qty}</TableCell>
-                          <TableCell className="text-right text-sm text-muted-foreground">
-                            {line.unit ? UNIT_LABELS[line.unit] ?? line.unit : "—"}
-                          </TableCell>
-                          <TableCell className="text-right font-mono text-sm">{fmt(line.unit_price_ht)}</TableCell>
-                          <TableCell className="text-right text-sm text-muted-foreground">
-                            {line.vat_rate.toLocaleString("fr-FR")}%
-                          </TableCell>
-                          <TableCell className="text-right font-mono text-sm font-semibold">{fmt(line.total_line_ht)}</TableCell>
-                        </TableRow>
-                      ))}
+                      {sections.length > 0 ? (
+                        <>
+                          {sections.map((section) => {
+                            const sectionLines = linesBySection.get(section.id) ?? [];
+                            if (sectionLines.length === 0) return null;
+                            const sectionTotal = sectionLines.reduce((s, l) => s + l.total_line_ht, 0);
+                            return (
+                              <>
+                                <TableRow key={`sec-${section.id}`} className="bg-muted/40 hover:bg-muted/40">
+                                  <TableCell colSpan={5} className="font-semibold text-sm py-2">
+                                    {section.label}
+                                  </TableCell>
+                                  <TableCell className="text-right font-mono font-semibold text-sm py-2">
+                                    {fmt(sectionTotal)}
+                                  </TableCell>
+                                </TableRow>
+                                {sectionLines.map((line) => (
+                                  <LineRow key={line.id} line={line} />
+                                ))}
+                              </>
+                            );
+                          })}
+                          {orphanLines.length > 0 && (
+                            <>
+                              <TableRow key="sec-others" className="bg-muted/40 hover:bg-muted/40">
+                                <TableCell colSpan={5} className="font-semibold text-sm py-2">
+                                  Autres
+                                </TableCell>
+                                <TableCell className="text-right font-mono font-semibold text-sm py-2">
+                                  {fmt(orphanLines.reduce((s, l) => s + l.total_line_ht, 0))}
+                                </TableCell>
+                              </TableRow>
+                              {orphanLines.map((line) => (
+                                <LineRow key={line.id} line={line} />
+                              ))}
+                            </>
+                          )}
+                        </>
+                      ) : (
+                        lines.map((line) => <LineRow key={line.id} line={line} />)
+                      )}
                     </TableBody>
                   </Table>
                 </div>
@@ -559,7 +577,7 @@ export default function QuoteDetail() {
             <div className="flex flex-col items-end gap-2 text-sm">
               <div className="flex items-center justify-between w-full max-w-sm">
                 <span className="text-muted-foreground">Total HT</span>
-                <span className="font-mono font-medium">{fmt(quote.total_ht)}</span>
+                <span className="font-mono font-medium">{fmt(displayTotalHt)}</span>
               </div>
               {Object.entries(vatGroups)
                 .sort(([a], [b]) => Number(a) - Number(b))
@@ -572,7 +590,7 @@ export default function QuoteDetail() {
               <Separator className="my-1 max-w-sm w-full" />
               <div className="flex items-center justify-between w-full max-w-sm">
                 <span className="font-semibold text-base">Total TTC</span>
-                <span className="font-mono font-bold text-lg">{fmt(quote.total_ttc)}</span>
+                <span className="font-mono font-bold text-lg">{fmt(displayTotalTtc)}</span>
               </div>
             </div>
           </Card>

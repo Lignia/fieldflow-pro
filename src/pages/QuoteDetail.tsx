@@ -542,6 +542,16 @@ export default function QuoteDetail() {
                         <TableHead className="text-right w-[110px]">Prix HT</TableHead>
                         <TableHead className="text-right w-[70px]">TVA</TableHead>
                         <TableHead className="text-right w-[120px]">Total HT</TableHead>
+                        {showCostCols && (
+                          <>
+                            <TableHead className="text-right w-[110px] text-xs text-muted-foreground">
+                              Coût HT <span className="opacity-60">(interne)</span>
+                            </TableHead>
+                            <TableHead className="text-right w-[110px] text-xs text-muted-foreground">
+                              Marge <span className="opacity-60">(interne)</span>
+                            </TableHead>
+                          </>
+                        )}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -560,9 +570,10 @@ export default function QuoteDetail() {
                                   <TableCell className="text-right font-mono font-semibold text-sm py-2">
                                     {fmt(sectionTotal)}
                                   </TableCell>
+                                  {showCostCols && <TableCell colSpan={2} className="py-2" />}
                                 </TableRow>
                                 {sectionLines.map((line) => (
-                                  <LineRow key={line.id} line={line} />
+                                  <LineRow key={line.id} line={line} showCostCols={showCostCols} />
                                 ))}
                               </>
                             );
@@ -576,15 +587,32 @@ export default function QuoteDetail() {
                                 <TableCell className="text-right font-mono font-semibold text-sm py-2">
                                   {fmt(orphanLines.reduce((s, l) => s + l.total_line_ht, 0))}
                                 </TableCell>
+                                {showCostCols && <TableCell colSpan={2} className="py-2" />}
                               </TableRow>
                               {orphanLines.map((line) => (
-                                <LineRow key={line.id} line={line} />
+                                <LineRow key={line.id} line={line} showCostCols={showCostCols} />
                               ))}
                             </>
                           )}
                         </>
                       ) : (
-                        lines.map((line) => <LineRow key={line.id} line={line} />)
+                        lines.map((line) => <LineRow key={line.id} line={line} showCostCols={showCostCols} />)
+                      )}
+                      {showCostCols && (
+                        <TableRow className="bg-muted/30 hover:bg-muted/30">
+                          <TableCell colSpan={5} className="text-right font-semibold text-xs text-muted-foreground py-2">
+                            Marge totale (interne)
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-xs text-muted-foreground py-2">
+                            {fmt(totalSale)}
+                          </TableCell>
+                          <TableCell className="text-right font-mono text-xs text-muted-foreground py-2">
+                            {fmt(totalCost)}
+                          </TableCell>
+                          <TableCell className="text-right py-2">
+                            <MarginBadge pct={totalMarginPct} eur={totalMarginEur} />
+                          </TableCell>
+                        </TableRow>
                       )}
                     </TableBody>
                   </Table>

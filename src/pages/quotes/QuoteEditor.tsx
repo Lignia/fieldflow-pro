@@ -437,9 +437,9 @@ function ItemRow({ row, index, onChange, onDuplicate, onDelete }: {
       <span className="text-xs text-muted-foreground text-center tabular-nums pt-2">{index}</span>
       <div className="min-w-0 space-y-1">
         <Textarea
-          value={row.label}
-          onChange={(e) => onChange("label", e.target.value)}
-          placeholder="Désignation — collez ici une référence longue si besoin"
+          value={resolveDisplayLabel(row)}
+          onChange={(e) => onChange("customer_label", e.target.value)}
+          placeholder="Désignation — renommez pour le client si besoin"
           rows={1}
           className="min-h-[32px] resize-none text-sm font-medium leading-snug px-2 py-1.5 overflow-hidden"
           ref={(el) => {
@@ -465,6 +465,13 @@ function ItemRow({ row, index, onChange, onDuplicate, onDelete }: {
             </span>
           )}
         </div>
+        {(row.supplier_name_snapshot || row.supplier_ref_snapshot) && (
+          <p className="text-[10px] text-muted-foreground/60 mt-0.5">
+            {[row.supplier_name_snapshot, row.supplier_ref_snapshot]
+              .filter(Boolean)
+              .join(" · ")}
+          </p>
+        )}
       </div>
       <Input type="number" min={0} step={0.01} value={row.qty || ""} onChange={(e) => onChange("qty", parseFloat(e.target.value) || 0)} className="h-8 text-sm text-right mt-0" />
       <Select value={row.unit} onValueChange={(v) => onChange("unit", v)}>

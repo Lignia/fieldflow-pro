@@ -186,6 +186,7 @@ export default function QuoteDetail() {
   } = useQuoteDetail(id);
   const [showDelete, setShowDelete] = useState(false);
   const [showSignConfirm, setShowSignConfirm] = useState(false);
+  const [showNegativeMarginDialog, setShowNegativeMarginDialog] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
   const { signQuote, signing, error: signError } = useSignQuote();
 
@@ -311,6 +312,10 @@ export default function QuoteDetail() {
   const totalMarginEur = totalSale - totalCost;
   const totalMarginPct = totalSale > 0 ? (totalMarginEur / totalSale) * 100 : 0;
   const totalCols = 6 + (showCostCols ? 2 : 0);
+
+  /* ── Marge négative (à perte) ── */
+  const hasNegativeMargin =
+    totalCost > 0 && displayTotalHt - totalCost < 0;
 
   /* ── Google Maps link ── */
   const mapsUrl = property

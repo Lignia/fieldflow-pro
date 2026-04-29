@@ -8,8 +8,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
-import { billingDb, coreDb } from "@/integrations/supabase/schema-clients";
-import { catalogDb } from "@/integrations/supabase/schema-clients";
+import { billingDb, coreDb, catalogDb } from "@/integrations/supabase/schema-clients";
 import { cn } from "@/lib/utils";
 import { useCreateQuote, type QuoteLine } from "@/hooks/useCreateQuote";
 import { useCatalogSearch, suggestedVat, type CatalogItem } from "@/hooks/useCatalogSearch";

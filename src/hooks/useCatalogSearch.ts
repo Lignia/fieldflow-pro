@@ -11,6 +11,7 @@ export interface CatalogSearchResult {
   supplier_name: string | null;
   supplier_range: string | null;
   product_kind: string | null;
+  product_type: string;
   technology_type: string | null;
   diameter_inner_mm: number | null;
   diameter_outer_mm: number | null;
@@ -29,7 +30,6 @@ export interface CatalogSearchResult {
 
 // Compat: QuoteEditor importe encore CatalogItem
 export type CatalogItem = CatalogSearchResult & {
-  product_type: string;
   description: string | null;
   brand: string | null;
   is_labor: boolean | null;

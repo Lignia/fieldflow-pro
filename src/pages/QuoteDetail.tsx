@@ -321,6 +321,15 @@ export default function QuoteDetail() {
         Devis
       </Button>
 
+      {/* ── Alerte désynchronisation totaux/lignes ── */}
+      {isDesynced && (
+        <Alert variant="destructive" className="mb-2">
+          <AlertDescription>
+            Totaux désynchronisés — les lignes ont été supprimées. Rééditez le devis pour corriger.
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* ══ 2-COLUMN LAYOUT ══ */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 

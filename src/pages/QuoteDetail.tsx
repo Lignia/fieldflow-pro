@@ -872,7 +872,7 @@ function SignDialog({ open, onOpenChange, signing, onConfirm }: {
 }
 
 /* ── Duplicate button (reusable) ── */
-function DuplicateButton() {
+function DuplicateButton({ canSend = true }: { canSend?: boolean }) {
   return (
     <Tooltip>
       <TooltipTrigger asChild>
@@ -883,8 +883,65 @@ function DuplicateButton() {
           </Button>
         </span>
       </TooltipTrigger>
-      <TooltipContent>Disponible prochainement</TooltipContent>
+      <TooltipContent>
+        {!canSend
+          ? "Ajoutez au moins une ligne pour pouvoir dupliquer ce devis"
+          : "Disponible prochainement"}
+      </TooltipContent>
     </Tooltip>
+  );
+}
+
+/* ── Line row (réutilisable, avec ou sans section) ── */
+function LineRow({ line }: { line: import("@/hooks/useQuoteDetail").QuoteLine }) {
+  const isNote = line.line_type !== "item";
+  const title =
+    line.customer_label ??
+    line.display_label ??
+    line.normalized_label_snapshot ??
+    line.raw_label_snapshot ??
+    line.label;
+  const badges = buildLineBadges(line);
+
+  if (isNote) {
+    return (
+      <TableRow className="bg-muted/20 hover:bg-muted/20">
+        <TableCell colSpan={6} className="text-sm italic text-muted-foreground">
+          {title}
+        </TableCell>
+      </TableRow>
+    );
+  }
+
+  return (
+    <TableRow>
+      <TableCell>
+        <p className="font-medium text-sm">{title}</p>
+        {badges.length > 0 && (
+          <div className="mt-1 flex flex-wrap gap-1">
+            {badges.map((b, i) => (
+              <span
+                key={i}
+                className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground"
+              >
+                {b}
+              </span>
+            ))}
+          </div>
+        )}
+      </TableCell>
+      <TableCell className="text-right font-mono text-sm">{line.qty}</TableCell>
+      <TableCell className="text-right text-sm text-muted-foreground">
+        {line.unit ? UNIT_LABELS[line.unit] ?? line.unit : "—"}
+      </TableCell>
+      <TableCell className="text-right font-mono text-sm">{fmt(line.unit_price_ht)}</TableCell>
+      <TableCell className="text-right text-sm text-muted-foreground">
+        {line.vat_rate.toLocaleString("fr-FR")}%
+      </TableCell>
+      <TableCell className="text-right font-mono text-sm font-semibold">
+        {fmt(line.total_line_ht)}
+      </TableCell>
+    </TableRow>
   );
 }
 

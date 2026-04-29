@@ -53,6 +53,7 @@ export type Database = {
           normalization_status: string
           normalized_name: string
           product_kind: string
+          product_type: string
           search_score: number
           sku: string
           supplier_name: string

@@ -396,7 +396,11 @@ export default function QuoteDetail() {
                     </Button>
                   </span>
                 </TooltipTrigger>
-                <TooltipContent>Disponible prochainement</TooltipContent>
+                <TooltipContent>
+                  {!canSend
+                    ? "Ajoutez au moins une ligne pour pouvoir dupliquer ce devis"
+                    : "Disponible prochainement"}
+                </TooltipContent>
               </Tooltip>
             </div>
 
@@ -637,6 +641,7 @@ export default function QuoteDetail() {
               expiry={expiry}
               transitioning={transitioning}
               signing={signing}
+              canSend={canSend}
               onSend={() => transitionStatus("sent")}
               onSign={() => setShowSignConfirm(true)}
               onLost={() => transitionStatus("lost")}
@@ -739,12 +744,18 @@ export default function QuoteDetail() {
             <div className="space-y-2">
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <Button variant="outline" size="sm" className="w-full justify-start" disabled>
-                    <FileDown className="h-3.5 w-3.5 mr-2" />
-                    Générer PDF
-                  </Button>
+                  <span tabIndex={0} className="w-full">
+                    <Button variant="outline" size="sm" className="w-full justify-start" disabled>
+                      <FileDown className="h-3.5 w-3.5 mr-2" />
+                      Générer PDF
+                    </Button>
+                  </span>
                 </TooltipTrigger>
-                <TooltipContent>Disponible prochainement</TooltipContent>
+                <TooltipContent>
+                  {!canSend
+                    ? "Ajoutez au moins une ligne pour pouvoir générer le PDF"
+                    : "Disponible prochainement"}
+                </TooltipContent>
               </Tooltip>
               {depositInvoice && (
                 <Button
@@ -770,7 +781,7 @@ export default function QuoteDetail() {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Total HT</span>
-                  <span className="font-mono font-medium">{fmt(quote.total_ht)}</span>
+                  <span className="font-mono font-medium">{fmt(displayTotalHt)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Coût estimé</span>

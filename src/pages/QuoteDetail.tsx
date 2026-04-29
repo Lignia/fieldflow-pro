@@ -63,6 +63,11 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 /* ── Helpers ── */
 
@@ -287,6 +292,18 @@ export default function QuoteDetail() {
     linesBySection.get(key)!.push(l);
   }
   const orphanLines = linesBySection.get(null) ?? [];
+
+  /* ── Colonnes coût/marge (interne) ── */
+  const itemLines = lines.filter((l) => l.line_type === "item");
+  const showCostCols = itemLines.some((l) => (l.unit_cost_price ?? 0) > 0);
+  const totalCost = itemLines.reduce(
+    (s, l) => s + (l.unit_cost_price ?? 0) * l.qty,
+    0,
+  );
+  const totalSale = itemLines.reduce((s, l) => s + l.total_line_ht, 0);
+  const totalMarginEur = totalSale - totalCost;
+  const totalMarginPct = totalSale > 0 ? (totalMarginEur / totalSale) * 100 : 0;
+  const totalCols = 6 + (showCostCols ? 2 : 0);
 
   /* ── Google Maps link ── */
   const mapsUrl = property

@@ -344,6 +344,32 @@ export default function QuoteDetail() {
         }}
       />
 
+      <AlertDialog
+        open={showNegativeMarginDialog}
+        onOpenChange={setShowNegativeMarginDialog}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>⚠️ Devis à perte</AlertDialogTitle>
+            <AlertDialogDescription>
+              Ce devis génère une marge négative. Vérifiez les coûts d'achat avant d'envoyer.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Corriger le devis</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                setShowNegativeMarginDialog(false);
+                transitionStatus("sent");
+              }}
+            >
+              Envoyer quand même
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* ── Back nav ── */}
       <Button variant="ghost" size="sm" className="-ml-2" onClick={() => navigate(returnTo ?? "/quotes")}>
         <ArrowLeft className="h-4 w-4 mr-1" />

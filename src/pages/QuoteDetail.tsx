@@ -574,6 +574,65 @@ export default function QuoteDetail() {
 
           {/* ── Lines table ── */}
           <div className="space-y-3">
+            {/* ── Synthèse dirigeant ── */}
+            <Card>
+              <CardContent className="p-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="space-y-1">
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                    Total HT
+                  </p>
+                  <p className="text-lg font-semibold font-mono">
+                    {displayTotalHt.toLocaleString("fr-FR", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}{" "}
+                    €
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                    Total TTC
+                  </p>
+                  <p className="text-lg font-semibold font-mono">
+                    {displayTotalTtc.toLocaleString("fr-FR", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}{" "}
+                    €
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                    Marge
+                  </p>
+                  {hasCostData ? (
+                    <p className={cn("text-lg font-semibold font-mono", marginToneSummary)}>
+                      {marginEur.toLocaleString("fr-FR", {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      })}{" "}
+                      €{" "}
+                      <span className="text-xs font-normal">
+                        ({marginPct.toFixed(0)} %)
+                      </span>
+                    </p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground italic">
+                      Coûts non renseignés
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                    Lignes
+                  </p>
+                  <p className="text-lg font-semibold font-mono">
+                    {lines.filter((l) => l.line_type === "item").length}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
             <h2 className="text-base font-semibold">
               Lignes du devis
               <span className="text-muted-foreground font-normal ml-2 text-sm">({lines.length})</span>

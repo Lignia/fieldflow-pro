@@ -34,11 +34,12 @@ import { billingDb } from "@/integrations/supabase/schema-clients";
 import { useQuoteDetail, UNIT_LABELS, type QuoteActivity } from "@/hooks/useQuoteDetail";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useSignQuote } from "@/hooks/useSignQuote";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import {
   Table,
   TableBody,
@@ -317,6 +318,21 @@ export default function QuoteDetail() {
   const hasNegativeMargin =
     totalCost > 0 && displayTotalHt - totalCost < 0;
 
+  /* ── Synthèse dirigeant ── */
+  const totalCostSummary = lines
+    .filter((l) => l.line_type === "item")
+    .reduce((s, l) => s + (l.unit_cost_price ?? 0) * l.qty, 0);
+  const marginEur = displayTotalHt - totalCostSummary;
+  const marginPct = displayTotalHt > 0 ? (marginEur / displayTotalHt) * 100 : 0;
+  const hasCostData = totalCostSummary > 0;
+  const marginToneSummary = !hasCostData
+    ? "text-muted-foreground"
+    : marginEur < 0
+      ? "text-destructive"
+      : marginPct < 15
+        ? "text-warning"
+        : "text-success";
+
   /* ── Google Maps link ── */
   const mapsUrl = property
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
@@ -558,6 +574,65 @@ export default function QuoteDetail() {
 
           {/* ── Lines table ── */}
           <div className="space-y-3">
+            {/* ── Synthèse dirigeant ── */}
+            <Card>
+              <CardContent className="p-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div className="space-y-1">
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                    Total HT
+                  </p>
+                  <p className="text-lg font-semibold font-mono">
+                    {displayTotalHt.toLocaleString("fr-FR", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}{" "}
+                    €
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                    Total TTC
+                  </p>
+                  <p className="text-lg font-semibold font-mono">
+                    {displayTotalTtc.toLocaleString("fr-FR", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    })}{" "}
+                    €
+                  </p>
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                    Marge
+                  </p>
+                  {hasCostData ? (
+                    <p className={cn("text-lg font-semibold font-mono", marginToneSummary)}>
+                      {marginEur.toLocaleString("fr-FR", {
+                        minimumFractionDigits: 0,
+                        maximumFractionDigits: 0,
+                      })}{" "}
+                      €{" "}
+                      <span className="text-xs font-normal">
+                        ({marginPct.toFixed(0)} %)
+                      </span>
+                    </p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground italic">
+                      Coûts non renseignés
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-1">
+                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                    Lignes
+                  </p>
+                  <p className="text-lg font-semibold font-mono">
+                    {lines.filter((l) => l.line_type === "item").length}
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
             <h2 className="text-base font-semibold">
               Lignes du devis
               <span className="text-muted-foreground font-normal ml-2 text-sm">({lines.length})</span>

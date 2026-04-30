@@ -7,6 +7,7 @@ export interface CatalogSearchResult {
   name: string;
   normalized_name: string | null;
   sku: string | null;
+  sku_code: string | null;
   supplier_ref: string | null;
   supplier_name: string | null;
   supplier_range: string | null;
@@ -70,6 +71,7 @@ export function useCatalogSearch(
         const items = ((data as any[]) ?? []).map((r) => ({
           ...r,
           product_type: r.product_type ?? "part",
+          sku_code: (r as any).sku_code ?? null,
           description: null,
           brand: r.supplier_name ?? null,
           is_labor: r.product_kind === "labor",
@@ -80,7 +82,7 @@ export function useCatalogSearch(
         // Fallback FTS + ilike si la RPC échoue
         try {
           const cols =
-            "id, name, sku, unit_price_ht, vat_rate, unit, " +
+            "id, name, sku, sku_code, unit_price_ht, vat_rate, unit, " +
             "product_type, description, supplier_ref, supplier_name, " +
             "brand, cost_price, is_labor, normalized_name, product_kind";
           const escaped = term.trim().replace(/[%_]/g, " ");
@@ -99,6 +101,7 @@ export function useCatalogSearch(
           setResults(
             (((data ?? []) as any[]).map((r) => ({
               ...r,
+              sku_code: (r as any).sku_code ?? null,
               search_score: 50,
               boost_score: 0,
               default_visible: true,

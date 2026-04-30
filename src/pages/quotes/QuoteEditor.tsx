@@ -257,7 +257,21 @@ function CatalogPopover({
         <div className="max-h-64 overflow-y-auto">
           {loading && <div className="p-4 flex justify-center"><Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /></div>}
           {!loading && term.length >= 2 && results.length === 0 && (
-            <div className="p-4 text-center text-sm text-muted-foreground">Aucun résultat</div>
+            <div className="p-4 text-center space-y-2">
+              <p className="text-sm text-muted-foreground">
+                Aucun résultat pour cette recherche
+              </p>
+              {!includeLowPriority && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs"
+                  onClick={() => setIncludeLowPriority(true)}
+                >
+                  Élargir aux familles secondaires
+                </Button>
+              )}
+            </div>
           )}
           {results.map((item) => {
             const badges = [
@@ -269,7 +283,7 @@ function CatalogPopover({
               item.angle_deg ? `${item.angle_deg}°` : null,
               item.length_mm ? `${item.length_mm}mm` : null,
             ].filter(Boolean) as string[];
-            const ref = item.sku ?? item.supplier_ref;
+            const ref = (item as any).sku_code ?? item.sku ?? item.supplier_ref;
             return (
               <button
                 key={item.id}
@@ -304,7 +318,7 @@ function CatalogPopover({
               </button>
             );
           })}
-          {results.length >= 12 && !includeLowPriority && (
+          {!includeLowPriority && (results.length >= 12 || results.some((r) => r.boost_score < 0)) && (
             <button
               type="button"
               className="text-xs text-muted-foreground hover:text-foreground w-full py-2 border-t text-center"
@@ -468,7 +482,7 @@ function ItemRow({ row, index, onChange, onDuplicate, onDelete }: {
         </div>
         {(row.supplier_name_snapshot || row.supplier_ref_snapshot) && (
           <p className="text-[10px] text-muted-foreground/60 mt-0.5">
-            {[row.supplier_name_snapshot, row.supplier_ref_snapshot]
+            {[row.supplier_name_snapshot, row.supplier_sku_snapshot ?? row.supplier_ref_snapshot]
               .filter(Boolean)
               .join(" · ")}
           </p>
@@ -626,7 +640,9 @@ export default function QuoteEditor() {
       supplierRef = (catalogItem as any).supplier_ref ?? null;
       supplierName = (catalogItem as any).supplier_name ?? null;
       normalizedName = (catalogItem as any).normalized_name ?? null;
-      supplierSku = catalogItem.sku ?? null;
+      supplierSku = (catalogItem as any).sku_code
+                  ?? catalogItem.sku
+                  ?? null;
 
       // Sécurité : aller chercher en base les champs source garantis
       // (immuables) pour figer un snapshot fiable.
@@ -636,7 +652,7 @@ export default function QuoteEditor() {
             .catalogDb
             .from("catalog_items")
             .select(
-              "name, sku, cost_price, brand, supplier_ref, supplier_name, normalized_name, is_labor",
+              "name, sku, sku_code, cost_price, brand, supplier_ref, supplier_name, normalized_name, is_labor",
             )
             .eq("id", catalogItem.id)
             .maybeSingle();
@@ -646,7 +662,9 @@ export default function QuoteEditor() {
             supplierRef = (data as any).supplier_ref ?? null;
             supplierName = (data as any).supplier_name ?? null;
             normalizedName = (data as any).normalized_name ?? null;
-            supplierSku = (data as any).sku ?? supplierSku;
+            supplierSku = (data as any).sku_code
+                        ?? (data as any).sku
+                        ?? supplierSku;
             rawLabel = (data as any).name ?? rawLabel;
             if (!autoCategory && (data as any).is_labor) autoCategory = "labor";
           }

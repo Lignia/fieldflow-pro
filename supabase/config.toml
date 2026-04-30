@@ -1,4 +1,1 @@
 project_id = "hejxvqghsyaauwzkfikg"
-
-[functions.seed-ademe]
-verify_jwt = false

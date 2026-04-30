@@ -257,7 +257,21 @@ function CatalogPopover({
         <div className="max-h-64 overflow-y-auto">
           {loading && <div className="p-4 flex justify-center"><Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /></div>}
           {!loading && term.length >= 2 && results.length === 0 && (
-            <div className="p-4 text-center text-sm text-muted-foreground">Aucun résultat</div>
+            <div className="p-4 text-center space-y-2">
+              <p className="text-sm text-muted-foreground">
+                Aucun résultat pour cette recherche
+              </p>
+              {!includeLowPriority && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-xs"
+                  onClick={() => setIncludeLowPriority(true)}
+                >
+                  Élargir aux familles secondaires
+                </Button>
+              )}
+            </div>
           )}
           {results.map((item) => {
             const badges = [
@@ -304,7 +318,7 @@ function CatalogPopover({
               </button>
             );
           })}
-          {results.length >= 12 && !includeLowPriority && (
+          {!includeLowPriority && (results.length >= 12 || results.some((r) => r.boost_score < 0)) && (
             <button
               type="button"
               className="text-xs text-muted-foreground hover:text-foreground w-full py-2 border-t text-center"

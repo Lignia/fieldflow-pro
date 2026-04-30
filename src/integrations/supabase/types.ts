@@ -65,6 +65,7 @@ export type Database = {
           product_type: string
           search_score: number
           sku: string
+          sku_code: string
           supplier_name: string
           supplier_range: string
           supplier_ref: string

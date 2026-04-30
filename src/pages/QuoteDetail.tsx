@@ -34,11 +34,12 @@ import { billingDb } from "@/integrations/supabase/schema-clients";
 import { useQuoteDetail, UNIT_LABELS, type QuoteActivity } from "@/hooks/useQuoteDetail";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useSignQuote } from "@/hooks/useSignQuote";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 import {
   Table,
   TableBody,
@@ -316,6 +317,21 @@ export default function QuoteDetail() {
   /* ── Marge négative (à perte) ── */
   const hasNegativeMargin =
     totalCost > 0 && displayTotalHt - totalCost < 0;
+
+  /* ── Synthèse dirigeant ── */
+  const totalCostSummary = lines
+    .filter((l) => l.line_type === "item")
+    .reduce((s, l) => s + (l.unit_cost_price ?? 0) * l.qty, 0);
+  const marginEur = displayTotalHt - totalCostSummary;
+  const marginPct = displayTotalHt > 0 ? (marginEur / displayTotalHt) * 100 : 0;
+  const hasCostData = totalCostSummary > 0;
+  const marginToneSummary = !hasCostData
+    ? "text-muted-foreground"
+    : marginEur < 0
+      ? "text-destructive"
+      : marginPct < 15
+        ? "text-warning"
+        : "text-success";
 
   /* ── Google Maps link ── */
   const mapsUrl = property

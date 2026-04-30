@@ -468,7 +468,7 @@ function ItemRow({ row, index, onChange, onDuplicate, onDelete }: {
         </div>
         {(row.supplier_name_snapshot || row.supplier_ref_snapshot) && (
           <p className="text-[10px] text-muted-foreground/60 mt-0.5">
-            {[row.supplier_name_snapshot, row.supplier_ref_snapshot]
+            {[row.supplier_name_snapshot, row.supplier_sku_snapshot ?? row.supplier_ref_snapshot]
               .filter(Boolean)
               .join(" · ")}
           </p>

@@ -75,6 +75,7 @@ export type Database = {
           vat_rate: number
         }[]
       }
+      unaccent: { Args: { "": string }; Returns: string }
     }
     Enums: {
       [_ in never]: never

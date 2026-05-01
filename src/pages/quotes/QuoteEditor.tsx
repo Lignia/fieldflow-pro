@@ -557,6 +557,7 @@ export default function QuoteEditor() {
   const [expiryDate, setExpiryDate] = useState("");
   const [subject, setSubject] = useState("");
   const [depositPct, setDepositPct] = useState<number | null>(null);
+  const [globalDiscountPct, setGlobalDiscountPct] = useState<number>(0);
   const [visitDate, setVisitDate] = useState("");
   const [startDate, setStartDate] = useState("");
   const [initializing, setInitializing] = useState(true);

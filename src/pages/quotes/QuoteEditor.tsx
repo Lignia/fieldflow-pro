@@ -1407,6 +1407,33 @@ export default function QuoteEditor() {
               </CardContent>
             </Card>
           )}
+
+          {/* Remise globale */}
+          <div className="flex items-center gap-3 px-3 py-2 border-t border-border bg-muted/10">
+            <Label className="text-sm text-muted-foreground shrink-0">
+              Remise globale :
+            </Label>
+            <div className="flex items-center gap-1.5">
+              <Input
+                type="number"
+                min={0}
+                max={50}
+                step={0.5}
+                value={globalDiscountPct || ""}
+                onChange={(e) =>
+                  setGlobalDiscountPct(parseFloat(e.target.value) || 0)
+                }
+                className="h-8 w-20 text-sm text-right"
+                placeholder="0"
+              />
+              <span className="text-sm text-muted-foreground">%</span>
+            </div>
+            {globalDiscountPct > 0 && (
+              <span className="text-xs text-muted-foreground">
+                → -{fmt(totals.discountAmount)} HT sur le total
+              </span>
+            )}
+          </div>
         </div>
       </main>
 

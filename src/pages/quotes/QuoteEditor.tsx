@@ -555,6 +555,7 @@ export default function QuoteEditor() {
   const [projectInfo, setProjectInfo] = useState<ProjectInfo | null>(null);
   const [quoteDate, setQuoteDate] = useState("");
   const [expiryDate, setExpiryDate] = useState("");
+  const [subject, setSubject] = useState("");
   const [visitDate, setVisitDate] = useState("");
   const [startDate, setStartDate] = useState("");
   const [initializing, setInitializing] = useState(true);
@@ -607,6 +608,7 @@ export default function QuoteEditor() {
       if (q) {
         setQuoteDate(q.quote_date);
         setExpiryDate(q.expiry_date);
+        setSubject((q as any).subject || "");
       }
       setInitializing(false);
     });
@@ -835,6 +837,7 @@ export default function QuoteEditor() {
         quote_kind: quote.quote_kind,
         quote_date: quoteDate,
         expiry_date: expiryDate,
+        subject: subject.trim() || null,
         payload: {
           ...(quote as any).payload,
           visit_date: visitDate || null,
@@ -1146,6 +1149,18 @@ export default function QuoteEditor() {
           {/* Dates */}
           <Card>
             <CardContent className="p-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="space-y-1.5 col-span-full">
+                <Label className="text-xs text-muted-foreground">
+                  Objet du devis
+                </Label>
+                <Input
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  placeholder="ex : Fourniture et pose poêle à granulés + conduit Ø80"
+                  className="h-8 text-sm"
+                  maxLength={200}
+                />
+              </div>
               <div className="space-y-1.5">
                 <Label className="text-xs text-muted-foreground">Date d'émission</Label>
                 <Input type="date" value={quoteDate} onChange={(e) => setQuoteDate(e.target.value)} className="h-8 text-sm" />

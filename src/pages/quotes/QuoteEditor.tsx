@@ -612,6 +612,7 @@ export default function QuoteEditor() {
         setExpiryDate(q.expiry_date);
         setSubject((q as any).subject || "");
         setDepositPct((q as any).deposit_pct ?? null);
+        setGlobalDiscountPct((q as any).global_discount_pct ?? 0);
       }
       setInitializing(false);
     });

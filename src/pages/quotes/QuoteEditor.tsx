@@ -1448,6 +1448,14 @@ export default function QuoteEditor() {
                 <span className="text-muted-foreground">Total HT </span>
                 <span className="font-mono font-semibold text-foreground">{fmt(totals.totalHt)}</span>
               </div>
+              {globalDiscountPct > 0 && (
+                <div className="text-xs text-destructive">
+                  <span>Remise {globalDiscountPct} % </span>
+                  <span className="font-mono">
+                    -{fmt(totals.discountAmount)}
+                  </span>
+                </div>
+              )}
               {Object.entries(totals.vatMap)
                 .sort(([a], [b]) => Number(a) - Number(b))
                 .map(([rate, amount]) => (
@@ -1458,7 +1466,9 @@ export default function QuoteEditor() {
                 ))}
               <div>
                 <span className="text-muted-foreground">Total TTC </span>
-                <span className="font-mono font-bold text-base text-foreground">{fmt(totals.totalTtc)}</span>
+                <span className="font-mono font-bold text-base text-foreground">
+                  {fmt(globalDiscountPct > 0 ? totals.totalTtcAfterDiscount : totals.totalTtc)}
+                </span>
               </div>
               {depositPct != null && depositPct > 0 && (
                 <div className="text-xs">

@@ -38,6 +38,41 @@ export type Database = {
         }
         Returns: Json
       }
+      search_heating_appliances: {
+        Args: {
+          p_appliance_type?: string
+          p_brand_filter?: string[]
+          p_eligible_only?: boolean
+          p_fuel_type?: string
+          p_limit?: number
+          p_query: string
+          p_tenant_id: string
+        }
+        Returns: {
+          ademe_fonds_air_bois_status: string
+          appliance_type: string
+          co_emission_mg_nm3: number
+          commercial_name: string
+          cov_ogc_emission_mg_nm3: number
+          data_source: string
+          efficiency_pct: number
+          en_standard: string
+          flamme_verte_stars: number
+          flamme_verte_status: string
+          flue_diameter_mm: number
+          flue_exit_position: string
+          fuel_type: string
+          id: string
+          nominal_power_kw: number
+          normalized_brand: string
+          normalized_model: string
+          nox_emission_mg_nm3: number
+          particles_emission_mg_nm3: number
+          search_score: number
+          source_confidence: number
+          standard_obsolete: boolean
+        }[]
+      }
       search_quote_items: {
         Args: {
           p_active_supplier_names?: string[]

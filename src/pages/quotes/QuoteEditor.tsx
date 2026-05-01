@@ -749,8 +749,21 @@ export default function QuoteEditor() {
     }
 
     const totalVat = Object.values(vatMap).reduce((s, v) => s + v, 0);
-    return { totalHt, vatMap, totalVat, totalTtc: totalHt + totalVat };
-  }, [rows]);
+    const totalTtc = totalHt + totalVat;
+    const discountAmount = totalHt * (globalDiscountPct / 100);
+    const totalHtAfterDiscount = totalHt - discountAmount;
+    const totalTtcAfterDiscount =
+      totalHtAfterDiscount + totalVat * (1 - globalDiscountPct / 100);
+    return {
+      totalHt,
+      vatMap,
+      totalVat,
+      totalTtc,
+      discountAmount,
+      totalHtAfterDiscount,
+      totalTtcAfterDiscount,
+    };
+  }, [rows, globalDiscountPct]);
 
   // Section subtotals
   const sectionSubtotals = useMemo(() => {

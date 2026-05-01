@@ -557,6 +557,7 @@ export default function QuoteEditor() {
   const [expiryDate, setExpiryDate] = useState("");
   const [subject, setSubject] = useState("");
   const [depositPct, setDepositPct] = useState<number | null>(null);
+  const [globalDiscountPct, setGlobalDiscountPct] = useState<number>(0);
   const [visitDate, setVisitDate] = useState("");
   const [startDate, setStartDate] = useState("");
   const [initializing, setInitializing] = useState(true);
@@ -611,6 +612,7 @@ export default function QuoteEditor() {
         setExpiryDate(q.expiry_date);
         setSubject((q as any).subject || "");
         setDepositPct((q as any).deposit_pct ?? null);
+        setGlobalDiscountPct((q as any).global_discount_pct ?? 0);
       }
       setInitializing(false);
     });
@@ -747,8 +749,21 @@ export default function QuoteEditor() {
     }
 
     const totalVat = Object.values(vatMap).reduce((s, v) => s + v, 0);
-    return { totalHt, vatMap, totalVat, totalTtc: totalHt + totalVat };
-  }, [rows]);
+    const totalTtc = totalHt + totalVat;
+    const discountAmount = totalHt * (globalDiscountPct / 100);
+    const totalHtAfterDiscount = totalHt - discountAmount;
+    const totalTtcAfterDiscount =
+      totalHtAfterDiscount + totalVat * (1 - globalDiscountPct / 100);
+    return {
+      totalHt,
+      vatMap,
+      totalVat,
+      totalTtc,
+      discountAmount,
+      totalHtAfterDiscount,
+      totalTtcAfterDiscount,
+    };
+  }, [rows, globalDiscountPct]);
 
   // Section subtotals
   const sectionSubtotals = useMemo(() => {
@@ -841,6 +856,7 @@ export default function QuoteEditor() {
         expiry_date: expiryDate,
         subject: subject.trim() || null,
         deposit_pct: depositPct ?? null,
+        global_discount_pct: globalDiscountPct || 0,
         payload: {
           ...(quote as any).payload,
           visit_date: visitDate || null,
@@ -1391,6 +1407,33 @@ export default function QuoteEditor() {
               </CardContent>
             </Card>
           )}
+
+          {/* Remise globale */}
+          <div className="flex items-center gap-3 px-3 py-2 border-t border-border bg-muted/10">
+            <Label className="text-sm text-muted-foreground shrink-0">
+              Remise globale :
+            </Label>
+            <div className="flex items-center gap-1.5">
+              <Input
+                type="number"
+                min={0}
+                max={50}
+                step={0.5}
+                value={globalDiscountPct || ""}
+                onChange={(e) =>
+                  setGlobalDiscountPct(parseFloat(e.target.value) || 0)
+                }
+                className="h-8 w-20 text-sm text-right"
+                placeholder="0"
+              />
+              <span className="text-sm text-muted-foreground">%</span>
+            </div>
+            {globalDiscountPct > 0 && (
+              <span className="text-xs text-muted-foreground">
+                → -{fmt(totals.discountAmount)} HT sur le total
+              </span>
+            )}
+          </div>
         </div>
       </main>
 
@@ -1405,6 +1448,14 @@ export default function QuoteEditor() {
                 <span className="text-muted-foreground">Total HT </span>
                 <span className="font-mono font-semibold text-foreground">{fmt(totals.totalHt)}</span>
               </div>
+              {globalDiscountPct > 0 && (
+                <div className="text-xs text-destructive">
+                  <span>Remise {globalDiscountPct} % </span>
+                  <span className="font-mono">
+                    -{fmt(totals.discountAmount)}
+                  </span>
+                </div>
+              )}
               {Object.entries(totals.vatMap)
                 .sort(([a], [b]) => Number(a) - Number(b))
                 .map(([rate, amount]) => (
@@ -1415,7 +1466,9 @@ export default function QuoteEditor() {
                 ))}
               <div>
                 <span className="text-muted-foreground">Total TTC </span>
-                <span className="font-mono font-bold text-base text-foreground">{fmt(totals.totalTtc)}</span>
+                <span className="font-mono font-bold text-base text-foreground">
+                  {fmt(globalDiscountPct > 0 ? totals.totalTtcAfterDiscount : totals.totalTtc)}
+                </span>
               </div>
               {depositPct != null && depositPct > 0 && (
                 <div className="text-xs">

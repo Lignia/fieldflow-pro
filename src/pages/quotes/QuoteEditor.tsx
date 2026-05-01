@@ -687,7 +687,7 @@ export default function QuoteEditor() {
       qty: 1,
       unit: catalogItem?.unit || "u",
       unit_price_ht: catalogItem?.unit_price_ht || 0,
-      vat_rate: catalogItem ? suggestedVat(catalogItem.product_type) : 10,
+      vat_rate: 10,
       sort_order: rows.length,
       line_category: autoCategory,
       unit_cost_price: costPrice,

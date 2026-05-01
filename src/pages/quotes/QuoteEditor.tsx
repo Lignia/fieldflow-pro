@@ -843,6 +843,7 @@ export default function QuoteEditor() {
         expiry_date: expiryDate,
         subject: subject.trim() || null,
         deposit_pct: depositPct ?? null,
+        global_discount_pct: globalDiscountPct || 0,
         payload: {
           ...(quote as any).payload,
           visit_date: visitDate || null,

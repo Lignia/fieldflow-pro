@@ -556,6 +556,7 @@ export default function QuoteEditor() {
   const [quoteDate, setQuoteDate] = useState("");
   const [expiryDate, setExpiryDate] = useState("");
   const [subject, setSubject] = useState("");
+  const [depositPct, setDepositPct] = useState<number | null>(null);
   const [visitDate, setVisitDate] = useState("");
   const [startDate, setStartDate] = useState("");
   const [initializing, setInitializing] = useState(true);
@@ -609,6 +610,7 @@ export default function QuoteEditor() {
         setQuoteDate(q.quote_date);
         setExpiryDate(q.expiry_date);
         setSubject((q as any).subject || "");
+        setDepositPct((q as any).deposit_pct ?? null);
       }
       setInitializing(false);
     });
@@ -838,6 +840,7 @@ export default function QuoteEditor() {
         quote_date: quoteDate,
         expiry_date: expiryDate,
         subject: subject.trim() || null,
+        deposit_pct: depositPct ?? null,
         payload: {
           ...(quote as any).payload,
           visit_date: visitDate || null,
@@ -1180,6 +1183,38 @@ export default function QuoteEditor() {
             </CardContent>
           </Card>
 
+          {/* Acompte */}
+          <div className="flex items-center gap-3 mt-2">
+            <Label className="text-sm text-muted-foreground shrink-0">
+              Acompte :
+            </Label>
+            <div className="flex items-center gap-1.5">
+              <Input
+                type="number"
+                min={0}
+                max={100}
+                step={1}
+                value={depositPct ?? ""}
+                onChange={(e) =>
+                  setDepositPct(
+                    e.target.value === "" ? null : parseFloat(e.target.value) || 0
+                  )
+                }
+                className="h-8 w-20 text-sm text-right"
+                placeholder="0"
+              />
+              <span className="text-sm text-muted-foreground">%</span>
+              <span className="text-xs text-muted-foreground">
+                à la signature
+              </span>
+            </div>
+            {depositPct != null && depositPct > 0 && (
+              <span className="font-mono text-sm font-semibold text-foreground ml-2">
+                = {fmt(totals.totalTtc * depositPct / 100)} TTC
+              </span>
+            )}
+          </div>
+
           {/* Type de devis */}
           <div className="flex items-center gap-3">
             <Label className="text-sm text-muted-foreground">Type :</Label>
@@ -1382,6 +1417,16 @@ export default function QuoteEditor() {
                 <span className="text-muted-foreground">Total TTC </span>
                 <span className="font-mono font-bold text-base text-foreground">{fmt(totals.totalTtc)}</span>
               </div>
+              {depositPct != null && depositPct > 0 && (
+                <div className="text-xs">
+                  <span className="text-muted-foreground">
+                    Acompte ({depositPct} %) :{" "}
+                  </span>
+                  <span className="font-mono font-semibold text-foreground">
+                    {fmt(totals.totalTtc * depositPct / 100)}
+                  </span>
+                </div>
+              )}
             </div>
 
             <Separator orientation="vertical" className="h-10 hidden md:block" />

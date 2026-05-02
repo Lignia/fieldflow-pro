@@ -752,8 +752,8 @@ export default function QuoteEditor() {
     const totalTtc = totalHt + totalVat;
     const discountAmount = totalHt * (globalDiscountPct / 100);
     const totalHtAfterDiscount = totalHt - discountAmount;
-    const totalTtcAfterDiscount =
-      totalHtAfterDiscount + totalVat * (1 - globalDiscountPct / 100);
+    const totalVatAfterDiscount = totalVat * (1 - globalDiscountPct / 100);
+    const totalTtcAfterDiscount = totalHtAfterDiscount + totalVatAfterDiscount;
     return {
       totalHt,
       vatMap,
@@ -761,6 +761,7 @@ export default function QuoteEditor() {
       totalTtc,
       discountAmount,
       totalHtAfterDiscount,
+      totalVatAfterDiscount,
       totalTtcAfterDiscount,
     };
   }, [rows, globalDiscountPct]);
@@ -961,7 +962,7 @@ export default function QuoteEditor() {
     } finally {
       setSavingAll(false);
     }
-  }, [quote, tenantId, quoteDate, expiryDate, visitDate, startDate, rows, coreUser, projectInfo, navigate, projectId]);
+  }, [quote, tenantId, quoteDate, expiryDate, visitDate, startDate, rows, coreUser, projectInfo, navigate, projectId, subject, depositPct, globalDiscountPct]);
 
   // ─── Duplication ──────────────────────────────────────────────
   const handleDuplicate = useCallback(async () => {
@@ -1213,7 +1214,9 @@ export default function QuoteEditor() {
                 value={depositPct ?? ""}
                 onChange={(e) =>
                   setDepositPct(
-                    e.target.value === "" ? null : parseFloat(e.target.value) || 0
+                    e.target.value === ""
+                      ? null
+                      : Math.max(0, Math.min(100, parseFloat(e.target.value) || 0))
                   )
                 }
                 className="h-8 w-20 text-sm text-right"
@@ -1421,7 +1424,9 @@ export default function QuoteEditor() {
                 step={0.5}
                 value={globalDiscountPct || ""}
                 onChange={(e) =>
-                  setGlobalDiscountPct(parseFloat(e.target.value) || 0)
+                  setGlobalDiscountPct(
+                    Math.max(0, Math.min(50, parseFloat(e.target.value) || 0))
+                  )
                 }
                 className="h-8 w-20 text-sm text-right"
                 placeholder="0"

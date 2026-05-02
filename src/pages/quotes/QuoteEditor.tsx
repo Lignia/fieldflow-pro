@@ -1229,7 +1229,7 @@ export default function QuoteEditor() {
             </div>
             {depositPct != null && depositPct > 0 && (
               <span className="font-mono text-sm font-semibold text-foreground ml-2">
-                = {fmt(totals.totalTtc * depositPct / 100)} TTC
+                = {fmt((globalDiscountPct > 0 ? totals.totalTtcAfterDiscount : totals.totalTtc) * depositPct / 100)} TTC
               </span>
             )}
           </div>
@@ -1481,7 +1481,7 @@ export default function QuoteEditor() {
                     Acompte ({depositPct} %) :{" "}
                   </span>
                   <span className="font-mono font-semibold text-foreground">
-                    {fmt(totals.totalTtc * depositPct / 100)}
+                    {fmt((globalDiscountPct > 0 ? totals.totalTtcAfterDiscount : totals.totalTtc) * depositPct / 100)}
                   </span>
                 </div>
               )}

@@ -1405,7 +1405,7 @@ function ActionsBloc({
             </Button>
           </>
         )}
-        <DuplicateButton canSend={canSend} />
+        <DuplicateButton quoteId={quote.id} canSend={canSend} />
       </div>
     );
   }
@@ -1419,7 +1419,7 @@ function ActionsBloc({
           <Pencil className="h-3.5 w-3.5 mr-1" />
           Modifier
         </Button>
-        <DuplicateButton canSend={canSend} />
+        <DuplicateButton quoteId={quote.id} canSend={canSend} />
         <Button variant="outline" size="sm" className="w-full" disabled={transitioning} onClick={onLost}>
           <XCircle className="h-3.5 w-3.5 mr-1" />
           Marquer perdu
@@ -1437,7 +1437,7 @@ function ActionsBloc({
           <Pencil className="h-3.5 w-3.5 mr-1" />
           Modifier
         </Button>
-        <DuplicateButton canSend={canSend} />
+        <DuplicateButton quoteId={quote.id} canSend={canSend} />
       </div>
     );
   }
@@ -1458,7 +1458,7 @@ function ActionsBloc({
             Recréer un devis estimatif
           </Button>
         )}
-        <DuplicateButton canSend={canSend} />
+        <DuplicateButton quoteId={quote.id} canSend={canSend} />
         <Button variant="outline" size="sm" className="w-full" disabled={transitioning} onClick={onLost}>
           <XCircle className="h-3.5 w-3.5 mr-1" />
           Marquer perdu
@@ -1484,7 +1484,7 @@ function ActionsBloc({
           <Pencil className="h-3.5 w-3.5 mr-1" />
           Modifier
         </Button>
-        <DuplicateButton canSend={canSend} />
+        <DuplicateButton quoteId={quote.id} canSend={canSend} />
         <Button variant="outline" size="sm" className="w-full" disabled={transitioning} onClick={onLost}>
           <XCircle className="h-3.5 w-3.5 mr-1" />
           Marquer perdu
@@ -1509,7 +1509,7 @@ function ActionsBloc({
             Recréer un devis final
           </Button>
         )}
-        <DuplicateButton canSend={canSend} />
+        <DuplicateButton quoteId={quote.id} canSend={canSend} />
       </div>
     );
   }
@@ -1523,7 +1523,7 @@ function ActionsBloc({
           <Pencil className="h-3.5 w-3.5 mr-1" />
           Modifier
         </Button>
-        <DuplicateButton canSend={canSend} />
+        <DuplicateButton quoteId={quote.id} canSend={canSend} />
       </div>
     );
   }
@@ -1548,7 +1548,7 @@ function ActionsBloc({
             Ouvrir le projet
           </Button>
         )}
-        <DuplicateButton canSend={canSend} />
+        <DuplicateButton quoteId={quote.id} canSend={canSend} />
       </div>
     );
   }
@@ -1565,7 +1565,7 @@ function ActionsBloc({
           Ouvrir le projet
         </Button>
       )}
-      <DuplicateButton canSend={canSend} />
+      <DuplicateButton quoteId={quote.id} canSend={canSend} />
     </div>
   );
 }

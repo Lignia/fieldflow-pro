@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
@@ -632,6 +633,7 @@ export default function QuoteEditor() {
   const [bundleName, setBundleName] = useState("");
   const [bundleNotes, setBundleNotes] = useState("");
   const [savingBundle, setSavingBundle] = useState(false);
+  const [showSectionTotals, setShowSectionTotals] = useState<boolean>(true);
   const initRef = useRef(false);
 
   // Load project info
@@ -678,6 +680,10 @@ export default function QuoteEditor() {
         setSubject((q as any).subject || "");
         setDepositPct((q as any).deposit_pct ?? null);
         setGlobalDiscountPct((q as any).global_discount_pct ?? 0);
+        const payload = (q as any).payload ?? {};
+        if (typeof payload.show_section_totals === "boolean") {
+          setShowSectionTotals(payload.show_section_totals);
+        }
       }
       setInitializing(false);
     });
@@ -927,6 +933,7 @@ export default function QuoteEditor() {
           ...(quote as any).payload,
           visit_date: visitDate || null,
           start_date: startDate || null,
+          show_section_totals: showSectionTotals,
         },
       }).eq("id", quote.id);
 

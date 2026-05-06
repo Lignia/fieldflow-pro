@@ -32,6 +32,7 @@ import {
 import { toast } from "sonner";
 import { billingDb } from "@/integrations/supabase/schema-clients";
 import { useQuoteDetail, UNIT_LABELS, type QuoteActivity } from "@/hooks/useQuoteDetail";
+import { generateQuotePdf } from "@/lib/quote-pdf";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useSignQuote } from "@/hooks/useSignQuote";
 import { Card, CardContent } from "@/components/ui/card";
@@ -193,6 +194,21 @@ export default function QuoteDetail() {
 
   if (error && !loading) {
     toast.error(error, { id: "quote-detail-error" });
+  }
+
+  /* ── PDF ── */
+  function handleGeneratePdf() {
+    if (!quote) return;
+    const showSectionTotals =
+      ((quote.payload as any)?.show_section_totals ?? true) === true;
+    const doc = generateQuotePdf({
+      quote,
+      lines,
+      totalHt: displayTotalHt,
+      totalTtc: displayTotalTtc,
+      showSectionTotals,
+    });
+    doc.save(`${quote.quote_number || "devis"}.pdf`);
   }
 
   /* ── Status transition ── */
@@ -912,21 +928,31 @@ export default function QuoteDetail() {
           <Card className="p-4 space-y-3">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Documents</h3>
             <div className="space-y-2">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span tabIndex={0} className="w-full">
-                    <Button variant="outline" size="sm" className="w-full justify-start" disabled>
-                      <FileDown className="h-3.5 w-3.5 mr-2" />
-                      Générer PDF
-                    </Button>
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {!canSend
-                    ? "Ajoutez au moins une ligne pour pouvoir générer le PDF"
-                    : "Disponible prochainement"}
-                </TooltipContent>
-              </Tooltip>
+              {!canSend ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span tabIndex={0} className="w-full">
+                      <Button variant="outline" size="sm" className="w-full justify-start" disabled>
+                        <FileDown className="h-3.5 w-3.5 mr-2" />
+                        Générer PDF
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    Ajoutez au moins une ligne pour pouvoir générer le PDF
+                  </TooltipContent>
+                </Tooltip>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full justify-start"
+                  onClick={handleGeneratePdf}
+                >
+                  <FileDown className="h-3.5 w-3.5 mr-2" />
+                  Générer PDF
+                </Button>
+              )}
               {depositInvoice && (
                 <Button
                   variant="ghost"

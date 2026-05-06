@@ -24,6 +24,7 @@ import Invoices from "./pages/Invoices";
 import ServiceRequests from "./pages/ServiceRequests";
 import Catalog from "./pages/Catalog";
 import CatalogImport from "./pages/catalog/CatalogImport";
+import SupplierDiscounts from "./pages/settings/SupplierDiscounts";
 import NotFound from "./pages/NotFound";
 import IconShowcase from "./pages/IconShowcase";
 import DesignSystem from "./pages/DesignSystem";
@@ -117,6 +118,9 @@ const App = () => (
               {/* Catalog */}
               <Route path="/catalog" element={<Catalog />} />
               <Route path="/catalog/import" element={<CatalogImport />} />
+
+              {/* Settings */}
+              <Route path="/settings/supplier-discounts" element={<SupplierDiscounts />} />
             </Route>
 
             <Route path="*" element={<NotFound />} />

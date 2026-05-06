@@ -928,21 +928,31 @@ export default function QuoteDetail() {
           <Card className="p-4 space-y-3">
             <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Documents</h3>
             <div className="space-y-2">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <span tabIndex={0} className="w-full">
-                    <Button variant="outline" size="sm" className="w-full justify-start" disabled>
-                      <FileDown className="h-3.5 w-3.5 mr-2" />
-                      Générer PDF
-                    </Button>
-                  </span>
-                </TooltipTrigger>
-                <TooltipContent>
-                  {!canSend
-                    ? "Ajoutez au moins une ligne pour pouvoir générer le PDF"
-                    : "Disponible prochainement"}
-                </TooltipContent>
-              </Tooltip>
+              {!canSend ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span tabIndex={0} className="w-full">
+                      <Button variant="outline" size="sm" className="w-full justify-start" disabled>
+                        <FileDown className="h-3.5 w-3.5 mr-2" />
+                        Générer PDF
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    Ajoutez au moins une ligne pour pouvoir générer le PDF
+                  </TooltipContent>
+                </Tooltip>
+              ) : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-full justify-start"
+                  onClick={handleGeneratePdf}
+                >
+                  <FileDown className="h-3.5 w-3.5 mr-2" />
+                  Générer PDF
+                </Button>
+              )}
               {depositInvoice && (
                 <Button
                   variant="ghost"

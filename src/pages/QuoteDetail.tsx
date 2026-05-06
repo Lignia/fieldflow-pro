@@ -1073,7 +1073,7 @@ function DuplicateButton({
       if (!newId) throw new Error("ID du nouveau devis introuvable");
       toast.success("Devis dupliqué");
       setOpen(false);
-      navigate(`/quotes/${newId}/edit`);
+      navigate(`/quotes/${newId}`);
     } catch (e: any) {
       toast.error(e?.message ?? "Échec de la duplication");
     } finally {

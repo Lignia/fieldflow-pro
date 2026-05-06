@@ -9,6 +9,7 @@ import {
   Wrench,
   Flame,
   Package,
+  Percent,
   LogOut,
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
@@ -69,6 +70,7 @@ const navSections = [
     label: "Outils",
     items: [
       { title: "Catalogue", url: "/catalog", icon: Package },
+      { title: "Conditions d'achat", url: "/settings/supplier-discounts", icon: Percent },
     ],
   },
 ];

@@ -1315,6 +1315,15 @@ export default function QuoteEditor() {
                 {Object.entries(KIND_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
               </SelectContent>
             </Select>
+            <span className="mx-2 text-muted-foreground/40">·</span>
+            <Label htmlFor="show-section-totals" className="text-sm text-muted-foreground cursor-pointer">
+              Afficher sous-totaux par bloc (PDF)
+            </Label>
+            <Switch
+              id="show-section-totals"
+              checked={showSectionTotals}
+              onCheckedChange={setShowSectionTotals}
+            />
           </div>
 
           {/* ─── CANVAS ─────────────────────────────────────────── */}

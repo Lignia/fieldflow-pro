@@ -28,6 +28,11 @@ import {
   Popover, PopoverContent, PopoverTrigger,
 } from "@/components/ui/popover";
 import {
+  Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList,
+} from "@/components/ui/command";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -180,25 +185,42 @@ function CatalogPopover({
   const [open, setOpen] = useState(false);
   const [term, setTerm] = useState("");
   const [includeLowPriority, setIncludeLowPriority] = useState(false);
-  const [activeSuppliers, setActiveSuppliers] = useState<string[] | null>(null);
-  const [availableSuppliers, setAvailableSuppliers] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState<"all" | "conduits" | "terminaux" | "raccords" | "labor">("all");
   const { tenantId } = useCurrentUser();
-  const { results, loading } = useCatalogSearch(term, activeSuppliers, includeLowPriority);
+  const { results, loading } = useCatalogSearch(term, null, includeLowPriority);
 
-  useEffect(() => {
-    if (!tenantId) return;
-    catalogDb
-      .from("catalog_items")
-      .select("supplier_name")
-      .eq("is_active", true)
-      .not("supplier_name", "is", null)
-      .then(({ data }: { data: { supplier_name: string | null }[] | null }) => {
-        const unique = [
-          ...new Set((data ?? []).map((r) => r.supplier_name).filter(Boolean) as string[]),
-        ];
-        setAvailableSuppliers(unique);
-      });
-  }, [tenantId]);
+  // Client-side categorization of search results
+  const categorize = (item: CatalogItem): "conduits" | "terminaux" | "raccords" | "labor" | "other" => {
+    const k = (item.product_kind ?? "").toLowerCase();
+    const t = (item.product_type ?? "").toLowerCase();
+    const name = `${item.normalized_name ?? item.name ?? ""}`.toLowerCase();
+    if (item.is_labor || k === "labor" || t === "service") return "labor";
+    if (k.includes("terminal") || k.includes("sortie") || name.includes("sortie de toit") || name.includes("terminal")) return "terminaux";
+    if (k.includes("fitting") || k.includes("elbow") || k.includes("tee") || k.includes("raccord") || k.includes("coude") || item.angle_deg != null) return "raccords";
+    if (k.includes("conduit") || k.includes("flue") || k.includes("duct") || k.includes("tube") || k.includes("element")) return "conduits";
+    return "other";
+  };
+
+  const counts = useMemo(() => {
+    const c = { all: results.length, conduits: 0, terminaux: 0, raccords: 0, labor: 0 };
+    results.forEach((r) => {
+      const cat = categorize(r);
+      if (cat in c) (c as any)[cat]++;
+    });
+    return c;
+  }, [results]);
+
+  const filtered = useMemo(() => {
+    if (activeTab === "all") return results;
+    return results.filter((r) => categorize(r) === activeTab);
+  }, [results, activeTab]);
+
+  const handleSelect = (item: CatalogItem) => {
+    onSelect(item);
+    setOpen(false);
+    setTerm("");
+    setActiveTab("all");
+  };
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -207,141 +229,184 @@ function CatalogPopover({
           <Plus className="h-3.5 w-3.5 mr-1.5" /> {triggerLabel}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-96 p-0" align="start">
-        <div className="p-3 border-b border-border space-y-2">
-          {availableSuppliers.length > 1 && (
-            <div className="flex flex-wrap gap-1">
-              {availableSuppliers.map((supplier) => {
-                const isActive = !activeSuppliers || activeSuppliers.includes(supplier);
-                return (
-                  <button
-                    key={supplier}
-                    type="button"
-                    onClick={() => {
-                      if (!activeSuppliers) {
-                        setActiveSuppliers(availableSuppliers.filter((s) => s !== supplier));
-                      } else if (activeSuppliers.includes(supplier)) {
-                        const next = activeSuppliers.filter((s) => s !== supplier);
-                        setActiveSuppliers(next.length === 0 ? null : next);
-                      } else {
-                        const next = [...activeSuppliers, supplier];
-                        setActiveSuppliers(
-                          next.length === availableSuppliers.length ? null : next,
-                        );
-                      }
-                    }}
-                    className={cn(
-                      "text-[10px] px-2 py-0.5 rounded-full border transition-colors",
-                      isActive
-                        ? "bg-primary/10 border-primary/30 text-primary"
-                        : "bg-muted border-border text-muted-foreground",
-                    )}
-                  >
-                    {supplier}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-          <div className="relative">
-            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Référence, désignation ou diamètre (ex: 80/130)"
-              value={term}
-              onChange={(e) => setTerm(e.target.value)}
-              className="pl-9"
-              autoFocus
-            />
+      <PopoverContent
+        className="p-0 overflow-hidden"
+        style={{ width: 520 }}
+        align="start"
+        onOpenAutoFocus={(e) => {
+          // let CommandInput handle focus
+        }}
+      >
+        <Command
+          shouldFilter={false}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") {
+              e.preventDefault();
+              setOpen(false);
+            }
+          }}
+        >
+          <CommandInput
+            placeholder="Référence, désignation ou diamètre (ex: 80/130)…"
+            value={term}
+            onValueChange={setTerm}
+            autoFocus
+          />
+          <div className="px-2 pt-2 border-b border-border">
+            <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
+              <TabsList className="h-8 bg-transparent p-0 gap-1">
+                <TabsTrigger value="all" className="h-7 px-2.5 text-xs data-[state=active]:bg-muted">
+                  Tous {results.length > 0 && <span className="ml-1 text-[10px] text-muted-foreground">{counts.all}</span>}
+                </TabsTrigger>
+                <TabsTrigger value="conduits" className="h-7 px-2.5 text-xs data-[state=active]:bg-muted">
+                  Conduits {counts.conduits > 0 && <span className="ml-1 text-[10px] text-muted-foreground">{counts.conduits}</span>}
+                </TabsTrigger>
+                <TabsTrigger value="terminaux" className="h-7 px-2.5 text-xs data-[state=active]:bg-muted">
+                  Terminaux {counts.terminaux > 0 && <span className="ml-1 text-[10px] text-muted-foreground">{counts.terminaux}</span>}
+                </TabsTrigger>
+                <TabsTrigger value="raccords" className="h-7 px-2.5 text-xs data-[state=active]:bg-muted">
+                  Raccords {counts.raccords > 0 && <span className="ml-1 text-[10px] text-muted-foreground">{counts.raccords}</span>}
+                </TabsTrigger>
+                <TabsTrigger value="labor" className="h-7 px-2.5 text-xs data-[state=active]:bg-muted">
+                  Main d'œuvre {counts.labor > 0 && <span className="ml-1 text-[10px] text-muted-foreground">{counts.labor}</span>}
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
-        </div>
-        <div className="max-h-64 overflow-y-auto">
-          {loading && <div className="p-4 flex justify-center"><Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /></div>}
-          {!loading && term.length >= 2 && results.length === 0 && (
-            <div className="p-4 text-center space-y-2">
-              <p className="text-sm text-muted-foreground">
-                Aucun résultat pour cette recherche
-              </p>
-              {!includeLowPriority && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-xs"
-                  onClick={() => setIncludeLowPriority(true)}
-                >
-                  Élargir aux familles secondaires
-                </Button>
-              )}
-            </div>
-          )}
-          {results.map((item) => {
-            const badges = [
-              item.diameter_outer_mm
-                ? `Ø${item.diameter_inner_mm}/${item.diameter_outer_mm}`
-                : item.diameter_inner_mm
-                  ? `Ø${item.diameter_inner_mm}`
-                  : null,
-              item.angle_deg ? `${item.angle_deg}°` : null,
-              item.length_mm ? `${item.length_mm}mm` : null,
-            ].filter(Boolean) as string[];
-            const ref = (item as any).sku_code ?? item.sku ?? item.supplier_ref;
-            return (
-              <button
-                key={item.id}
-                className="w-full text-left px-3 py-2.5 hover:bg-accent/10 transition-colors border-b border-border last:border-b-0"
-                onClick={() => { onSelect(item); setOpen(false); setTerm(""); }}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <p className="text-sm font-medium text-foreground leading-snug truncate">
-                    {item.normalized_name ?? item.name}
-                  </p>
-                  <span className="text-xs font-mono text-foreground shrink-0">
-                    {item.unit_price_ht.toLocaleString("fr-FR", { minimumFractionDigits: 2 })} € HT
-                  </span>
-                </div>
-                <div className="text-xs text-muted-foreground mt-0.5 flex items-center flex-wrap gap-1">
-                  {ref && <span className="font-mono">{ref}</span>}
-                  {item.supplier_name && (
-                    <Badge variant="outline" className="text-[9px] ml-1">
-                      {item.supplier_name}
-                    </Badge>
-                  )}
-                  {badges.map((b) => (
-                    <Badge
-                      key={b}
-                      variant="outline"
-                      className="text-[9px]"
-                    >
-                      {b}
-                    </Badge>
+
+          <ScrollArea style={{ maxHeight: "65vh" }} className="overflow-y-auto">
+            <CommandList className="max-h-none overflow-visible">
+              {loading && (
+                <div className="p-3 space-y-2">
+                  {[0, 1, 2].map((i) => (
+                    <div key={i} className="space-y-1.5">
+                      <Skeleton className="h-4 w-3/5" />
+                      <Skeleton className="h-3 w-2/5" />
+                      <Skeleton className="h-3 w-1/3" />
+                      {i < 2 && <Separator className="!my-2" />}
+                    </div>
                   ))}
                 </div>
-              </button>
-            );
-          })}
-          {!includeLowPriority && (results.length >= 12 || results.some((r) => r.boost_score < 0)) && (
-            <button
-              type="button"
-              className="text-xs text-muted-foreground hover:text-foreground w-full py-2 border-t text-center"
-              onClick={() => setIncludeLowPriority(true)}
+              )}
+
+              {!loading && term.length < 2 && (
+                <div className="p-6 text-center text-xs text-muted-foreground">
+                  Tape au moins 2 caractères pour rechercher.
+                </div>
+              )}
+
+              {!loading && term.length >= 2 && filtered.length === 0 && (
+                <CommandEmpty className="py-6">
+                  <div className="space-y-2 text-center">
+                    <p className="text-sm text-muted-foreground">Aucun résultat dans cette catégorie.</p>
+                    {activeTab !== "all" && results.length > 0 && (
+                      <Button variant="ghost" size="sm" className="text-xs" onClick={() => setActiveTab("all")}>
+                        Voir tous les résultats ({results.length})
+                      </Button>
+                    )}
+                    {activeTab === "all" && !includeLowPriority && (
+                      <Button variant="ghost" size="sm" className="text-xs" onClick={() => setIncludeLowPriority(true)}>
+                        Élargir aux familles secondaires
+                      </Button>
+                    )}
+                  </div>
+                </CommandEmpty>
+              )}
+
+              {!loading && filtered.length > 0 && (
+                <CommandGroup className="px-1 py-1">
+                  {filtered.map((item) => {
+                    const title =
+                      (item as any).customer_label ?? item.normalized_name ?? item.name;
+                    const ref = (item as any).sku_code ?? item.sku ?? item.supplier_ref;
+                    const specs = [
+                      item.diameter_outer_mm
+                        ? `Ø${item.diameter_inner_mm ?? "?"}/${item.diameter_outer_mm}`
+                        : item.diameter_inner_mm
+                          ? `Ø${item.diameter_inner_mm}`
+                          : null,
+                      item.length_mm ? `${item.length_mm}mm` : null,
+                      item.angle_deg ? `${item.angle_deg}°` : null,
+                      item.finish_color,
+                      item.technology_type,
+                    ].filter((x) => x !== null && x !== undefined && x !== "") as string[];
+
+                    return (
+                      <CommandItem
+                        key={item.id}
+                        value={`${item.id}__${title}__${ref ?? ""}`}
+                        onSelect={() => handleSelect(item)}
+                        className="flex flex-col items-stretch gap-1 px-2.5 py-2 cursor-pointer aria-selected:bg-accent/40 data-[selected=true]:bg-accent/40 rounded-md"
+                      >
+                        {/* Line 1 — title + supplier badge */}
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-sm font-medium text-foreground truncate flex-1 min-w-0">
+                            {title}
+                          </span>
+                          {item.supplier_name && (
+                            <Badge variant="outline" className="text-[9px] py-0 h-4 px-1.5 font-normal shrink-0">
+                              {item.supplier_name}
+                            </Badge>
+                          )}
+                        </div>
+
+                        {/* Line 2 — specs */}
+                        {specs.length > 0 && (
+                          <div className="text-xs text-muted-foreground font-mono leading-tight truncate">
+                            {specs.join(" · ")}
+                          </div>
+                        )}
+
+                        {/* Line 3 — range/ref left, price right */}
+                        <div className="flex items-center justify-between gap-2 text-xs">
+                          <span className="text-muted-foreground truncate min-w-0">
+                            {item.supplier_range && (
+                              <span className="text-foreground/70">{item.supplier_range}</span>
+                            )}
+                            {item.supplier_range && ref && <span className="mx-1">·</span>}
+                            {ref && <span className="font-mono">réf {ref}</span>}
+                          </span>
+                          <span className="font-mono text-foreground shrink-0">
+                            {item.unit_price_ht.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} € HT
+                          </span>
+                        </div>
+                      </CommandItem>
+                    );
+                  })}
+                </CommandGroup>
+              )}
+
+              {!loading && term.length >= 2 && (
+                <>
+                  <Separator />
+                  <div className="px-2 py-1.5 text-center">
+                    <button
+                      type="button"
+                      className="text-[11px] text-muted-foreground hover:text-foreground"
+                      onClick={() => setIncludeLowPriority((v) => !v)}
+                    >
+                      {includeLowPriority
+                        ? "Masquer les familles secondaires"
+                        : "Afficher les familles secondaires (gaz, ventilation…)"}
+                    </button>
+                  </div>
+                </>
+              )}
+            </CommandList>
+          </ScrollArea>
+
+          <Separator />
+          <div className="p-1.5">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full text-xs h-8"
+              onClick={() => { onFreeLine(); setOpen(false); setTerm(""); setActiveTab("all"); }}
             >
-              Afficher les familles secondaires (gaz, ventilation…)
-            </button>
-          )}
-          {includeLowPriority && (
-            <button
-              type="button"
-              className="text-xs text-muted-foreground hover:text-foreground w-full py-2 border-t text-center"
-              onClick={() => setIncludeLowPriority(false)}
-            >
-              Masquer les familles secondaires
-            </button>
-          )}
-        </div>
-        <div className="p-2 border-t border-border">
-          <Button variant="ghost" size="sm" className="w-full text-xs" onClick={() => { onFreeLine(); setOpen(false); setTerm(""); }}>
-            Saisir une ligne libre
-          </Button>
-        </div>
+              Saisir une ligne libre
+            </Button>
+          </div>
+        </Command>
       </PopoverContent>
     </Popover>
   );

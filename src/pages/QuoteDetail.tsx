@@ -1042,23 +1042,98 @@ function SignDialog({ open, onOpenChange, signing, onConfirm }: {
 }
 
 /* ── Duplicate button (reusable) ── */
-function DuplicateButton({ canSend = true }: { canSend?: boolean }) {
+function DuplicateButton({
+  quoteId,
+  canSend = true,
+}: {
+  quoteId?: string;
+  canSend?: boolean;
+}) {
+  const navigate = useNavigate();
+  const { coreUser, tenantId } = useCurrentUser();
+  const [open, setOpen] = useState(false);
+  const [duplicating, setDuplicating] = useState(false);
+
+  const ready = !!quoteId && !!coreUser?.id && !!tenantId;
+
+  async function handleConfirm() {
+    if (!ready) return;
+    setDuplicating(true);
+    try {
+      const { data, error } = await billingDb.rpc("duplicate_quote", {
+        p_quote_id: quoteId,
+        p_tenant_id: tenantId,
+        p_actor_id: coreUser!.id,
+      });
+      if (error) throw error;
+      const newId =
+        typeof data === "string"
+          ? data
+          : (data as any)?.quote_id ?? (data as any)?.id;
+      if (!newId) throw new Error("ID du nouveau devis introuvable");
+      toast.success("Devis dupliqué");
+      setOpen(false);
+      navigate(`/quotes/${newId}/edit`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Échec de la duplication");
+    } finally {
+      setDuplicating(false);
+    }
+  }
+
+  if (!canSend) {
+    return (
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span tabIndex={0} className="w-full">
+            <Button variant="outline" size="sm" className="w-full" disabled>
+              <Copy className="h-3.5 w-3.5 mr-1" />
+              Dupliquer
+            </Button>
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>
+          Ajoutez au moins une ligne pour pouvoir dupliquer ce devis
+        </TooltipContent>
+      </Tooltip>
+    );
+  }
+
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span tabIndex={0} className="w-full">
-          <Button variant="outline" size="sm" className="w-full" disabled>
-            <Copy className="h-3.5 w-3.5 mr-1" />
-            Dupliquer
-          </Button>
-        </span>
-      </TooltipTrigger>
-      <TooltipContent>
-        {!canSend
-          ? "Ajoutez au moins une ligne pour pouvoir dupliquer ce devis"
-          : "Disponible prochainement"}
-      </TooltipContent>
-    </Tooltip>
+    <>
+      <Button
+        variant="outline"
+        size="sm"
+        className="w-full"
+        disabled={!ready || duplicating}
+        onClick={() => setOpen(true)}
+      >
+        <Copy className="h-3.5 w-3.5 mr-1" />
+        Dupliquer
+      </Button>
+      <AlertDialog open={open} onOpenChange={setOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Dupliquer ce devis ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Une copie en brouillon sera créée. Vous serez redirigé vers le nouveau devis pour le modifier.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={duplicating}>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={duplicating}
+              onClick={(e) => {
+                e.preventDefault();
+                handleConfirm();
+              }}
+            >
+              {duplicating ? "Duplication…" : "Dupliquer"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 

@@ -8,7 +8,7 @@
 
 | Indicateur | Valeur |
 |---|---|
-| `catalog_items` | 18 260 articles — tous `is_central = false` (import central non exécuté) |
+| `catalog_items` | 18 260 articles — tous `is_central = false` (import central non exécuté) |
 | `quote_lines` | 83 lignes — `vat_rate = 10.0` à 100 %, `unit_cost_price = NULL` à 100 % |
 | Catalogue central | **0 article publié** — staging prêt, non déclenché |
 | `needs_human_review = true` | 0 article — règles DTA non encore appliquées |
@@ -55,11 +55,11 @@ billing.quote_lines    = historique immuable
 ## 3. TVA — Format
 
 ```typescript
-type VatRate = 5.5 | 10 | 20  // TypeScript (le SQL stocke 5.5 / 10.0 / 20.0)
+type VatRate = 5.5 | 10 | 20  // TypeScript (le SQL stocke 5.5 / 10.0 / 20.0)
 ```
 
 ```
-✅ Valeurs autorisées : 5.5 / 10.0 / 20.0
+✅ Valeurs autorisées : 5.5 / 10.0 / 20.0
 ❌ Format interdit   : 0.055 / 0.10 / 0.20
 ❌ vat_rate = 0 interdit sauf justification explicite
 ❌ Aucun fallback silencieux — toujours confirmation artisan
@@ -69,7 +69,7 @@ type VatRate = 5.5 | 10 | 20  // TypeScript (le SQL stocke 5.5 / 10.0 / 
 
 ## 4. `supplier_ref` — Clé d’achat fournisseur externe
 
-`supplier_ref` = EAN-13 ou code interne Joncoux transmis tel quel au fournisseur.
+`supplier_ref` = EAN-13 ou code fournisseur transmis tel quel à la commande.
 Ce n’est **pas** un identifiant métier LIGNIA.
 
 ```
@@ -85,7 +85,7 @@ Priorité snapshot : `sku_code ?? supplier_ref ?? sku ?? id`
 ## 5. Catalogue central — `is_central`
 
 ```sql
--- CHECK actif : check_central_consistency
+-- CHECK actif : check_central_consistency
 is_central = true  →  tenant_id IS NULL
 is_central = false →  tenant_id IS NOT NULL
 
@@ -143,6 +143,7 @@ UNIQUE (supplier_name, supplier_ref) WHERE is_central = true
 | `tva_context` | `quotes.payload.tva` | V1.5 |
 | `aides` (MaPrimeRénov, CEE) | `quotes.payload.aides` | V1.5 |
 | `ban` (citycode, score) | `properties.external_data.ban` | V2 |
+| Contexte fiscal | `invoices.payload` | V1.5 |
 
 ```
 ⚠️ payload = usage exceptionnel, documenté ici
@@ -168,4 +169,26 @@ const eligible = vatContext.logement_eligible_tva_reduite ?? null
 
 ---
 
-*ARCH-DOC-1 v1.2 — 2026-05-17*
+## 11. `has_dta` et `dta_status` — Cohérence obligatoire
+
+```
+has_dta BOOLEAN et dta_status TEXT doivent rester cohérents.
+
+Convention :
+  has_dta = (dta_status = 'confirmed')
+
+✅ dta_status = 'confirmed'            →  has_dta = true
+✅ dta_status IN ('missing',
+                  'unknown',
+                  'not_applicable')   →  has_dta = false
+
+❌ NE JAMAIS has_dta = true avec dta_status ≠ 'confirmed'
+❌ NE JAMAIS has_dta = false avec dta_status = 'confirmed'
+```
+
+> Règle documentaire uniquement — pas de CHECK SQL appliqué en base pour le MVP.
+> Vérification à la charge du pipeline d’import (Edge Function) et des opérations de maintenance.
+
+---
+
+*ARCH-DOC-1 v1.3 — 2026-05-17 — DOC-ALIGN-1*

@@ -110,6 +110,52 @@ export type Database = {
           vat_rate: number
         }[]
       }
+      search_quote_items_v2: {
+        Args: {
+          p_active_supplier_names?: string[]
+          p_include_low_priority?: boolean
+          p_limit?: number
+          p_query: string
+          p_quote_context?: string
+          p_tenant_id: string
+        }
+        Returns: {
+          angle_deg: number
+          boost_score: number
+          cost_price: number
+          default_visible: boolean
+          diameter_inner_mm: number
+          diameter_outer_mm: number
+          dta_status: string
+          energy_type_simple: string
+          finish_color: string
+          has_dta: boolean
+          id: string
+          is_central: boolean
+          is_etanche: boolean
+          length_mm: number
+          name: string
+          needs_human_review: boolean
+          normalization_confidence: number
+          normalization_status: string
+          normalized_name: string
+          pricing_status: string
+          prix_sur_devis: boolean
+          product_kind: string
+          product_type: string
+          search_score: number
+          sku: string
+          sku_code: string
+          source_system: string
+          supplier_name: string
+          supplier_range: string
+          supplier_ref: string
+          technology_type: string
+          unit: string
+          unit_price_ht: number
+          vat_rate: number
+        }[]
+      }
       unaccent: { Args: { "": string }; Returns: string }
     }
     Enums: {

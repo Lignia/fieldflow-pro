@@ -41,8 +41,8 @@
 --      (purchase_order_lines) : nommage incohérent — dette acceptée.
 --   2. catalog.import_joncoux_staging : nom Joncoux-centric — dette
 --      acceptée. Renommage à étudier post-stabilisation multi-fournisseurs.
---   3. heating_appliances.flamme_verte_stars : CHECK IN (5,6,7)
---      absent — migration séparée à planifier.
+--   3. heating_appliances.flamme_verte_stars : contrainte de valeur
+--      absente — migration séparée à planifier.
 --   4. catalog.catalog_items.technology_type : taxonomie partielle,
 --      aide au ranking uniquement — pas une taxonomie universelle.
 --   5. RLS catalogue central : politiques exactes à documenter
@@ -66,7 +66,7 @@ Danger: Ne jamais modifier les *_snapshot de quote_lines depuis ici.';
 
 COMMENT ON TABLE catalog.import_joncoux_staging IS
 'Rôle: Sas de validation avant publication dans catalog_items central.
-Règle: RLS deny-all pour authenticated — service_role uniquement (Edge Functions).
+Règle: Accès réservé aux Edge Functions/service_role — inaccessible depuis le client.
 Standard: Pipeline SOURCE → STAGING → VALIDATION → PUBLICATION.
 Danger: Ne jamais accéder depuis Lovable ; jamais publier sans import_status=valid.';
 
@@ -107,7 +107,7 @@ Danger: unit_price_ht = prix vente. Jamais remplacer par net_price_ht.';
 
 COMMENT ON TABLE billing.purchase_orders IS
 'Rôle: Bon de commande fournisseur — groupement de lignes par supplier_name.
-Règle: order_status CHECK actif : draft | sent | confirmed | partial | received | cancelled.
+Règle: order_status contrôlé en base : draft | sent | confirmed | partial | received | cancelled.
 Standard: 1 purchase_order par supplier_name distinct par projet.
 Danger: supplier_ref = référence d''achat externe — jamais un identifiant métier LIGNIA.';
 
@@ -124,7 +124,7 @@ Danger: qty_received < qty_ordered → order_status=partial automatiquement.';
 
 COMMENT ON TABLE core.customers IS
 'Rôle: Client d''un artisan — particulier, professionnel ou collectivité.
-Règle: customer_type ENUM : particulier | professionnel | collectivite.
+Règle: customer_type = particulier | professionnel | collectivite.
 Standard: name = civility+first_name+last_name OU company_name selon customer_type.
 Danger: payload = dette contrôlée — SIRET va dans siret, pas dans payload.';
 
@@ -136,7 +136,7 @@ Danger: payload ≠ external_data. TVA dans payload.tva, geocodage dans external
 
 COMMENT ON TABLE core.projects IS
 'Rôle: Projet commercial d''installation — du lead à la mise en service.
-Règle: project_status ENUM (17 valeurs) — transitions via RPCs uniquement.
+Règle: project_status = pipeline métier géré via RPCs uniquement.
 Standard: pipeline_value_ttc = valeur estimée pour dashboard KPIs uniquement.
 Danger: payload = dette contrôlée. Ne jamais stocker données comptables dans payload.';
 
@@ -147,13 +147,13 @@ Danger: payload = dette contrôlée. Ne jamais stocker données comptables dans 
 
 COMMENT ON COLUMN catalog.catalog_items.tenant_id IS
 'Rôle: Propriétaire tenant de l''article (NULL = catalogue central LIGNIA).
-Règle: is_central=true ↔ tenant_id IS NULL (contrôlé par check_central_consistency).
+Règle: is_central=true ↔ tenant_id IS NULL (contrainte métier appliquée en base).
 Standard: Articles centraux visibles par tous les tenants via RLS.
 Danger: Ne jamais insérer tenant_id sur un article central.';
 
 COMMENT ON COLUMN catalog.catalog_items.is_central IS
 'Rôle: Indique si l''article appartient au catalogue central partagé LIGNIA.
-Règle: is_central=true ↔ tenant_id IS NULL — contrainte CHECK active en base.
+Règle: is_central=true ↔ tenant_id IS NULL (contrainte métier appliquée en base).
 Standard: Articles centraux : import fournisseur validé via staging.
 Danger: Un mauvais usage casse resolve_item_price et la visibilité multi-tenant.';
 
@@ -219,19 +219,19 @@ Danger: Article étanche sans DTA confirmé = risque DTU 24.1.';
 
 COMMENT ON COLUMN catalog.catalog_items.product_kind IS
 'Rôle: Type de composant fumisterie — clé de scoring dans search_quote_items_v2.
-Règle: Valeurs réelles : tube, coude, adaptateur, te, solin, bride, flexible, terminal, kit, joint, plaque, accessoire.
+Règle: Exemples courants : tube, coude, adaptateur, te, solin, bride, flexible, terminal, kit, joint, plaque, accessoire.
 Standard: Ranking : coude+angle → +20pts. Pénalité si dims manquantes sur coude/tube/adaptateur.
 Danger: NULL = pénalité -20pts en recherche pour coude/tube/adaptateur/te/flexible.';
 
 COMMENT ON COLUMN catalog.catalog_items.technology_type IS
 'Rôle: Technologie du conduit — aide au tri dans search_quote_items_v2 (pas taxonomie universelle).
-Règle: Valeurs réelles : concentrique, double_paroi_isolee, flexible_tubage.
+Règle: Exemples courants : concentrique, double_paroi_isolee, flexible_tubage.
 Standard: Ordre de tri : concentrique(1) > double_paroi_isolee(2) > flexible_tubage(3).
 Danger: NULL = classé en dernier (rang 4). Mapping partiel — ne pas traiter comme taxonomie complète.';
 
 COMMENT ON COLUMN catalog.catalog_items.item_family IS
 'Rôle: Famille produit LIGNIA — candidat pour product_family multi-fournisseurs (vide à 100% aujourd''hui).
-Règle: Valeurs autorisées (liste fermée, validation côté Edge Function) :
+Règle: Valeurs contrôlées applicativement (Edge Function) :
   conduit_principal | systeme_etanche | tubage_flexible | tubage_rigide |
   raccordement_visible | raccordement_pellets_visible | sortie_toiture |
   gaine_technique | accessoire_fumisterie | adaptateur_transition.
@@ -263,7 +263,7 @@ Danger: Toujours généré côté Edge Function — jamais en base (non traçabl
 
 COMMENT ON COLUMN catalog.import_joncoux_staging.import_status IS
 'Rôle: Statut de validation avant publication dans catalog_items.
-Règle: pending | valid | duplicate | error | review | rejected | published (CHECK actif).
+Règle: pending | valid | duplicate | error | review | rejected | published (contrôlé en base).
 Standard: Seules les lignes import_status=valid sont publiables.
 Danger: Ne jamais publier sans valid — review et error bloquent intentionnellement.';
 
@@ -338,8 +338,8 @@ Danger: Écraser avec net_price_ht = le client voit le prix d''achat.';
 
 COMMENT ON COLUMN billing.quote_lines.unit_cost_price IS
 'Rôle: Prix achat net artisan — depuis resolve_item_price.net_price_ht.
-Règle: Jamais affiché dans le PDF client. NULL sur 100% des lignes actuelles (L1 non branché).
-Standard: Figé à l''insertion. Calculé par resolve_item_price() dans addItem().
+Règle: Jamais affiché dans le PDF client. Figurer à l''insertion si resolve_item_price est branché.
+Standard: Calculé par resolve_item_price() dans addItem(). Voir D-05 et Lovable L1.
 Danger: Ne jamais utiliser comme base de calcul du prix de vente.';
 
 COMMENT ON COLUMN billing.quote_lines.vat_rate IS
@@ -421,7 +421,7 @@ Danger: rejected sans correction = blocage paiement.';
 
 COMMENT ON COLUMN billing.invoices.external_reference IS
 'Rôle: Référence dans le logiciel comptable externe (Evoliz, Pennylane, Sage...).
-Règle: external_system CHECK : evoliz | pennylane | sage | ebp | cegid | axonaut | sellsy | other.
+Règle: external_system contrôlé : evoliz | pennylane | sage | ebp | cegid | axonaut | sellsy | other.
 Standard: NULL si non synchronisé. synced_at = horodatage dernière synchro.
 Danger: Ne pas écraser manuellement — géré par le connecteur de synchronisation.';
 
@@ -502,14 +502,14 @@ Standard: Distinct de purchase_order_lines.reference (= supplier_ref par ligne a
 Danger: Ne pas confondre avec order_number (= référence interne LIGNIA).';
 
 COMMENT ON COLUMN billing.purchase_orders.order_status IS
-'Rôle: Statut (CHECK actif) : draft | sent | confirmed | partial | received | cancelled.
+'Rôle: Statut contrôlé en base : draft | sent | confirmed | partial | received | cancelled.
 Règle: partial = réception incomplète sur ≥1 ligne. received = toutes lignes réceptionnées.
 Standard: Transitions via rpc_receive_delivery_and_advance_project.
 Danger: received sans vérification de toutes les lignes = stock potentiellement incorrect.';
 
 COMMENT ON COLUMN billing.purchase_orders.external_reference IS
 'Rôle: Référence dans le logiciel externe (Evoliz, Pennylane...).
-Règle: external_system CHECK : evoliz | pennylane | sage | ebp | cegid | axonaut | sellsy | other.
+Règle: external_system contrôlé : evoliz | pennylane | sage | ebp | cegid | axonaut | sellsy | other.
 Standard: NULL si non synchronisé. Géré par connecteur automatique.
 Danger: Ne pas écraser manuellement — risque de désynchronisation.';
 
@@ -554,7 +554,7 @@ Standard: Filtrage RLS — jamais bypasser.
 Danger: Un client ne peut pas être partagé entre tenants.';
 
 COMMENT ON COLUMN core.customers.customer_type IS
-'Rôle: Type de client : particulier | professionnel | collectivite (ENUM).
+'Rôle: Type de client : particulier | professionnel | collectivite.
 Règle: NOT NULL. Détermine les champs d''identité affichés et la TVA applicable.
 Standard: particulier → civility+first_name+last_name. pro/collectivite → company_name.
 Danger: Mauvais type = affichage incorrect du nom et erreur TVA (collectivite → 20%).';
@@ -567,7 +567,7 @@ Danger: Stocker dans payload au lieu de siret = invisible pour l''export FEC.';
 
 COMMENT ON COLUMN core.customers.source_origin IS
 'Rôle: Canal d''acquisition du client — valeur libre (pas d''ENUM).
-Règle: NOT NULL. Exemples réels : manual, web_form, import, referral.
+Règle: NOT NULL. Exemples courants : manual, web_form, import, referral.
 Standard: Utilisé pour l''analyse pipeline et les KPIs d''acquisition.
 Danger: Valeur générique ou vide = perte de données CRM.';
 
@@ -591,7 +591,7 @@ Danger: Un bien ne peut pas être partagé entre tenants.';
 COMMENT ON COLUMN core.properties.property_type IS
 'Rôle: Type de logement — détermine l''éligibilité à la TVA réduite.
 Règle: NULL autorisé mais bloquant pour TVA réduite. Valeur libre (pas d''ENUM).
-Standard: Exemples : maison | appartement | local_commercial | immeuble.
+Standard: Exemples courants : maison | appartement | local_commercial | immeuble.
 Danger: NULL = TVA réduite impossible à valider avant génération PDF.';
 
 COMMENT ON COLUMN core.properties.external_data IS
@@ -618,9 +618,9 @@ Standard: Filtrage RLS — jamais bypasser.
 Danger: Un projet ne peut pas être partagé entre tenants.';
 
 COMMENT ON COLUMN core.projects.status IS
-'Rôle: Avancement dans le pipeline : lead_new → ... → closed | cancelled (ENUM, 17 valeurs).
+'Rôle: Avancement dans le pipeline commercial — pipeline métier géré via RPCs.
 Règle: Transitions via RPCs uniquement (sign_quote, commissioning, etc.).
-Standard: Valeur courante la plus avancée : mes_done → closed.
+Standard: Progression : lead_new → ... → mes_done → closed.
 Danger: Modifier manuellement sans RPC = désynchronisation avec core.activities.';
 
 COMMENT ON COLUMN core.projects.pipeline_value_ttc IS
@@ -665,7 +665,7 @@ Standard: Valeur par défaut : to_verify. Jamais déduire depuis flamme_verte_st
 Danger: 7★ / A+ dans un catalogue fabricant = classe EcoDesign — PAS le label Flamme Verte.';
 
 COMMENT ON COLUMN catalog.heating_appliances.flamme_verte_stars IS
-'Rôle: Nombre d''étoiles Flamme Verte (5, 6 ou 7). NULL si statut non confirmed.
+'Rôle: Nombre d''étoiles Flamme Verte (exemples courants : 5, 6 ou 7). NULL si statut non confirmed.
 Règle: flamme_verte_stars présent ne suffit pas — flamme_verte_status doit être confirmed.
 Standard: 7★ = niveau maximum actuel. Ne pas confondre avec la classification EcoDesign.
 Danger: Stars sans status confirmed = label affiché sans base officielle.';
@@ -731,4 +731,7 @@ Danger: net_price_ht → unit_cost_price (jamais unit_price_ht) = erreur contrac
 
 -- ============================================================
 -- FIN DE MIGRATION
+-- DOC-STABILITY-PASS appliqué : suppression des formulations
+-- temporelles, des chiffres figés et des références aux
+-- implémentations pouvant évoluer.
 -- ============================================================

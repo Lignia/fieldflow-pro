@@ -1,9 +1,9 @@
 import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Trash2, ArrowLeft, Save } from "lucide-react";
+import { Plus, Trash2, ArrowLeft, Save, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
-import { billingDb, coreDb } from "@/integrations/supabase/schema-clients";
+import { billingDb } from "@/integrations/supabase/schema-clients";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,7 +18,12 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
-// ─── Types ──────────────────────────────────────────────────────
+// ─── STABILISATION-4 : Warning legacy visible ────────────────────
+// Ce composant est un flux legacy (saisie manuelle sans catalogue).
+// Il reste accessible via /quotes/new mais ne doit pas être utilisé
+// pour créer des devis contractuels — utiliser QuoteEditor via un projet.
+// ─────────────────────────────────────────────────────────────────
+
 type QuoteKind = "estimate" | "final" | "service";
 type UnitType = "u" | "m" | "m2" | "forfait" | "h";
 
@@ -44,7 +49,6 @@ interface SimpleProperty {
   customer_id: string;
 }
 
-// ─── Constants ──────────────────────────────────────────────────
 const UNIT_LABELS: Record<UnitType, string> = {
   u: "Unité",
   m: "Mètre",
@@ -92,12 +96,10 @@ function formatCurrency(n: number) {
   return n.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
 }
 
-// ─── Component ──────────────────────────────────────────────────
 export default function CreateQuote() {
   const { tenantId, loading: userLoading } = useCurrentUser();
   const navigate = useNavigate();
 
-  // Form state
   const [quoteKind, setQuoteKind] = useState<QuoteKind>("estimate");
   const [customerId, setCustomerId] = useState("");
   const [propertyId, setPropertyId] = useState("");
@@ -105,17 +107,14 @@ export default function CreateQuote() {
   const [lines, setLines] = useState<QuoteLine[]>([emptyLine()]);
   const [saving, setSaving] = useState(false);
 
-  // Data state
   const [customers] = useState<SimpleCustomer[]>(DEV_BYPASS ? MOCK_CUSTOMERS : []);
   const [properties] = useState<SimpleProperty[]>(DEV_BYPASS ? MOCK_PROPERTIES : []);
 
-  // Filtered properties based on selected customer
   const filteredProperties = customerId
     ? properties.filter((p) => p.customer_id === customerId)
     : properties;
 
-  // ─── Line management ──────────────────────────────────────────
-  const updateLine = useCallback((key: string, field: keyof QuoteLine, value: any) => {
+  const updateLine = useCallback((key: string, field: keyof QuoteLine, value: unknown) => {
     setLines((prev) =>
       prev.map((l) => (l.key === key ? { ...l, [field]: value } : l))
     );
@@ -130,7 +129,6 @@ export default function CreateQuote() {
     });
   };
 
-  // ─── Calculations ─────────────────────────────────────────────
   const lineTotal = (l: QuoteLine) => l.qty * l.unit_price_ht;
   const totalHT = lines.reduce((sum, l) => sum + lineTotal(l), 0);
 
@@ -145,7 +143,6 @@ export default function CreateQuote() {
   const totalVAT = Object.values(vatGroups).reduce((s, g) => s + g.vat, 0);
   const totalTTC = totalHT + totalVAT;
 
-  // ─── Submit ───────────────────────────────────────────────────
   const handleSubmit = async () => {
     if (!customerId) {
       toast.error("Veuillez sélectionner un client");
@@ -206,8 +203,8 @@ export default function CreateQuote() {
 
       toast.success("Devis créé avec succès");
       navigate(`/quotes/${quote.id}`);
-    } catch (err: any) {
-      toast.error(err.message || "Erreur lors de la création");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Erreur lors de la création");
     } finally {
       setSaving(false);
     }
@@ -221,9 +218,28 @@ export default function CreateQuote() {
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Nouveau devis</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Nouveau devis (saisie libre)</h1>
           <p className="text-sm text-muted-foreground">
             Renseignez les informations du devis et ajoutez les lignes d'articles
+          </p>
+        </div>
+      </div>
+
+      {/* STABILISATION-4 : Warning legacy — visible, non bloquant */}
+      <div className="flex items-start gap-3 rounded-lg border border-warning/40 bg-warning/5 px-4 py-3">
+        <AlertTriangle className="h-4 w-4 text-warning shrink-0 mt-0.5" />
+        <div className="text-sm">
+          <p className="font-medium text-warning">Flux de saisie libre — sans catalogue</p>
+          <p className="text-muted-foreground mt-0.5">
+            Ce formulaire crée un devis sans lien au catalogue produit (pas de pricing résolu, pas de snapshots fournisseur).
+            Pour un devis traçable avec catalogue,{" "}
+            <button
+              type="button"
+              className="underline text-foreground hover:text-primary"
+              onClick={() => navigate("/projects")}
+            >
+              créez d'abord un projet
+            </button>.
           </p>
         </div>
       </div>
@@ -255,6 +271,11 @@ export default function CreateQuote() {
                 <SelectValue placeholder="Sélectionner un client" />
               </SelectTrigger>
               <SelectContent>
+                {customers.length === 0 && (
+                  <div className="px-3 py-2 text-xs text-muted-foreground">
+                    Aucun client disponible — passez par un projet.
+                  </div>
+                )}
                 {customers.map((c) => (
                   <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                 ))}
@@ -290,7 +311,6 @@ export default function CreateQuote() {
           </Button>
         </CardHeader>
         <CardContent className="space-y-3">
-          {/* Column headers (desktop) */}
           <div className="hidden md:grid md:grid-cols-[1fr_80px_100px_110px_100px_80px_40px] gap-2 text-xs font-medium text-muted-foreground px-1">
             <span>Désignation</span>
             <span>Qté</span>
@@ -409,12 +429,16 @@ export default function CreateQuote() {
         </CardContent>
       </Card>
 
-      {/* Actions */}
+      {/* Actions — CTA désactivé si pas de clients disponibles en production */}
       <div className="flex justify-end gap-3 pb-6">
         <Button variant="outline" onClick={() => navigate("/quotes")}>
           Annuler
         </Button>
-        <Button onClick={handleSubmit} disabled={userLoading || !tenantId || saving}>
+        <Button
+          onClick={handleSubmit}
+          disabled={userLoading || !tenantId || saving || (!DEV_BYPASS && customers.length === 0)}
+          title={!DEV_BYPASS && customers.length === 0 ? "Passez par un projet pour créer un devis traçable" : undefined}
+        >
           <Save className="h-4 w-4 mr-2" />
           {saving ? "Enregistrement…" : "Créer le devis"}
         </Button>

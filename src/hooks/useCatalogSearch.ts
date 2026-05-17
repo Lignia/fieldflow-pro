@@ -27,6 +27,16 @@ export interface CatalogSearchResult {
   search_score: number;
   boost_score: number;
   default_visible: boolean;
+  // ── Champs v2 (search_quote_items_v2) ──────────────────────────
+  needs_human_review: boolean;
+  pricing_status: string | null;
+  prix_sur_devis: boolean;
+  is_etanche: boolean | null;
+  has_dta: boolean;
+  dta_status: string | null;
+  energy_type_simple: string | null;
+  is_central: boolean;
+  source_system: string | null;
 }
 
 // Compat: QuoteEditor importe encore CatalogItem
@@ -57,7 +67,8 @@ export function useCatalogSearch(
     timerRef.current = setTimeout(async () => {
       setLoading(true);
       try {
-        const { data, error } = await catalogDb.rpc("search_quote_items", {
+        // STABILISATION-1 : migration v1 → v2
+        const { data, error } = await catalogDb.rpc("search_quote_items_v2", {
           p_tenant_id: tenantId,
           p_query: term.trim(),
           p_active_supplier_names: activeSuppliers,
@@ -68,18 +79,32 @@ export function useCatalogSearch(
 
         if (error) throw error;
 
-        const items = ((data as any[]) ?? []).map((r) => ({
+        const items = ((data as CatalogSearchResult[]) ?? []).map((r) => ({
           ...r,
           product_type: r.product_type ?? "part",
-          sku_code: (r as any).sku_code ?? null,
+          sku_code: r.sku_code ?? null,
           description: null,
           brand: r.supplier_name ?? null,
           is_labor: r.product_kind === "labor",
+          // Valeurs par défaut pour les champs v2 si absents (protection)
+          needs_human_review: r.needs_human_review ?? false,
+          pricing_status: r.pricing_status ?? null,
+          prix_sur_devis: r.prix_sur_devis ?? false,
+          is_etanche: r.is_etanche ?? null,
+          has_dta: r.has_dta ?? false,
+          dta_status: r.dta_status ?? null,
+          energy_type_simple: r.energy_type_simple ?? null,
+          is_central: r.is_central ?? false,
+          source_system: r.source_system ?? null,
         })) as CatalogItem[];
 
         setResults(items);
-      } catch {
-        // Fallback FTS + ilike si la RPC échoue
+      } catch (rpcError) {
+        // Fallback FTS + ilike si la RPC échoue — EXPLICITE (non silencieux)
+        console.warn(
+          "[useCatalogSearch] search_quote_items_v2 RPC failed, falling back to direct catalog_items query.",
+          rpcError,
+        );
         try {
           const cols =
             "id, name, sku, sku_code, unit_price_ht, vat_rate, unit, " +
@@ -99,12 +124,22 @@ export function useCatalogSearch(
             .limit(12);
 
           setResults(
-            (((data ?? []) as any[]).map((r) => ({
+            (((data ?? []) as CatalogSearchResult[]).map((r) => ({
               ...r,
-              sku_code: (r as any).sku_code ?? null,
+              sku_code: r.sku_code ?? null,
               search_score: 50,
               boost_score: 0,
               default_visible: true,
+              // Champs v2 absents du fallback — valeurs neutres
+              needs_human_review: false,
+              pricing_status: null,
+              prix_sur_devis: false,
+              is_etanche: null,
+              has_dta: false,
+              dta_status: null,
+              energy_type_simple: null,
+              is_central: false,
+              source_system: null,
             })) as CatalogItem[]),
           );
         } catch {

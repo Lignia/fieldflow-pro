@@ -44,6 +44,32 @@ import {
 type UnitType = "u" | "m" | "m2" | "forfait" | "h";
 type LineType = "item" | "text" | "section";
 
+/**
+ * STABILISATION-3 : type local QuoteLineMetadata (sans any)
+ * Figé à l'ajout de la ligne — jamais modifié après insertion.
+ */
+interface QuoteLinePricing {
+  public_price_ht: number;
+  net_price_ht: number | null;
+  pricing_source: string | null;
+  resolved_at: string; // ISO datetime
+}
+
+interface QuoteLinePrescription {
+  catalog_item_id: string;
+  needs_human_review: boolean;
+  has_dta: boolean;
+  dta_status: string | null;
+  is_etanche: boolean | null;
+  supplier_name: string | null;
+}
+
+interface QuoteLineMetadata {
+  source: "catalogue" | "manual";
+  pricing?: QuoteLinePricing;
+  prescription?: QuoteLinePrescription;
+}
+
 interface EditorSection {
   _type: "section";
   _key: string;
@@ -76,6 +102,8 @@ interface EditorItem {
   raw_label_snapshot?: string | null;
   normalized_label_snapshot?: string | null;
   customer_label?: string | null;
+  // ─── Metadata contractuel (figé à l'ajout) ────────────────────
+  metadata?: QuoteLineMetadata;
 }
 
 interface EditorText {
@@ -206,7 +234,7 @@ function CatalogPopover({
     const c = { all: results.length, conduits: 0, terminaux: 0, raccords: 0, labor: 0 };
     results.forEach((r) => {
       const cat = categorize(r);
-      if (cat in c) (c as any)[cat]++;
+      if (cat in c) (c as Record<string, number>)[cat]++;
     });
     return c;
   }, [results]);
@@ -234,9 +262,6 @@ function CatalogPopover({
         className="p-0 overflow-hidden"
         style={{ width: 520 }}
         align="start"
-        onOpenAutoFocus={(e) => {
-          // let CommandInput handle focus
-        }}
       >
         <Command
           shouldFilter={false}
@@ -318,8 +343,8 @@ function CatalogPopover({
                 <CommandGroup className="px-1 py-1">
                   {filtered.map((item) => {
                     const title =
-                      (item as any).customer_label ?? item.normalized_name ?? item.name;
-                    const ref = (item as any).sku_code ?? item.sku ?? item.supplier_ref;
+                      item.customer_label ?? item.normalized_name ?? item.name;
+                    const ref = item.sku_code ?? item.sku ?? item.supplier_ref;
                     const specs = [
                       item.diameter_outer_mm
                         ? `Ø${item.diameter_inner_mm ?? "?"}/${item.diameter_outer_mm}`
@@ -344,6 +369,9 @@ function CatalogPopover({
                           <span className="text-sm font-medium text-foreground truncate flex-1 min-w-0">
                             {title}
                           </span>
+                          {item.needs_human_review && (
+                            <span title="Vérification obligatoire — DTA / DTU" className="text-[10px] text-warning font-semibold shrink-0">⚠️</span>
+                          )}
                           {item.supplier_name && (
                             <Badge variant="outline" className="text-[9px] py-0 h-4 px-1.5 font-normal shrink-0">
                               {item.supplier_name}
@@ -368,7 +396,9 @@ function CatalogPopover({
                             {ref && <span className="font-mono">réf {ref}</span>}
                           </span>
                           <span className="font-mono text-foreground shrink-0">
-                            {item.unit_price_ht.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} € HT
+                            {item.prix_sur_devis
+                              ? "Sur demande"
+                              : `${item.unit_price_ht.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} € HT`}
                           </span>
                         </div>
                       </CommandItem>
@@ -498,7 +528,7 @@ function CategoryPicker({ value, onChange }: { value: LineCategory | null | unde
 
 // ─── Item Row ───────────────────────────────────────────────────
 function ItemRow({ row, index, onChange, onDuplicate, onDelete }: {
-  row: EditorItem; index: number; onChange: (field: string, value: any) => void; onDuplicate: () => void; onDelete: () => void;
+  row: EditorItem; index: number; onChange: (field: string, value: unknown) => void; onDuplicate: () => void; onDelete: () => void;
 }) {
   const totalHt = row.qty * row.unit_price_ht;
   const cost = row.unit_cost_price ?? 0;
@@ -652,18 +682,19 @@ export default function QuoteEditor() {
       }
       const { data } = await coreDb.from("v_projects_with_customer").select("*").eq("id", projectId).single();
       if (data) {
+        const d = data as Record<string, unknown>;
         setProjectInfo({
-          id: data.id,
-          project_number: data.project_number || "",
-          customer_id: data.customer_id || null,
-          customer_name: data.customer_name || "",
-          customer_email: data.customer_email || null,
-          customer_phone: data.customer_phone || null,
-          customer_type: data.customer_type || "individual",
-          address_line1: data.address_line1 || "",
-          city: data.city || "",
-          postal_code: data.postal_code || "",
-          flue_scenario: (data as any).payload?.flue_scenario ?? null,
+          id: String(d.id),
+          project_number: String(d.project_number || ""),
+          customer_id: d.customer_id ? String(d.customer_id) : null,
+          customer_name: String(d.customer_name || ""),
+          customer_email: d.customer_email ? String(d.customer_email) : null,
+          customer_phone: d.customer_phone ? String(d.customer_phone) : null,
+          customer_type: String(d.customer_type || "individual"),
+          address_line1: String(d.address_line1 || ""),
+          city: String(d.city || ""),
+          postal_code: String(d.postal_code || ""),
+          flue_scenario: d.payload && typeof d.payload === "object" ? String((d.payload as Record<string, unknown>).flue_scenario ?? "") || null : null,
         });
       }
     })();
@@ -677,10 +708,10 @@ export default function QuoteEditor() {
       if (q) {
         setQuoteDate(q.quote_date);
         setExpiryDate(q.expiry_date);
-        setSubject((q as any).subject || "");
-        setDepositPct((q as any).deposit_pct ?? null);
-        setGlobalDiscountPct((q as any).global_discount_pct ?? 0);
-        const payload = (q as any).payload ?? {};
+        setSubject((q as Record<string, unknown>).subject as string || "");
+        setDepositPct((q as Record<string, unknown>).deposit_pct as number ?? null);
+        setGlobalDiscountPct((q as Record<string, unknown>).global_discount_pct as number ?? 0);
+        const payload = (q as Record<string, unknown>).payload as Record<string, unknown> ?? {};
         if (typeof payload.show_section_totals === "boolean") {
           setShowSectionTotals(payload.show_section_totals);
         }
@@ -703,52 +734,93 @@ export default function QuoteEditor() {
     let supplierSku: string | null = null;
     let rawLabel: string | null = catalogItem?.name ?? null;
 
+    // Metadata contractuel figé à l'ajout
+    let metadata: QuoteLineMetadata;
+
     if (catalogItem) {
-      const pt = (catalogItem as any).product_type;
+      const pt = catalogItem.product_type;
       if (!autoCategory) {
         if (pt === "service") autoCategory = "labor";
         else if (pt === "appliance") autoCategory = "device";
         else if (pt === "flue" || pt === "conduit") autoCategory = "flue";
       }
 
-      // Pré-remplissage à partir des champs déjà exposés par useCatalogSearch
-      costPrice = (catalogItem as any).cost_price ?? null;
-      brand = (catalogItem as any).brand ?? null;
-      supplierRef = (catalogItem as any).supplier_ref ?? null;
-      supplierName = (catalogItem as any).supplier_name ?? null;
-      normalizedName = (catalogItem as any).normalized_name ?? null;
-      supplierSku = (catalogItem as any).sku_code
-                  ?? catalogItem.sku
-                  ?? null;
+      // Pré-remplissage depuis les champs déjà exposés par search_quote_items_v2
+      brand = catalogItem.supplier_name ?? null;
+      supplierRef = catalogItem.supplier_ref ?? null;
+      supplierName = catalogItem.supplier_name ?? null;
+      normalizedName = catalogItem.normalized_name ?? null;
+      supplierSku = catalogItem.sku_code ?? catalogItem.sku ?? null;
 
-      // Sécurité : aller chercher en base les champs source garantis
-      // (immuables) pour figer un snapshot fiable.
-      if (!DEV_BYPASS) {
+      // STABILISATION-2 : résolution prix achat via resolve_item_price
+      // Remplace l'accès direct catalog_items.cost_price
+      if (!DEV_BYPASS && tenantId) {
         try {
-          const { data } = await (await import("@/integrations/supabase/schema-clients"))
-            .catalogDb
-            .from("catalog_items")
-            .select(
-              "name, sku, sku_code, cost_price, brand, supplier_ref, supplier_name, normalized_name, is_labor",
-            )
-            .eq("id", catalogItem.id)
-            .maybeSingle();
-          if (data) {
-            costPrice = (data as any).cost_price ?? null;
-            brand = (data as any).brand ?? null;
-            supplierRef = (data as any).supplier_ref ?? null;
-            supplierName = (data as any).supplier_name ?? null;
-            normalizedName = (data as any).normalized_name ?? null;
-            supplierSku = (data as any).sku_code
-                        ?? (data as any).sku
-                        ?? supplierSku;
-            rawLabel = (data as any).name ?? rawLabel;
-            if (!autoCategory && (data as any).is_labor) autoCategory = "labor";
+          const { data: priceData } = await catalogDb.rpc("resolve_item_price", {
+            p_item_id: catalogItem.id,
+            p_tenant_id: tenantId,
+            p_purchase_supplier_name: null,
+          });
+          if (priceData && typeof priceData === "object") {
+            const pd = priceData as Record<string, unknown>;
+            // unit_cost_price = net_price_ht (prix achat résolu avec remise)
+            costPrice = pd.net_price_ht != null ? Number(pd.net_price_ht) : null;
+
+            // STABILISATION-3 : metadata.pricing depuis resolve_item_price
+            const pricing: QuoteLinePricing = {
+              public_price_ht: Number(pd.public_price_ht ?? catalogItem.unit_price_ht),
+              net_price_ht: costPrice,
+              pricing_source: pd.pricing_source != null ? String(pd.pricing_source) : null,
+              resolved_at: new Date().toISOString(),
+            };
+            const prescription: QuoteLinePrescription = {
+              catalog_item_id: catalogItem.id,
+              needs_human_review: catalogItem.needs_human_review ?? false,
+              has_dta: catalogItem.has_dta ?? false,
+              dta_status: catalogItem.dta_status ?? null,
+              is_etanche: catalogItem.is_etanche ?? null,
+              supplier_name: supplierName,
+            };
+            metadata = { source: "catalogue", pricing, prescription };
+          } else {
+            // RPC a retourné null — ligne catalogue sans pricing résolu
+            metadata = {
+              source: "catalogue",
+              prescription: {
+                catalog_item_id: catalogItem.id,
+                needs_human_review: catalogItem.needs_human_review ?? false,
+                has_dta: catalogItem.has_dta ?? false,
+                dta_status: catalogItem.dta_status ?? null,
+                is_etanche: catalogItem.is_etanche ?? null,
+                supplier_name: supplierName,
+              },
+            };
           }
-        } catch {
-          /* non-blocking */
+        } catch (resolveErr) {
+          console.warn("[QuoteEditor] resolve_item_price failed, continuing without pricing metadata.", resolveErr);
+          // Non-bloquant : la ligne est ajoutée sans metadata.pricing
+          metadata = {
+            source: "catalogue",
+            prescription: {
+              catalog_item_id: catalogItem.id,
+              needs_human_review: catalogItem.needs_human_review ?? false,
+              has_dta: catalogItem.has_dta ?? false,
+              dta_status: catalogItem.dta_status ?? null,
+              is_etanche: catalogItem.is_etanche ?? null,
+              supplier_name: supplierName,
+            },
+          };
         }
+      } else {
+        // DEV_BYPASS ou pas de tenantId : fallback cost_price
+        costPrice = catalogItem.cost_price ?? null;
+        metadata = { source: "catalogue" };
       }
+
+      if (!autoCategory && catalogItem.is_labor) autoCategory = "labor";
+    } else {
+      // STABILISATION-3 : ligne manuelle — metadata minimal
+      metadata = { source: "manual" };
     }
 
     // display_label initial = customer_label ?? normalized ?? raw
@@ -757,6 +829,12 @@ export default function QuoteEditor() {
       (rawLabel && rawLabel.trim()) ||
       "";
 
+    // STABILISATION-2 : TVA depuis catalogItem.vat_rate en priorité
+    // Fallback suggestedVat() uniquement si vat_rate absent
+    const vatRate = catalogItem?.vat_rate != null && catalogItem.vat_rate > 0
+      ? catalogItem.vat_rate
+      : suggestedVat(catalogItem?.product_type ?? "");
+
     const newRow: EditorItem = {
       _type: "item", _key: nextKey(), line_type: "item",
       product_id: catalogItem?.id || null,
@@ -764,22 +842,24 @@ export default function QuoteEditor() {
       qty: 1,
       unit: catalogItem?.unit || "u",
       unit_price_ht: catalogItem?.unit_price_ht || 0,
-      vat_rate: 10,
+      vat_rate: vatRate,
       sort_order: rows.length,
       line_category: autoCategory,
       unit_cost_price: costPrice,
       brand,
       supplier_ref: supplierRef,
-      // ─── Snapshots figés (indépendants du catalogue après création) ───
+      // ─── Snapshots figés ────────────────────────────────────────
       supplier_ref_snapshot: supplierRef,
       supplier_sku_snapshot: supplierSku,
       supplier_name_snapshot: supplierName,
       raw_label_snapshot: rawLabel,
       normalized_label_snapshot: normalizedName,
       customer_label: null,
+      // ─── Metadata contractuel ───────────────────────────────────
+      metadata,
     };
     setRows((prev) => [...prev, newRow]);
-  }, [rows.length]);
+  }, [rows.length, tenantId]);
 
   const addSection = useCallback(() => {
     setRows((prev) => [...prev, { _type: "section", _key: nextKey(), label: "Nouvelle section", sort_order: prev.length }]);
@@ -789,7 +869,7 @@ export default function QuoteEditor() {
     setRows((prev) => [...prev, { _type: "text", _key: nextKey(), label: "", sort_order: prev.length, line_type: "text" }]);
   }, []);
 
-  const updateRow = useCallback((key: string, field: string, value: any) => {
+  const updateRow = useCallback((key: string, field: string, value: unknown) => {
     setRows((prev) => prev.map((r) => r._key === key ? { ...r, [field]: value } : r));
   }, []);
 
@@ -850,7 +930,7 @@ export default function QuoteEditor() {
     return map;
   }, [rows]);
 
-  // Category subtotals (HT) — only the 3 main displayable categories
+  // Category subtotals (HT)
   const categorySubtotals = useMemo(() => {
     const map: Partial<Record<LineCategory, number>> = {};
     for (const row of rows) {
@@ -863,15 +943,12 @@ export default function QuoteEditor() {
 
   const hasAnyCategory = Object.keys(categorySubtotals).length > 0;
 
-  // Mode "groupé par catégorie" : actif uniquement si pas de section utilisateur
-  // (sinon les sections sont déjà la structuration choisie)
   const hasUserSections = useMemo(
     () => rows.some((r) => r._type === "section"),
     [rows],
   );
   const useCategoryGrouping = !hasUserSections && hasAnyCategory;
 
-  // Construction des groupes pour le rendu
   const groupedRows = useMemo(() => {
     if (!useCategoryGrouping) return null;
     const groups: Record<LineCategory | "none", EditorRow[]> = {
@@ -892,7 +969,7 @@ export default function QuoteEditor() {
   const marginTotals = useMemo(() => {
     let sale = 0;
     let cost = 0;
-    let coveredSale = 0; // sale where cost is known (>0)
+    let coveredSale = 0;
     for (const row of rows) {
       if (row._type !== "item") continue;
       const ht = row.qty * row.unit_price_ht;
@@ -911,7 +988,6 @@ export default function QuoteEditor() {
   const handleSave = useCallback(async (finalize = false) => {
     if (!quote || !tenantId) return;
 
-    // Bug 5 — guard: at least one item line
     const hasItems = rows.some((r) => r._type === "item");
     if (!hasItems) {
       toast.error("Ajoutez au moins une ligne avant d'enregistrer");
@@ -921,7 +997,6 @@ export default function QuoteEditor() {
     setSavingAll(true);
 
     try {
-      // Update quote dates/kind — visit_date & start_date go into payload (bug 6)
       await billingDb.from("quotes").update({
         quote_kind: quote.quote_kind,
         quote_date: quoteDate,
@@ -930,14 +1005,13 @@ export default function QuoteEditor() {
         deposit_pct: depositPct ?? null,
         global_discount_pct: globalDiscountPct || 0,
         payload: {
-          ...(quote as any).payload,
+          ...(quote as Record<string, unknown>).payload,
           visit_date: visitDate || null,
           start_date: startDate || null,
           show_section_totals: showSectionTotals,
         },
       }).eq("id", quote.id);
 
-      // Re-assign sort_order globally based on display order
       let globalOrder = 0;
       const reorderedRows = rows.map((r) => ({ ...r, sort_order: globalOrder++ }));
 
@@ -945,7 +1019,6 @@ export default function QuoteEditor() {
         (r): r is EditorSection => r._type === "section",
       );
 
-      // Map each line to its current section_key (parcours top→bottom)
       let currentSectionKey: string | null = null;
       const lineRows: Array<(EditorItem | EditorText) & { section_key: string | null }> = [];
       for (const row of reorderedRows) {
@@ -994,13 +1067,15 @@ export default function QuoteEditor() {
           customer_label: l._type === "item" ? (l as EditorItem).customer_label ?? null : null,
           display_label:
             l._type === "item" ? resolveDisplayLabel(l as EditorItem) : null,
-          metadata: {},
+          // STABILISATION-3 : metadata structuré (jamais {})
+          metadata: l._type === "item"
+            ? ((l as EditorItem).metadata ?? { source: "manual" })
+            : { source: "manual" },
         })),
       });
       if (saveErr) throw saveErr;
 
       if (finalize) {
-        // Transition to sent
         if (!DEV_BYPASS) {
           const { data: session } = await (await import("@/integrations/supabase/client")).supabase.auth.getSession();
           const sub = session?.session?.user?.id;
@@ -1008,12 +1083,11 @@ export default function QuoteEditor() {
           const { data: actor } = await coreDb.from("users").select("id").eq("auth_uid", sub).maybeSingle();
           if (!actor?.id) throw new Error("Utilisateur introuvable");
           const { error: rpcErr } = await billingDb.rpc("transition_quote_status", {
-            p_quote_id: quote.id, p_new_status: "sent", p_actor_id: actor.id, p_reason: "Devis envoyé au client",
+            p_quote_id: quote.id, p_new_status: "sent", p_actor_id: (actor as Record<string, unknown>).id, p_reason: "Devis envoyé au client",
           });
           if (rpcErr) throw rpcErr;
         }
 
-        // Bug 4 — Convert prospect → active
         if (projectInfo?.customer_id) {
           await coreDb
             .from("customers")
@@ -1029,8 +1103,8 @@ export default function QuoteEditor() {
       } else {
         toast.success("Devis enregistré");
       }
-    } catch (err: any) {
-      toast.error(err.message || "Erreur lors de l'enregistrement");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Erreur lors de l'enregistrement");
     } finally {
       setSavingAll(false);
     }
@@ -1047,7 +1121,7 @@ export default function QuoteEditor() {
       const { data, error } = await billingDb.rpc("duplicate_quote", {
         p_quote_id: quote.id,
         p_tenant_id: tenantId,
-        p_actor_id: coreUser.id,
+        p_actor_id: (coreUser as Record<string, unknown>).id,
       });
       if (error) throw error;
       const result = data as {
@@ -1061,14 +1135,14 @@ export default function QuoteEditor() {
       });
       const targetProject = result.project_id || projectId;
       navigate(`/projects/${targetProject}/quotes/editor?id=${result.new_quote_id}`);
-    } catch (err: any) {
-      toast.error(err.message || "Erreur lors de la duplication");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Erreur lors de la duplication");
     } finally {
       setDuplicating(false);
     }
   }, [quote, tenantId, coreUser, projectId, navigate]);
 
-  // ─── Save as bundle (bibliothèque) ────────────────────────────
+  // ─── Save as bundle ───────────────────────────────────────────
   const itemRows = useMemo(
     () => rows.filter((r): r is EditorItem => r._type === "item"),
     [rows],
@@ -1082,8 +1156,8 @@ export default function QuoteEditor() {
     }
     setSavingBundle(true);
     try {
-      const { catalogDb } = await import("@/integrations/supabase/schema-clients");
-      const { error } = await catalogDb.rpc("save_lines_as_bundle", {
+      const { catalogDb: cDb } = await import("@/integrations/supabase/schema-clients");
+      const { error } = await cDb.rpc("save_lines_as_bundle", {
         p_tenant_id: tenantId,
         p_name: bundleName.trim(),
         p_lines: itemRows.map((r) => ({
@@ -1093,7 +1167,7 @@ export default function QuoteEditor() {
           unit_price_ht: r.unit_price_ht,
           vat_rate: r.vat_rate,
           line_category: r.line_category ?? null,
-        })) as any,
+        })),
         p_notes: bundleNotes.trim() || null,
       });
       if (error) throw error;
@@ -1101,8 +1175,8 @@ export default function QuoteEditor() {
       setSaveToLibOpen(false);
       setBundleName("");
       setBundleNotes("");
-    } catch (err: any) {
-      toast.error(err.message || "Erreur lors de l'enregistrement");
+    } catch (err: unknown) {
+      toast.error(err instanceof Error ? err.message : "Erreur lors de l'enregistrement");
     } finally {
       setSavingBundle(false);
     }
@@ -1380,7 +1454,6 @@ export default function QuoteEditor() {
               )}
 
               {rows.length > 0 && (() => {
-                // Helper de rendu d'une ligne (réutilisé en mode plat ou groupé)
                 const renderRow = (row: EditorRow) => {
                   if (row._type === "section") {
                     return (
@@ -1414,7 +1487,6 @@ export default function QuoteEditor() {
                   );
                 };
 
-                // Mode groupé : un header par catégorie présente
                 if (useCategoryGrouping && groupedRows) {
                   return (
                     <>
@@ -1443,7 +1515,6 @@ export default function QuoteEditor() {
                   );
                 }
 
-                // Mode plat (par défaut, ou si l'utilisateur a créé des sections)
                 return <>{rows.map(renderRow)}</>;
               })()}
             </div>
@@ -1469,7 +1540,7 @@ export default function QuoteEditor() {
             )}
           </Card>
 
-          {/* ─── Répartition du devis ─────────────────────────── */}
+          {/* Répartition du devis */}
           {hasAnyCategory && (
             <Card>
               <CardContent className="p-4">
@@ -1527,7 +1598,7 @@ export default function QuoteEditor() {
       <footer className="sticky bottom-0 z-40 bg-card/95 backdrop-blur border-t border-border">
         <div className="max-w-6xl mx-auto px-4 py-3">
           <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-3 md:gap-6 items-center">
-            {/* Bloc Client — visible sur le devis */}
+            {/* Bloc Client */}
             <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1 text-sm">
               <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70 font-semibold">💰 Client</span>
               <div>
@@ -1537,9 +1608,7 @@ export default function QuoteEditor() {
               {globalDiscountPct > 0 && (
                 <div className="text-xs text-destructive">
                   <span>Remise {globalDiscountPct} % </span>
-                  <span className="font-mono">
-                    -{fmt(totals.discountAmount)}
-                  </span>
+                  <span className="font-mono">-{fmt(totals.discountAmount)}</span>
                 </div>
               )}
               {Object.entries(totals.vatMap)
@@ -1558,9 +1627,7 @@ export default function QuoteEditor() {
               </div>
               {depositPct != null && depositPct > 0 && (
                 <div className="text-xs">
-                  <span className="text-muted-foreground">
-                    Acompte ({depositPct} %) :{" "}
-                  </span>
+                  <span className="text-muted-foreground">Acompte ({depositPct} %) : </span>
                   <span className="font-mono font-semibold text-foreground">
                     {fmt((globalDiscountPct > 0 ? totals.totalTtcAfterDiscount : totals.totalTtc) * depositPct / 100)}
                   </span>
@@ -1570,12 +1637,9 @@ export default function QuoteEditor() {
 
             <Separator orientation="vertical" className="h-10 hidden md:block" />
 
-            {/* Bloc Artisan — interne, jamais affiché au client */}
+            {/* Bloc Artisan — interne */}
             <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1 text-sm md:justify-end">
-              <span
-                className="text-[10px] uppercase tracking-wider text-muted-foreground/70 font-semibold"
-                title="Information interne — non visible par le client"
-              >
+              <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70 font-semibold" title="Information interne — non visible par le client">
                 📈 Rentabilité
               </span>
               {marginTotals.hasCost ? (
@@ -1593,9 +1657,7 @@ export default function QuoteEditor() {
                       ({marginTotals.pct.toFixed(0)} %)
                     </span>
                     {!marginTotals.fullyCovered && (
-                      <span className="ml-1.5 text-[10px] text-warning" title="Coûts manquants sur certaines lignes">
-                        Marge partielle
-                      </span>
+                      <span className="ml-1.5 text-[10px] text-warning" title="Coûts manquants sur certaines lignes">Marge partielle</span>
                     )}
                   </div>
                 </>

@@ -656,7 +656,7 @@ export default function QuoteEditor() {
       if (q) {
         setQuoteDate(q.quote_date);
         setExpiryDate(q.expiry_date);
-        const qr = q as Record<string, unknown>;
+        const qr = q as unknown as Record<string, unknown>;
         setSubject(qr.subject as string || "");
         setDepositPct(qr.deposit_pct as number ?? null);
         setGlobalDiscountPct(qr.global_discount_pct as number ?? 0);
@@ -877,7 +877,7 @@ export default function QuoteEditor() {
         deposit_pct: depositPct ?? null,
         global_discount_pct: globalDiscountPct || 0,
         payload: {
-          ...(quote as Record<string, unknown>).payload,
+          ...((quote as unknown as Record<string, unknown>).payload as Record<string, unknown> ?? {}),
           visit_date: visitDate || null,
           start_date: startDate || null,
           show_section_totals: showSectionTotals,

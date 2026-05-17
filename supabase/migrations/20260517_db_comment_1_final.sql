@@ -47,6 +47,10 @@
 --      aide au ranking uniquement — pas une taxonomie universelle.
 --   5. RLS catalogue central : politiques exactes à documenter
 --      dans une vague ultérieure.
+--   6. catalog.catalog_items.item_family : colonne vide à 100% —
+--      les valeurs autorisées vivent dans le COMMENT ON ci-dessous
+--      et dans DECISION_LOG D-12. À valider côté Edge Function
+--      lors du premier import multi-fournisseurs.
 -- ============================================================
 
 
@@ -224,6 +228,15 @@ COMMENT ON COLUMN catalog.catalog_items.technology_type IS
 Règle: Valeurs réelles : concentrique, double_paroi_isolee, flexible_tubage.
 Standard: Ordre de tri : concentrique(1) > double_paroi_isolee(2) > flexible_tubage(3).
 Danger: NULL = classé en dernier (rang 4). Mapping partiel — ne pas traiter comme taxonomie complète.';
+
+COMMENT ON COLUMN catalog.catalog_items.item_family IS
+'Rôle: Famille produit LIGNIA — candidat pour product_family multi-fournisseurs (vide à 100% aujourd''hui).
+Règle: Valeurs autorisées (liste fermée, validation côté Edge Function) :
+  conduit_principal | systeme_etanche | tubage_flexible | tubage_rigide |
+  raccordement_visible | raccordement_pellets_visible | sortie_toiture |
+  gaine_technique | accessoire_fumisterie | adaptateur_transition.
+Standard: À renseigner lors du premier import multi-fournisseurs. Voir DECISION_LOG D-12.
+Danger: Ne jamais insérer de valeur hors liste — risque de fragmentation de la taxonomie.';
 
 COMMENT ON COLUMN catalog.catalog_items.source_system IS
 'Rôle: Provenance technique de l''article (LORFLEX_ERP | OPENFIRE | MANUAL | NULL).

@@ -338,7 +338,11 @@ export function useQuoteDetail(quoteId: string | undefined): UseQuoteDetailRetur
   }, [quoteId]);
 
   useEffect(() => {
-    fetchQuote();
+    const timeout = window.setTimeout(() => {
+      fetchQuote();
+    }, 500);
+
+    return () => window.clearTimeout(timeout);
   }, [fetchQuote]);
 
   const itemLines = lines.filter((l) => l.line_type === "item");

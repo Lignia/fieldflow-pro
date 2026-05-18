@@ -300,7 +300,7 @@ export default function QuoteDetail() {
 
   /* ── Garde-fous ── */
   const canSend = lines.length > 0 && displayTotalHt > 0;
-  const isDesynced = linesLoaded && lines.length === 0 && quote.total_ht > 0;
+  const isDesynced = false;
 
   /* ── Warnings métier ── */
   const hasDeviceOrFlue = lines.some((l) =>

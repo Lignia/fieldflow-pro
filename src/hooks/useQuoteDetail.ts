@@ -187,6 +187,17 @@ export function useQuoteDetail(quoteId: string | undefined): UseQuoteDetailRetur
           .limit(10),
       ]);
 
+      console.log("[useQuoteDetail] fetch", {
+        quoteId,
+        quoteIdLength: quoteId?.length,
+        linesCount: linesRes.data?.length ?? 0,
+        linesError: linesRes.error?.message ?? null,
+        linesData: linesRes.data,
+        quoteError: quoteRes.error?.message ?? null,
+        quoteTotalHt: (quoteRes.data as any)?.total_ht,
+        quoteTenantId: (quoteRes.data as any)?.tenant_id,
+      });
+
       if (quoteRes.error) {
         setError(quoteRes.error.message);
         return;

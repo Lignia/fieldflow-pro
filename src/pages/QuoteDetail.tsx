@@ -184,7 +184,7 @@ export default function QuoteDetail() {
     quote, lines, activities, project,
     depositInvoice, installation, technicalSurvey,
     sections, displayTotalHt, displayTotalTtc,
-    loading, error, refetch,
+    loading, linesLoaded, error, refetch,
   } = useQuoteDetail(id);
   const [showDelete, setShowDelete] = useState(false);
   const [showSignConfirm, setShowSignConfirm] = useState(false);
@@ -300,7 +300,7 @@ export default function QuoteDetail() {
 
   /* ── Garde-fous ── */
   const canSend = lines.length > 0 && displayTotalHt > 0;
-  const isDesynced = !loading && lines.length === 0 && quote.total_ht > 0;
+  const isDesynced = linesLoaded && lines.length === 0 && quote.total_ht > 0;
 
   /* ── Warnings métier ── */
   const hasDeviceOrFlue = lines.some((l) =>

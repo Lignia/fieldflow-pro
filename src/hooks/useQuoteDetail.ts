@@ -37,13 +37,6 @@ export interface QuoteLine {
   normalized_label_snapshot: string | null;
   customer_label: string | null;
   display_label: string | null;
-  // Normalisation LIGNIA
-  product_kind: string | null;
-  supplier_range: string | null;
-  diameter_inner_mm: number | null;
-  diameter_outer_mm: number | null;
-  length_mm: number | null;
-  angle_deg: number | null;
 }
 
 export interface QuoteSection {
@@ -168,7 +161,7 @@ export function useQuoteDetail(quoteId: string | undefined): UseQuoteDetailRetur
 
         billingDb
           .from("quote_lines")
-          .select("id, label, qty, unit, unit_price_ht, vat_rate, total_line_ht, sort_order, product_id, metadata, line_type, line_category, section_id, unit_cost_price, brand, supplier_ref_snapshot, supplier_sku_snapshot, supplier_name_snapshot, raw_label_snapshot, normalized_label_snapshot, customer_label, display_label, product_kind, supplier_range, diameter_inner_mm, diameter_outer_mm, length_mm, angle_deg")
+          .select("id, label, qty, unit, unit_price_ht, vat_rate, total_line_ht, sort_order, product_id, metadata, line_type, line_category, section_id, unit_cost_price, brand, supplier_ref_snapshot, supplier_sku_snapshot, supplier_name_snapshot, raw_label_snapshot, normalized_label_snapshot, customer_label, display_label")
           .eq("quote_id", quoteId)
           .order("sort_order", { ascending: true }),
 
@@ -265,12 +258,6 @@ export function useQuoteDetail(quoteId: string | undefined): UseQuoteDetailRetur
           normalized_label_snapshot: l.normalized_label_snapshot ?? null,
           customer_label: l.customer_label ?? null,
           display_label: l.display_label ?? null,
-          product_kind: l.product_kind ?? null,
-          supplier_range: l.supplier_range ?? null,
-          diameter_inner_mm: l.diameter_inner_mm != null ? Number(l.diameter_inner_mm) : null,
-          diameter_outer_mm: l.diameter_outer_mm != null ? Number(l.diameter_outer_mm) : null,
-          length_mm: l.length_mm != null ? Number(l.length_mm) : null,
-          angle_deg: l.angle_deg != null ? Number(l.angle_deg) : null,
         }))
       );
       setLinesLoaded(true);

@@ -134,6 +134,7 @@ interface UseQuoteDetailReturn {
   displayTotalHt: number;
   displayTotalTtc: number;
   loading: boolean;
+  linesLoaded: boolean;
   error: string | null;
   refetch: () => void;
 }
@@ -148,11 +149,13 @@ export function useQuoteDetail(quoteId: string | undefined): UseQuoteDetailRetur
   const [installation, setInstallation] = useState<QuoteInstallation | null>(null);
   const [technicalSurvey, setTechnicalSurvey] = useState<QuoteTechnicalSurvey | null>(null);
   const [loading, setLoading] = useState(true);
+  const [linesLoaded, setLinesLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchQuote = useCallback(async () => {
     if (!quoteId) return;
     setLoading(true);
+    setLinesLoaded(false);
     setError(null);
 
     try {
@@ -259,6 +262,7 @@ export function useQuoteDetail(quoteId: string | undefined): UseQuoteDetailRetur
           angle_deg: l.angle_deg != null ? Number(l.angle_deg) : null,
         }))
       );
+      setLinesLoaded(true);
 
       setSections(
         (sectionsRes.data ?? []).map((s: any) => ({
@@ -364,6 +368,7 @@ export function useQuoteDetail(quoteId: string | undefined): UseQuoteDetailRetur
     displayTotalHt,
     displayTotalTtc,
     loading,
+    linesLoaded,
     error,
     refetch: fetchQuote,
   };

@@ -8,10 +8,10 @@
 
 | Indicateur | Valeur |
 |---|---|
-| `catalog_items` | 18 260 articles — tous `is_central = false` (import central non exécuté) |
-| `quote_lines` | 83 lignes — `vat_rate = 10.0` à 100 %, `unit_cost_price = NULL` à 100 % |
-| Catalogue central | **0 article publié** — staging prêt, non déclenché |
-| `needs_human_review = true` | 0 article — règles DTA non encore appliquées |
+| `catalog_items` | 18 260 articles legacy `is_central=false` + 166 KEMP + 8 ouvrages LIGNIA en `is_central=true` |
+| `quote_lines` | 83 lignes — `vat_rate = 10.0` à 100 %, `unit_cost_price = NULL` à 100 % |
+| Catalogue central | **174 articles publiés** — KEMP SAS (166) + LIGNIA ouvrages (8) |
+| `needs_human_review = true` | 968 articles Apollo Pellets concentrique (Joncoux legacy) + 5 KEMP OEM |
 
 ---
 
@@ -20,16 +20,16 @@
 ```
 catalog.catalog_items  = source mutable
   → Prix, libellés et dimensions peuvent être mis à jour à tout moment
-  → Les changements n’affectent PAS les devis déjà créés
+  → Les changements n'affectent PAS les devis déjà créés
 
 billing.quote_lines    = historique immuable
-  → Snapshot figé au moment de l’ajout
+  → Snapshot figé au moment de l'ajout
   → metadata.pricing + metadata.prescription = jamais modifiés après insertion
 ```
 
 | Champ | `catalog_items` | `quote_lines` |
 |---|---|---|
-| `unit_price_ht` | Prix tarif courant (modifiable) | Prix de vente figé à l’insertion |
+| `unit_price_ht` | Prix tarif courant (modifiable) | Prix de vente figé à l'insertion |
 | `name` / libellé | Enrichissable | `raw_label_snapshot` figé |
 | Dimensions | Enrichissables | `diameter_inner_mm` figé dans `metadata.prescription` |
 | `needs_human_review` | Calculé sur règles DTA | Figé dans `metadata.prescription` |
@@ -47,8 +47,8 @@ billing.quote_lines    = historique immuable
 ❌ NE JAMAIS laisser unit_cost_price NULL après branchement de resolve_item_price
 ```
 
-> **État actuel** : `unit_cost_price` NULL sur 100 % des lignes.
-> Cause : `resolve_item_price` non encore appelé dans `addItem()`. Correction en Lovable L1.
+> **État actuel** : `unit_cost_price` NULL sur 100 % des lignes.
+> Cause : `resolve_item_price` non encore appelé dans `addItem()`. Correction en Lovable L1.
 
 ---
 
@@ -67,18 +67,18 @@ type VatRate = 5.5 | 10 | 20  // TypeScript (le SQL stocke 5.5 / 10.0 / 20.0)
 
 ---
 
-## 4. `supplier_ref` — Clé d’achat fournisseur externe
+## 4. `supplier_ref` — Clé d'achat fournisseur externe
 
 `supplier_ref` = EAN-13 ou code fournisseur transmis tel quel à la commande.
-Ce n’est **pas** un identifiant métier LIGNIA.
+Ce n'est **pas** un identifiant métier LIGNIA.
 
 ```
-✅ Utilisé pour : commandes fournisseur + snapshot quote_lines
+✅ Utilisé pour : commandes fournisseur + snapshot quote_lines
 ❌ NE JAMAIS utiliser comme clé métier LIGNIA
 ❌ NE JAMAIS modifier après publication centrale
 ```
 
-Priorité snapshot : `sku_code ?? supplier_ref ?? sku ?? id`
+Priorité snapshot : `sku_code ?? supplier_ref ?? sku ?? id`
 
 ---
 
@@ -89,7 +89,7 @@ Priorité snapshot : `sku_code ?? supplier_ref ?? sku ?? id`
 is_central = true  →  tenant_id IS NULL
 is_central = false →  tenant_id IS NOT NULL
 
--- Index partiel d’unicité
+-- Index partiel d'unicité
 UNIQUE (supplier_name, supplier_ref) WHERE is_central = true
 ```
 
@@ -103,9 +103,11 @@ UNIQUE (supplier_name, supplier_ref) WHERE is_central = true
 ## 6. FK `quote_lines → catalog_items`
 
 ```
-✅ product_id       (nom réel)
-❌ catalog_item_id  (n’existe pas)
+✅ product_id       (nom réel) — FK simple ON DELETE SET NULL
+❌ catalog_item_id  (n'existe pas)
 ```
+
+La FK composite `(product_id, tenant_id)` a été remplacée par une FK simple `product_id → catalog_items(id)` pour permettre les articles centraux (`tenant_id=NULL`) dans les devis tenant.
 
 ---
 
@@ -128,10 +130,10 @@ UNIQUE (supplier_name, supplier_ref) WHERE is_central = true
 | `is_etanche=true` ET `dta_status IN ('missing','unknown')` | `normalized_name IS NULL` |
 | Pellets concentrique sans DTA confirmé | `data_quality_status = 'partial'` |
 | Adaptateur/kit central sans `diameter_inner_mm` | `bareme_code IS NULL` |
-| | `energy_type_simple NULL` |
+| Turbines/electronique OEM non certifié (KEMP AE400/AE550) | `energy_type_simple NULL` |
 
 ```
-❌ JAMAIS pour qualité d’import, encodage, données non critiques
+❌ JAMAIS pour qualité d'import, encodage, données non critiques
 ```
 
 ---
@@ -174,7 +176,7 @@ const eligible = vatContext.logement_eligible_tva_reduite ?? null
 ```
 has_dta BOOLEAN et dta_status TEXT doivent rester cohérents.
 
-Convention :
+Convention :
   has_dta = (dta_status = 'confirmed')
 
 ✅ dta_status = 'confirmed'            →  has_dta = true
@@ -187,8 +189,58 @@ Convention :
 ```
 
 > Règle documentaire uniquement — pas de CHECK SQL appliqué en base pour le MVP.
-> Vérification à la charge du pipeline d’import (Edge Function) et des opérations de maintenance.
+> Vérification à la charge du pipeline d'import (Edge Function) et des opérations de maintenance.
 
 ---
 
-*ARCH-DOC-1 v1.3 — 2026-05-17 — DOC-ALIGN-1*
+## 12. Modèle ramoneur et architecture réseau
+
+### Cycle métier ramoneur
+
+```
+core.customers → core.properties → core.installations
+  → billing.quotes → billing.invoices
+```
+
+`core.installations.catalog_item_id` = appareil installé chez le client.
+Ce lien sera utilisé pour les contrats d'entretien récurrents (V2).
+
+### Colonnes multi-distributeurs (TEMPORAIRE MVP)
+
+```
+catalog_items.primary_vendor JSONB : canal d'achat principal.
+  Format : {"name": "KEMP SAS", "supplier_ref": "BO315B"}
+  manufacturer_name = fabricant réel (inchangé).
+
+catalog_items.other_vendors JSONB : canaux alternatifs pour le même article.
+  Format : [{"name": "Joncoux", "bareme_code": "LX_ATRIER_25"}, {"name": "Tubest", "gamme": "5000"}]
+
+TEMPORAIRE MVP — migreront vers catalog.catalog_item_suppliers en V2.
+```
+
+### Ouvrages ramonage
+
+Les prestations types LIGNIA (`supplier_name='LIGNIA'`, `item_family='service'`) sont stockées dans `catalog_items` pour le MVP. Une table `service_templates` sera envisagée en V2 si la complexité le justifie.
+
+```
+✅ TVA ouvrages ramonage = 10% (art. 279-0 bis CGI — logement > 2 ans)
+⚠️ L'artisan ajuste à 20% si chantier neuf ou local commercial
+```
+
+### Réservé V2 — ne pas implémenter avant stabilisation catalogue
+
+```
+core.networks          (Hoben, Club Seguin, Aäsgard, Flammes du Monde...)
+core.network_members   (artisans membres d'un réseau)
+catalog_items.network_id  (visibilité article par réseau)
+catalog.catalog_item_suppliers  (table relationnelle vendors)
+```
+
+```
+❌ NE JAMAIS stocker network_id dans tenant_id
+❌ NE JAMAIS créer core.networks avant V2
+```
+
+---
+
+*ARCH-DOC-1 v1.4 — 2026-05-19 — SESSION-3*

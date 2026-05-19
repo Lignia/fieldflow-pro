@@ -666,7 +666,7 @@ export default function QuoteDetail() {
                           {sections.map((section) => {
                             const sectionLines = linesBySection.get(section.id) ?? [];
                             if (sectionLines.length === 0) return null;
-                            const sectionTotal = sectionLines.reduce((s, l) => s + l.total_line_ht, 0);
+                            const sectionTotal = sectionLines.reduce((s, l) => s + l.qty * l.unit_price_ht, 0);
                             return (
                               <>
                                 <TableRow key={`sec-${section.id}`} className="bg-muted/40 hover:bg-muted/40">
@@ -691,7 +691,7 @@ export default function QuoteDetail() {
                                   Autres
                                 </TableCell>
                                 <TableCell className="text-right font-mono font-semibold text-sm py-2">
-                                  {fmt(orphanLines.reduce((s, l) => s + l.total_line_ht, 0))}
+                                  {fmt(orphanLines.reduce((s, l) => s + l.qty * l.unit_price_ht, 0))}
                                 </TableCell>
                                 {showCostCols && <TableCell colSpan={2} className="py-2" />}
                               </TableRow>

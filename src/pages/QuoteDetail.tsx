@@ -261,7 +261,7 @@ export default function QuoteDetail() {
   /* ── VAT breakdown ── */
   const vatGroups = lines.reduce<Record<number, number>>((acc, l) => {
     if (!acc[l.vat_rate]) acc[l.vat_rate] = 0;
-    acc[l.vat_rate] += l.total_line_ht * (l.vat_rate / 100);
+    acc[l.vat_rate] += l.qty * l.unit_price_ht * (l.vat_rate / 100);
     return acc;
   }, {});
 
@@ -292,7 +292,7 @@ export default function QuoteDetail() {
     (s, l) => s + (l.unit_cost_price ?? 0) * l.qty,
     0,
   );
-  const totalSale = itemLines.reduce((s, l) => s + l.total_line_ht, 0);
+  const totalSale = itemLines.reduce((s, l) => s + l.qty * l.unit_price_ht, 0);
   const totalMarginEur = totalSale - totalCost;
   const totalMarginPct = totalSale > 0 ? (totalMarginEur / totalSale) * 100 : 0;
   const totalCols = 6 + (showCostCols ? 2 : 0);
@@ -666,7 +666,7 @@ export default function QuoteDetail() {
                           {sections.map((section) => {
                             const sectionLines = linesBySection.get(section.id) ?? [];
                             if (sectionLines.length === 0) return null;
-                            const sectionTotal = sectionLines.reduce((s, l) => s + l.total_line_ht, 0);
+                            const sectionTotal = sectionLines.reduce((s, l) => s + l.qty * l.unit_price_ht, 0);
                             return (
                               <>
                                 <TableRow key={`sec-${section.id}`} className="bg-muted/40 hover:bg-muted/40">
@@ -691,7 +691,7 @@ export default function QuoteDetail() {
                                   Autres
                                 </TableCell>
                                 <TableCell className="text-right font-mono font-semibold text-sm py-2">
-                                  {fmt(orphanLines.reduce((s, l) => s + l.total_line_ht, 0))}
+                                  {fmt(orphanLines.reduce((s, l) => s + l.qty * l.unit_price_ht, 0))}
                                 </TableCell>
                                 {showCostCols && <TableCell colSpan={2} className="py-2" />}
                               </TableRow>
@@ -1178,8 +1178,9 @@ function LineRow({
 
   // Coût / marge ligne
   const costLine = (line.unit_cost_price ?? 0) * line.qty;
-  const marginEur = line.total_line_ht - costLine;
-  const marginPct = line.total_line_ht > 0 ? (marginEur / line.total_line_ht) * 100 : 0;
+  const lineSale = line.qty * line.unit_price_ht;
+  const marginEur = lineSale - costLine;
+  const marginPct = lineSale > 0 ? (marginEur / lineSale) * 100 : 0;
 
   return (
     <TableRow>
@@ -1212,7 +1213,7 @@ function LineRow({
         {line.vat_rate.toLocaleString("fr-FR")}%
       </TableCell>
       <TableCell className="text-right font-mono text-sm font-semibold">
-        {fmt(line.total_line_ht)}
+        {fmt(line.qty * line.unit_price_ht)}
       </TableCell>
       {showCostCols && (
         <>

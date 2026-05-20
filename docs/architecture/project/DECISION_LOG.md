@@ -7,8 +7,8 @@
 
 ## État actuel — Mai 2026
 
-Sessions appliquées : CAT-3, RESET-CATALOG-2 v1.3, SQI-1, SEC-1, SQI-2, PRICING-1, WRAPPER-1, ARCH-DOC-1, DOC-ALIGN-1, CATALOG-STABILIZE-1, SESSION-2, SESSION-3.
-Catalogue central : 174 articles publiés (KEMP 166 + LIGNIA ouvrages 8).
+Sessions appliquées : CAT-3, RESET-CATALOG-2 v1.3, SQI-1, SEC-1, SQI-2, PRICING-1, WRAPPER-1, ARCH-DOC-1, DOC-ALIGN-1, CATALOG-STABILIZE-1, SESSION-2, SESSION-3, SESSION-C (Joncoux 6 093 articles).
+Catalogue central : 6 267 articles publiés (Joncoux 6 093 + KEMP 166 + LIGNIA ouvrages 8).
 
 ---
 
@@ -133,22 +133,17 @@ Catalogue central : 174 articles publiés (KEMP 166 + LIGNIA ouvrages 8).
 
 ---
 
-## D-09 — [DOC-ALIGN-1] `supplier_name` = nom commercial canonique
+## D-09 — [DOC-ALIGN-1] `supplier_name` = canal d'achat de l'artisan
 
 | Date | Session | Statut |
 |---|---|---|
 | 2026-05-17 | DOC-ALIGN-1 | ✅ Appliqué |
 
-**Contexte** : Les docs de référence (RUNTIME §2.5) proposaient `supplier_name` en snake_case stable (`f16-lorflex`). En base, la valeur est `'Joncoux'` (nom commercial). Les futurs imports multi-fournisseurs (Poujoulat, Jeremias, Tubest…) risquent d'introduire des variantes de casse.
+**Contexte** : Les docs proposaient `supplier_name` en snake_case stable. En base, la valeur est le nom commercial.
 
-**Décision** : `supplier_name` = nom commercial du distributeur d'achat, format libre, mais **canonique et stable une fois choisi**. Pas de snake_case obligé. Pas de migration des valeurs existantes.
+**Décision** : `supplier_name` = qui facture l'artisan (canal d'achat). Format libre, canonique et stable une fois choisi.
 
-**Règle canonique** :
-- Toute nouvelle valeur `supplier_name` doit être validée avant import.
-- Sensible à la casse — `'Joncoux'` ≠ `'joncoux'`.
-- En cas de doute : utiliser le nom commercial officiel du fournisseur, sans suffixe pays ni forme juridique.
-
-**Alternatives rejetées** : snake_case (`f16-lorflex`) — inutilement opaque pour les artisans et les logs.
+**Règle** : `supplier_name = 'Joncoux'` (groupement Sphering/Lorflex qui facture). `manufacturer_name = 'Joncoux'` pour les conduits Apollo, `'Paroc'` pour les isolants achetés chez Lorflex, `'Firerock'` pour les panneaux, etc. La séparation fabricant/distributeur est portée par `manufacturer_name` + `distributor_name`, pas par `supplier_name`.
 
 ---
 
@@ -158,7 +153,7 @@ Catalogue central : 174 articles publiés (KEMP 166 + LIGNIA ouvrages 8).
 |---|---|---|
 | 2026-05-17 | DOC-ALIGN-1 | ✅ Appliqué |
 
-**Contexte** : Les docs proposaient `canonical_technology` avec 12 valeurs figées. En base, `technology_type` TEXT a 3 valeurs réelles (`concentrique`, `double_paroi_isolee`, `flexible_tubage`).
+**Contexte** : Les docs proposaient `canonical_technology` avec 12 valeurs figées. En base, `technology_type` TEXT a les valeurs réelles.
 
 **Décision** : Ne pas créer `canonical_technology`. `technology_type` est l'implémentation retenue.
 
@@ -172,11 +167,8 @@ Catalogue central : 174 articles publiés (KEMP 166 + LIGNIA ouvrages 8).
 |---|---|---|
 | 2026-05-17 | DOC-ALIGN-1 | ✅ Appliqué |
 
-**Contexte** : Les docs appellent ce champ `component_type` (12 valeurs). En base, il s'appelle `product_kind`.
-
 **Décision** : `product_kind` est l'implémentation. Ne pas renommer.
-
-**Règle** : `product_kind = NULL` est correct pour les articles Environment Layer et ouvrages service (pas des composants fumisterie).
+**Règle** : `product_kind = NULL` est correct pour les articles Environment Layer et ouvrages service.
 
 ---
 
@@ -186,10 +178,7 @@ Catalogue central : 174 articles publiés (KEMP 166 + LIGNIA ouvrages 8).
 |---|---|---|
 | 2026-05-17 | DOC-ALIGN-1 | ✅ Appliqué |
 
-**Contexte** : Les docs proposent `product_family`. En base, `item_family` TEXT existe et est vide à 100 % (legacy).
-
 **Décision** : `item_family` est le candidat naturel. CHECK remplacé par 13 valeurs cibles (Session CATALOG-STABILIZE-1 M2).
-
 **Règle** : Ne pas créer une colonne `product_family`.
 
 ---
@@ -200,10 +189,7 @@ Catalogue central : 174 articles publiés (KEMP 166 + LIGNIA ouvrages 8).
 |---|---|---|
 | 2026-05-17 | DOC-ALIGN-1 | ✅ Appliqué |
 
-**Contexte** : Les docs demandent `manufacturer_name = 'unknown'` si inconnu, jamais NULL.
-
 **Décision** : La règle s'applique uniquement à l'import. Pas de migration SQL ni de DEFAULT.
-
 **Règle** : Tout nouvel import doit valider `manufacturer_name IS NOT NULL OR manufacturer_name = 'unknown'`.
 
 ---
@@ -244,18 +230,11 @@ Catalogue central : 174 articles publiés (KEMP 166 + LIGNIA ouvrages 8).
 |---|---|---|
 | 2026-05-19 | CATALOG-STABILIZE-1 + SESSION-2 | ✅ Appliqué |
 
-**Contexte** : 18 260 articles Joncoux legacy avec `is_central=false`, `tenant_id` renseigné sur 3 tenants. FK composite `(product_id, tenant_id)` active sur `quote_lines` bloquerait une migration en central.
+**Contexte** : 18 260 articles Joncoux legacy avec `is_central=false`, `tenant_id` renseigné sur 3 tenants.
 
-**Décision** : Les 18 260 articles legacy restent intacts (`is_central=false`). Catalogue central `CENTRAL_LIGNIA` créé à côté (`tenant_id=NULL`, `is_central=true`). Les nouveaux imports alimentent uniquement le central.
+**Décision** : Les articles legacy restent intacts. Catalogue central `CENTRAL_LIGNIA` créé à côté. Les nouveaux imports alimentent uniquement le central.
 
-**Alternatives rejetées** : Migration UPDATE massive des legacy → trop risqué avec 83 `quote_lines` actives pointant sur des UUIDs tenant-specific.
-
-**Conséquences** :
-- Anciens devis → articles legacy (inchangés, stables).
-- Nouveaux devis → articles centraux (`is_central=true`).
-- FK composite remplacée par FK simple `product_id → catalog_items(id)` (Session 1D).
-
-**Règle** : Ne jamais UPDATE `tenant_id` en masse sur les 18 260 articles legacy.
+**Règle** : Ne jamais UPDATE `tenant_id` en masse sur les articles legacy.
 
 ---
 
@@ -265,14 +244,7 @@ Catalogue central : 174 articles publiés (KEMP 166 + LIGNIA ouvrages 8).
 |---|---|---|
 | 2026-05-19 | SESSION-3 | ✅ Appliqué |
 
-**Contexte** : Les artisans LIGNIA ont besoin de prestations types (ramonage, mise en service, dépose) pour les devis. Ces ouvrages doivent être partagés entre tous les tenants.
-
-**Décision** : 8 prestations types insérées en `is_central=true`, `item_family='service'`, `is_labor=true`, `supplier_name='LIGNIA'`, `vat_rate=10.0` (art. 279-0 bis CGI — logement > 2 ans).
-
-**Règle TVA** : 10% sur toutes les prestations ramonage/entretien en rénovation logement. L'artisan ajuste manuellement à 20% si chantier neuf ou local commercial. La prestation d'évacuation des déchets suit la TVA de la prestation principale.
-
-**Conséquences** : Prix indicatifs — ajustables dans le devis. Stockage temporaire dans `catalog_items` — une table `service_templates` sera envisagée en V2 si la complexité le justifie.
-
+**Décision** : 8 prestations types en `is_central=true`, `item_family='service'`, `is_labor=true`, `supplier_name='LIGNIA'`, `vat_rate=10.0`.
 **`import_batch_id`** : `001587be-a8bd-467b-b9e8-caa68a284a2a`
 
 ---
@@ -283,21 +255,9 @@ Catalogue central : 174 articles publiés (KEMP 166 + LIGNIA ouvrages 8).
 |---|---|---|
 | 2026-05-19 | SESSION-2 | ✅ Appliqué |
 
-**Contexte** : KEMP SAS est distribué par Joncoux (via Lorflex, barème LX_ATRIER_25) ET par Tubest (gamme 5000). Sans modèle multi-distributeurs, il faudrait créer 3 lignes distinctes pour le même article physique → doublons + incohérences de prix.
-
-**Décision** : Deux colonnes JSONB ajoutées à `catalog_items` :
-- `primary_vendor` : canal d'achat principal `{"name": "KEMP SAS"}`
-- `other_vendors` : canaux alternatifs `[{"name": "Joncoux", ...}, {"name": "Tubest", ...}]`
-
-**Inspiré de** : ServiceTitan `primaryVendor` / `otherVendors`.
-
-**Alternatives rejetées** : Table relationnelle `catalog_item_suppliers` — surengineering MVP. Doublons par distributeur — incohérence garantie sur les mises à jour de prix.
-
-**Conséquences** : `manufacturer_name` reste le fabricant réel (inchangé). `primary_vendor.name` = distributeur d'achat principal.
-
+**Décision** : Deux colonnes JSONB sur `catalog_items` pour le modèle multi-distributeurs MVP.
 **TEMPORAIRE MVP** — Cible V2 : `catalog.catalog_item_suppliers` (table relationnelle normalisée).
-
-**Règle** : Ne pas dupliquer un article pour chaque distributeur. Un seul article central, plusieurs `other_vendors`.
+**Règle** : Un seul article central, plusieurs `other_vendors`. Ne pas dupliquer pour chaque distributeur.
 
 ---
 
@@ -307,18 +267,78 @@ Catalogue central : 174 articles publiés (KEMP 166 + LIGNIA ouvrages 8).
 |---|---|---|
 | 2026-05-19 | SESSION-2 + SESSION-3 | ✅ Appliqué |
 
-**Contexte** : Les articles KEMP (grilles, protections, rangements, accessoires) ne sont pas des composants fumisterie. La taxonomie `item_family` initialement définie pour la fumisterie (`conduit_principal`, `tubage_flexible`…) ne les couvre pas.
-
-**Décision** : Ajout de `'environment'` dans le CHECK `item_family` (Session M2). Tous les articles KEMP reçoivent `item_family = 'environment'`. `technology_type = NULL` reste correct (confirmé D-10).
-
-**Règle taxonomique KEMP** :
-- `item_family = 'environment'` : article Environment Layer (aménagement autour du foyer)
-- `environment_category` : vraie taxonomie KEMP (grille_air_chaud, protection_murale, rangement_bois…)
-- `technology_type = NULL` : KEMP ≠ composant fumisterie
-- `product_kind = NULL` : KEMP ≠ composant de conduit
-
-**Règle de déduplication** : Un article KEMP distribué par Lorflex ET Tubest n'apparaît qu'une fois dans `catalog_items`, avec `other_vendors` listant les deux canaux (D-19).
+**Décision** : `'environment'` ajouté au CHECK `item_family`. Articles KEMP = `item_family='environment'`, `technology_type=NULL`, `environment_category` = vraie taxonomie KEMP.
 
 ---
 
-*ARCH-DOC-1 v1.4 — 2026-05-19 — SESSION-3*
+## D-21 — [SESSION-C] supplier_name = canal d'achat / manufacturer_name = fabricant réel
+
+| Date | Session | Statut |
+|---|---|---|
+| 2026-05-20 | SESSION-C | ✅ Appliqué |
+
+**Contexte** : Lorflex distribue plusieurs marques (Joncoux conduits, Paroc isolants, Firerock panneaux, KEMP accessories). La séparation fabricant/canal d'achat doit être claire en base pour que `resolve_item_price` et les grilles de remises fonctionnent correctement.
+
+**Décision** :
+- `supplier_name` = qui facture l'artisan = canal d'achat = `'Joncoux'` (groupement Sphering/Lorflex)
+- `manufacturer_name` = qui fabrique = `'Joncoux'` (conduits Apollo), `'Paroc'` (isolants), `'Firerock'` (panneaux), `'KEMP SAS'` (accessoires)
+- `distributor_name` = enseigne commerciale = `'Lorflex'`
+- `primary_vendor` = `{"name":"Lorflex","bareme_code":"LX_ATRIER_25"}`
+
+**Ce qu'on ne fait PAS en MVP** :
+- Pas de table `suppliers` distincte
+- Pas de gestion des prix d'achat alternatifs (Richardson, Cédéo, Comafranc)
+- Pas de rapprochement avec données fabricants externes
+
+**Ce qu'on prévoit sans construire** : `other_vendors` JSONB est déjà là pour le jour où un artisan aura deux sources d'achat pour le même article.
+
+**Règle** : `supplier_name` sensible à la casse. Le fait que Lorflex appartienne au groupe Joncoux est un détail commercial sans impact sur le modèle. Ce qui compte : "je commande chez Lorflex, j'ai une remise de 52%, voilà mon prix net."
+
+---
+
+## D-22 — [SESSION-C] Grilles de remises multi-niveaux — anticipation V2
+
+| Date | Session | Statut |
+|---|---|---|
+| 2026-05-20 | SESSION-C | ✅ Colonnes ajoutées / ⚠️ Logique V2 |
+
+**Contexte** : Le modèle MVP `tenant_supplier_discounts` a une remise unique par `supplier_name`. En réalité chaque artisan a une grille par fabricant et par famille produit :
+- Conduits Apollo Pellets (systeme_etanche) : 52%
+- Grilles air chaud (environment) : 35%
+- Isolants Paroc : 45%
+- Consommables entretien : 40%
+
+**Décision** : Trois colonnes ajoutées à `tenant_supplier_discounts` en prévision V2 :
+- `manufacturer_name TEXT` — NULL en MVP
+- `item_family TEXT` — NULL en MVP
+- `technology_type TEXT` — NULL en MVP
+
+**Logique de résolution V2 (cascade du plus spécifique au plus général)** :
+1. `tenant + supplier_name + manufacturer_name + item_family`
+2. `tenant + supplier_name + manufacturer_name`
+3. `tenant + supplier_name` ← MVP actuel
+4. remise par défaut du tenant
+
+**En MVP** : `resolve_item_price` prend la ligne la plus générale (toutes les colonnes V2 à NULL). Aucune modification de `resolve_item_price` nécessaire maintenant.
+
+**Règle** : La grille de remises fait foi — c'est l'artisan qui la configure, pas LIGNIA. LIGNIA affiche le prix net calculé, l'artisan ajuste si sa grille réelle diffère.
+
+---
+
+## D-23 — [SESSION-C] `eligible_fonds_air_bois` sur `catalog_items`
+
+| Date | Session | Statut |
+|---|---|---|
+| 2026-05-20 | SESSION-C | ✅ Appliqué |
+
+**Contexte** : La prescription MaPrimeRénov' et les aides régionales Fonds Air Bois nécessitent de savoir si un appareil est éligible. Ce critère est distinct de Flamme Verte (critères régionaux variables, programmes locaux).
+
+**Décision** : Colonne `eligible_fonds_air_bois BOOLEAN DEFAULT false` ajoutée à `catalog_items`. À renseigner depuis `catalog.heating_appliances.ademe_fonds_air_bois_status`.
+
+**Ce qui ne change pas** : `heating_appliances` reste la table de référence des appareils ADEME (1 516 lignes). Le champ sur `catalog_items` permet de l'exposer dans `search_quote_items_v2` sans jointure.
+
+**Règle** : Un appareil peut être Flamme Verte sans être éligible Fonds Air Bois. Les deux booléens sont indépendants.
+
+---
+
+*ARCH-DOC-1 v1.5 — 2026-05-20 — SESSION-C*

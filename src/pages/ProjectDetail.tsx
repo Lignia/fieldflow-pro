@@ -938,6 +938,16 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
   const { quotes, invoices } = project;
   const hasSignedFinalQuote = quotes.some((q) => q.quote_kind === "final" && q.quote_status === "signed");
   const hasDepositInvoice = invoices.some((i) => i.invoice_kind === "deposit");
+  const existingFinalQuote = quotes.find((q) => q.quote_kind === "final");
+  const finalQuoteButton = existingFinalQuote ? (
+    <Button size="sm" variant="outline" onClick={() => onNavigate(`/quotes/${existingFinalQuote.id}`)}>
+      Ouvrir le devis final <ArrowRight className="h-3.5 w-3.5 ml-1" />
+    </Button>
+  ) : (
+    <Button size="sm" onClick={() => onNavigate(`/projects/${project.id}/quotes/new?kind=final`)}>
+      <Plus className="h-3.5 w-3.5 mr-1" /> Créer le devis final
+    </Button>
+  );
   const firstDepositInvoice = invoices.find((i) => i.invoice_kind === "deposit");
 
   const renderContent = () => {

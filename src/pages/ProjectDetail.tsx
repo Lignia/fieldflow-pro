@@ -1002,8 +1002,25 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
         };
 
       case "signed":
+      {
+        const depositPaid = invoices.some(
+          (i) => i.invoice_kind === "deposit" && (i.invoice_status === "paid" || i.invoice_status === "settled"),
+        );
+        if (!depositPaid) {
+          return {
+            title: "🔴 Acompte non reçu — commande fournisseur impossible",
+            actions: firstDepositInvoice ? (
+              <Button size="sm" variant="outline" onClick={() => onNavigate(`/invoices/${firstDepositInvoice.id}`)}>
+                <Receipt className="h-3.5 w-3.5 mr-1" /> Voir la facture acompte
+              </Button>
+            ) : (
+              <Button size="sm" disabled>En attente facture acompte</Button>
+            ),
+            note: "Marquez l'acompte reçu une fois le paiement encaissé.",
+          };
+        }
         return {
-          title: "Devis signé ✓",
+          title: "Devis signé ✓ — Acompte reçu",
           actions: hasDepositInvoice ? (
             <>
               <span className="inline-flex items-center gap-1 text-xs text-success">
@@ -1028,6 +1045,7 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
             </Button>
           ),
         };
+      }
 
       case "deposit_paid":
         return {

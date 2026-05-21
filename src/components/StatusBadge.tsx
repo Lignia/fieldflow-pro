@@ -36,24 +36,31 @@ type StatusType =
 //   muted            → brouillon, clôturé, archivé, superseded
 
 const STATUS_COLORS: Record<string, string> = {
+  // Groupes sémantiques fixes (Correction 2 — design system)
+  //   secondary    → bg-secondary text-secondary-foreground
+  //   warning      → bg-warning/15 text-warning
+  //   info         → bg-info/15 text-info
+  //   success      → bg-success/15 text-success
+  //   destructive  → bg-destructive/10 text-destructive
+
   // ── core.project_status (17) ──────────────────────────────────────────────
-  lead_new:                "bg-info/15 text-info",
-  lead_qualified:          "bg-info/20 text-info",
-  vt_planned:              "bg-info/15 text-info",
-  vt_done:                 "bg-warning/15 text-warning",
-  tech_review_done:        "bg-warning/20 text-warning",
-  estimate_sent:           "bg-info/15 text-info",
-  final_quote_sent:        "bg-info/20 text-info",
-  signed:                  "bg-accent/15 text-accent",
-  deposit_paid:            "bg-accent/20 text-accent",
-  supplier_ordered:        "bg-warning/15 text-warning",
-  material_received:       "bg-warning/20 text-warning",
-  installation_scheduled:  "bg-accent/15 text-accent",
-  mes_done:                "bg-accent/20 text-accent",
-  closed:                  "bg-muted text-muted-foreground",
-  on_hold:                 "bg-warning/15 text-warning",
+  lead_new:                "bg-secondary text-secondary-foreground",
+  lead_qualified:          "bg-secondary text-secondary-foreground",
+  vt_planned:              "bg-warning/15 text-warning",
+  vt_done:                 "bg-info/15 text-info",
+  tech_review_done:        "bg-info/15 text-info",
+  estimate_sent:           "bg-warning/15 text-warning",
+  final_quote_sent:        "bg-warning/15 text-warning",
+  signed:                  "bg-success/15 text-success",
+  deposit_paid:            "bg-success/15 text-success",
+  supplier_ordered:        "bg-info/15 text-info",
+  material_received:       "bg-info/15 text-info",
+  installation_scheduled:  "bg-info/15 text-info",
+  mes_done:                "bg-success/15 text-success",
+  closed:                  "bg-success/15 text-success",
+  on_hold:                 "bg-secondary text-secondary-foreground",
   lost:                    "bg-destructive/10 text-destructive",
-  cancelled:               "bg-destructive/10 text-destructive", // alias FR (pages existantes)
+  cancelled:               "bg-destructive/10 text-destructive",
 
   // ── customer_status (3) ─────────────────────────────────────────────────
   prospect:                "bg-muted text-muted-foreground",
@@ -61,27 +68,26 @@ const STATUS_COLORS: Record<string, string> = {
   archived:                "bg-destructive/10 text-destructive",
 
   // ── core.installation_status (5) ──────────────────────────────────────────
-  // "draft" → traité en fallback par type
-  planned:                 "bg-info/15 text-info",
-  installed:               "bg-accent/15 text-accent",
-  commissioned:            "bg-accent/20 text-accent",
-  active:                  "bg-accent/15 text-accent",
+  planned:                 "bg-warning/15 text-warning",
+  installed:               "bg-success/15 text-success",
+  commissioned:            "bg-info/15 text-info",
+  active:                  "bg-success/15 text-success",
 
   // ── core.survey_status (3) ────────────────────────────────────────────────
-  validated:               "bg-accent/15 text-accent",
+  validated:               "bg-success/15 text-success",
   superseded:              "bg-muted text-muted-foreground",
 
   // ── operations.service_request_status (6) ─────────────────────────────────
   new:                     "bg-info/15 text-info",
   qualified:               "bg-warning/15 text-warning",
   scheduled:               "bg-info/15 text-info",
-  in_progress:             "bg-warning/20 text-warning",
+  in_progress:             "bg-info/15 text-info",
   // "closed" → déjà défini
   // "cancelled" → déjà défini
 
   // ── operations.intervention_status (5) ────────────────────────────────────
   // "planned", "scheduled", "in_progress" → déjà définis
-  completed:               "bg-accent/20 text-accent",
+  completed:               "bg-success/15 text-success",
   // "cancelled" → déjà défini
 
   // ── operations.intervention_type (8) ──────────────────────────────────────
@@ -95,20 +101,17 @@ const STATUS_COLORS: Record<string, string> = {
   technical_survey:        "bg-warning/15 text-warning",
 
   // ── billing.quote_status (6) ──────────────────────────────────────────────
-  draft:                   "bg-muted text-muted-foreground",
-  sent:                    "bg-info/15 text-info",
-  // "signed" → déjà défini
-  // "lost" → déjà défini
-  expired:                 "bg-warning/15 text-warning",
-  canceled:                "bg-destructive/10 text-destructive", // SQL : 1 L
+  draft:                   "bg-secondary text-secondary-foreground",
+  sent:                    "bg-warning/15 text-warning",
+  expired:                 "bg-destructive/10 text-destructive",
+  canceled:                "bg-secondary text-secondary-foreground",
 
   // ── billing.invoice_status (7) ────────────────────────────────────────────
   // "draft", "sent" → déjà définis
-  paid:                    "bg-accent/15 text-accent",
+  paid:                    "bg-success/15 text-success",
   partial:                 "bg-warning/15 text-warning",
-  overdue:                 "bg-destructive/10 text-destructive",
-  // "canceled" → déjà défini
-  void:                    "bg-destructive/10 text-destructive",
+  overdue:                 "bg-warning/15 text-warning",
+  void:                    "bg-secondary text-secondary-foreground",
 
   // ── billing.payment_status (5) ────────────────────────────────────────────
   pending:                 "bg-warning/15 text-warning",

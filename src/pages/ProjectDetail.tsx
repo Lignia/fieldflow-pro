@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { useParams, useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { format, formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -581,8 +581,16 @@ export default function ProjectDetail() {
   const hasFinalQuote = quotes.some((q) => q.quote_kind === "final");
   const finalQuote = quotes.find((q) => q.quote_kind === "final");
 
+  // Recommended action — single source of truth, also rendered in the mobile/tablet sticky bar.
+  const recommendedContent = getRecommendedActionContent({
+    project,
+    transitioning,
+    onTransition: transitionStatus,
+    onNavigate: navigate,
+  });
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-28 lg:pb-0">
       {/* Header */}
       <div>
         <Button variant="ghost" size="sm" className="mb-3 -ml-2" onClick={handleBack}>
@@ -916,6 +924,15 @@ export default function ProjectDetail() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Sticky action bar — mobile/tablet only. Reuses getRecommendedActionContent (no logic duplication). */}
+      {recommendedContent && (
+        <div className="fixed bottom-0 inset-x-0 z-40 bg-background/95 backdrop-blur border-t p-3 lg:hidden">
+          <div className="max-w-7xl mx-auto flex items-center gap-2 flex-wrap">
+            {recommendedContent.actions}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -929,25 +946,33 @@ interface ActionRecommendedCardProps {
   onNavigate: (path: string) => void;
 }
 
-function ActionRecommendedCard({ project, transitioning, onTransition, onNavigate }: ActionRecommendedCardProps) {
+// Shared helper — used by ActionRecommendedCard AND by the sticky bottom action bar.
+// Single source of truth for "next recommended action" per project status.
+function getRecommendedActionContent({
+  project,
+  transitioning,
+  onTransition,
+  onNavigate,
+}: ActionRecommendedCardProps): { title: string; note?: string; actions: ReactNode } | null {
   if (!project) return null;
   const status = project.status;
 
-  // Pas de Card pour statuts terminaux
   if (status === "closed" || status === "lost" || status === "cancelled" || status === "on_hold") {
     return null;
   }
 
   const { quotes, invoices } = project;
+  // Shared touch-target className for any default-variant CTA so they're usable on tablet/mobile.
+  const cta = "min-h-[44px] w-full md:w-auto px-4";
   const hasSignedFinalQuote = quotes.some((q) => q.quote_kind === "final" && q.quote_status === "signed");
   const hasDepositInvoice = invoices.some((i) => i.invoice_kind === "deposit");
   const existingFinalQuote = quotes.find((q) => q.quote_kind === "final");
   const finalQuoteButton = existingFinalQuote ? (
-    <Button size="sm" variant="outline" onClick={() => onNavigate(`/quotes/${existingFinalQuote.id}`)}>
+    <Button size="sm" variant="outline" className="min-h-[40px]" onClick={() => onNavigate(`/quotes/${existingFinalQuote.id}`)}>
       Ouvrir le devis final <ArrowRight className="h-3.5 w-3.5 ml-1" />
     </Button>
   ) : (
-    <Button size="sm" onClick={() => onNavigate(`/projects/${project.id}/quotes/new?kind=final`)}>
+    <Button size="sm" className={cta} onClick={() => onNavigate(`/projects/${project.id}/quotes/new?kind=final`)}>
       <Plus className="h-3.5 w-3.5 mr-1" /> Créer le devis final
     </Button>
   );
@@ -961,6 +986,7 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
           actions: (
             <Button
               size="sm"
+              className={cta}
               disabled={transitioning}
               onClick={() => onTransition("lead_qualified", "Lead qualifié")}
             >
@@ -981,6 +1007,7 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
               <>
                 <Button
                   size="sm"
+                  className={cta}
                   onClick={() =>
                     onNavigate(
                       `/interventions/new?type=technical_survey&project_id=${project.id}&return_to=${encodeURIComponent(`/projects/${project.id}`)}`,
@@ -992,6 +1019,7 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
                 <Button
                   size="sm"
                   variant="outline"
+                  className="min-h-[40px]"
                   disabled={transitioning}
                   onClick={() => onTransition("estimate_sent", "Estimatif envoyé")}
                 >
@@ -1007,6 +1035,7 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
           actions: (
             <Button
               size="sm"
+              className={cta}
               onClick={() => onNavigate(`/projects/${project.id}/quotes/new?kind=estimate`)}
             >
               <Plus className="h-3.5 w-3.5 mr-1" /> Créer le devis estimatif
@@ -1034,6 +1063,7 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
                 <Button
                   size="sm"
                   variant="outline"
+                  className="min-h-[40px]"
                   onClick={() =>
                     onNavigate(
                       `/interventions/new?type=technical_survey&project_id=${project.id}&return_to=${encodeURIComponent(`/projects/${project.id}`)}`,
@@ -1053,6 +1083,7 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
             <>
               <Button
                 size="sm"
+                className={cta}
                 onClick={() => onNavigate(`/interventions/new?type=technical_survey&project_id=${project.id}&return_to=${encodeURIComponent(`/projects/${project.id}`)}`)}
               >
                 <ClipboardList className="h-3.5 w-3.5 mr-1" /> Planifier la VT
@@ -1060,6 +1091,7 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
               <Button
                 size="sm"
                 variant="outline"
+                className="min-h-[40px]"
                 disabled={transitioning}
                 onClick={() => onTransition("vt_planned", "VT planifiée")}
               >
@@ -1076,6 +1108,7 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
           actions: (
             <Button
               size="sm"
+              className={cta}
               disabled={transitioning}
               onClick={() => onTransition("vt_done", "VT réalisée")}
             >
@@ -1091,6 +1124,7 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
             <>
               <Button
                 size="sm"
+                className={cta}
                 onClick={() => onNavigate(`/technical-surveys/new?project=${project.id}`)}
               >
                 <Plus className="h-3.5 w-3.5 mr-1" /> Créer le relevé technique
@@ -1098,6 +1132,7 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
               <Button
                 size="sm"
                 variant="outline"
+                className="min-h-[40px]"
                 disabled={transitioning}
                 onClick={() => onTransition("tech_review_done", "Étude validée")}
               >
@@ -1119,13 +1154,14 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
           actions: hasSignedFinalQuote ? (
             <Button
               size="sm"
+              className={cta}
               disabled={transitioning}
               onClick={() => onTransition("signed", "Devis signé")}
             >
               Marquer comme signé <ArrowRight className="h-3.5 w-3.5 ml-1" />
             </Button>
           ) : (
-            <Button size="sm" disabled>
+            <Button size="sm" className={cta} disabled>
               En attente de signature
             </Button>
           ),
@@ -1143,11 +1179,11 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
           return {
             title: "🔴 Acompte non reçu — commande fournisseur impossible",
             actions: firstDepositInvoice ? (
-              <Button size="sm" variant="outline" onClick={() => onNavigate(`/invoices/${firstDepositInvoice.id}`)}>
+              <Button size="sm" variant="outline" className="min-h-[40px]" onClick={() => onNavigate(`/invoices/${firstDepositInvoice.id}`)}>
                 <Receipt className="h-3.5 w-3.5 mr-1" /> Voir la facture acompte
               </Button>
             ) : (
-              <Button size="sm" disabled>En attente facture acompte</Button>
+              <Button size="sm" className={cta} disabled>En attente facture acompte</Button>
             ),
             note: "Marquez l'acompte reçu une fois le paiement encaissé.",
           };
@@ -1161,6 +1197,7 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
               </span>
               <Button
                 size="sm"
+                className={cta}
                 disabled={transitioning}
                 onClick={() => onTransition("deposit_paid", "Acompte reçu")}
               >
@@ -1171,6 +1208,7 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
             <Button
               size="sm"
               variant="outline"
+              className="min-h-[40px]"
               onClick={() => firstDepositInvoice && onNavigate(`/invoices/${firstDepositInvoice.id}`)}
               disabled={!firstDepositInvoice}
             >
@@ -1186,6 +1224,7 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
           actions: (
             <Button
               size="sm"
+              className={cta}
               disabled={transitioning}
               onClick={() => onTransition("supplier_ordered", "Commande passée")}
             >
@@ -1200,6 +1239,7 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
           actions: (
             <Button
               size="sm"
+              className={cta}
               disabled={transitioning}
               onClick={() => onTransition("material_received", "Matériel reçu")}
             >
@@ -1215,6 +1255,7 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
             <>
               <Button
                 size="sm"
+                className={cta}
                 onClick={() => onNavigate(`/interventions/new?type=installation&project_id=${project.id}&return_to=${encodeURIComponent(`/projects/${project.id}`)}`)}
               >
                 <Hammer className="h-3.5 w-3.5 mr-1" /> Planifier la pose
@@ -1222,6 +1263,7 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
               <Button
                 size="sm"
                 variant="outline"
+                className="min-h-[40px]"
                 disabled={transitioning}
                 onClick={() => onTransition("installation_scheduled", "Pose planifiée")}
               >
@@ -1238,6 +1280,7 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
             <>
               <Button
                 size="sm"
+                className={cta}
                 onClick={() => onNavigate(`/interventions/new?type=commissioning&project_id=${project.id}&return_to=${encodeURIComponent(`/projects/${project.id}`)}`)}
               >
                 <Zap className="h-3.5 w-3.5 mr-1" /> Planifier la mise en service
@@ -1245,6 +1288,7 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
               <Button
                 size="sm"
                 variant="outline"
+                className="min-h-[40px]"
                 disabled={transitioning}
                 onClick={() => onTransition("mes_done", "MES réalisée")}
               >
@@ -1260,6 +1304,7 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
           actions: (
             <Button
               size="sm"
+              className={cta}
               disabled={transitioning}
               onClick={() => onTransition("closed", "Dossier clôturé")}
             >
@@ -1273,7 +1318,11 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
     }
   };
 
-  const content = renderContent();
+  return renderContent();
+}
+
+function ActionRecommendedCard(props: ActionRecommendedCardProps) {
+  const content = getRecommendedActionContent(props);
   if (!content) return null;
 
   return (

@@ -28,6 +28,7 @@ export interface ProjectQuote {
   total_ttc: number;
   quote_date: string;
   expiry_date: string;
+  subject: string | null;
 }
 
 export interface ProjectInvoice {
@@ -85,7 +86,7 @@ export function useProjectDetail(projectId: string | undefined): UseProjectDetai
 
         billingDb
           .from("quotes")
-          .select("id, quote_number, quote_kind, quote_status, total_ttc, quote_date, expiry_date")
+          .select("id, quote_number, quote_kind, quote_status, total_ttc, quote_date, expiry_date, subject")
           .eq("project_id", projectId)
           .order("quote_date", { ascending: false }),
 
@@ -134,6 +135,7 @@ export function useProjectDetail(projectId: string | undefined): UseProjectDetai
         quotes: (quotesRes.data ?? []).map((q: any) => ({
           ...q,
           total_ttc: Number(q.total_ttc) || 0,
+          subject: q.subject ?? null,
         })),
         invoices: (invoicesRes.data ?? []).map((i: any) => ({
           ...i,

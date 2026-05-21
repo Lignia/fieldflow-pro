@@ -1,15 +1,18 @@
 import { cn } from "@/lib/utils";
 
 /**
- * StatusBadge — Design System P0
- * Couvre les 55 valeurs d'enums SQL exactes du schéma LIGNIA V1.
+ * StatusBadge — Design System (reconstruit from scratch)
+ * Une seule définition par statut. Zéro doublon.
  *
- * Conventions :
- *   - Clés = valeurs SQL littérales (ex: "vt_planned", "canceled" 1 L)
- *   - Couleurs = tokens sémantiques Tailwind (accent, info, warning, destructive, muted)
- *   - Labels = français métier
- *   - `type` permet de désambiguïser les clés partagées entre domaines
- *     (ex: "draft" existe dans quote, invoice, installation, survey)
+ * Buckets sémantiques :
+ *   SECONDARY    → état initial, neutre
+ *   INFO         → workflow en cours, étape normale
+ *   WARNING      → action requise, attention
+ *   SUCCESS      → vraiment terminé / payé
+ *   DESTRUCTIVE  → perdu, annulé
+ *
+ * Note : `canceled` (1 L, billing) = SECONDARY (annulation neutre)
+ *        `cancelled` (2 L, core/operations) = DESTRUCTIVE (perte d'activité)
  */
 
 type StatusType =
@@ -27,256 +30,147 @@ type StatusType =
   | "payment_method"
   | "customer_status";
 
-// ─── Couleurs par clé ────────────────────────────────────────────────────────
-// Groupement sémantique :
-//   info (bleu)      → planifié, envoyé, nouveau, en attente
-//   accent (vert)    → signé, payé, actif, complété, validé
-//   warning (ambre)  → en cours, qualifié, partiel, expiré
-//   destructive      → annulé, perdu, en retard, non conforme, void
-//   muted            → brouillon, clôturé, archivé, superseded
-
 const STATUS_COLORS: Record<string, string> = {
-  // Groupes sémantiques fixes (Correction 2 — design system)
-  //   secondary    → bg-secondary text-secondary-foreground
-  //   warning      → bg-warning/15 text-warning
-  //   info         → bg-info/15 text-info
-  //   success      → bg-success/15 text-success
-  //   destructive  → bg-destructive/10 text-destructive
+  // ── SECONDARY ─────────────────────────────
+  lead_new:          "bg-secondary text-secondary-foreground",
+  lead_qualified:    "bg-secondary text-secondary-foreground",
+  draft:             "bg-secondary text-secondary-foreground",
+  on_hold:           "bg-secondary text-secondary-foreground",
+  void:              "bg-secondary text-secondary-foreground",
+  canceled:          "bg-secondary text-secondary-foreground",
+  superseded:        "bg-secondary text-secondary-foreground",
+  prospect:          "bg-secondary text-secondary-foreground",
 
-  // ── core.project_status (17) ──────────────────────────────────────────────
-  lead_new:                "bg-secondary text-secondary-foreground",
-  lead_qualified:          "bg-secondary text-secondary-foreground",
-  vt_planned:              "bg-warning/15 text-warning",
-  vt_done:                 "bg-info/15 text-info",
-  tech_review_done:        "bg-info/15 text-info",
-  estimate_sent:           "bg-warning/15 text-warning",
-  final_quote_sent:        "bg-warning/15 text-warning",
-  signed:                  "bg-success/15 text-success",
-  deposit_paid:            "bg-success/15 text-success",
-  supplier_ordered:        "bg-info/15 text-info",
-  material_received:       "bg-info/15 text-info",
-  installation_scheduled:  "bg-info/15 text-info",
-  mes_done:                "bg-success/15 text-success",
-  closed:                  "bg-success/15 text-success",
-  on_hold:                 "bg-secondary text-secondary-foreground",
-  lost:                    "bg-destructive/10 text-destructive",
-  cancelled:               "bg-destructive/10 text-destructive",
+  // ── INFO ──────────────────────────────────
+  vt_planned:             "bg-info/15 text-info",
+  vt_done:                "bg-info/15 text-info",
+  tech_review_done:       "bg-info/15 text-info",
+  estimate_sent:          "bg-info/15 text-info",
+  final_quote_sent:       "bg-info/15 text-info",
+  sent:                   "bg-info/15 text-info",
+  supplier_ordered:       "bg-info/15 text-info",
+  material_received:      "bg-info/15 text-info",
+  installation_scheduled: "bg-info/15 text-info",
+  in_progress:            "bg-info/15 text-info",
+  planned:                "bg-info/15 text-info",
+  commissioned:           "bg-info/15 text-info",
+  scheduled:              "bg-info/15 text-info",
+  new:                    "bg-info/15 text-info",
+  qualified:              "bg-info/15 text-info",
+  technical_survey:       "bg-info/15 text-info",
+  signed:                 "bg-info/20 text-info",
+  deposit_paid:           "bg-info/20 text-info",
 
-  // ── customer_status (3) ─────────────────────────────────────────────────
-  prospect:                "bg-muted text-muted-foreground",
-  // "active" → défini ci-dessous
-  archived:                "bg-destructive/10 text-destructive",
+  // ── WARNING ───────────────────────────────
+  overdue:           "bg-warning/15 text-warning",
+  partial:           "bg-warning/15 text-warning",
 
-  // ── core.installation_status (5) ──────────────────────────────────────────
-  planned:                 "bg-warning/15 text-warning",
-  installed:               "bg-success/15 text-success",
-  commissioned:            "bg-info/15 text-info",
-  active:                  "bg-success/15 text-success",
+  // ── SUCCESS ───────────────────────────────
+  mes_done:          "bg-success/15 text-success",
+  closed:            "bg-success/15 text-success",
+  paid:              "bg-success/15 text-success",
+  active:            "bg-success/15 text-success",
+  validated:         "bg-success/15 text-success",
+  completed:         "bg-success/15 text-success",
+  installed:         "bg-success/15 text-success",
 
-  // ── core.survey_status (3) ────────────────────────────────────────────────
-  validated:               "bg-success/15 text-success",
-  superseded:              "bg-muted text-muted-foreground",
-
-  // ── operations.service_request_status (6) ─────────────────────────────────
-  new:                     "bg-info/15 text-info",
-  qualified:               "bg-warning/15 text-warning",
-  scheduled:               "bg-info/15 text-info",
-  in_progress:             "bg-info/15 text-info",
-  // "closed" → déjà défini
-  // "cancelled" → déjà défini
-
-  // ── operations.intervention_status (5) ────────────────────────────────────
-  // "planned", "scheduled", "in_progress" → déjà définis
-  completed:               "bg-success/15 text-success",
-  // "cancelled" → déjà défini
-
-  // ── operations.intervention_type (8) ──────────────────────────────────────
-  sweep:                   "bg-info/15 text-info",
-  annual_service:          "bg-info/15 text-info",
-  repair:                  "bg-destructive/10 text-destructive",
-  diagnostic:              "bg-warning/15 text-warning",
-  commissioning:           "bg-accent/15 text-accent",
-  installation:            "bg-accent/15 text-accent",
-  commercial_visit:        "bg-info/15 text-info",
-  technical_survey:        "bg-warning/15 text-warning",
-
-  // ── billing.quote_status (6) ──────────────────────────────────────────────
-  draft:                   "bg-secondary text-secondary-foreground",
-  sent:                    "bg-warning/15 text-warning",
-  expired:                 "bg-destructive/10 text-destructive",
-  canceled:                "bg-secondary text-secondary-foreground",
-
-  // ── billing.invoice_status (7) ────────────────────────────────────────────
-  // "draft", "sent" → déjà définis
-  paid:                    "bg-success/15 text-success",
-  partial:                 "bg-warning/15 text-warning",
-  overdue:                 "bg-warning/15 text-warning",
-  void:                    "bg-secondary text-secondary-foreground",
-
-  // ── billing.payment_status (5) ────────────────────────────────────────────
-  pending:                 "bg-warning/15 text-warning",
-  succeeded:               "bg-accent/15 text-accent",
-  failed:                  "bg-destructive/10 text-destructive",
-  refunded:                "bg-warning/15 text-warning",
-  // "canceled" → déjà défini
-
-  // ── billing.quote_kind (3) ────────────────────────────────────────────────
-  estimate:                "bg-info/15 text-info",
-  final:                   "bg-accent/15 text-accent",
-  service:                 "bg-warning/15 text-warning",
-
-  // ── billing.invoice_kind (4) ──────────────────────────────────────────────
-  deposit:                 "bg-info/15 text-info",
-  // "final", "service" → déjà définis
-  credit_note:             "bg-destructive/10 text-destructive",
-
-  // ── billing.payment_method (6) ────────────────────────────────────────────
-  card:                    "bg-info/15 text-info",
-  bank_transfer:           "bg-info/15 text-info",
-  cash:                    "bg-accent/15 text-accent",
-  check:                   "bg-info/15 text-info",
-  direct_debit:            "bg-info/15 text-info",
-  other:                   "bg-muted text-muted-foreground",
+  // ── DESTRUCTIVE ───────────────────────────
+  lost:              "bg-destructive/10 text-destructive",
+  cancelled:         "bg-destructive/10 text-destructive",
+  expired:           "bg-destructive/10 text-destructive",
 };
-
-// ─── Labels FR par clé ───────────────────────────────────────────────────────
 
 const STATUS_LABELS: Record<string, string> = {
-  // ── core.project_status (17) ──────────────────────────────────────────────
-  lead_new:                "Nouveau lead",
-  lead_qualified:          "Lead qualifié",
-  vt_planned:              "VT planifiée",
-  vt_done:                 "VT réalisée",
-  tech_review_done:        "Étude faite",
-  estimate_sent:           "Estimatif envoyé",
-  final_quote_sent:        "Devis envoyé",
-  signed:                  "Signé",
-  deposit_paid:            "Acompte reçu",
-  supplier_ordered:        "Commandé",
-  material_received:       "Matériel reçu",
-  installation_scheduled:  "Pose planifiée",
-  mes_done:                "MES réalisée",
-  closed:                  "Clôturé",
-  on_hold:                 "En pause",
-  lost:                    "Perdu",
-  cancelled:               "Annulé",
+  // SECONDARY
+  lead_new: "Nouveau lead",
+  lead_qualified: "Lead qualifié",
+  draft: "Brouillon",
+  on_hold: "En pause",
+  void: "Nul",
+  canceled: "Annulé",
+  superseded: "Remplacé",
+  prospect: "Prospect",
 
-  // ── customer_status (3) ─────────────────────────────────────────────────
-  prospect:                "Prospect",
-  // "active" → "Actif" (via type override)
-  archived:                "Archivé",
+  // INFO
+  vt_planned: "VT planifiée",
+  vt_done: "VT réalisée",
+  tech_review_done: "Étude faite",
+  estimate_sent: "Estimatif envoyé",
+  final_quote_sent: "Devis envoyé",
+  sent: "Envoyé",
+  supplier_ordered: "Commandé",
+  material_received: "Matériel reçu",
+  installation_scheduled: "Pose planifiée",
+  in_progress: "En cours",
+  planned: "Planifié",
+  commissioned: "Mis en service",
+  scheduled: "Planifié",
+  new: "Nouveau",
+  qualified: "Qualifié",
+  technical_survey: "Visite technique",
+  signed: "Signé",
+  deposit_paid: "Acompte reçu",
 
-  // ── core.installation_status (5) ──────────────────────────────────────────
-  // "draft" → label par défaut ci-dessous
-  planned:                 "Planifié",
-  installed:               "Installé",
-  commissioned:            "Mis en service",
-  active:                  "Actif",
+  // WARNING
+  overdue: "En retard",
+  partial: "Partiel",
 
-  // ── core.survey_status (3) ────────────────────────────────────────────────
-  validated:               "Validé",
-  superseded:              "Remplacé",
+  // SUCCESS
+  mes_done: "MES réalisée",
+  closed: "Clôturé",
+  paid: "Payé",
+  active: "Actif",
+  validated: "Validé",
+  completed: "Terminé",
+  installed: "Installé",
 
-  // ── operations.service_request_status (6) ─────────────────────────────────
-  new:                     "Nouveau",
-  qualified:               "Qualifié",
-  scheduled:               "Planifié",
-  in_progress:             "En cours",
-  // "closed" → "Clôturé"
-  // "cancelled" → "Annulé"
+  // DESTRUCTIVE
+  lost: "Perdu",
+  cancelled: "Annulé",
+  expired: "Expiré",
 
-  // ── operations.intervention_status (5) ────────────────────────────────────
-  // "planned" → "Planifié"
-  // "scheduled" → "Planifié"
-  // "in_progress" → "En cours"
-  completed:               "Terminé",
-  // "cancelled" → "Annulé"
+  // Kinds (non-status) — conservés pour compat
+  estimate: "Estimatif",
+  final: "Final",
+  service: "SAV",
+  deposit: "Acompte",
+  credit_note: "Avoir",
 
-  // ── operations.intervention_type (8) ──────────────────────────────────────
-  sweep:                   "Ramonage",
-  annual_service:          "Entretien annuel",
-  repair:                  "Réparation",
-  diagnostic:              "Diagnostic",
-  commissioning:           "Mise en service",
-  installation:            "Installation",
-  commercial_visit:        "Visite commerciale",
-  technical_survey:        "Visite technique",
+  // Intervention types
+  sweep: "Ramonage",
+  annual_service: "Entretien annuel",
+  repair: "Réparation",
+  diagnostic: "Diagnostic",
+  commissioning: "Mise en service",
+  installation: "Installation",
+  commercial_visit: "Visite commerciale",
 
-  // ── billing.quote_status (6) ──────────────────────────────────────────────
-  draft:                   "Brouillon",
-  sent:                    "Envoyé",
-  // "signed" → "Signé"
-  // "lost" → "Perdu"
-  expired:                 "Expiré",
-  canceled:                "Annulé",
+  // Payment methods
+  card: "Carte",
+  bank_transfer: "Virement",
+  cash: "Espèces",
+  check: "Chèque",
+  direct_debit: "Prélèvement",
+  other: "Autre",
 
-  // ── billing.invoice_status (7) ────────────────────────────────────────────
-  // "draft" → "Brouillon", "sent" → "Envoyé"
-  paid:                    "Payé",
-  partial:                 "Partiel",
-  overdue:                 "En retard",
-  // "canceled" → "Annulé"
-  void:                    "Nul",
+  // Customer
+  archived: "Archivé",
 
-  // ── billing.payment_status (5) ────────────────────────────────────────────
-  pending:                 "En attente",
-  succeeded:               "Encaissé",
-  failed:                  "Échoué",
-  refunded:                "Remboursé",
-  // "canceled" → "Annulé"
-
-  // ── billing.quote_kind (3) ────────────────────────────────────────────────
-  estimate:                "Estimatif",
-  final:                   "Final",
-  service:                 "SAV",
-
-  // ── billing.invoice_kind (4) ──────────────────────────────────────────────
-  deposit:                 "Acompte",
-  // "final" → "Définitif", "service" → "SAV"
-  credit_note:             "Avoir",
-
-  // ── billing.payment_method (6) ────────────────────────────────────────────
-  card:                    "Carte",
-  bank_transfer:           "Virement",
-  cash:                    "Espèces",
-  check:                   "Chèque",
-  direct_debit:            "Prélèvement",
-  other:                   "Autre",
+  // Payment status
+  pending: "En attente",
+  succeeded: "Encaissé",
+  failed: "Échoué",
+  refunded: "Remboursé",
 };
-
-// ─── Overrides par type (désambiguïsation) ──────────────────────────────────
-// Quand un même status key a un sens différent selon le domaine,
-// on peut forcer un label/couleur spécifique via le prop `type`.
 
 const TYPE_LABEL_OVERRIDES: Partial<Record<StatusType, Record<string, string>>> = {
-  customer_status: {
-    active: "Actif",
-    prospect: "Prospect",
-    archived: "Archivé",
-  },
-  installation: {
-    draft: "Brouillon",
-    planned: "Planifiée",
-  },
-  survey: {
-    draft: "Brouillon",
-    validated: "Validé",
-  },
-  invoice: {
-    canceled: "Annulée",
-    void: "Annulée (nul)",
-  },
-  invoice_kind: {
-    final: "Solde",
-    service: "Intervention",
-  },
-  payment: {
-    pending: "En attente",
-    canceled: "Annulé",
-  },
+  customer_status: { active: "Actif", prospect: "Prospect", archived: "Archivé" },
+  installation: { draft: "Brouillon", planned: "Planifiée" },
+  survey: { draft: "Brouillon", validated: "Validé" },
+  invoice: { canceled: "Annulée", void: "Annulée (nul)" },
+  invoice_kind: { final: "Solde", service: "Intervention" },
+  payment: { pending: "En attente", canceled: "Annulé" },
 };
-
-// ─── Component ──────────────────────────────────────────────────────────────
 
 interface StatusBadgeProps {
   status: string;
@@ -287,8 +181,6 @@ interface StatusBadgeProps {
 
 export function StatusBadge({ status, type, size = "sm", className }: StatusBadgeProps) {
   const colorClass = STATUS_COLORS[status] ?? "bg-muted text-muted-foreground";
-
-  // Label : override par type > label global > clé brute
   const overrideLabel = type ? TYPE_LABEL_OVERRIDES[type]?.[status] : undefined;
   const label = overrideLabel ?? STATUS_LABELS[status] ?? status;
 
@@ -307,5 +199,4 @@ export function StatusBadge({ status, type, size = "sm", className }: StatusBadg
   );
 }
 
-// ─── Export des types pour usage externe ─────────────────────────────────────
 export type { StatusType, StatusBadgeProps };

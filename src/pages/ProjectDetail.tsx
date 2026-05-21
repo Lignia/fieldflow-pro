@@ -381,6 +381,13 @@ export default function ProjectDetail() {
   const [transitioning, setTransitioning] = useState(false);
   const [technicalSurvey, setTechnicalSurvey] = useState<{ id: string } | null>(null);
   const [creatingSurvey, setCreatingSurvey] = useState(false);
+  const [interventions, setInterventions] = useState<Array<{
+    id: string;
+    intervention_type: string;
+    status: string;
+    start_datetime: string | null;
+  }>>([]);
+  const [interventionsLoading, setInterventionsLoading] = useState(false);
 
   async function transitionStatus(next: ProjectStatus, label: string) {
     if (!project) return;

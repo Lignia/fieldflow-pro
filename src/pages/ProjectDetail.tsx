@@ -380,13 +380,20 @@ export default function ProjectDetail() {
     async function fetchActivities() {
       setActivitiesLoading(true);
       try {
+        // Charger les activités liées au projet ET à ses devis
+        const quoteIds = (project?.quotes ?? []).map((q) => q.id);
+        const scopeFilters: string[] = [
+          `and(scope_type.eq.project,scope_id.eq.${id})`,
+        ];
+        if (quoteIds.length > 0) {
+          scopeFilters.push(`and(scope_type.eq.quote,scope_id.in.(${quoteIds.join(",")}))`);
+        }
         const { data, error: err } = await coreDb
           .from("activities")
           .select(`id, activity_type, payload, occurred_at, actor:actor_user_id (full_name)`)
-          .eq("scope_type", "project")
-          .eq("scope_id", id)
+          .or(scopeFilters.join(","))
           .order("occurred_at", { ascending: false })
-          .limit(10);
+          .limit(30);
         if (err) throw err;
         setActivities(
           (data ?? []).map((d: any) => ({
@@ -397,7 +404,7 @@ export default function ProjectDetail() {
       } catch { /* non-critical */ } finally { setActivitiesLoading(false); }
     }
     fetchActivities();
-  }, [id]);
+  }, [id, project?.quotes]);
 
   useEffect(() => {
     if (!id) { setTechnicalSurvey(null); return; }

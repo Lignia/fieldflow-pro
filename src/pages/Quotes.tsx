@@ -400,7 +400,9 @@ function QuoteTableRow({ quote, onDelete, refetch, coreUserId }: QuoteTableRowPr
             {quote.quote_number}
           </Link>
           {quote.quote_status === "draft" && quote.total_ttc === 0 && (
-            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Vide</Badge>
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-muted-foreground/40 text-muted-foreground">
+              Vide
+            </Badge>
           )}
         </div>
         <p className="text-[11px] text-muted-foreground mt-0.5">

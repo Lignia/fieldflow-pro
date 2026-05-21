@@ -3,8 +3,6 @@ import {
   LayoutDashboard,
   Users,
   FolderKanban,
-  CalendarDays,
-  Wrench,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -12,8 +10,10 @@ const tabs = [
   { icon: LayoutDashboard, label: "Accueil", path: "/dashboard" },
   { icon: Users, label: "Clients", path: "/clients" },
   { icon: FolderKanban, label: "Projets", path: "/projects" },
-  { icon: CalendarDays, label: "Planning", path: "/planning" },
-  { icon: Wrench, label: "SAV", path: "/service-requests" },
+  // TODO: activer quand module prêt
+  // { icon: CalendarDays, label: "Planning", path: "/planning" },
+  // TODO: activer quand module prêt
+  // { icon: Wrench, label: "SAV", path: "/service-requests" },
 ];
 
 export function MobileBottomNav() {

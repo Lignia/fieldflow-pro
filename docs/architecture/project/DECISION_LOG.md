@@ -7,7 +7,7 @@
 
 ## État actuel — Mai 2026
 
-Sessions appliquées : CAT-3, RESET-CATALOG-2 v1.3, SQI-1, SEC-1, SQI-2, PRICING-1, WRAPPER-1, ARCH-DOC-1, DOC-ALIGN-1, CATALOG-STABILIZE-1, SESSION-2, SESSION-3, SESSION-C (Joncoux 6 093 articles).
+Sessions appliquées : CAT-3, RESET-CATALOG-2 v1.3, SQI-1, SEC-1, SQI-2, PRICING-1, WRAPPER-1, ARCH-DOC-1, DOC-ALIGN-1, CATALOG-STABILIZE-1, SESSION-2, SESSION-3, SESSION-C (Joncoux 6 093 articles), RUNTIME-CONSOLIDATION.
 Catalogue central : 6 267 articles publiés (Joncoux 6 093 + KEMP 166 + LIGNIA ouvrages 8).
 
 ---
@@ -140,10 +140,8 @@ Catalogue central : 6 267 articles publiés (Joncoux 6 093 + KEMP 166 + LIGNIA o
 | 2026-05-17 | DOC-ALIGN-1 | ✅ Appliqué |
 
 **Contexte** : Les docs proposaient `supplier_name` en snake_case stable. En base, la valeur est le nom commercial.
-
 **Décision** : `supplier_name` = qui facture l'artisan (canal d'achat). Format libre, canonique et stable une fois choisi.
-
-**Règle** : `supplier_name = 'Joncoux'` (groupement Sphering/Lorflex qui facture). `manufacturer_name = 'Joncoux'` pour les conduits Apollo, `'Paroc'` pour les isolants achetés chez Lorflex, `'Firerock'` pour les panneaux, etc. La séparation fabricant/distributeur est portée par `manufacturer_name` + `distributor_name`, pas par `supplier_name`.
+**Règle** : `supplier_name = 'Joncoux'` (groupement Sphering/Lorflex qui facture). `manufacturer_name = 'Joncoux'` pour les conduits Apollo, `'Paroc'` pour les isolants achetés chez Lorflex, `'Firerock'` pour les panneaux, etc.
 
 ---
 
@@ -153,11 +151,8 @@ Catalogue central : 6 267 articles publiés (Joncoux 6 093 + KEMP 166 + LIGNIA o
 |---|---|---|
 | 2026-05-17 | DOC-ALIGN-1 | ✅ Appliqué |
 
-**Contexte** : Les docs proposaient `canonical_technology` avec 12 valeurs figées. En base, `technology_type` TEXT a les valeurs réelles.
-
 **Décision** : Ne pas créer `canonical_technology`. `technology_type` est l'implémentation retenue.
-
-**Règle** : `technology_type = NULL` est correct pour les articles non-fumisterie (KEMP Environment Layer, ouvrages). Ne pas forcer une valeur artificielle.
+**Règle** : `technology_type = NULL` est correct pour les articles non-fumisterie (KEMP Environment Layer, ouvrages).
 
 ---
 
@@ -178,7 +173,7 @@ Catalogue central : 6 267 articles publiés (Joncoux 6 093 + KEMP 166 + LIGNIA o
 |---|---|---|
 | 2026-05-17 | DOC-ALIGN-1 | ✅ Appliqué |
 
-**Décision** : `item_family` est le candidat naturel. CHECK remplacé par 13 valeurs cibles (Session CATALOG-STABILIZE-1 M2).
+**Décision** : `item_family` est le candidat naturel. CHECK remplacé par 13 valeurs cibles.
 **Règle** : Ne pas créer une colonne `product_family`.
 
 ---
@@ -220,7 +215,7 @@ Catalogue central : 6 267 articles publiés (Joncoux 6 093 + KEMP 166 + LIGNIA o
 |---|---|---|
 | 2026-05-17 | DOC-ALIGN-1 | ✅ Appliqué |
 
-**Décision** : Ne pas fusionner `normalization_confidence` (qualité parsing) et `confidence_pct` OEM (fiabilité fabricant). Si nécessaire en V2, créer `oem_confidence_pct` distinct.
+**Décision** : Ne pas fusionner les deux colonnes. Si nécessaire en V2, créer `oem_confidence_pct` distinct.
 
 ---
 
@@ -230,10 +225,7 @@ Catalogue central : 6 267 articles publiés (Joncoux 6 093 + KEMP 166 + LIGNIA o
 |---|---|---|
 | 2026-05-19 | CATALOG-STABILIZE-1 + SESSION-2 | ✅ Appliqué |
 
-**Contexte** : 18 260 articles Joncoux legacy avec `is_central=false`, `tenant_id` renseigné sur 3 tenants.
-
-**Décision** : Les articles legacy restent intacts. Catalogue central `CENTRAL_LIGNIA` créé à côté. Les nouveaux imports alimentent uniquement le central.
-
+**Décision** : Les articles legacy restent intacts. Catalogue central `CENTRAL_LIGNIA` créé à côté.
 **Règle** : Ne jamais UPDATE `tenant_id` en masse sur les articles legacy.
 
 ---
@@ -255,8 +247,8 @@ Catalogue central : 6 267 articles publiés (Joncoux 6 093 + KEMP 166 + LIGNIA o
 |---|---|---|
 | 2026-05-19 | SESSION-2 | ✅ Appliqué |
 
-**Décision** : Deux colonnes JSONB sur `catalog_items` pour le modèle multi-distributeurs MVP.
-**TEMPORAIRE MVP** — Cible V2 : `catalog.catalog_item_suppliers` (table relationnelle normalisée).
+**Décision** : Deux colonnes JSONB pour le modèle multi-distributeurs MVP.
+**TEMPORAIRE MVP** — Cible V2 : `catalog.catalog_item_suppliers` (table relationnelle).
 **Règle** : Un seul article central, plusieurs `other_vendors`. Ne pas dupliquer pour chaque distributeur.
 
 ---
@@ -277,22 +269,13 @@ Catalogue central : 6 267 articles publiés (Joncoux 6 093 + KEMP 166 + LIGNIA o
 |---|---|---|
 | 2026-05-20 | SESSION-C | ✅ Appliqué |
 
-**Contexte** : Lorflex distribue plusieurs marques (Joncoux conduits, Paroc isolants, Firerock panneaux, KEMP accessories). La séparation fabricant/canal d'achat doit être claire en base pour que `resolve_item_price` et les grilles de remises fonctionnent correctement.
-
 **Décision** :
-- `supplier_name` = qui facture l'artisan = canal d'achat = `'Joncoux'` (groupement Sphering/Lorflex)
-- `manufacturer_name` = qui fabrique = `'Joncoux'` (conduits Apollo), `'Paroc'` (isolants), `'Firerock'` (panneaux), `'KEMP SAS'` (accessoires)
+- `supplier_name` = qui facture l'artisan = `'Joncoux'` (groupement Sphering/Lorflex)
+- `manufacturer_name` = qui fabrique réellement l'article
 - `distributor_name` = enseigne commerciale = `'Lorflex'`
 - `primary_vendor` = `{"name":"Lorflex","bareme_code":"LX_ATRIER_25"}`
 
-**Ce qu'on ne fait PAS en MVP** :
-- Pas de table `suppliers` distincte
-- Pas de gestion des prix d'achat alternatifs (Richardson, Cédéo, Comafranc)
-- Pas de rapprochement avec données fabricants externes
-
-**Ce qu'on prévoit sans construire** : `other_vendors` JSONB est déjà là pour le jour où un artisan aura deux sources d'achat pour le même article.
-
-**Règle** : `supplier_name` sensible à la casse. Le fait que Lorflex appartienne au groupe Joncoux est un détail commercial sans impact sur le modèle. Ce qui compte : "je commande chez Lorflex, j'ai une remise de 52%, voilà mon prix net."
+**Règle** : `supplier_name` sensible à la casse. La complexité Lorflex/Joncoux/Sphering est un détail commercial sans impact sur le modèle.
 
 ---
 
@@ -302,26 +285,8 @@ Catalogue central : 6 267 articles publiés (Joncoux 6 093 + KEMP 166 + LIGNIA o
 |---|---|---|
 | 2026-05-20 | SESSION-C | ✅ Colonnes ajoutées / ⚠️ Logique V2 |
 
-**Contexte** : Le modèle MVP `tenant_supplier_discounts` a une remise unique par `supplier_name`. En réalité chaque artisan a une grille par fabricant et par famille produit :
-- Conduits Apollo Pellets (systeme_etanche) : 52%
-- Grilles air chaud (environment) : 35%
-- Isolants Paroc : 45%
-- Consommables entretien : 40%
-
-**Décision** : Trois colonnes ajoutées à `tenant_supplier_discounts` en prévision V2 :
-- `manufacturer_name TEXT` — NULL en MVP
-- `item_family TEXT` — NULL en MVP
-- `technology_type TEXT` — NULL en MVP
-
-**Logique de résolution V2 (cascade du plus spécifique au plus général)** :
-1. `tenant + supplier_name + manufacturer_name + item_family`
-2. `tenant + supplier_name + manufacturer_name`
-3. `tenant + supplier_name` ← MVP actuel
-4. remise par défaut du tenant
-
-**En MVP** : `resolve_item_price` prend la ligne la plus générale (toutes les colonnes V2 à NULL). Aucune modification de `resolve_item_price` nécessaire maintenant.
-
-**Règle** : La grille de remises fait foi — c'est l'artisan qui la configure, pas LIGNIA. LIGNIA affiche le prix net calculé, l'artisan ajuste si sa grille réelle diffère.
+**Décision** : Trois colonnes ajoutées à `tenant_supplier_discounts` en prévision V2 : `manufacturer_name`, `item_family`, `technology_type` (toutes NULL en MVP). Résolution en cascade du plus spécifique au plus général prévue.
+**Règle** : `resolve_item_price` prend la ligne la plus générale en MVP. Aucune modification nécessaire maintenant.
 
 ---
 
@@ -331,14 +296,64 @@ Catalogue central : 6 267 articles publiés (Joncoux 6 093 + KEMP 166 + LIGNIA o
 |---|---|---|
 | 2026-05-20 | SESSION-C | ✅ Appliqué |
 
-**Contexte** : La prescription MaPrimeRénov' et les aides régionales Fonds Air Bois nécessitent de savoir si un appareil est éligible. Ce critère est distinct de Flamme Verte (critères régionaux variables, programmes locaux).
-
-**Décision** : Colonne `eligible_fonds_air_bois BOOLEAN DEFAULT false` ajoutée à `catalog_items`. À renseigner depuis `catalog.heating_appliances.ademe_fonds_air_bois_status`.
-
-**Ce qui ne change pas** : `heating_appliances` reste la table de référence des appareils ADEME (1 516 lignes). Le champ sur `catalog_items` permet de l'exposer dans `search_quote_items_v2` sans jointure.
-
-**Règle** : Un appareil peut être Flamme Verte sans être éligible Fonds Air Bois. Les deux booléens sont indépendants.
+**Décision** : Colonne `eligible_fonds_air_bois BOOLEAN DEFAULT false` ajoutée à `catalog_items`.
+**Règle** : Distinct de Flamme Verte. Un appareil peut être Flamme Verte sans être éligible Fonds Air Bois.
 
 ---
 
-*ARCH-DOC-1 v1.5 — 2026-05-20 — SESSION-C*
+## D-24 — [RUNTIME-CONSOLIDATION] TVA réglementaire catalogue — source BOFiP officielle
+
+| Date | Session | Statut |
+|---|---|---|
+| 2026-05-21 | RUNTIME-CONSOLIDATION | ✅ Appliqué |
+
+**Contexte** : `catalog_items.vat_rate` est une **suggestion ergonomique** — la vérité contractuelle est toujours `quote_lines.vat_rate`, modifiable par l'artisan. La question est : quelle suggestion pré-remplit le devis le plus correctement pour le cas dominant LIGNIA (fourniture + pose, logement > 2 ans, artisan pro) ?
+
+**Sources officielles** :
+- BOFiP BOI-ANNX-000210 (31/07/2024) — Taux TVA opérations entretien, désinfection, dépannage
+- Art. 278-0 bis CGI — Équipements de chauffage ENR
+
+**Tableau TVA réglementaire complet** :
+
+| Opération | TVA | Remarque |
+|---|---|---|
+| Fourniture + pose poêle bois/granulés | **5,5%** | Logement >2 ans, artisan pro |
+| Fourniture + pose conduits fumisterie (tubage, raccordement, sortie toiture) | **5,5%** | Travaux d'adaptation indissociables |
+| Fourniture + pose insert / foyer fermé | **5,5%** | |
+| Pièces détachées facturées avec main-d'œuvre de pose | **5,5%** | Indissociables de la prestation |
+| Pièces détachées vendues seules sans pose | **20%** | Livraison de bien meuble |
+| Ramonage, élimination suie/dépôts | **10%** | BOFiP §20 explicite |
+| Entretien annuel poêle/chauffage | **10%** | BOFiP §40 — contrats maintenance chauffage |
+| Dépannage avec pièces | **10%** | Prestation de service + fourniture accessoire |
+| VMC, nettoyage gaines | **10%** | BOFiP §20 explicite |
+| Accessoires meubles amovibles (décoration, rangement) | **20%** | Biens meubles non fixés |
+| Logement neuf ou < 2 ans | **20%** | Taux réduit inapplicable |
+| Local commercial | **20%** | |
+
+**Décisions appliquées en base** :
+
+*Joncoux — fumisterie (4 962 articles) :*
+- `conduit_principal`, `tubage_flexible`, `raccordement_visible`, `sortie_toiture`, `accessoire_fumisterie`, `raccordement_pellets_visible` → **suggestion 5,5%**
+- `systeme_etanche` (concentriques) → **20%** maintenu (NHR=true, DTA non confirmé, artisan doit trancher)
+- `environment` → **20%** (biens meubles non-pose obligatoire)
+
+*KEMP SAS — environment layer (166 articles) :*
+- `distribution_air_chaud` (22), `grille_air_chaud` (54), `arrivee_air_frais` (26), `protection_murale` (11) → **suggestion 5,5%** (composants fixés/posés, indissociables de l'installation)
+- `protection_sol` (7), `protection_securite` (3), `rangement_bois` (19), `rangement_granules` (8), `accessoire_decoratif` (6), `accessoire_entretien` (10) → **20%** maintenu (biens meubles amovibles ou hétérogènes)
+
+*LIGNIA — ouvrages (8 articles) :*
+- Ramonage, entretien, mise en service → **10%** confirmé (BOFiP §20 et §40)
+
+**Règles invariantes** :
+1. `catalog_items.vat_rate` = suggestion. `quote_lines.vat_rate` = vérité contractuelle. L'artisan ajuste toujours.
+2. La condition logement >2 ans est de la responsabilité de l'artisan (attestation client). LIGNIA n'a pas à la vérifier.
+3. `systeme_etanche` reste à 20% par prudence : le 5,5% s'applique techniquement mais le NHR=true et l'absence de DTA confirme que l'artisan doit de toute façon valider manuellement ce type de ligne.
+4. Ne jamais appliquer le 5,5% sur les pièces détachées vendues seules en SAV sans prestation associée.
+
+**Alternatives rejetées** :
+- `vat_rate = NULL` partout → trop de friction dans le devis, l'artisan saisit à chaque fois
+- `vat_rate = 20%` partout → incorrect pour le cas dominant, force une correction systématique
+
+---
+
+*ARCH-DOC-1 v1.6 — 2026-05-21 — RUNTIME-CONSOLIDATION*

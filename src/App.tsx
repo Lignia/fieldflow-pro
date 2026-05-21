@@ -21,6 +21,7 @@ import QuoteCreate from "./pages/quotes/QuoteCreate";
 import QuoteEditor from "./pages/quotes/QuoteEditor";
 import QuoteDetail from "./pages/QuoteDetail";
 import Invoices from "./pages/Invoices";
+import InvoiceDetail from "./pages/InvoiceDetail";
 import ServiceRequests from "./pages/ServiceRequests";
 import Catalog from "./pages/Catalog";
 import CatalogImport from "./pages/catalog/CatalogImport";
@@ -95,7 +96,7 @@ const App = () => (
 
               {/* Invoices */}
               <Route path="/invoices" element={<Invoices />} />
-              <Route path="/invoices/:id" element={<PlaceholderPage title="Détail facture" backTo="/invoices" backLabel="Factures" />} />
+              <Route path="/invoices/:id" element={<InvoiceDetail />} />
 
               {/* Service Requests */}
               <Route path="/service-requests" element={<ServiceRequests />} />

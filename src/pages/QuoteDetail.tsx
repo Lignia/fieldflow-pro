@@ -1339,7 +1339,7 @@ function ActionsBloc({
     canSend ? (
       <Button
         size="sm"
-        className="w-full"
+        className="w-full min-h-[44px]"
         disabled={transitioning}
         onClick={() => {
           if (hasNegativeMargin) {
@@ -1356,7 +1356,7 @@ function ActionsBloc({
       <Tooltip>
         <TooltipTrigger asChild>
           <span tabIndex={0} className="w-full">
-            <Button size="sm" className="w-full" disabled>
+            <Button size="sm" className="w-full min-h-[44px]" disabled>
               <Send className="h-3.5 w-3.5 mr-1" />
               Envoyer
             </Button>
@@ -1371,7 +1371,7 @@ function ActionsBloc({
       <Button
         variant="success"
         size="sm"
-        className="w-full"
+        className="w-full min-h-[44px]"
         disabled={transitioning || signing}
         onClick={onSign}
       >
@@ -1382,7 +1382,7 @@ function ActionsBloc({
       <Tooltip>
         <TooltipTrigger asChild>
           <span tabIndex={0} className="w-full">
-            <Button variant="success" size="sm" className="w-full" disabled>
+            <Button variant="success" size="sm" className="w-full min-h-[44px]" disabled>
               <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
               Marquer comme signé
             </Button>
@@ -1464,7 +1464,7 @@ function ActionsBloc({
         {project_id && (
           <Button
             size="sm"
-            className="w-full"
+            className="w-full min-h-[44px]"
             onClick={() => navigate(`/projects/${project_id}/quotes/new?kind=estimate`)}
           >
             Recréer un devis estimatif
@@ -1513,7 +1513,7 @@ function ActionsBloc({
         {project_id && (
           <Button
             size="sm"
-            className="w-full"
+            className="w-full min-h-[44px]"
             onClick={() => navigate(`/projects/${project_id}/quotes/new?kind=final`)}
           >
             Recréer un devis final
@@ -1543,7 +1543,7 @@ function ActionsBloc({
     return (
       <div className="space-y-2">
         {depositInvoice ? (
-          <Button size="sm" className="w-full" onClick={() => navigate(`/invoices/${depositInvoice.id}`)}>
+          <Button size="sm" className="w-full min-h-[44px]" onClick={() => navigate(`/invoices/${depositInvoice.id}`)}>
             <Receipt className="h-3.5 w-3.5 mr-1" />
             Voir la facture d'acompte
           </Button>

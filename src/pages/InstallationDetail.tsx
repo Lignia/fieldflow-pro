@@ -46,6 +46,7 @@ import {
   type InstallationDetail as TInstallation,
   type InstallationActivity,
 } from "@/hooks/useInstallationDetail";
+import { PageContainer } from "@/components/PageContainer";
 
 // ---------- Helpers ----------
 
@@ -272,7 +273,7 @@ export default function InstallationDetail() {
   // ----- Loading -----
   if (loading) {
     return (
-      <div className="container max-w-6xl mx-auto p-6 space-y-6">
+      <PageContainer>
         <Skeleton className="h-9 w-32" />
         <Skeleton className="h-24 w-full" />
         <div className="grid gap-4 md:grid-cols-3">
@@ -280,14 +281,14 @@ export default function InstallationDetail() {
           <Skeleton className="h-40" />
           <Skeleton className="h-40" />
         </div>
-      </div>
+      </PageContainer>
     );
   }
 
   // ----- Error -----
   if (error) {
     return (
-      <div className="container max-w-2xl mx-auto p-6">
+      <PageContainer>
         <Card className="p-8 text-center space-y-4">
           <p className="text-sm text-destructive">Impossible de charger l'installation.</p>
           <p className="text-xs text-muted-foreground font-mono">{error}</p>
@@ -302,7 +303,7 @@ export default function InstallationDetail() {
             </Button>
           </div>
         </Card>
-      </div>
+      </PageContainer>
     );
   }
 
@@ -319,7 +320,7 @@ export default function InstallationDetail() {
     .join(", ");
 
   return (
-    <div className="container max-w-6xl mx-auto p-4 md:p-6 space-y-6">
+    <PageContainer>
       {/* SECTION 1 — En-tête */}
       <div>
         <Button
@@ -747,6 +748,6 @@ export default function InstallationDetail() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageContainer>
   );
 }

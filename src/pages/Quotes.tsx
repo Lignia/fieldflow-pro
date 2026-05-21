@@ -42,6 +42,7 @@ import { NewQuoteModal } from "@/components/quotes/NewQuoteModal";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { billingDb } from "@/integrations/supabase/schema-clients";
+import { PageContainer } from "@/components/PageContainer";
 
 /* ── Helpers ── */
 
@@ -159,7 +160,7 @@ export default function Quotes() {
   };
 
   return (
-    <div className="space-y-5">
+    <PageContainer>
       <NewQuoteModal open={showNewQuote} onOpenChange={setShowNewQuote} />
 
       {/* Header */}
@@ -320,7 +321,7 @@ export default function Quotes() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageContainer>
   );
 }
 

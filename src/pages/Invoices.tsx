@@ -16,6 +16,7 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { PageContainer } from "@/components/PageContainer";
 
 type StatusFilter = "all" | "deposit" | "final" | "overdue";
 
@@ -53,7 +54,7 @@ export default function Invoices() {
   const { data: invoices, isLoading, isError } = useInvoices(filter, search);
 
   return (
-    <div className="space-y-6">
+    <PageContainer>
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -169,6 +170,6 @@ export default function Invoices() {
           </Table>
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }

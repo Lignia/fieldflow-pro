@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { PageContainer } from "@/components/PageContainer";
 
 const FIELDS: { key: string; label: string; type: "text" | "number" }[] = [
   // Section 1
@@ -167,15 +168,15 @@ export default function TechnicalSurveyDetail() {
 
   if (loading) {
     return (
-      <div className="p-6 space-y-4">
+      <PageContainer>
         <Skeleton className="h-8 w-64" />
         <Skeleton className="h-64 w-full" />
-      </div>
+      </PageContainer>
     );
   }
 
   if (!survey) {
-    return <div className="p-6">Relevé introuvable.</div>;
+    return <PageContainer>Relevé introuvable.</PageContainer>;
   }
 
   const status: string = survey.survey_status ?? "draft";
@@ -191,7 +192,7 @@ export default function TechnicalSurveyDetail() {
         : { label: "En cours", cls: "bg-warning/15 text-warning" };
 
   return (
-    <div className="p-4 sm:p-6 max-w-4xl mx-auto space-y-4">
+    <PageContainer>
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
           <ArrowLeft className="h-4 w-4 mr-1" /> Retour
@@ -274,6 +275,6 @@ export default function TechnicalSurveyDetail() {
           </Button>
         )}
       </div>
-    </div>
+    </PageContainer>
   );
 }

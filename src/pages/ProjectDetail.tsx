@@ -829,9 +829,58 @@ export default function ProjectDetail() {
                 </Button>
               </div>
             </div>
-            <Card className="p-6 text-center">
-              <p className="text-sm text-muted-foreground">Aucune intervention liée à ce projet</p>
-            </Card>
+            {interventionsLoading ? (
+              <div className="space-y-2">
+                {Array.from({ length: 2 }).map((_, i) => <Skeleton key={i} className="h-14 w-full" />)}
+              </div>
+            ) : interventions.length === 0 ? (
+              <Card className="p-6 text-center">
+                <p className="text-sm text-muted-foreground">Aucune intervention liée à ce projet</p>
+              </Card>
+            ) : (
+              <div className="space-y-2">
+                {interventions.map((iv) => {
+                  const TYPE_LABELS: Record<string, string> = {
+                    sweep: "Ramonage",
+                    annual_service: "Entretien annuel",
+                    repair: "Réparation",
+                    diagnostic: "Diagnostic",
+                    commissioning: "Mise en service",
+                    installation: "Installation",
+                    commercial_visit: "Visite commerciale",
+                    technical_survey: "Visite technique",
+                  };
+                  const STATUS_LABELS: Record<string, string> = {
+                    planned: "Planifiée",
+                    scheduled: "Programmée",
+                    in_progress: "En cours",
+                    completed: "Terminée",
+                    cancelled: "Annulée",
+                  };
+                  return (
+                    <Card
+                      key={iv.id}
+                      className="p-3 flex items-center justify-between cursor-pointer hover:bg-accent/30 transition-colors"
+                      onClick={() => navigate(`/interventions/${iv.id}`)}
+                    >
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium">
+                          {TYPE_LABELS[iv.intervention_type] ?? iv.intervention_type}
+                        </span>
+                        <span className="text-xs text-muted-foreground">
+                          {iv.start_datetime
+                            ? format(new Date(iv.start_datetime), "d MMM yyyy 'à' HH:mm", { locale: fr })
+                            : "Non planifiée"}
+                        </span>
+                      </div>
+                      <Badge variant="secondary" className="text-xs">
+                        {STATUS_LABELS[iv.status] ?? iv.status}
+                      </Badge>
+                    </Card>
+                  );
+                })}
+              </div>
+            )}
           </div>
         </TabsContent>
 

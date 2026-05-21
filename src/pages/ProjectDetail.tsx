@@ -924,6 +924,15 @@ export default function ProjectDetail() {
           )}
         </TabsContent>
       </Tabs>
+
+      {/* Sticky action bar — mobile/tablet only. Reuses getRecommendedActionContent (no logic duplication). */}
+      {recommendedContent && (
+        <div className="fixed bottom-0 inset-x-0 z-40 bg-background/95 backdrop-blur border-t p-3 lg:hidden">
+          <div className="max-w-7xl mx-auto flex items-center gap-2 flex-wrap">
+            {recommendedContent.actions}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

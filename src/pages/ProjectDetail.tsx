@@ -932,7 +932,7 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
 
       case "vt_planned":
         return {
-          title: "Visite technique planifiée",
+          title: "📅 Visite technique planifiée — à marquer réalisée",
           actions: (
             <Button
               size="sm"

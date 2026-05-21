@@ -35,6 +35,7 @@ import { useQuoteDetail, UNIT_LABELS, type QuoteActivity } from "@/hooks/useQuot
 import { generateQuotePdf } from "@/lib/quote-pdf";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useSignQuote } from "@/hooks/useSignQuote";
+import { formatCurrency } from "@/lib/format";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -72,10 +73,6 @@ import {
 } from "@/components/ui/collapsible";
 
 /* ── Helpers ── */
-
-function fmt(amount: number): string {
-  return amount.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
-}
 
 function fmtDate(d: string): string {
   return format(new Date(d), "d MMM yyyy", { locale: fr });
@@ -420,7 +417,6 @@ export default function QuoteDetail() {
                   <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${statusCfg.className}`}>
                     {statusCfg.label}
                   </span>
-                  {/* Expiry badges — only positive days or "Expiré" */}
                   {expiry.isExpired && (
                     <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-destructive/15 text-destructive">
                       Expiré
@@ -433,7 +429,6 @@ export default function QuoteDetail() {
                   )}
                 </div>
 
-                {/* Origin mention */}
                 {quote.previous_quote_id && (
                   <p className="text-xs text-muted-foreground flex items-center gap-1">
                     <GitBranch className="h-3 w-3" />
@@ -441,7 +436,6 @@ export default function QuoteDetail() {
                   </p>
                 )}
 
-                {/* Signed date — only if non-null */}
                 {quote.signed_at && (
                   <p className="text-sm text-accent flex items-center gap-1.5">
                     <CheckCircle2 className="h-3.5 w-3.5" />
@@ -449,7 +443,6 @@ export default function QuoteDetail() {
                   </p>
                 )}
 
-                {/* TVA context (visible quand renseigné dans payload) */}
                 {(() => {
                   const ctx = (quote as any).tva_context;
                   if (!ctx) return null;
@@ -468,7 +461,6 @@ export default function QuoteDetail() {
                 })()}
               </div>
 
-              {/* Duplicate button (disabled placeholder) */}
               <Tooltip>
                 <TooltipTrigger asChild>
                   <span tabIndex={0}>
@@ -488,9 +480,7 @@ export default function QuoteDetail() {
 
             <Separator />
 
-            {/* Context links row */}
             <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
-              {/* Client */}
               {customer && (
                 <button
                   onClick={() => navigate(`/clients/${customer.id}`)}
@@ -502,7 +492,6 @@ export default function QuoteDetail() {
                 </button>
               )}
 
-              {/* Project — only for non-service */}
               {project && !isService && (
                 <button
                   onClick={() => navigate(`/projects/${project.id}`)}
@@ -514,7 +503,6 @@ export default function QuoteDetail() {
                 </button>
               )}
 
-              {/* SAV link — only for service with service_request_id */}
               {isService && quote.service_request_id && (
                 <button
                   onClick={() => navigate(`/service-requests/${quote.service_request_id}`)}
@@ -526,7 +514,6 @@ export default function QuoteDetail() {
                 </button>
               )}
 
-              {/* Address — label: "Adresse d'intervention" */}
               {property && (
                 <span className="flex items-center gap-1.5 text-muted-foreground">
                   <MapPin className="h-3.5 w-3.5" />
@@ -546,7 +533,6 @@ export default function QuoteDetail() {
               )}
             </div>
 
-            {/* Dates row — conditional display */}
             <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Calendar className="h-3 w-3" />
@@ -556,14 +542,12 @@ export default function QuoteDetail() {
                 <Clock className="h-3 w-3" />
                 Valide jusqu'au {fmtDate(quote.expiry_date)}
               </span>
-              {/* sent_at — only if non-null */}
               {quote.sent_at && (
                 <span className="flex items-center gap-1">
                   <Send className="h-3 w-3" />
                   Envoyé le {fmtDate(quote.sent_at)}
                 </span>
               )}
-              {/* signed_at — already shown above, but also in date row for consistency */}
               {quote.signed_at && (
                 <span className="flex items-center gap-1">
                   <CheckCircle2 className="h-3 w-3" />
@@ -693,7 +677,7 @@ export default function QuoteDetail() {
                                     {section.label}
                                   </TableCell>
                                   <TableCell className="text-right font-mono font-semibold text-sm py-2">
-                                    {fmt(sectionTotal)}
+                                    {formatCurrency(sectionTotal)}
                                   </TableCell>
                                   {showCostCols && <TableCell colSpan={2} className="py-2" />}
                                 </TableRow>
@@ -710,7 +694,7 @@ export default function QuoteDetail() {
                                   Autres
                                 </TableCell>
                                 <TableCell className="text-right font-mono font-semibold text-sm py-2">
-                                  {fmt(orphanLines.reduce((s, l) => s + l.qty * l.unit_price_ht, 0))}
+                                  {formatCurrency(orphanLines.reduce((s, l) => s + l.qty * l.unit_price_ht, 0))}
                                 </TableCell>
                                 {showCostCols && <TableCell colSpan={2} className="py-2" />}
                               </TableRow>
@@ -729,10 +713,10 @@ export default function QuoteDetail() {
                             Marge totale (interne)
                           </TableCell>
                           <TableCell className="text-right font-mono text-xs text-muted-foreground py-2">
-                            {fmt(totalSale)}
+                            {formatCurrency(totalSale)}
                           </TableCell>
                           <TableCell className="text-right font-mono text-xs text-muted-foreground py-2">
-                            {fmt(totalCost)}
+                            {formatCurrency(totalCost)}
                           </TableCell>
                           <TableCell className="text-right py-2">
                             <MarginBadge pct={totalMarginPct} eur={totalMarginEur} />
@@ -751,20 +735,20 @@ export default function QuoteDetail() {
             <div className="flex flex-col items-end gap-2 text-sm">
               <div className="flex items-center justify-between w-full max-w-sm">
                 <span className="text-muted-foreground">Total HT</span>
-                <span className="font-mono font-medium">{fmt(displayTotalHt)}</span>
+                <span className="font-mono font-medium">{formatCurrency(displayTotalHt)}</span>
               </div>
               {Object.entries(vatGroups)
                 .sort(([a], [b]) => Number(a) - Number(b))
                 .map(([rate, vatAmount]) => (
                   <div key={rate} className="flex items-center justify-between w-full max-w-sm">
                     <span className="text-muted-foreground">TVA {Number(rate).toLocaleString("fr-FR")}%</span>
-                    <span className="font-mono text-sm">{fmt(vatAmount)}</span>
+                    <span className="font-mono text-sm">{formatCurrency(vatAmount)}</span>
                   </div>
                 ))}
               <Separator className="my-1 max-w-sm w-full" />
               <div className="flex items-center justify-between w-full max-w-sm">
                 <span className="font-semibold text-base">Total TTC</span>
-                <span className="font-mono font-bold text-lg">{fmt(displayTotalTtc)}</span>
+                <span className="font-mono font-bold text-lg">{formatCurrency(displayTotalTtc)}</span>
               </div>
             </div>
           </Card>
@@ -872,7 +856,6 @@ export default function QuoteDetail() {
             <Card className="p-4 space-y-3">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">État du dossier</h3>
               <div className="space-y-2">
-                {/* Invoice status */}
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground flex items-center gap-1.5">
                     <Receipt className="h-3.5 w-3.5" />
@@ -902,7 +885,6 @@ export default function QuoteDetail() {
                     <span className="text-xs text-muted-foreground">Non créée</span>
                   )}
                 </div>
-                {/* Installation status */}
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground flex items-center gap-1.5">
                     <Wrench className="h-3.5 w-3.5" />
@@ -976,7 +958,7 @@ export default function QuoteDetail() {
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Total HT</span>
-                  <span className="font-mono font-medium">{fmt(displayTotalHt)}</span>
+                  <span className="font-mono font-medium">{formatCurrency(displayTotalHt)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Coût estimé</span>
@@ -1066,7 +1048,6 @@ function SignDialog({ open, onOpenChange, signing, onConfirm }: {
   );
 }
 
-/* ── Duplicate button (reusable) ── */
 function DuplicateButton({
   quoteId,
   canSend = true,
@@ -1162,7 +1143,6 @@ function DuplicateButton({
   );
 }
 
-/* ── Line row (réutilisable, avec ou sans section) ── */
 function LineRow({
   line,
   showCostCols,
@@ -1186,14 +1166,12 @@ function LineRow({
     );
   }
 
-  // Niveau 1 — titre client
   const title =
     line.customer_label ??
     line.display_label ??
     line.normalized_label_snapshot ??
     line.label;
 
-  // Niveau 2 — détails techniques (interne)
   const techParts: string[] = [];
   const supplierLine = [
     line.supplier_name_snapshot,
@@ -1208,7 +1186,6 @@ function LineRow({
     !!line.supplier_sku_snapshot ||
     !!line.supplier_ref_snapshot;
 
-  // Coût / marge ligne
   const costLine = (line.unit_cost_price ?? 0) * line.qty;
   const lineSale = line.qty * line.unit_price_ht;
   const marginEur = lineSale - costLine;
@@ -1240,17 +1217,17 @@ function LineRow({
       <TableCell className="text-right text-sm text-muted-foreground">
         {line.unit ? UNIT_LABELS[line.unit] ?? line.unit : "—"}
       </TableCell>
-      <TableCell className="text-right font-mono text-sm">{fmt(line.unit_price_ht)}</TableCell>
+      <TableCell className="text-right font-mono text-sm">{formatCurrency(line.unit_price_ht)}</TableCell>
       <TableCell className="text-right text-sm text-muted-foreground">
         {line.vat_rate.toLocaleString("fr-FR")}%
       </TableCell>
       <TableCell className="text-right font-mono text-sm font-semibold">
-        {fmt(line.qty * line.unit_price_ht)}
+        {formatCurrency(line.qty * line.unit_price_ht)}
       </TableCell>
       {showCostCols && (
         <>
           <TableCell className="text-right font-mono text-xs text-muted-foreground">
-            {(line.unit_cost_price ?? 0) > 0 ? fmt(costLine) : "—"}
+            {(line.unit_cost_price ?? 0) > 0 ? formatCurrency(costLine) : "—"}
           </TableCell>
           <TableCell className="text-right">
             {(line.unit_cost_price ?? 0) > 0 ? (
@@ -1265,7 +1242,6 @@ function LineRow({
   );
 }
 
-/* ── Margin badge (interne) ── */
 function MarginBadge({ pct, eur }: { pct: number; eur: number }) {
   const cls =
     pct >= 25
@@ -1275,12 +1251,10 @@ function MarginBadge({ pct, eur }: { pct: number; eur: number }) {
         : "text-destructive";
   return (
     <Badge variant="outline" className={`${cls} font-mono text-xs`}>
-      {pct.toFixed(0)}% · {fmt(eur)}
+      {pct.toFixed(0)}% · {formatCurrency(eur)}
     </Badge>
   );
 }
-
-/* ── Next Step Bloc ── */
 
 function NextStepBloc({ kind, status }: { kind: string; status: string }) {
   let message: string | null = null;
@@ -1304,8 +1278,6 @@ function NextStepBloc({ kind, status }: { kind: string; status: string }) {
     </Card>
   );
 }
-
-/* ── Actions bloc (right sidebar) ── */
 
 interface ActionsBlocProps {
   quote: NonNullable<ReturnType<typeof useQuoteDetail>["quote"]>;
@@ -1392,7 +1364,6 @@ function ActionsBloc({
       </Tooltip>
     );
 
-  /* CAS 6 — Service / SAV */
   if (kind === "service") {
     return (
       <div className="space-y-2">
@@ -1422,7 +1393,6 @@ function ActionsBloc({
     );
   }
 
-  /* CAS 1 — estimate + draft */
   if (kind === "estimate" && status === "draft") {
     return (
       <div className="space-y-2">
@@ -1440,7 +1410,6 @@ function ActionsBloc({
     );
   }
 
-  /* CAS 3 — final + draft */
   if (kind === "final" && status === "draft") {
     return (
       <div className="space-y-2">
@@ -1454,7 +1423,6 @@ function ActionsBloc({
     );
   }
 
-  /* CAS 2b — estimate + sent + expiré */
   if (kind === "estimate" && status === "sent" && expiry.isExpired) {
     return (
       <div className="space-y-2">
@@ -1479,7 +1447,6 @@ function ActionsBloc({
     );
   }
 
-  /* CAS 2 — estimate + sent + non expiré */
   if (kind === "estimate" && status === "sent") {
     return (
       <div className="space-y-2">
@@ -1503,7 +1470,6 @@ function ActionsBloc({
     );
   }
 
-  /* CAS 4b — final + sent + expiré */
   if (kind === "final" && status === "sent" && expiry.isExpired) {
     return (
       <div className="space-y-2">
@@ -1524,7 +1490,6 @@ function ActionsBloc({
     );
   }
 
-  /* CAS 4 — final + sent + non expiré */
   if (kind === "final" && status === "sent") {
     return (
       <div className="space-y-2">
@@ -1538,7 +1503,6 @@ function ActionsBloc({
     );
   }
 
-  /* CAS 5 — signed */
   if (status === "signed") {
     return (
       <div className="space-y-2">
@@ -1563,7 +1527,6 @@ function ActionsBloc({
     );
   }
 
-  /* CAS lost / canceled — neutral */
   return (
     <div className="space-y-2">
       <Badge variant="secondary" className="w-full justify-center py-1">
@@ -1579,10 +1542,6 @@ function ActionsBloc({
     </div>
   );
 }
-
-/* ══════════════════════════════════════════════════════
-   CREATE FINAL QUOTE FROM ESTIMATE
-   ══════════════════════════════════════════════════════ */
 
 function CreateFinalFromEstimateButton({ quoteId }: { quoteId: string }) {
   const navigate = useNavigate();
@@ -1627,10 +1586,6 @@ function CreateFinalFromEstimateButton({ quoteId }: { quoteId: string }) {
     </Button>
   );
 }
-
-/* ══════════════════════════════════════════════════════
-   MANUAL DEPOSIT INVOICE — fallback uniquement
-   ══════════════════════════════════════════════════════ */
 
 function ManualDepositButton(props: {
   quoteId: string;

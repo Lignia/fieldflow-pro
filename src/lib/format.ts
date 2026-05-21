@@ -9,3 +9,12 @@ export const getInitials = (name: string): string => {
   }
   return clean.slice(0, 2).toUpperCase();
 };
+
+export function formatCurrency(amount: number): string {
+  return (
+    amount.toLocaleString("fr-FR", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }) + " €"
+  );
+}

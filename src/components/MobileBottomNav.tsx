@@ -3,6 +3,8 @@ import {
   LayoutDashboard,
   Users,
   FolderKanban,
+  FileText,
+  Receipt,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -10,6 +12,8 @@ const tabs = [
   { icon: LayoutDashboard, label: "Accueil", path: "/dashboard" },
   { icon: Users, label: "Clients", path: "/clients" },
   { icon: FolderKanban, label: "Projets", path: "/projects" },
+  { icon: FileText, label: "Devis", path: "/quotes" },
+  { icon: Receipt, label: "Factures", path: "/invoices" },
   // TODO: activer quand module prêt
   // { icon: CalendarDays, label: "Planning", path: "/planning" },
   // TODO: activer quand module prêt

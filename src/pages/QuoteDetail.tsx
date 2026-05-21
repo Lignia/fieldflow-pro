@@ -451,7 +451,7 @@ export default function QuoteDetail() {
 
                 {/* TVA context (visible quand renseigné dans payload) */}
                 {(() => {
-                  const ctx = (quote.payload as any)?.tva_context;
+                  const ctx = (quote as any).tva_context;
                   if (!ctx) return null;
                   const label =
                     typeof ctx === "string"

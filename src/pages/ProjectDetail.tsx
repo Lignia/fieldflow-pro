@@ -605,6 +605,13 @@ export default function ProjectDetail() {
                   );
                 }
                 if (s === "estimate_sent" || s === "vt_planned" || s === "vt_done" || s === "tech_review_done") {
+                  if (hasFinalQuote && finalQuote) {
+                    return (
+                      <Button size="sm" variant="outline" onClick={() => navigate(`/quotes/${finalQuote.id}`)}>
+                        Ouvrir le devis final <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                      </Button>
+                    );
+                  }
                   return (
                     <Button size="sm" onClick={() => navigate(`/projects/${project.id}/quotes/new?kind=final`)}>
                       <Plus className="h-3.5 w-3.5 mr-1" /> Créer le devis final
@@ -628,6 +635,11 @@ export default function ProjectDetail() {
                       <span className="font-mono text-xs text-muted-foreground shrink-0">{q.quote_number}</span>
                       <StatusBadge status={q.quote_kind} type="quote_kind" size="sm" />
                       <StatusBadge status={q.quote_status} type="quote" size="sm" />
+                      {q.total_ttc === 0 && (
+                        <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30 text-[10px]">
+                          À compléter
+                        </Badge>
+                      )}
                       <span className="flex-1" />
                       <span className="font-mono text-sm font-semibold shrink-0">{formatCurrency(q.total_ttc)}</span>
                       <span className="text-xs text-muted-foreground shrink-0">{formatDateShort(q.quote_date)}</span>

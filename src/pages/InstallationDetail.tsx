@@ -27,6 +27,15 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { StatusBadge } from "@/components/StatusBadge";
 import { cn } from "@/lib/utils";
@@ -185,6 +194,14 @@ export default function InstallationDetail() {
   const [editingMemo, setEditingMemo] = useState(false);
   const [memoDraft, setMemoDraft] = useState("");
   const [savingMemo, setSavingMemo] = useState(false);
+  const [editingEquipment, setEditingEquipment] = useState(false);
+  const [savingEquipment, setSavingEquipment] = useState(false);
+  const [equipDraft, setEquipDraft] = useState({
+    device_type: "",
+    brand: "",
+    model: "",
+    serial_number: "",
+  });
 
   useEffect(() => {
     if (notFound) {
@@ -195,6 +212,17 @@ export default function InstallationDetail() {
 
   useEffect(() => {
     if (installation) setMemoDraft(installation.memo ?? "");
+  }, [installation]);
+
+  useEffect(() => {
+    if (installation) {
+      setEquipDraft({
+        device_type: installation.device_type ?? "",
+        brand: installation.brand ?? "",
+        model: installation.model ?? "",
+        serial_number: installation.serial_number ?? "",
+      });
+    }
   }, [installation]);
 
   const status = installation?.installation_status ?? installation?.status ?? null;
@@ -215,6 +243,29 @@ export default function InstallationDetail() {
     }
     toast.success("Mémo enregistré");
     setEditingMemo(false);
+    refetch();
+  }
+
+  async function handleSaveEquipment() {
+    if (!installation) return;
+    setSavingEquipment(true);
+    const { error: updErr } = await coreDb
+      .from("installations")
+      .update({
+        device_type: equipDraft.device_type.trim() || null,
+        brand: equipDraft.brand.trim() || null,
+        model: equipDraft.model.trim() || null,
+        serial_number: equipDraft.serial_number.trim() || null,
+      })
+      .eq("id", installation.id);
+    setSavingEquipment(false);
+
+    if (updErr) {
+      toast.error("Échec de la sauvegarde");
+      return;
+    }
+    toast.success("Équipement mis à jour");
+    setEditingEquipment(false);
     refetch();
   }
 

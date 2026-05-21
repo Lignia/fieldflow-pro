@@ -448,6 +448,24 @@ export default function QuoteDetail() {
                     Signé le {fmtDate(quote.signed_at)}
                   </p>
                 )}
+
+                {/* TVA context (visible quand renseigné dans payload) */}
+                {(() => {
+                  const ctx = (quote.payload as any)?.tva_context;
+                  if (!ctx) return null;
+                  const label =
+                    typeof ctx === "string"
+                      ? ctx
+                      : [ctx.label, ctx.rate != null ? `TVA ${ctx.rate}%` : null]
+                          .filter(Boolean)
+                          .join(" — ");
+                  if (!label) return null;
+                  return (
+                    <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-success/15 text-success">
+                      {label}
+                    </span>
+                  );
+                })()}
               </div>
 
               {/* Duplicate button (disabled placeholder) */}

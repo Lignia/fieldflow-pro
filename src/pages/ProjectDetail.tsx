@@ -748,10 +748,8 @@ export default function ProjectDetail() {
                       <span className="font-mono text-xs text-muted-foreground shrink-0">{q.quote_number}</span>
                       <StatusBadge status={q.quote_kind} type="quote_kind" size="sm" />
                       <StatusBadge status={q.quote_status} type="quote" size="sm" />
-                      {q.total_ttc === 0 && (
-                        <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30 text-[10px]">
-                          À compléter
-                        </Badge>
+                      {q.quote_status === "draft" && q.total_ttc === 0 && (
+                        <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Vide</Badge>
                       )}
                       <span className="flex-1" />
                       <span className="font-mono text-sm font-semibold shrink-0">{formatCurrency(q.total_ttc)}</span>

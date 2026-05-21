@@ -370,7 +370,13 @@ export default function InstallationDetail() {
 
       {/* SECTION 2 — Infos appareil */}
       <Card className="p-5">
-        <h2 className="text-sm font-semibold mb-4">Informations appareil</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-semibold">Informations appareil</h2>
+          <Button variant="ghost" size="sm" onClick={() => setEditingEquipment(true)}>
+            <Pencil className="h-3.5 w-3.5 mr-1.5" />
+            Modifier
+          </Button>
+        </div>
         <div className="grid gap-6 md:grid-cols-2">
           {/* Colonne gauche */}
           <div className="space-y-3 text-sm">

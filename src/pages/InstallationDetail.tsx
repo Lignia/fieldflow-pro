@@ -679,6 +679,74 @@ export default function InstallationDetail() {
           </ul>
         )}
       </Card>
+
+      {/* Edit equipment dialog */}
+      <Dialog open={editingEquipment} onOpenChange={setEditingEquipment}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Modifier l'équipement</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="ed-device" className="text-xs">Type d'appareil</Label>
+              <Input
+                id="ed-device"
+                value={equipDraft.device_type}
+                onChange={(e) =>
+                  setEquipDraft((d) => ({ ...d, device_type: e.target.value }))
+                }
+                placeholder="Ex: Poêle à granulés"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="ed-brand" className="text-xs">Marque</Label>
+              <Input
+                id="ed-brand"
+                value={equipDraft.brand}
+                onChange={(e) =>
+                  setEquipDraft((d) => ({ ...d, brand: e.target.value }))
+                }
+                placeholder="Ex: Jotul"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="ed-model" className="text-xs">Modèle</Label>
+              <Input
+                id="ed-model"
+                value={equipDraft.model}
+                onChange={(e) =>
+                  setEquipDraft((d) => ({ ...d, model: e.target.value }))
+                }
+                placeholder="Ex: PF 730"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="ed-serial" className="text-xs">Numéro de série</Label>
+              <Input
+                id="ed-serial"
+                value={equipDraft.serial_number}
+                onChange={(e) =>
+                  setEquipDraft((d) => ({ ...d, serial_number: e.target.value }))
+                }
+                className="font-mono"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => setEditingEquipment(false)}
+              disabled={savingEquipment}
+            >
+              Annuler
+            </Button>
+            <Button onClick={handleSaveEquipment} disabled={savingEquipment}>
+              <Save className="h-3.5 w-3.5 mr-1.5" />
+              {savingEquipment ? "Enregistrement…" : "Enregistrer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

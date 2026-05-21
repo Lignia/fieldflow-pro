@@ -110,6 +110,7 @@ export interface QuoteDetailData {
   service_request_id: string | null;
   installation_id: string | null;
   payload: Record<string, unknown> | null;
+  tva_context: Record<string, unknown> | string | null;
   customer: QuoteDetailCustomer;
   property: QuoteDetailProperty | null;
 }
@@ -216,6 +217,7 @@ export function useQuoteDetail(quoteId: string | undefined): UseQuoteDetailRetur
         service_request_id: q.service_request_id ?? null,
         installation_id: q.installation_id ?? null,
         payload: (q.payload as Record<string, unknown>) ?? null,
+        tva_context: (q.tva_context as any) ?? null,
         customer: {
           id: q.customer_id ?? "",
           name: q.customer_name ?? "Client inconnu",

@@ -303,7 +303,42 @@ interface Activity {
 }
 
 const ACTIVITY_LABELS: Record<string, (payload: any) => string> = {
-  wf_status_change: (p) => `Statut : ${p?.from ?? "?"} → ${p?.to ?? "?"}`,
+  project_created: (p) =>
+    p?.project_number ? `Projet ${p.project_number} créé` : "Projet créé",
+  quote_created: (p) => {
+    const num = p?.quote_number ?? "";
+    const kindLabel =
+      p?.quote_kind === "final"
+        ? "final"
+        : p?.quote_kind === "service"
+        ? "service"
+        : p?.quote_kind === "estimate"
+        ? "estimatif"
+        : p?.quote_kind ?? "";
+    return `Devis ${num}${kindLabel ? ` (${kindLabel})` : ""} créé`.trim();
+  },
+  wf_status_change: (p) => {
+    const STATUS_LABELS: Record<string, string> = {
+      lead_new: "Nouveau lead",
+      lead_qualified: "Lead qualifié",
+      vt_planned: "Visite technique planifiée",
+      vt_done: "Visite technique faite",
+      tech_review_done: "Relevé technique validé",
+      final_quote_sent: "Devis final envoyé",
+      signed: "Devis signé",
+      deposit_paid: "Acompte reçu",
+      install_scheduled: "Pose planifiée",
+      install_done: "Pose terminée",
+      closed: "Clôturé",
+      lost: "Perdu",
+      cancelled: "Annulé",
+      on_hold: "En attente",
+    };
+    const to = p?.to_status ?? p?.to;
+    const from = p?.from_status ?? p?.from;
+    if (to && STATUS_LABELS[to]) return STATUS_LABELS[to];
+    return `Statut : ${from ?? "?"} → ${to ?? "?"}`;
+  },
   wf_quote_sent: () => "Devis envoyé au client",
   payment_received: () => "Paiement reçu",
 };
@@ -390,18 +425,37 @@ export default function ProjectDetail() {
         }
         const { data, error: err } = await coreDb
           .from("activities")
-          .select(`id, activity_type, payload, occurred_at, actor:actor_user_id (full_name)`)
+          .select(`id, activity_type, payload, occurred_at, actor_user_id`)
           .or(scopeFilters.join(","))
           .order("occurred_at", { ascending: false })
           .limit(30);
         if (err) throw err;
+        const rows = data ?? [];
+        const actorIds = Array.from(
+          new Set(rows.map((r: any) => r.actor_user_id).filter(Boolean))
+        );
+        let actorMap: Record<string, string> = {};
+        if (actorIds.length > 0) {
+          const { data: users } = await coreDb
+            .from("users")
+            .select("id, full_name")
+            .in("id", actorIds);
+          actorMap = Object.fromEntries(
+            (users ?? []).map((u: any) => [u.id, u.full_name])
+          );
+        }
         setActivities(
-          (data ?? []).map((d: any) => ({
-            id: d.id, activity_type: d.activity_type, payload: d.payload,
-            occurred_at: d.occurred_at, actor_name: d.actor?.full_name ?? null,
+          rows.map((d: any) => ({
+            id: d.id,
+            activity_type: d.activity_type,
+            payload: d.payload,
+            occurred_at: d.occurred_at,
+            actor_name: d.actor_user_id ? actorMap[d.actor_user_id] ?? null : null,
           }))
         );
-      } catch { /* non-critical */ } finally { setActivitiesLoading(false); }
+      } catch (e) {
+        console.error("[ProjectDetail] activities fetch failed", e);
+      } finally { setActivitiesLoading(false); }
     }
     fetchActivities();
   }, [id, project?.quotes]);

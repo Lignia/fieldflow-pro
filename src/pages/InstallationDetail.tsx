@@ -373,9 +373,9 @@ export default function InstallationDetail() {
       <Card className="p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-semibold">Informations appareil</h2>
-          <Button variant="ghost" size="sm" onClick={() => setEditingEquipment(true)}>
+          <Button size="sm" onClick={() => setEditingEquipment(true)}>
             <Pencil className="h-3.5 w-3.5 mr-1.5" />
-            Modifier
+            Modifier l'équipement
           </Button>
         </div>
         <div className="grid gap-6 md:grid-cols-2">

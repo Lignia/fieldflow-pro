@@ -908,7 +908,7 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
           };
         }
         return {
-          title: "Étape suivante : planifier la visite technique",
+          title: "⏳ Attente retour client sur devis estimatif",
           actions: (
             <>
               <Button

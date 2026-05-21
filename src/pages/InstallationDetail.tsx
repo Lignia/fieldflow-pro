@@ -373,7 +373,11 @@ export default function InstallationDetail() {
       <Card className="p-5">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-sm font-semibold">Informations appareil</h2>
-          <Button size="sm" onClick={() => setEditingEquipment(true)}>
+          <Button
+            size="sm"
+            className="min-h-[44px] w-full md:w-auto px-4"
+            onClick={() => setEditingEquipment(true)}
+          >
             <Pencil className="h-3.5 w-3.5 mr-1.5" />
             Modifier l'équipement
           </Button>

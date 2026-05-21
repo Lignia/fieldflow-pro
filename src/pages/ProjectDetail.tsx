@@ -581,8 +581,16 @@ export default function ProjectDetail() {
   const hasFinalQuote = quotes.some((q) => q.quote_kind === "final");
   const finalQuote = quotes.find((q) => q.quote_kind === "final");
 
+  // Recommended action — single source of truth, also rendered in the mobile/tablet sticky bar.
+  const recommendedContent = getRecommendedActionContent({
+    project,
+    transitioning,
+    onTransition: transitionStatus,
+    onNavigate: navigate,
+  });
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 pb-28 lg:pb-0">
       {/* Header */}
       <div>
         <Button variant="ghost" size="sm" className="mb-3 -ml-2" onClick={handleBack}>

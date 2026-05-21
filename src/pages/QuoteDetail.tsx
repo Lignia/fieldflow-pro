@@ -1486,9 +1486,7 @@ function ActionsBloc({
           Devis estimatif — non signable
         </span>
         {project_id && (
-          <Button size="sm" className="w-full" onClick={() => navigate(`/projects/${project_id}/quotes/new?kind=final&from_quote_id=${quote.id}`)}>
-            Créer un devis final
-          </Button>
+          <CreateFinalFromEstimateButton quoteId={quote.id} />
         )}
         <p className="text-xs text-muted-foreground text-center">Le devis final permettra d'engager le client</p>
         <Button variant="outline" size="sm" className="w-full" onClick={onEdit}>

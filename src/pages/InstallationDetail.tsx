@@ -347,6 +347,9 @@ export default function InstallationDetail() {
               )}
               <div className="flex flex-wrap items-center gap-2 mt-3">
                 {status && <StatusBadge status={status} type="installation" />}
+                {(!installation.device_type || installation.device_type.trim() === "" || installation.device_type === "À compléter") && (
+                  <Badge variant="warning" className="text-xs">À compléter</Badge>
+                )}
                 {installation.installed_by_self === false && (
                   <Badge variant="warning" className="text-xs">
                     Repris

@@ -1027,12 +1027,7 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
             title: "Qualification solide — devis final possible",
             actions: (
               <>
-                <Button
-                  size="sm"
-                  onClick={() => onNavigate(`/projects/${project.id}/quotes/new?kind=final`)}
-                >
-                  <Plus className="h-3.5 w-3.5 mr-1" /> Créer le devis final
-                </Button>
+                {finalQuoteButton}
                 <Button
                   size="sm"
                   variant="outline"
@@ -1112,14 +1107,7 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
       case "tech_review_done":
         return {
           title: "Étape suivante : créer le devis final",
-          actions: (
-            <Button
-              size="sm"
-              onClick={() => onNavigate(`/projects/${project.id}/quotes/new?kind=final`)}
-            >
-              <Plus className="h-3.5 w-3.5 mr-1" /> Créer le devis final
-            </Button>
-          ),
+          actions: finalQuoteButton,
         };
 
       case "final_quote_sent":

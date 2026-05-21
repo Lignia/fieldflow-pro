@@ -19,6 +19,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { PageContainer } from "@/components/PageContainer";
 
 interface InvoiceData {
   id: string;
@@ -136,17 +137,17 @@ export default function InvoiceDetail() {
 
   if (loading) {
     return (
-      <div className="max-w-5xl mx-auto p-6 space-y-4">
+      <PageContainer>
         <Skeleton className="h-8 w-40" />
         <Skeleton className="h-32 w-full" />
         <Skeleton className="h-64 w-full" />
-      </div>
+      </PageContainer>
     );
   }
 
   if (error || !invoice) {
     return (
-      <div className="max-w-3xl mx-auto p-6">
+      <PageContainer>
         <Button
           variant="ghost"
           size="sm"
@@ -159,7 +160,7 @@ export default function InvoiceDetail() {
         <Card className="p-8 text-center text-sm text-muted-foreground">
           {error ?? "Facture introuvable"}
         </Card>
-      </div>
+      </PageContainer>
     );
   }
 
@@ -171,7 +172,7 @@ export default function InvoiceDetail() {
     .join(", ");
 
   return (
-    <div className="max-w-5xl mx-auto p-4 md:p-6 space-y-5">
+    <PageContainer>
       <Button
         variant="ghost"
         size="sm"
@@ -339,6 +340,6 @@ export default function InvoiceDetail() {
           </div>
         </div>
       </Card>
-    </div>
+    </PageContainer>
   );
 }

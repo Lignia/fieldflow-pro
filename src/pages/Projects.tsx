@@ -31,6 +31,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { PageContainer } from "@/components/PageContainer";
 
 type ViewMode = "kanban" | "list";
 
@@ -177,7 +178,7 @@ export default function Projects() {
   }
 
   return (
-    <div className="space-y-5">
+    <PageContainer>
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
@@ -290,6 +291,6 @@ export default function Projects() {
       ) : (
         <ListView projects={projects} navigate={navigate} />
       )}
-    </div>
+    </PageContainer>
   );
 }

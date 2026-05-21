@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { PageContainer } from "@/components/PageContainer";
 
 type StatusFilter = "all" | "prospect" | "active" | "archived";
 
@@ -41,7 +42,7 @@ export default function Clients() {
   }, [customers, statusFilter]);
 
   return (
-    <div className="space-y-5">
+    <PageContainer>
       {/* Header */}
       <div className="flex items-start justify-between gap-4">
         <div>
@@ -192,6 +193,6 @@ export default function Clients() {
           </Table>
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }

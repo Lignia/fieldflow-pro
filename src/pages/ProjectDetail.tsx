@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, type ReactNode } from "react";
 import { useParams, useNavigate, useSearchParams, useLocation } from "react-router-dom";
 import { format, formatDistanceToNow } from "date-fns";
 import { fr } from "date-fns/locale";

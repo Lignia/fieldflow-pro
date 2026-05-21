@@ -422,6 +422,7 @@ export default function ProjectDetail() {
           project_id: project.id,
           tenant_id: tenantId,
           surveyed_by: coreUser.id,
+          flue_scenario: 'non_defini',
         })
         .select("id")
         .single();

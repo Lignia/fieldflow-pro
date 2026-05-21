@@ -982,7 +982,7 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
 
       case "final_quote_sent":
         return {
-          title: "En attente de signature client",
+          title: "⏳ Devis final envoyé — attente signature",
           actions: hasSignedFinalQuote ? (
             <Button
               size="sm"

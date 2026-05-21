@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Save, CheckCircle2 } from "lucide-react";
+import { ArrowLeft, Save, CheckCircle2, Wrench } from "lucide-react";
 import { toast } from "sonner";
 import { coreDb } from "@/integrations/supabase/schema-clients";
 import { Card } from "@/components/ui/card";
@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 const FIELDS: { key: string; label: string; type: "text" | "number" }[] = [
   // Section 1
@@ -53,7 +53,8 @@ export default function TechnicalSurveyDetail() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [finalizing, setFinalizing] = useState(false);
+  const [validating, setValidating] = useState(false);
+  const [creatingInstall, setCreatingInstall] = useState(false);
   const [survey, setSurvey] = useState<any>(null);
   const [form, setForm] = useState<Record<string, any>>({});
   const [notes, setNotes] = useState("");
@@ -117,25 +118,50 @@ export default function TechnicalSurveyDetail() {
     }
   }
 
-  async function handleFinalize() {
-    if (!id || !survey?.project_id) return;
-    setFinalizing(true);
+  async function handleValidate() {
+    if (!id) return;
+    setValidating(true);
     try {
-      // Save first to persist any current edits
       const { error: upErr } = await coreDb.from("technical_surveys").update(buildPayload()).eq("id", id);
       if (upErr) throw upErr;
+      const { error } = await coreDb
+        .from("technical_surveys")
+        .update({ survey_status: "validated" })
+        .eq("id", id);
+      if (error) throw error;
+      toast.success("Relevé validé");
+      window.location.reload();
+    } catch (e: any) {
+      toast.error(e?.message ?? "Échec de la validation");
+    } finally {
+      setValidating(false);
+    }
+  }
 
-      const { error } = await coreDb.rpc("finalize_installation_from_survey", {
+  async function handleCreateInstallation() {
+    if (!id || !survey?.project_id) return;
+    setCreatingInstall(true);
+    try {
+      const { data, error } = await coreDb.rpc("finalize_installation_from_survey", {
         p_survey_id: id,
         p_project_id: survey.project_id,
       });
       if (error) throw error;
-      toast.success("Installation finalisée depuis le relevé");
-      navigate(`/projects/${survey.project_id}`);
+      const installationId =
+        typeof data === "string"
+          ? data
+          : (data as any)?.installation_id ?? (data as any)?.id ?? (Array.isArray(data) ? (data[0] as any)?.id : null);
+      if (installationId) {
+        toast.success("Installation créée");
+        navigate(`/installations/${installationId}`);
+      } else {
+        toast.success("Installation créée");
+        navigate(`/projects/${survey.project_id}`);
+      }
     } catch (e: any) {
-      toast.error(e?.message ?? "Échec de la finalisation");
+      toast.error(e?.message ?? "Échec de la création de l'installation");
     } finally {
-      setFinalizing(false);
+      setCreatingInstall(false);
     }
   }
 
@@ -152,6 +178,18 @@ export default function TechnicalSurveyDetail() {
     return <div className="p-6">Relevé introuvable.</div>;
   }
 
+  const status: string = survey.survey_status ?? "draft";
+  const isDraft = status === "draft";
+  const isValidated = status === "validated";
+  const readOnly = !isDraft;
+
+  const statusBadge =
+    status === "validated"
+      ? { label: "Validé", cls: "bg-accent/15 text-accent" }
+      : status === "superseded"
+        ? { label: "Remplacé", cls: "bg-muted text-muted-foreground" }
+        : { label: "En cours", cls: "bg-warning/15 text-warning" };
+
   return (
     <div className="p-4 sm:p-6 max-w-4xl mx-auto space-y-4">
       <div className="flex items-center gap-2">
@@ -159,7 +197,14 @@ export default function TechnicalSurveyDetail() {
           <ArrowLeft className="h-4 w-4 mr-1" /> Retour
         </Button>
         <h1 className="text-xl font-semibold">Relevé technique</h1>
-        <Badge variant="secondary" className="ml-2">{survey.survey_status}</Badge>
+        <span
+          className={cn(
+            "ml-2 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+            statusBadge.cls,
+          )}
+        >
+          {statusBadge.label}
+        </span>
       </div>
 
       {SECTIONS.map((section) => (
@@ -176,6 +221,8 @@ export default function TechnicalSurveyDetail() {
                     type={f.type === "number" ? "number" : "text"}
                     value={form[k] ?? ""}
                     onChange={(e) => setField(k, e.target.value)}
+                    readOnly={readOnly}
+                    disabled={readOnly}
                   />
                 </div>
               );
@@ -188,7 +235,14 @@ export default function TechnicalSurveyDetail() {
         <h2 className="text-sm font-semibold">4. Notes & croquis</h2>
         <div className="space-y-1">
           <Label htmlFor="notes" className="text-xs">Notes libres</Label>
-          <Textarea id="notes" rows={4} value={notes} onChange={(e) => setNotes(e.target.value)} />
+          <Textarea
+            id="notes"
+            rows={4}
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            readOnly={readOnly}
+            disabled={readOnly}
+          />
         </div>
         <div className="space-y-1">
           <Label htmlFor="croquis" className="text-xs">Chemin croquis (placeholder)</Label>
@@ -197,17 +251,28 @@ export default function TechnicalSurveyDetail() {
             placeholder="storage path"
             value={croquisPath}
             onChange={(e) => setCroquisPath(e.target.value)}
+            readOnly={readOnly}
+            disabled={readOnly}
           />
         </div>
       </Card>
 
       <div className="flex gap-2 justify-end">
-        <Button variant="outline" onClick={handleSave} disabled={saving}>
-          <Save className="h-4 w-4 mr-1" /> {saving ? "Enregistrement..." : "Enregistrer"}
-        </Button>
-        <Button onClick={handleFinalize} disabled={finalizing || !survey.project_id}>
-          <CheckCircle2 className="h-4 w-4 mr-1" /> {finalizing ? "Finalisation..." : "Finaliser"}
-        </Button>
+        {isDraft && (
+          <>
+            <Button variant="outline" onClick={handleSave} disabled={saving}>
+              <Save className="h-4 w-4 mr-1" /> {saving ? "Enregistrement..." : "Enregistrer"}
+            </Button>
+            <Button onClick={handleValidate} disabled={validating}>
+              <CheckCircle2 className="h-4 w-4 mr-1" /> {validating ? "Validation..." : "Valider le relevé"}
+            </Button>
+          </>
+        )}
+        {isValidated && (
+          <Button onClick={handleCreateInstallation} disabled={creatingInstall || !survey.project_id}>
+            <Wrench className="h-4 w-4 mr-1" /> {creatingInstall ? "Création..." : "Créer l'installation"}
+          </Button>
+        )}
       </div>
     </div>
   );

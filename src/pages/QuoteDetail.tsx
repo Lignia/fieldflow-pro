@@ -884,6 +884,19 @@ export default function QuoteDetail() {
                     >
                       Créée ✔ <ExternalLink className="h-3 w-3" />
                     </button>
+                  ) : quote.quote_status === "signed" &&
+                    quote.customer?.id &&
+                    quote.property?.id ? (
+                    <ManualDepositButton
+                      quoteId={quote.id}
+                      tenantId={quote.tenant_id}
+                      customerId={quote.customer.id}
+                      propertyId={quote.property.id}
+                      projectId={quote.project_id}
+                      totalHt={displayTotalHt}
+                      totalTtc={displayTotalTtc}
+                      onCreated={refetch}
+                    />
                   ) : (
                     <span className="text-xs text-muted-foreground">Non créée</span>
                   )}

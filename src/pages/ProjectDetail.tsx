@@ -585,6 +585,28 @@ export default function ProjectDetail() {
               <p className="text-sm text-muted-foreground">{property.postal_code} {property.city}</p>
             </Card>
           </div>
+
+          {/* Relevé technique — section dédiée hors onglet Interventions */}
+          <Card className="p-5">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-2">
+                <ClipboardList className="h-4 w-4 text-muted-foreground" />
+                <h2 className="text-sm font-semibold">Relevé technique</h2>
+              </div>
+              {technicalSurvey ? (
+                <Button size="sm" variant="outline" onClick={() => navigate(`/technical-surveys/${technicalSurvey.id}`)}>
+                  Ouvrir le relevé <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                </Button>
+              ) : (
+                <Button size="sm" onClick={handleCreateSurvey} disabled={creatingSurvey}>
+                  <Plus className="h-3.5 w-3.5 mr-1" /> {creatingSurvey ? "Création..." : "Créer un relevé"}
+                </Button>
+              )}
+            </div>
+            {!technicalSurvey && (
+              <p className="text-xs text-muted-foreground mt-2">Aucun relevé technique enregistré pour ce projet.</p>
+            )}
+          </Card>
         </TabsContent>
 
         {/* ── Devis & Factures ── */}
@@ -726,30 +748,6 @@ export default function ProjectDetail() {
             </div>
             <Card className="p-6 text-center">
               <p className="text-sm text-muted-foreground">Aucune intervention liée à ce projet</p>
-            </Card>
-          </div>
-
-          <div className="space-y-3">
-            <h2 className="text-base font-semibold flex items-center gap-2">
-              <ClipboardList className="h-4 w-4 text-muted-foreground" />
-              Relevé technique
-            </h2>
-            <Card className="p-6 text-center space-y-3">
-              {technicalSurvey ? (
-                <>
-                  <p className="text-sm text-muted-foreground">Un relevé technique est lié à ce projet</p>
-                  <Button size="sm" onClick={() => navigate(`/technical-surveys/${technicalSurvey.id}`)}>
-                    Ouvrir le relevé
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <p className="text-sm text-muted-foreground">Aucun relevé technique enregistré</p>
-                  <Button size="sm" onClick={handleCreateSurvey} disabled={creatingSurvey}>
-                    <Plus className="h-3.5 w-3.5 mr-1" /> {creatingSurvey ? "Création..." : "Créer un relevé"}
-                  </Button>
-                </>
-              )}
             </Card>
           </div>
         </TabsContent>

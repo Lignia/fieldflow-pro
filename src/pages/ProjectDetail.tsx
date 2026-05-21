@@ -858,7 +858,7 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
           };
         }
         return {
-          title: "Étape suivante : créer le devis estimatif",
+          title: "📋 Faire le devis estimatif",
           actions: (
             <Button
               size="sm"

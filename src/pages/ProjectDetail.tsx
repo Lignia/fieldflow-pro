@@ -38,36 +38,42 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const DEV_BYPASS = import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
 
-// ─── Pipeline (4 phases) ────────────────────────────────────────────────────
+// ─── Pipeline (5 macro-étapes) ──────────────────────────────────────────────
 
-type Phase = "commercial" | "terrain" | "signature" | "livraison";
-
-const PIPELINE_STEPS: { status: ProjectStatus; label: string; phase: Phase }[] = [
-  { status: "lead_new", label: "Lead entrant", phase: "commercial" },
-  { status: "lead_qualified", label: "Lead qualifié", phase: "commercial" },
-  { status: "estimate_sent", label: "Estimatif envoyé", phase: "commercial" },
-  { status: "vt_planned", label: "Visite technique planifiée", phase: "terrain" },
-  { status: "vt_done", label: "Visite technique réalisée", phase: "terrain" },
-  { status: "tech_review_done", label: "Étude technique validée", phase: "terrain" },
-  { status: "final_quote_sent", label: "Devis final envoyé", phase: "signature" },
-  { status: "signed", label: "Devis signé", phase: "signature" },
-  { status: "deposit_paid", label: "Acompte reçu", phase: "signature" },
-  { status: "supplier_ordered", label: "Commande fournisseur", phase: "livraison" },
-  { status: "material_received", label: "Matériel reçu", phase: "livraison" },
-  { status: "installation_scheduled", label: "Pose planifiée", phase: "livraison" },
-  { status: "mes_done", label: "Mise en service faite", phase: "livraison" },
-  { status: "closed", label: "Dossier clôturé", phase: "livraison" },
-];
+type Phase = "qualification" | "vt" | "devis" | "chantier" | "sav";
 
 const PHASES: { key: Phase; label: string }[] = [
-  { key: "commercial", label: "Commercial" },
-  { key: "terrain", label: "Terrain" },
-  { key: "signature", label: "Signature" },
-  { key: "livraison", label: "Livraison" },
+  { key: "qualification", label: "Qualification" },
+  { key: "vt", label: "Visite technique" },
+  { key: "devis", label: "Devis" },
+  { key: "chantier", label: "Chantier" },
+  { key: "sav", label: "SAV" },
 ];
 
-function getStepIndex(status: ProjectStatus): number {
-  return PIPELINE_STEPS.findIndex((s) => s.status === status);
+function statusToPhase(status: ProjectStatus): Phase | null {
+  switch (status) {
+    case "lead_new":
+    case "lead_qualified":
+      return "qualification";
+    case "vt_planned":
+    case "vt_done":
+    case "tech_review_done":
+      return "vt";
+    case "estimate_sent":
+    case "final_quote_sent":
+    case "signed":
+      return "devis";
+    case "deposit_paid":
+    case "supplier_ordered":
+    case "material_received":
+    case "installation_scheduled":
+    case "mes_done":
+      return "chantier";
+    case "closed":
+      return "sav";
+    default:
+      return null;
+  }
 }
 
 function PipelineProgress({ status }: { status: ProjectStatus }) {
@@ -80,11 +86,9 @@ function PipelineProgress({ status }: { status: ProjectStatus }) {
     );
   }
 
-  const currentIdx = getStepIndex(status);
-  const current = PIPELINE_STEPS[currentIdx];
-  const currentPhase = current?.phase;
-  const phaseOrder = PHASES.map((p) => p.key);
-  const currentPhaseIdx = phaseOrder.indexOf(currentPhase);
+  const currentPhase = statusToPhase(status);
+  const currentPhaseIdx = currentPhase ? PHASES.findIndex((p) => p.key === currentPhase) : -1;
+  const currentLabel = PHASES[currentPhaseIdx]?.label ?? status;
 
   return (
     <div className="space-y-3">
@@ -125,9 +129,9 @@ function PipelineProgress({ status }: { status: ProjectStatus }) {
         })}
       </div>
       <p className="text-xs text-muted-foreground text-center">
-        <span className="font-mono">Étape {currentIdx + 1}/14</span>
+        <span className="font-mono">Étape {Math.max(currentPhaseIdx + 1, 1)}/5</span>
         <span className="mx-1.5">·</span>
-        <span className="font-medium text-foreground">{current?.label ?? status}</span>
+        <span className="font-medium text-foreground">{currentLabel}</span>
       </p>
     </div>
   );
@@ -376,13 +380,20 @@ export default function ProjectDetail() {
     async function fetchActivities() {
       setActivitiesLoading(true);
       try {
+        // Charger les activités liées au projet ET à ses devis
+        const quoteIds = (project?.quotes ?? []).map((q) => q.id);
+        const scopeFilters: string[] = [
+          `and(scope_type.eq.project,scope_id.eq.${id})`,
+        ];
+        if (quoteIds.length > 0) {
+          scopeFilters.push(`and(scope_type.eq.quote,scope_id.in.(${quoteIds.join(",")}))`);
+        }
         const { data, error: err } = await coreDb
           .from("activities")
           .select(`id, activity_type, payload, occurred_at, actor:actor_user_id (full_name)`)
-          .eq("scope_type", "project")
-          .eq("scope_id", id)
+          .or(scopeFilters.join(","))
           .order("occurred_at", { ascending: false })
-          .limit(10);
+          .limit(30);
         if (err) throw err;
         setActivities(
           (data ?? []).map((d: any) => ({
@@ -393,7 +404,7 @@ export default function ProjectDetail() {
       } catch { /* non-critical */ } finally { setActivitiesLoading(false); }
     }
     fetchActivities();
-  }, [id]);
+  }, [id, project?.quotes]);
 
   useEffect(() => {
     if (!id) { setTechnicalSurvey(null); return; }
@@ -465,6 +476,28 @@ export default function ProjectDetail() {
 
   const { customer, property, quotes, invoices, payload } = project;
 
+  // Devis le plus avancé : signed > final_quote_sent > estimate_sent > autres
+  const quoteRank = (q: { quote_kind: string; quote_status: string }) => {
+    if (q.quote_status === "signed") return 100;
+    if (q.quote_kind === "final" && q.quote_status === "sent") return 80;
+    if (q.quote_kind === "estimate" && q.quote_status === "sent") return 60;
+    if (q.quote_kind === "final") return 40;
+    if (q.quote_kind === "estimate") return 20;
+    return 0;
+  };
+  const leadingQuote = [...quotes].sort((a, b) => quoteRank(b) - quoteRank(a))[0];
+  const headerSubject =
+    leadingQuote?.subject?.trim() ||
+    (typeof payload?.description === "string" ? payload.description : null);
+  const headerBits = [
+    headerSubject,
+    property.city || null,
+    leadingQuote ? formatCurrency(leadingQuote.total_ttc) : null,
+  ].filter(Boolean) as string[];
+
+  const hasFinalQuote = quotes.some((q) => q.quote_kind === "final");
+  const finalQuote = quotes.find((q) => q.quote_kind === "final");
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -481,6 +514,11 @@ export default function ProjectDetail() {
             <p className="text-sm text-muted-foreground mt-1">
               {customer.name} · {ORIGIN_LABELS[project.origin] ?? project.origin} · Créé le {formatDateShort(project.created_at)}
             </p>
+            {headerBits.length > 0 && (
+              <p className="text-sm text-foreground/80 mt-1 font-medium">
+                {headerBits.join(" · ")}
+              </p>
+            )}
           </div>
           <div className="flex items-center gap-2">
             {error && (
@@ -547,6 +585,28 @@ export default function ProjectDetail() {
               <p className="text-sm text-muted-foreground">{property.postal_code} {property.city}</p>
             </Card>
           </div>
+
+          {/* Relevé technique — section dédiée hors onglet Interventions */}
+          <Card className="p-5">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="flex items-center gap-2">
+                <ClipboardList className="h-4 w-4 text-muted-foreground" />
+                <h2 className="text-sm font-semibold">Relevé technique</h2>
+              </div>
+              {technicalSurvey ? (
+                <Button size="sm" variant="outline" onClick={() => navigate(`/technical-surveys/${technicalSurvey.id}`)}>
+                  Ouvrir le relevé <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                </Button>
+              ) : (
+                <Button size="sm" onClick={handleCreateSurvey} disabled={creatingSurvey}>
+                  <Plus className="h-3.5 w-3.5 mr-1" /> {creatingSurvey ? "Création..." : "Créer un relevé"}
+                </Button>
+              )}
+            </div>
+            {!technicalSurvey && (
+              <p className="text-xs text-muted-foreground mt-2">Aucun relevé technique enregistré pour ce projet.</p>
+            )}
+          </Card>
         </TabsContent>
 
         {/* ── Devis & Factures ── */}
@@ -567,6 +627,13 @@ export default function ProjectDetail() {
                   );
                 }
                 if (s === "estimate_sent" || s === "vt_planned" || s === "vt_done" || s === "tech_review_done") {
+                  if (hasFinalQuote && finalQuote) {
+                    return (
+                      <Button size="sm" variant="outline" onClick={() => navigate(`/quotes/${finalQuote.id}`)}>
+                        Ouvrir le devis final <ArrowRight className="h-3.5 w-3.5 ml-1" />
+                      </Button>
+                    );
+                  }
                   return (
                     <Button size="sm" onClick={() => navigate(`/projects/${project.id}/quotes/new?kind=final`)}>
                       <Plus className="h-3.5 w-3.5 mr-1" /> Créer le devis final
@@ -590,6 +657,11 @@ export default function ProjectDetail() {
                       <span className="font-mono text-xs text-muted-foreground shrink-0">{q.quote_number}</span>
                       <StatusBadge status={q.quote_kind} type="quote_kind" size="sm" />
                       <StatusBadge status={q.quote_status} type="quote" size="sm" />
+                      {q.total_ttc === 0 && (
+                        <Badge variant="outline" className="bg-warning/10 text-warning border-warning/30 text-[10px]">
+                          À compléter
+                        </Badge>
+                      )}
                       <span className="flex-1" />
                       <span className="font-mono text-sm font-semibold shrink-0">{formatCurrency(q.total_ttc)}</span>
                       <span className="text-xs text-muted-foreground shrink-0">{formatDateShort(q.quote_date)}</span>
@@ -676,30 +748,6 @@ export default function ProjectDetail() {
             </div>
             <Card className="p-6 text-center">
               <p className="text-sm text-muted-foreground">Aucune intervention liée à ce projet</p>
-            </Card>
-          </div>
-
-          <div className="space-y-3">
-            <h2 className="text-base font-semibold flex items-center gap-2">
-              <ClipboardList className="h-4 w-4 text-muted-foreground" />
-              Relevé technique
-            </h2>
-            <Card className="p-6 text-center space-y-3">
-              {technicalSurvey ? (
-                <>
-                  <p className="text-sm text-muted-foreground">Un relevé technique est lié à ce projet</p>
-                  <Button size="sm" onClick={() => navigate(`/technical-surveys/${technicalSurvey.id}`)}>
-                    Ouvrir le relevé
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <p className="text-sm text-muted-foreground">Aucun relevé technique enregistré</p>
-                  <Button size="sm" onClick={handleCreateSurvey} disabled={creatingSurvey}>
-                    <Plus className="h-3.5 w-3.5 mr-1" /> {creatingSurvey ? "Création..." : "Créer un relevé"}
-                  </Button>
-                </>
-              )}
             </Card>
           </div>
         </TabsContent>
@@ -810,7 +858,7 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
           };
         }
         return {
-          title: "Étape suivante : créer le devis estimatif",
+          title: "📋 Faire le devis estimatif",
           actions: (
             <Button
               size="sm"
@@ -860,7 +908,7 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
           };
         }
         return {
-          title: "Étape suivante : planifier la visite technique",
+          title: "⏳ Attente retour client sur devis estimatif",
           actions: (
             <>
               <Button
@@ -884,7 +932,7 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
 
       case "vt_planned":
         return {
-          title: "Visite technique planifiée",
+          title: "📅 Visite technique planifiée — à marquer réalisée",
           actions: (
             <Button
               size="sm"
@@ -934,7 +982,7 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
 
       case "final_quote_sent":
         return {
-          title: "En attente de signature client",
+          title: "⏳ Devis final envoyé — attente signature",
           actions: hasSignedFinalQuote ? (
             <Button
               size="sm"
@@ -954,8 +1002,25 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
         };
 
       case "signed":
+      {
+        const depositPaid = invoices.some(
+          (i) => i.invoice_kind === "deposit" && (i.invoice_status === "paid" || i.invoice_status === "settled"),
+        );
+        if (!depositPaid) {
+          return {
+            title: "🔴 Acompte non reçu — commande fournisseur impossible",
+            actions: firstDepositInvoice ? (
+              <Button size="sm" variant="outline" onClick={() => onNavigate(`/invoices/${firstDepositInvoice.id}`)}>
+                <Receipt className="h-3.5 w-3.5 mr-1" /> Voir la facture acompte
+              </Button>
+            ) : (
+              <Button size="sm" disabled>En attente facture acompte</Button>
+            ),
+            note: "Marquez l'acompte reçu une fois le paiement encaissé.",
+          };
+        }
         return {
-          title: "Devis signé ✓",
+          title: "Devis signé ✓ — Acompte reçu",
           actions: hasDepositInvoice ? (
             <>
               <span className="inline-flex items-center gap-1 text-xs text-success">
@@ -980,6 +1045,7 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
             </Button>
           ),
         };
+      }
 
       case "deposit_paid":
         return {
@@ -1082,7 +1148,7 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="space-y-1 flex-1 min-w-0">
           <p className="text-xs uppercase tracking-wider text-accent font-bold">
-            Action recommandée
+            Prochaine action
           </p>
           <h2 className="text-base font-semibold">{content.title}</h2>
           {content.note && (

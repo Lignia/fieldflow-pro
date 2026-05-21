@@ -1486,9 +1486,7 @@ function ActionsBloc({
           Devis estimatif — non signable
         </span>
         {project_id && (
-          <Button size="sm" className="w-full" onClick={() => navigate(`/projects/${project_id}/quotes/new?kind=final&from_quote_id=${quote.id}`)}>
-            Créer un devis final
-          </Button>
+          <CreateFinalFromEstimateButton quoteId={quote.id} />
         )}
         <p className="text-xs text-muted-foreground text-center">Le devis final permettra d'engager le client</p>
         <Button variant="outline" size="sm" className="w-full" onClick={onEdit}>
@@ -1578,6 +1576,54 @@ function ActionsBloc({
       )}
       <DuplicateButton quoteId={quote.id} canSend={canSend} />
     </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════
+   CREATE FINAL QUOTE FROM ESTIMATE
+   ══════════════════════════════════════════════════════ */
+
+function CreateFinalFromEstimateButton({ quoteId }: { quoteId: string }) {
+  const navigate = useNavigate();
+  const { coreUser, tenantId } = useCurrentUser();
+  const [loading, setLoading] = useState(false);
+  const ready = !!coreUser?.id && !!tenantId;
+
+  async function handleClick() {
+    if (!ready) return;
+    setLoading(true);
+    try {
+      const { data, error } = await billingDb.rpc("duplicate_quote", {
+        p_quote_id: quoteId,
+        p_tenant_id: tenantId,
+        p_actor_id: coreUser!.id,
+      });
+      if (error) throw error;
+      const newId =
+        typeof data === "string"
+          ? data
+          : (data as any)?.quote_id ?? (data as any)?.id;
+      if (!newId) throw new Error("ID du nouveau devis introuvable");
+
+      const { error: updErr } = await billingDb
+        .from("quotes")
+        .update({ quote_kind: "final" })
+        .eq("id", newId);
+      if (updErr) throw updErr;
+
+      toast.success("Devis final créé");
+      navigate(`/quotes/${newId}`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Échec de la création du devis final");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <Button size="sm" className="w-full" disabled={!ready || loading} onClick={handleClick}>
+      {loading ? "Création..." : "Créer le devis final"}
+    </Button>
   );
 }
 

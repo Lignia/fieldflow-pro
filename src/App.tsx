@@ -22,6 +22,7 @@ import QuoteEditor from "./pages/quotes/QuoteEditor";
 import QuoteDetail from "./pages/QuoteDetail";
 import Invoices from "./pages/Invoices";
 import InvoiceDetail from "./pages/InvoiceDetail";
+import TechnicalSurveyDetail from "./pages/TechnicalSurveyDetail";
 import ServiceRequests from "./pages/ServiceRequests";
 import Catalog from "./pages/Catalog";
 import CatalogImport from "./pages/catalog/CatalogImport";
@@ -87,7 +88,7 @@ const App = () => (
 
               {/* Technical surveys */}
               <Route path="/technical-surveys/new" element={<PlaceholderPage title="Nouveau relevé technique" backTo="/projects" backLabel="Projets" />} />
-              <Route path="/technical-surveys/:id" element={<PlaceholderPage title="Relevé technique" backTo="/projects" backLabel="Projets" />} />
+              <Route path="/technical-surveys/:id" element={<TechnicalSurveyDetail />} />
 
               {/* Quotes */}
               <Route path="/quotes" element={<Quotes />} />

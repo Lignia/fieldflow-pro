@@ -1622,7 +1622,7 @@ function CreateFinalFromEstimateButton({ quoteId }: { quoteId: string }) {
   }
 
   return (
-    <Button size="sm" className="w-full" disabled={!ready || loading} onClick={handleClick}>
+    <Button size="sm" className="w-full min-h-[44px]" disabled={!ready || loading} onClick={handleClick}>
       {loading ? "Création..." : "Créer le devis final"}
     </Button>
   );

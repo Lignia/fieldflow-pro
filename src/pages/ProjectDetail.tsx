@@ -476,6 +476,28 @@ export default function ProjectDetail() {
 
   const { customer, property, quotes, invoices, payload } = project;
 
+  // Devis le plus avancé : signed > final_quote_sent > estimate_sent > autres
+  const quoteRank = (q: { quote_kind: string; quote_status: string }) => {
+    if (q.quote_status === "signed") return 100;
+    if (q.quote_kind === "final" && q.quote_status === "sent") return 80;
+    if (q.quote_kind === "estimate" && q.quote_status === "sent") return 60;
+    if (q.quote_kind === "final") return 40;
+    if (q.quote_kind === "estimate") return 20;
+    return 0;
+  };
+  const leadingQuote = [...quotes].sort((a, b) => quoteRank(b) - quoteRank(a))[0];
+  const headerSubject =
+    leadingQuote?.subject?.trim() ||
+    (typeof payload?.description === "string" ? payload.description : null);
+  const headerBits = [
+    headerSubject,
+    property.city || null,
+    leadingQuote ? formatCurrency(leadingQuote.total_ttc) : null,
+  ].filter(Boolean) as string[];
+
+  const hasFinalQuote = quotes.some((q) => q.quote_kind === "final");
+  const finalQuote = quotes.find((q) => q.quote_kind === "final");
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -492,6 +514,11 @@ export default function ProjectDetail() {
             <p className="text-sm text-muted-foreground mt-1">
               {customer.name} · {ORIGIN_LABELS[project.origin] ?? project.origin} · Créé le {formatDateShort(project.created_at)}
             </p>
+            {headerBits.length > 0 && (
+              <p className="text-sm text-foreground/80 mt-1 font-medium">
+                {headerBits.join(" · ")}
+              </p>
+            )}
           </div>
           <div className="flex items-center gap-2">
             {error && (

@@ -127,10 +127,10 @@ function HeroMockup() {
             </div>
             <div className="space-y-1.5">
               {[
-                { name: "Morel — Poêle Invicta Onsen", num: "PRJ-0047", badge: "VT planifiée", color: "bg-warning/15 text-warning" },
-                { name: "Durand — Insert Jøtul F520", num: "PRJ-0045", badge: "Devis envoyé", color: "bg-warning/15 text-warning" },
-                { name: "Fabre — Chaudière Fröling", num: "PRJ-0043", badge: "Pose en cours", color: "bg-info/15 text-info" },
-                { name: "Mercier — Tubage Ø180 inox", num: "PRJ-0041", badge: "MES planifiée", color: "bg-info/15 text-info" },
+                { name: "Morel — Poêle Invicta Onsen", num: "PRJ-0047", badge: "VT planifiée", color: "bg-slate-100 text-slate-700" },
+                { name: "Durand — Insert Jøtul F520", num: "PRJ-0045", badge: "Devis envoyé", color: "bg-slate-100 text-slate-700" },
+                { name: "Fabre — Chaudière Fröling", num: "PRJ-0043", badge: "Pose en cours", color: "bg-emerald-100 text-emerald-700" },
+                { name: "Mercier — Tubage Ø180 inox", num: "PRJ-0041", badge: "MES planifiée", color: "bg-emerald-100 text-emerald-700" },
               ].map((p) => (
                 <div key={p.num} className="flex items-center justify-between rounded-lg border px-3 py-2 hover:bg-muted/30 transition-colors">
                   <div className="flex items-center gap-2 min-w-0">
@@ -167,8 +167,8 @@ function PlanningMockup() {
         <span className="text-[11px] font-semibold">Planning — Semaine 12</span>
         <div className="flex gap-2">
           <span className="text-[8px] rounded-full px-2 py-0.5 bg-primary/10 text-primary font-semibold">Installation</span>
-          <span className="text-[8px] rounded-full px-2 py-0.5 bg-warning/15 text-warning font-semibold">SAV</span>
-          <span className="text-[8px] rounded-full px-2 py-0.5 bg-info/10 text-info font-semibold">Entretien</span>
+          <span className="text-[8px] rounded-full px-2 py-0.5 bg-slate-100 text-slate-700 font-semibold">SAV</span>
+          <span className="text-[8px] rounded-full px-2 py-0.5 bg-emerald-100 text-emerald-700 font-semibold">Entretien</span>
         </div>
       </div>
       <div className="grid grid-cols-5 divide-x">

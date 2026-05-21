@@ -92,11 +92,11 @@ const STATUS_STYLES: Record<InterventionStatus, { label: string; cls: string }> 
   planned: { label: "Planifiée", cls: "bg-muted text-muted-foreground border-border" },
   scheduled: {
     label: "Confirmée",
-    cls: "bg-blue-500/10 text-blue-700 border-blue-500/20 dark:text-blue-400",
+    cls: "bg-info/15 text-info border-info/20",
   },
   in_progress: {
     label: "En cours",
-    cls: "bg-orange-500/10 text-orange-700 border-orange-500/20 dark:text-orange-400",
+    cls: "bg-warning/15 text-warning border-warning/20",
   },
   completed: { label: "Terminée", cls: "bg-success/10 text-success border-success/20" },
   cancelled: {
@@ -155,7 +155,7 @@ function InterventionCard({
           {intervention.rescheduled_from_id && (
             <Badge
               variant="outline"
-              className="font-normal gap-1 bg-yellow-500/10 text-yellow-700 border-yellow-500/20 dark:text-yellow-400"
+              className="font-normal gap-1 bg-warning/15 text-warning border-warning/20"
             >
               <RotateCcw className="h-3 w-3" />
               Reprogrammée

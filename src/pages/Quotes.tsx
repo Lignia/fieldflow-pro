@@ -72,13 +72,13 @@ function StatusBadgeCell({ quote }: { quote: Quote }) {
   const expired = isExpired(quote);
 
   if (incomplete) {
-    return <Badge className="bg-orange-500 text-white hover:bg-orange-600">Incomplet</Badge>;
+    return <Badge variant="warning">Incomplet</Badge>;
   }
   if (expired) {
     return <Badge variant="destructive">Expiré</Badge>;
   }
   if (quote.quote_status === "signed") {
-    return <Badge className="bg-green-500 text-white hover:bg-green-600">Signé</Badge>;
+    return <Badge variant="success">Signé</Badge>;
   }
   if (quote.quote_status === "lost") {
     return <Badge variant="destructive">Perdu</Badge>;

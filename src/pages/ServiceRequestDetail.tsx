@@ -64,15 +64,15 @@ import type {
 const PRIORITY_STYLES: Record<ServiceRequestPriority, { label: string; cls: string }> = {
   critical: { label: "Critique", cls: "bg-destructive/10 text-destructive border-destructive/20" },
   high: { label: "Haute", cls: "bg-warning/10 text-warning border-warning/20" },
-  medium: { label: "Moyenne", cls: "bg-yellow-500/10 text-yellow-700 border-yellow-500/20 dark:text-yellow-400" },
+  medium: { label: "Moyenne", cls: "bg-warning/15 text-warning border-warning/20" },
   low: { label: "Basse", cls: "bg-muted text-muted-foreground border-border" },
 };
 
 const STATUS_STYLES: Record<ServiceRequestStatus, { label: string; cls: string }> = {
-  new: { label: "Nouvelle", cls: "bg-blue-500/10 text-blue-700 border-blue-500/20 dark:text-blue-400" },
-  qualified: { label: "Qualifiée", cls: "bg-purple-500/10 text-purple-700 border-purple-500/20 dark:text-purple-400" },
-  scheduled: { label: "Planifiée", cls: "bg-cyan-500/10 text-cyan-700 border-cyan-500/20 dark:text-cyan-400" },
-  in_progress: { label: "En cours", cls: "bg-orange-500/10 text-orange-700 border-orange-500/20 dark:text-orange-400" },
+  new: { label: "Nouvelle", cls: "bg-info/15 text-info border-info/20" },
+  qualified: { label: "Qualifiée", cls: "bg-warning/15 text-warning border-warning/20" },
+  scheduled: { label: "Planifiée", cls: "bg-info/15 text-info border-info/20" },
+  in_progress: { label: "En cours", cls: "bg-warning/15 text-warning border-warning/20" },
   closed: { label: "Clôturée", cls: "bg-success/10 text-success border-success/20" },
   cancelled: { label: "Annulée", cls: "bg-muted text-muted-foreground border-border" },
 };
@@ -96,7 +96,7 @@ const RESOLUTION_STYLES: Record<string, { label: string; cls: string }> = {
   },
   intervention_needed: {
     label: "Intervention planifiée",
-    cls: "bg-blue-500/10 text-blue-700 border-blue-500/20 dark:text-blue-400",
+    cls: "bg-info/15 text-info border-info/20",
   },
   no_action: {
     label: "Sans suite",

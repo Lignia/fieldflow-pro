@@ -17,7 +17,6 @@ import ProjectDetail from "./pages/ProjectDetail";
 import Planning from "./pages/Planning";
 import Quotes from "./pages/Quotes";
 import CreateQuote from "./pages/CreateQuote";
-import QuoteCreate from "./pages/quotes/QuoteCreate";
 import QuoteEditor from "./pages/quotes/QuoteEditor";
 import QuoteDetail from "./pages/QuoteDetail";
 import Invoices from "./pages/Invoices";
@@ -92,6 +91,7 @@ const App = () => (
 
               {/* Quotes */}
               <Route path="/quotes" element={<Quotes />} />
+              {/* LEGACY: /quotes/new redirige vers /projects — voir src/pages/CreateQuote.tsx */}
               <Route path="/quotes/new" element={<CreateQuote />} />
               <Route path="/quotes/:id" element={<QuoteDetail />} />
 

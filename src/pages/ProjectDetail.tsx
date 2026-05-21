@@ -38,36 +38,42 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const DEV_BYPASS = import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
 
-// ─── Pipeline (4 phases) ────────────────────────────────────────────────────
+// ─── Pipeline (5 macro-étapes) ──────────────────────────────────────────────
 
-type Phase = "commercial" | "terrain" | "signature" | "livraison";
-
-const PIPELINE_STEPS: { status: ProjectStatus; label: string; phase: Phase }[] = [
-  { status: "lead_new", label: "Lead entrant", phase: "commercial" },
-  { status: "lead_qualified", label: "Lead qualifié", phase: "commercial" },
-  { status: "estimate_sent", label: "Estimatif envoyé", phase: "commercial" },
-  { status: "vt_planned", label: "Visite technique planifiée", phase: "terrain" },
-  { status: "vt_done", label: "Visite technique réalisée", phase: "terrain" },
-  { status: "tech_review_done", label: "Étude technique validée", phase: "terrain" },
-  { status: "final_quote_sent", label: "Devis final envoyé", phase: "signature" },
-  { status: "signed", label: "Devis signé", phase: "signature" },
-  { status: "deposit_paid", label: "Acompte reçu", phase: "signature" },
-  { status: "supplier_ordered", label: "Commande fournisseur", phase: "livraison" },
-  { status: "material_received", label: "Matériel reçu", phase: "livraison" },
-  { status: "installation_scheduled", label: "Pose planifiée", phase: "livraison" },
-  { status: "mes_done", label: "Mise en service faite", phase: "livraison" },
-  { status: "closed", label: "Dossier clôturé", phase: "livraison" },
-];
+type Phase = "qualification" | "vt" | "devis" | "chantier" | "sav";
 
 const PHASES: { key: Phase; label: string }[] = [
-  { key: "commercial", label: "Commercial" },
-  { key: "terrain", label: "Terrain" },
-  { key: "signature", label: "Signature" },
-  { key: "livraison", label: "Livraison" },
+  { key: "qualification", label: "Qualification" },
+  { key: "vt", label: "Visite technique" },
+  { key: "devis", label: "Devis" },
+  { key: "chantier", label: "Chantier" },
+  { key: "sav", label: "SAV" },
 ];
 
-function getStepIndex(status: ProjectStatus): number {
-  return PIPELINE_STEPS.findIndex((s) => s.status === status);
+function statusToPhase(status: ProjectStatus): Phase | null {
+  switch (status) {
+    case "lead_new":
+    case "lead_qualified":
+      return "qualification";
+    case "vt_planned":
+    case "vt_done":
+    case "tech_review_done":
+      return "vt";
+    case "estimate_sent":
+    case "final_quote_sent":
+    case "signed":
+      return "devis";
+    case "deposit_paid":
+    case "supplier_ordered":
+    case "material_received":
+    case "installation_scheduled":
+    case "mes_done":
+      return "chantier";
+    case "closed":
+      return "sav";
+    default:
+      return null;
+  }
 }
 
 function PipelineProgress({ status }: { status: ProjectStatus }) {
@@ -80,11 +86,9 @@ function PipelineProgress({ status }: { status: ProjectStatus }) {
     );
   }
 
-  const currentIdx = getStepIndex(status);
-  const current = PIPELINE_STEPS[currentIdx];
-  const currentPhase = current?.phase;
-  const phaseOrder = PHASES.map((p) => p.key);
-  const currentPhaseIdx = phaseOrder.indexOf(currentPhase);
+  const currentPhase = statusToPhase(status);
+  const currentPhaseIdx = currentPhase ? PHASES.findIndex((p) => p.key === currentPhase) : -1;
+  const currentLabel = PHASES[currentPhaseIdx]?.label ?? status;
 
   return (
     <div className="space-y-3">
@@ -125,9 +129,9 @@ function PipelineProgress({ status }: { status: ProjectStatus }) {
         })}
       </div>
       <p className="text-xs text-muted-foreground text-center">
-        <span className="font-mono">Étape {currentIdx + 1}/14</span>
+        <span className="font-mono">Étape {Math.max(currentPhaseIdx + 1, 1)}/5</span>
         <span className="mx-1.5">·</span>
-        <span className="font-medium text-foreground">{current?.label ?? status}</span>
+        <span className="font-medium text-foreground">{currentLabel}</span>
       </p>
     </div>
   );

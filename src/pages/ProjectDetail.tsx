@@ -338,8 +338,10 @@ export default function ProjectDetail() {
   const { project, loading, error, refetch } = useProjectDetail(id);
   const [activities, setActivities] = useState<Activity[]>([]);
   const [activitiesLoading, setActivitiesLoading] = useState(false);
-  const { coreUser } = useCurrentUser();
+  const { coreUser, tenantId } = useCurrentUser();
   const [transitioning, setTransitioning] = useState(false);
+  const [technicalSurvey, setTechnicalSurvey] = useState<{ id: string } | null>(null);
+  const [creatingSurvey, setCreatingSurvey] = useState(false);
 
   async function transitionStatus(next: ProjectStatus, label: string) {
     if (!project) return;
@@ -392,6 +394,45 @@ export default function ProjectDetail() {
     }
     fetchActivities();
   }, [id]);
+
+  useEffect(() => {
+    if (!id) { setTechnicalSurvey(null); return; }
+    (async () => {
+      const { data } = await coreDb
+        .from("technical_surveys")
+        .select("id")
+        .eq("project_id", id)
+        .order("survey_version", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      setTechnicalSurvey((data as any) ?? null);
+    })();
+  }, [id]);
+
+  async function handleCreateSurvey() {
+    if (!project || !coreUser?.id || !tenantId) {
+      toast.error("Session non chargée, réessayez.");
+      return;
+    }
+    setCreatingSurvey(true);
+    try {
+      const { data, error: insErr } = await coreDb
+        .from("technical_surveys")
+        .insert({
+          project_id: project.id,
+          tenant_id: tenantId,
+          surveyed_by: coreUser.id,
+        })
+        .select("id")
+        .single();
+      if (insErr) throw insErr;
+      navigate(`/technical-surveys/${(data as any).id}`);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Échec de la création du relevé");
+    } finally {
+      setCreatingSurvey(false);
+    }
+  }
 
   if (error && !loading) toast.error(error, { id: "project-detail-error" });
 

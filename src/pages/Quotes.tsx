@@ -391,13 +391,18 @@ function QuoteTableRow({ quote, onDelete, refetch, coreUserId }: QuoteTableRowPr
     >
       {/* Col 1: N° Devis */}
       <TableCell>
-        <Link
-          to={`/quotes/${quote.id}`}
-          className="font-mono text-xs text-primary hover:underline"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {quote.quote_number}
-        </Link>
+        <div className="flex items-center gap-1.5">
+          <Link
+            to={`/quotes/${quote.id}`}
+            className="font-mono text-xs text-primary hover:underline"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {quote.quote_number}
+          </Link>
+          {quote.quote_status === "draft" && quote.total_ttc === 0 && (
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0">Vide</Badge>
+          )}
+        </div>
         <p className="text-[11px] text-muted-foreground mt-0.5">
           {KIND_LABEL[kind] ?? kind}
         </p>

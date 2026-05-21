@@ -111,6 +111,9 @@ function InstallationRow({ inst, onClick }: { inst: Installation; onClick: () =>
 
             <div className="flex flex-wrap items-center gap-1.5 shrink-0">
               <StatusBadge status={inst.status} type="installation" />
+              {(!inst.device_type || inst.device_type.trim() === "" || inst.device_type === "À compléter") && (
+                <Badge variant="warning">À compléter</Badge>
+              )}
               {inst.installed_by_self === false && (
                 <Badge variant="warning" className="bg-warning/15 text-warning border-warning/20">
                   Repris

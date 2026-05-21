@@ -953,7 +953,7 @@ function getRecommendedActionContent({
   transitioning,
   onTransition,
   onNavigate,
-}: ActionRecommendedCardProps): { title: string; note?: string; actions: React.ReactNode } | null {
+}: ActionRecommendedCardProps): { title: string; note?: string; actions: ReactNode } | null {
   if (!project) return null;
   const status = project.status;
 

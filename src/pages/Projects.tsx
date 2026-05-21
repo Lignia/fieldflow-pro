@@ -157,6 +157,50 @@ function ListView({ projects, navigate }: { projects: Project[]; navigate: Retur
   );
 }
 
+/* ─── Mobile List View (auto < lg) ────────────────────────── */
+
+function MobileListView({
+  projects,
+  navigate,
+}: {
+  projects: Project[];
+  navigate: ReturnType<typeof useNavigate>;
+}) {
+  return (
+    <div className="space-y-2">
+      {projects.map((project) => (
+        <Card
+          key={project.id}
+          className="p-3 cursor-pointer active:bg-muted/50 hover:border-accent/20 transition-colors"
+          onClick={() => navigate(`/projects/${project.id}`)}
+        >
+          <div className="flex items-center justify-between gap-2">
+            <span className="font-mono text-[11px] text-muted-foreground">
+              {project.project_number}
+            </span>
+            <StatusBadge status={project.status} type="project" size="sm" />
+          </div>
+          <p className="text-sm font-medium mt-1 truncate">
+            {project.customer_name}
+          </p>
+          <div className="flex items-center justify-between gap-2 mt-1.5 text-[11px] text-muted-foreground">
+            <span className="inline-flex items-center gap-1 min-w-0">
+              <MapPin className="h-3 w-3 shrink-0" />
+              <span className="truncate">{project.city}</span>
+            </span>
+            <span className="shrink-0">
+              {formatDistanceToNow(new Date(project.created_at), {
+                addSuffix: true,
+                locale: fr,
+              })}
+            </span>
+          </div>
+        </Card>
+      ))}
+    </div>
+  );
+}
+
 /* ─── Main Page ───────────────────────────────────────────── */
 
 export default function Projects() {
@@ -233,7 +277,8 @@ export default function Projects() {
               className="pl-9 h-8 text-sm"
             />
           </div>
-          <div className="flex rounded-md border bg-muted p-0.5">
+          {/* Toggle kanban/list visible uniquement sur desktop (lg+) — sous lg, vue liste mobile forcée */}
+          <div className="hidden lg:flex rounded-md border bg-muted p-0.5">
             <Button
               variant={viewMode === "kanban" ? "secondary" : "ghost"}
               size="xs"
@@ -286,10 +331,21 @@ export default function Projects() {
             </>
           )}
         </Card>
-      ) : viewMode === "kanban" ? (
-        <KanbanView projects={projects} navigate={navigate} />
       ) : (
-        <ListView projects={projects} navigate={navigate} />
+        <>
+          {/* Mobile/tablet (< lg) : vue liste forcée, plus utilisable que le kanban scrollé */}
+          <div className="lg:hidden">
+            <MobileListView projects={projects} navigate={navigate} />
+          </div>
+          {/* Desktop (lg+) : toggle kanban/list */}
+          <div className="hidden lg:block">
+            {viewMode === "kanban" ? (
+              <KanbanView projects={projects} navigate={navigate} />
+            ) : (
+              <ListView projects={projects} navigate={navigate} />
+            )}
+          </div>
+        </>
       )}
     </PageContainer>
   );

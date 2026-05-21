@@ -32,6 +32,7 @@ import { UserAvatar } from "@/components/navigation/UserAvatar";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { supabase, setPersistSession } from "@/integrations/supabase/client";
 import { toTitleCase } from "@/lib/format";
+import { isActiveRoute } from "@/lib/nav";
 
 const navSections = [
   {
@@ -73,10 +74,6 @@ export function AppSidebar() {
 
   const displayName = toTitleCase((coreUser?.full_name as string) ?? "Utilisateur");
 
-  const isActive = (route: string) =>
-    pathname === route ||
-    (route !== "/dashboard" && pathname.startsWith(route + "/"));
-
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     setPersistSession(true);
@@ -108,7 +105,7 @@ export function AppSidebar() {
               <SidebarMenu>
                 {section.items.map((item) => (
                   <SidebarMenuItem key={item.url}>
-                    <SidebarMenuButton asChild isActive={isActive(item.url)}>
+                    <SidebarMenuButton asChild isActive={isActiveRoute(pathname, item.url)}>
                       <NavLink
                         to={item.url}
                         className="hover:bg-sidebar-accent/50"

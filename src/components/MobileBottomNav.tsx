@@ -7,6 +7,7 @@ import {
   Receipt,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { isActiveRoute } from "@/lib/nav";
 
 const tabs = [
   { icon: LayoutDashboard, label: "Accueil", path: "/dashboard" },
@@ -26,24 +27,19 @@ export function MobileBottomNav() {
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-card md:hidden">
       <div className="flex items-center justify-around">
-        {tabs.map((tab) => {
-          const active =
-            pathname === tab.path ||
-            (tab.path !== "/dashboard" && pathname.startsWith(tab.path + "/"));
-          return (
-            <Link
-              key={tab.path}
-              to={tab.path}
-              className={cn(
-                "flex flex-col items-center gap-0.5 py-2 px-3 text-xs min-h-[52px] justify-center transition-colors",
-                active ? "text-accent font-medium" : "text-muted-foreground"
-              )}
-            >
-              <tab.icon className="h-5 w-5" />
-              <span>{tab.label}</span>
-            </Link>
-          );
-        })}
+        {tabs.map((tab) => (
+          <Link
+            key={tab.path}
+            to={tab.path}
+            className={cn(
+              "flex flex-col items-center gap-0.5 py-2 px-3 text-xs min-h-[52px] justify-center transition-colors",
+              isActiveRoute(pathname, tab.path) ? "text-accent font-medium" : "text-muted-foreground"
+            )}
+          >
+            <tab.icon className="h-5 w-5" />
+            <span>{tab.label}</span>
+          </Link>
+        ))}
       </div>
     </nav>
   );

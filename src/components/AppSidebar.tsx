@@ -2,11 +2,8 @@ import {
   LayoutDashboard,
   Users,
   FolderKanban,
-  CalendarDays,
   FileText,
   Receipt,
-  ClipboardList,
-  Wrench,
   Flame,
   Package,
   Percent,
@@ -43,7 +40,6 @@ const navSections = [
       { title: "Tableau de bord", url: "/dashboard", icon: LayoutDashboard },
       { title: "Clients", url: "/clients", icon: Users },
       { title: "Projets", url: "/projects", icon: FolderKanban },
-      { title: "Planning", url: "/planning", icon: CalendarDays },
     ],
   },
   {
@@ -51,13 +47,6 @@ const navSections = [
     items: [
       { title: "Devis", url: "/quotes", icon: FileText },
       { title: "Factures", url: "/invoices", icon: Receipt },
-    ],
-  },
-  {
-    label: "SAV",
-    items: [
-      { title: "Demandes", url: "/service-requests", icon: ClipboardList },
-      { title: "Interventions", url: "/interventions", icon: Wrench },
     ],
   },
   {

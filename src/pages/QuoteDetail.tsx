@@ -448,6 +448,24 @@ export default function QuoteDetail() {
                     Signé le {fmtDate(quote.signed_at)}
                   </p>
                 )}
+
+                {/* TVA context (visible quand renseigné dans payload) */}
+                {(() => {
+                  const ctx = (quote.payload as any)?.tva_context;
+                  if (!ctx) return null;
+                  const label =
+                    typeof ctx === "string"
+                      ? ctx
+                      : [ctx.label, ctx.rate != null ? `TVA ${ctx.rate}%` : null]
+                          .filter(Boolean)
+                          .join(" — ");
+                  if (!label) return null;
+                  return (
+                    <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium bg-success/15 text-success">
+                      {label}
+                    </span>
+                  );
+                })()}
               </div>
 
               {/* Duplicate button (disabled placeholder) */}
@@ -866,6 +884,19 @@ export default function QuoteDetail() {
                     >
                       Créée ✔ <ExternalLink className="h-3 w-3" />
                     </button>
+                  ) : quote.quote_status === "signed" &&
+                    quote.customer?.id &&
+                    quote.property?.id ? (
+                    <ManualDepositButton
+                      quoteId={quote.id}
+                      tenantId={quote.tenant_id}
+                      customerId={quote.customer.id}
+                      propertyId={quote.property.id}
+                      projectId={quote.project_id}
+                      totalHt={displayTotalHt}
+                      totalTtc={displayTotalTtc}
+                      onCreated={refetch}
+                    />
                   ) : (
                     <span className="text-xs text-muted-foreground">Non créée</span>
                   )}
@@ -1547,5 +1578,91 @@ function ActionsBloc({
       )}
       <DuplicateButton quoteId={quote.id} canSend={canSend} />
     </div>
+  );
+}
+
+/* ══════════════════════════════════════════════════════
+   MANUAL DEPOSIT INVOICE — fallback uniquement
+   ══════════════════════════════════════════════════════ */
+
+function ManualDepositButton(props: {
+  quoteId: string;
+  tenantId: string;
+  customerId: string;
+  propertyId: string;
+  projectId: string | null;
+  totalHt: number;
+  totalTtc: number;
+  onCreated: () => void;
+}) {
+  const navigate = useNavigate();
+  const [creating, setCreating] = useState(false);
+
+  async function handleCreate() {
+    if (creating) return;
+    setCreating(true);
+    try {
+      const today = new Date();
+      const due = new Date(today);
+      due.setDate(due.getDate() + 30);
+      const iso = (d: Date) => d.toISOString().slice(0, 10);
+      const depositHt = +(props.totalHt * 0.3).toFixed(2);
+      const depositTtc = +(props.totalTtc * 0.3).toFixed(2);
+      const depositVat = +(depositTtc - depositHt).toFixed(2);
+
+      const { data: inv, error: insErr } = await billingDb
+        .from("invoices")
+        .insert({
+          tenant_id: props.tenantId,
+          customer_id: props.customerId,
+          property_id: props.propertyId,
+          project_id: props.projectId,
+          quote_id: props.quoteId,
+          invoice_kind: "deposit",
+          invoice_status: "draft",
+          origin_mode: "manual",
+          invoice_date: iso(today),
+          due_date: iso(due),
+          total_ht: depositHt,
+          total_vat: depositVat,
+          total_ttc: depositTtc,
+          payload: { manual_creation: true, deposit_pct: 0.3 },
+        })
+        .select("id")
+        .single();
+
+      if (insErr || !inv) {
+        toast.error(insErr?.message ?? "Échec de la création");
+        return;
+      }
+
+      await billingDb.from("invoice_lines").insert({
+        tenant_id: props.tenantId,
+        invoice_id: (inv as any).id,
+        label: "Acompte 30%",
+        qty: 1,
+        unit_price_ht: depositHt,
+        vat_rate: depositHt > 0 ? +((depositVat / depositHt) * 100).toFixed(2) : 0,
+        total_line_ht: depositHt,
+        sort_order: 1,
+        metadata: { is_deposit: true, deposit_pct: 0.3 },
+      });
+
+      toast.success("Facture d'acompte créée");
+      props.onCreated();
+      navigate(`/invoices/${(inv as any).id}`);
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  return (
+    <button
+      onClick={handleCreate}
+      disabled={creating}
+      className="text-xs font-medium text-primary hover:underline disabled:opacity-50"
+    >
+      {creating ? "Création…" : "Créer manuellement"}
+    </button>
   );
 }

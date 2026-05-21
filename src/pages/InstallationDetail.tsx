@@ -27,6 +27,15 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { StatusBadge } from "@/components/StatusBadge";
 import { cn } from "@/lib/utils";
@@ -185,6 +194,14 @@ export default function InstallationDetail() {
   const [editingMemo, setEditingMemo] = useState(false);
   const [memoDraft, setMemoDraft] = useState("");
   const [savingMemo, setSavingMemo] = useState(false);
+  const [editingEquipment, setEditingEquipment] = useState(false);
+  const [savingEquipment, setSavingEquipment] = useState(false);
+  const [equipDraft, setEquipDraft] = useState({
+    device_type: "",
+    brand: "",
+    model: "",
+    serial_number: "",
+  });
 
   useEffect(() => {
     if (notFound) {
@@ -195,6 +212,17 @@ export default function InstallationDetail() {
 
   useEffect(() => {
     if (installation) setMemoDraft(installation.memo ?? "");
+  }, [installation]);
+
+  useEffect(() => {
+    if (installation) {
+      setEquipDraft({
+        device_type: installation.device_type ?? "",
+        brand: installation.brand ?? "",
+        model: installation.model ?? "",
+        serial_number: installation.serial_number ?? "",
+      });
+    }
   }, [installation]);
 
   const status = installation?.installation_status ?? installation?.status ?? null;
@@ -215,6 +243,29 @@ export default function InstallationDetail() {
     }
     toast.success("Mémo enregistré");
     setEditingMemo(false);
+    refetch();
+  }
+
+  async function handleSaveEquipment() {
+    if (!installation) return;
+    setSavingEquipment(true);
+    const { error: updErr } = await coreDb
+      .from("installations")
+      .update({
+        device_type: equipDraft.device_type.trim() || null,
+        brand: equipDraft.brand.trim() || null,
+        model: equipDraft.model.trim() || null,
+        serial_number: equipDraft.serial_number.trim() || null,
+      })
+      .eq("id", installation.id);
+    setSavingEquipment(false);
+
+    if (updErr) {
+      toast.error("Échec de la sauvegarde");
+      return;
+    }
+    toast.success("Équipement mis à jour");
+    setEditingEquipment(false);
     refetch();
   }
 
@@ -319,7 +370,13 @@ export default function InstallationDetail() {
 
       {/* SECTION 2 — Infos appareil */}
       <Card className="p-5">
-        <h2 className="text-sm font-semibold mb-4">Informations appareil</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-sm font-semibold">Informations appareil</h2>
+          <Button variant="ghost" size="sm" onClick={() => setEditingEquipment(true)}>
+            <Pencil className="h-3.5 w-3.5 mr-1.5" />
+            Modifier
+          </Button>
+        </div>
         <div className="grid gap-6 md:grid-cols-2">
           {/* Colonne gauche */}
           <div className="space-y-3 text-sm">
@@ -622,6 +679,74 @@ export default function InstallationDetail() {
           </ul>
         )}
       </Card>
+
+      {/* Edit equipment dialog */}
+      <Dialog open={editingEquipment} onOpenChange={setEditingEquipment}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Modifier l'équipement</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="ed-device" className="text-xs">Type d'appareil</Label>
+              <Input
+                id="ed-device"
+                value={equipDraft.device_type}
+                onChange={(e) =>
+                  setEquipDraft((d) => ({ ...d, device_type: e.target.value }))
+                }
+                placeholder="Ex: Poêle à granulés"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="ed-brand" className="text-xs">Marque</Label>
+              <Input
+                id="ed-brand"
+                value={equipDraft.brand}
+                onChange={(e) =>
+                  setEquipDraft((d) => ({ ...d, brand: e.target.value }))
+                }
+                placeholder="Ex: Jotul"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="ed-model" className="text-xs">Modèle</Label>
+              <Input
+                id="ed-model"
+                value={equipDraft.model}
+                onChange={(e) =>
+                  setEquipDraft((d) => ({ ...d, model: e.target.value }))
+                }
+                placeholder="Ex: PF 730"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="ed-serial" className="text-xs">Numéro de série</Label>
+              <Input
+                id="ed-serial"
+                value={equipDraft.serial_number}
+                onChange={(e) =>
+                  setEquipDraft((d) => ({ ...d, serial_number: e.target.value }))
+                }
+                className="font-mono"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button
+              variant="ghost"
+              onClick={() => setEditingEquipment(false)}
+              disabled={savingEquipment}
+            >
+              Annuler
+            </Button>
+            <Button onClick={handleSaveEquipment} disabled={savingEquipment}>
+              <Save className="h-3.5 w-3.5 mr-1.5" />
+              {savingEquipment ? "Enregistrement…" : "Enregistrer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

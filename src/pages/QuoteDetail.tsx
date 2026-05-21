@@ -646,6 +646,7 @@ export default function QuoteDetail() {
                 </p>
                 {quote.project_id && (
                   <Button
+                    variant="outline"
                     onClick={() =>
                       navigate(`/projects/${quote.project_id}/quotes/editor?quote_id=${quote.id}`)
                     }

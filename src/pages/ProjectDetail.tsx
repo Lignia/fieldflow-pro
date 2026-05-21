@@ -681,7 +681,7 @@ export default function ProjectDetail() {
                   Ouvrir le relevé <ArrowRight className="h-3.5 w-3.5 ml-1" />
                 </Button>
               ) : (
-                <Button size="sm" onClick={handleCreateSurvey} disabled={creatingSurvey}>
+                <Button size="sm" variant="outline" onClick={handleCreateSurvey} disabled={creatingSurvey}>
                   <Plus className="h-3.5 w-3.5 mr-1" /> {creatingSurvey ? "Création..." : "Créer un relevé"}
                 </Button>
               )}
@@ -704,7 +704,7 @@ export default function ProjectDetail() {
                 const s = project.status;
                 if (s === "lead_new" || s === "lead_qualified") {
                   return (
-                    <Button size="sm" onClick={() => navigate(`/projects/${project.id}/quotes/new?kind=estimate`)}>
+                    <Button size="sm" variant="outline" onClick={() => navigate(`/projects/${project.id}/quotes/new?kind=estimate`)}>
                       <Plus className="h-3.5 w-3.5 mr-1" /> Créer le devis estimatif
                     </Button>
                   );
@@ -718,7 +718,7 @@ export default function ProjectDetail() {
                     );
                   }
                   return (
-                    <Button size="sm" onClick={() => navigate(`/projects/${project.id}/quotes/new?kind=final`)}>
+                    <Button size="sm" variant="outline" onClick={() => navigate(`/projects/${project.id}/quotes/new?kind=final`)}>
                       <Plus className="h-3.5 w-3.5 mr-1" /> Créer le devis final
                     </Button>
                   );
@@ -795,6 +795,7 @@ export default function ProjectDetail() {
                 </Button>
                 {(project.status === "estimate_sent" || project.status === "vt_planned") && (
                   <Button
+                    variant="outline"
                     size="sm"
                     onClick={() => navigate(`/interventions/new?type=technical_survey&project_id=${project.id}&return_to=${encodeURIComponent(`/projects/${project.id}`)}`)}
                   >
@@ -806,6 +807,7 @@ export default function ProjectDetail() {
                   project.status === "deposit_paid" ||
                   project.status === "supplier_ordered") && (
                   <Button
+                    variant="outline"
                     size="sm"
                     onClick={() => navigate(`/interventions/new?type=installation&project_id=${project.id}&return_to=${encodeURIComponent(`/projects/${project.id}`)}`)}
                   >
@@ -814,6 +816,7 @@ export default function ProjectDetail() {
                 )}
                 {project.status === "mes_done" && (
                   <Button
+                    variant="outline"
                     size="sm"
                     onClick={() => navigate(`/interventions/new?type=commissioning&project_id=${project.id}&return_to=${encodeURIComponent(`/projects/${project.id}`)}`)}
                   >

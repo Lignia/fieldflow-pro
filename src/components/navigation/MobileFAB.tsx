@@ -14,23 +14,33 @@ export function MobileFAB() {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
-  const actions = [
-    {
-      label: "Démarrer une intervention",
-      icon: Wrench,
-      onClick: () => { setOpen(false); navigate("/interventions/new"); },
-    },
-    {
-      label: "Signaler un problème",
-      icon: AlertTriangle,
-      onClick: () => { setOpen(false); navigate("/service-requests/new"); },
-    },
-    {
-      label: "Prendre une photo",
-      icon: Camera,
-      onClick: () => { setOpen(false); /* future */ },
-    },
+  const actions: Array<{ label: string; icon: typeof Wrench; onClick: () => void }> = [
+    // TODO: activer quand module prêt
+    // {
+    //   label: "Démarrer une intervention",
+    //   icon: Wrench,
+    //   onClick: () => { setOpen(false); navigate("/interventions/new"); },
+    // },
+    // TODO: activer quand module prêt
+    // {
+    //   label: "Signaler un problème",
+    //   icon: AlertTriangle,
+    //   onClick: () => { setOpen(false); navigate("/service-requests/new"); },
+    // },
+    // TODO: activer quand module photo prêt
+    // {
+    //   label: "Prendre une photo",
+    //   icon: Camera,
+    //   onClick: () => { setOpen(false); },
+    // },
   ];
+
+  // Aucune action valide : on masque entièrement le FAB pour éviter un bouton vide.
+  if (actions.length === 0) {
+    // Références conservées pour éviter les imports orphelins quand on réactivera les actions.
+    void navigate; void open; void setOpen; void Wrench; void AlertTriangle; void Camera; void Sheet; void SheetContent; void SheetHeader; void SheetTitle; void SheetTrigger; void Button; void Plus;
+    return null;
+  }
 
   return (
     <div className="fixed bottom-20 right-4 z-50 md:hidden">

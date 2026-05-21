@@ -481,6 +481,28 @@ export default function ProjectDetail() {
     })();
   }, [id]);
 
+  useEffect(() => {
+    if (!id) { setInterventions([]); return; }
+    let cancelled = false;
+    (async () => {
+      setInterventionsLoading(true);
+      const { data, error: err } = await operationsDb
+        .from("interventions")
+        .select("id, intervention_type, status, start_datetime")
+        .eq("project_id", id)
+        .order("start_datetime", { ascending: true, nullsFirst: false });
+      if (cancelled) return;
+      if (err) {
+        console.error("[ProjectDetail] interventions fetch failed", err);
+        setInterventions([]);
+      } else {
+        setInterventions((data ?? []) as any);
+      }
+      setInterventionsLoading(false);
+    })();
+    return () => { cancelled = true; };
+  }, [id]);
+
   async function handleCreateSurvey() {
     if (!project || !coreUser?.id || !tenantId) {
       toast.error("Session non chargée, réessayez.");

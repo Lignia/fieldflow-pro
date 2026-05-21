@@ -188,12 +188,19 @@ function MobileListView({
               <MapPin className="h-3 w-3 shrink-0" />
               <span className="truncate">{project.city}</span>
             </span>
-            <span className="shrink-0">
-              {formatDistanceToNow(new Date(project.created_at), {
-                addSuffix: true,
-                locale: fr,
-              })}
-            </span>
+            <div className="flex items-center gap-2 shrink-0">
+              <span>
+                {formatDistanceToNow(new Date(project.created_at), {
+                  addSuffix: true,
+                  locale: fr,
+                })}
+              </span>
+              {project.pipeline_value_ttc > 0 && (
+                <span className="font-mono font-medium text-foreground">
+                  {Math.round(project.pipeline_value_ttc).toLocaleString("fr-FR")} €
+                </span>
+              )}
+            </div>
           </div>
         </Card>
       ))}

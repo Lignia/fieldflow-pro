@@ -799,7 +799,7 @@ export default function QuoteDetail() {
         {/* ══════════════════════════════════
             RIGHT COLUMN — Sticky sidebar
             ══════════════════════════════════ */}
-        <div className="space-y-4 lg:sticky lg:top-4 lg:self-start">
+        <div className="space-y-4 lg:sticky lg:top-6 lg:self-start">
 
           {/* ── BLOC 1 — ACTIONS ── */}
           <Card className="p-4 space-y-3">

@@ -127,9 +127,9 @@ function HeroMockup() {
             </div>
             <div className="space-y-1.5">
               {[
-                { name: "Morel — Poêle Invicta Onsen", num: "PRJ-0047", badge: "VT planifiée", color: "bg-amber-100 text-amber-800" },
-                { name: "Durand — Insert Jøtul F520", num: "PRJ-0045", badge: "Devis envoyé", color: "bg-orange-100 text-orange-800" },
-                { name: "Fabre — Chaudière Fröling", num: "PRJ-0043", badge: "Pose en cours", color: "bg-accent/15 text-accent" },
+                { name: "Morel — Poêle Invicta Onsen", num: "PRJ-0047", badge: "VT planifiée", color: "bg-warning/15 text-warning" },
+                { name: "Durand — Insert Jøtul F520", num: "PRJ-0045", badge: "Devis envoyé", color: "bg-warning/15 text-warning" },
+                { name: "Fabre — Chaudière Fröling", num: "PRJ-0043", badge: "Pose en cours", color: "bg-info/15 text-info" },
                 { name: "Mercier — Tubage Ø180 inox", num: "PRJ-0041", badge: "MES planifiée", color: "bg-info/15 text-info" },
               ].map((p) => (
                 <div key={p.num} className="flex items-center justify-between rounded-lg border px-3 py-2 hover:bg-muted/30 transition-colors">

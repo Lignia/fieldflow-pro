@@ -300,7 +300,7 @@ export default function ProjectCreate() {
 
   const powerColor = estimatedPower < 8 ? "bg-success/15 text-success border-success/30"
     : estimatedPower <= 12 ? "bg-warning/15 text-warning border-warning/30"
-    : "bg-orange-500/15 text-orange-600 border-orange-500/30";
+    : "bg-destructive/10 text-destructive border-destructive/30";
 
   const flueScenario = useMemo(() => {
     if (flueExisting === "yes" && fluePosition === "interior" && flueComplexity === "straight")
@@ -310,7 +310,7 @@ export default function ProjectCreate() {
     if (flueExisting === "yes" && (flueComplexity === "unknown" || (!flueComplexity && fluePosition)))
       return { label: "🟡 À préciser", className: "bg-warning/15 text-warning border-warning/30" };
     if (flueExisting === "no" && flueExit === "roof")
-      return { label: "🟠 Création conduit toiture", className: "bg-orange-500/15 text-orange-600 border-orange-500/30" };
+      return { label: "🟠 Création conduit toiture", className: "bg-warning/15 text-warning border-warning/30" };
     if (flueExisting === "no" && flueExit === "facade")
       return { label: "🔴 Conduit façade — surcoût", className: "bg-destructive/15 text-destructive border-destructive/30" };
     if (flueExisting === "unknown")
@@ -1300,7 +1300,7 @@ function ConstraintCard({
 }) {
   const badgeFor = (v: YesNoUnknown) =>
     v === "yes" ? "bg-success/15 text-success border-success/30"
-    : v === "no" ? "bg-orange-500/15 text-orange-600 border-orange-500/30"
+    : v === "no" ? "bg-warning/15 text-warning border-warning/30"
     : v === "unknown" ? "bg-muted text-muted-foreground border-border"
     : "";
 
@@ -1321,7 +1321,7 @@ function ConstraintCard({
           className="grid grid-cols-3 gap-1"
         >
           <ToggleGroupItem value="yes" className="h-7 text-xs data-[state=on]:bg-success/10 data-[state=on]:border-success data-[state=on]:text-success border">Oui</ToggleGroupItem>
-          <ToggleGroupItem value="no" className="h-7 text-xs data-[state=on]:bg-orange-500/10 data-[state=on]:border-orange-500 data-[state=on]:text-orange-600 border">Non</ToggleGroupItem>
+          <ToggleGroupItem value="no" className="h-7 text-xs data-[state=on]:bg-warning/10 data-[state=on]:border-warning data-[state=on]:text-warning border">Non</ToggleGroupItem>
           <ToggleGroupItem value="unknown" className="h-7 text-xs data-[state=on]:bg-muted data-[state=on]:border-border border">?</ToggleGroupItem>
         </ToggleGroup>
         {value && (

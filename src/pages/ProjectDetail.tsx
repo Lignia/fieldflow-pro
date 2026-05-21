@@ -749,7 +749,7 @@ export default function ProjectDetail() {
                       <StatusBadge status={q.quote_kind} type="quote_kind" size="sm" />
                       <StatusBadge status={q.quote_status} type="quote" size="sm" />
                       {q.quote_status === "draft" && q.total_ttc === 0 && (
-                        <Badge variant="outline" className="text-[10px] px-1.5 py-0 border-muted-foreground/40 text-muted-foreground">
+                        <Badge variant="outline" className="text-[11px] px-1.5 py-0 border-muted-foreground/40 text-muted-foreground">
                           Vide
                         </Badge>
                       )}

@@ -684,10 +684,21 @@ export default function ProjectDetail() {
               Relevé technique
             </h2>
             <Card className="p-6 text-center space-y-3">
-              <p className="text-sm text-muted-foreground">Aucun relevé technique enregistré</p>
-              <Button size="sm" onClick={() => navigate(`/technical-surveys/new?project=${id}`)}>
-                <Plus className="h-3.5 w-3.5 mr-1" /> Créer le relevé technique
-              </Button>
+              {technicalSurvey ? (
+                <>
+                  <p className="text-sm text-muted-foreground">Un relevé technique est lié à ce projet</p>
+                  <Button size="sm" onClick={() => navigate(`/technical-surveys/${technicalSurvey.id}`)}>
+                    Ouvrir le relevé
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <p className="text-sm text-muted-foreground">Aucun relevé technique enregistré</p>
+                  <Button size="sm" onClick={handleCreateSurvey} disabled={creatingSurvey}>
+                    <Plus className="h-3.5 w-3.5 mr-1" /> {creatingSurvey ? "Création..." : "Créer un relevé"}
+                  </Button>
+                </>
+              )}
             </Card>
           </div>
         </TabsContent>

@@ -590,7 +590,7 @@ export default function ProjectDetail() {
   });
 
   return (
-    <div className="space-y-6 pb-28 lg:pb-0">
+    <div className="space-y-6 pb-32 xl:pb-0">
       {/* Header */}
       <div>
         <Button variant="ghost" size="sm" className="mb-3 -ml-2" onClick={handleBack}>
@@ -925,9 +925,14 @@ export default function ProjectDetail() {
         </TabsContent>
       </Tabs>
 
-      {/* Sticky action bar — mobile/tablet only. Reuses getRecommendedActionContent (no logic duplication). */}
+      {/* Sticky action bar — mobile + tablet (incl. landscape iPad 1024px). xl:hidden = visible until 1280px.
+          Safari iOS: pb safe-area + sticky positioning relative to viewport behaves correctly with fixed
+          because we add env(safe-area-inset-bottom) to avoid being hidden by the home indicator / URL bar. */}
       {recommendedContent && (
-        <div className="fixed bottom-0 inset-x-0 z-40 bg-background/95 backdrop-blur border-t p-3 lg:hidden">
+        <div
+          className="fixed bottom-0 inset-x-0 z-40 bg-background/95 backdrop-blur border-t px-3 pt-3 xl:hidden"
+          style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}
+        >
           <div className="max-w-7xl mx-auto flex items-center gap-2 flex-wrap">
             {recommendedContent.actions}
           </div>

@@ -6,10 +6,28 @@ de `TODO` dans la base.
 
 Mise à jour : 2026-05-21
 
+## Horizon — vue d'ensemble
+
+| Module                          | Horizon                         |
+| ------------------------------- | ------------------------------- |
+| Planning                        | V2 (3-12 mois)                  |
+| SAV / Demandes                  | V1 (0-3 mois)                   |
+| Interventions                   | V1 (0-3 mois)                   |
+| MobileFAB                       | V1 (dépend SAV + Interventions) |
+| Technical Surveys workflow      | V1 (0-3 mois)                   |
+
+Valeurs autorisées pour la colonne *Horizon* :
+
+- **V1 (0-3 mois)** — engagement court terme.
+- **V2 (3-12 mois)** — engagé mais pas prioritaire.
+- **Expérimental** — pas tranché, dépend d'un signal métier.
+- **Abandonné** — ne reviendra pas, à supprimer du code à terme.
+
 ---
 
 ## Planning
 
+- **Horizon** : V2 (3-12 mois).
 - **Masqué dans** : `src/components/MobileBottomNav.tsx` (tab commenté),
   `src/components/AppSidebar.tsx` (jamais ajouté).
 - **Route encore active** : `/planning` (composant `src/pages/Planning.tsx`).
@@ -24,6 +42,7 @@ Mise à jour : 2026-05-21
 
 ## SAV / Demandes (`service-requests`)
 
+- **Horizon** : V1 (0-3 mois).
 - **Masqué dans** : `src/components/MobileBottomNav.tsx` (tab commenté),
   `src/components/navigation/MobileFAB.tsx` (action "Signaler un problème"
   commentée), `src/components/AppSidebar.tsx` (jamais ajouté).
@@ -40,6 +59,7 @@ Mise à jour : 2026-05-21
 
 ## Interventions
 
+- **Horizon** : V1 (0-3 mois).
 - **Masqué dans** : `src/components/navigation/MobileFAB.tsx` (action
   "Démarrer une intervention" commentée), `src/components/AppSidebar.tsx`
   (jamais ajouté).
@@ -56,6 +76,8 @@ Mise à jour : 2026-05-21
 
 ## MobileFAB — bouton d'actions rapides
 
+- **Horizon** : V1 — dépend de la réactivation des modules SAV et
+  Interventions.
 - **Masqué dans** : `src/components/navigation/MobileFAB.tsx` (composant
   retourne `null` tant que `actions` est vide).
 - **Actions prévues** :
@@ -72,6 +94,7 @@ Mise à jour : 2026-05-21
 
 ## Technical Surveys — workflow complet
 
+- **Horizon** : V1 (0-3 mois).
 - **Masqué dans** : aucune entrée de menu dédiée ; seule la route
   `/technical-surveys/:id` (lecture) et `/technical-surveys/new`
   (placeholder) existent.
@@ -86,6 +109,13 @@ Mise à jour : 2026-05-21
   - signature interne (chargé d'affaires) et export PDF.
 - **Dépendances** : backend (table `technical_surveys` + RPC
   `finalize_survey`), frontend (formulaire multi-sections, viewer PDF).
+
+> **Note d'implémentation (à respecter pour V1)** : le formulaire ne devra
+> **pas** être un formulaire ERP géant. Cible : formulaire guidé,
+> progressif, conversationnel. Les 55+ champs doivent être organisés en
+> sections contextuelles (révélées au fil du parcours), pas affichés en
+> une seule page. Toute implémentation qui dump l'intégralité des champs
+> sur un seul écran est considérée comme un anti-pattern.
 
 ---
 

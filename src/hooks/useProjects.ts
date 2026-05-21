@@ -49,6 +49,7 @@ export interface Project {
   city: string;
   created_at: string;
   modified_at: string;
+  pipeline_value_ttc: number;
 }
 
 interface UseProjectsReturn {
@@ -76,7 +77,7 @@ export function useProjects(): UseProjectsReturn {
     try {
       let query = coreDb
         .from("v_projects_with_customer")
-        .select("id, project_number, status, origin, modified_at, created_at, customer_name, city")
+        .select("id, project_number, status, origin, modified_at, created_at, customer_name, city, pipeline_value_ttc")
         .order("modified_at", { ascending: false })
         .limit(200);
 
@@ -102,6 +103,7 @@ export function useProjects(): UseProjectsReturn {
         city: p.city ?? "—",
         created_at: p.created_at,
         modified_at: p.modified_at,
+        pipeline_value_ttc: Number(p.pipeline_value_ttc) || 0,
       }));
 
       if (search.trim()) {

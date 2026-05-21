@@ -1148,7 +1148,7 @@ function ActionRecommendedCard({ project, transitioning, onTransition, onNavigat
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="space-y-1 flex-1 min-w-0">
           <p className="text-xs uppercase tracking-wider text-accent font-bold">
-            Action recommandée
+            Prochaine action
           </p>
           <h2 className="text-base font-semibold">{content.title}</h2>
           {content.note && (

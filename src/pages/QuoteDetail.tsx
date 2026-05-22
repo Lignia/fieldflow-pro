@@ -1044,6 +1044,81 @@ export default function QuoteDetail() {
 
         </div>
       </div>
+
+      {/* ── Sticky action bar — mobile/tablette uniquement ── */}
+      {primaryAction && (
+        <div className="fixed bottom-0 inset-x-0 z-40 border-t bg-background/95 backdrop-blur px-3 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)] xl:hidden">
+          <div className="max-w-6xl mx-auto">
+            {primaryAction.kind === "send" && (
+              <Button
+                size="lg"
+                className="w-full min-h-[48px]"
+                disabled={primaryAction.disabled || transitioning}
+                onClick={() => {
+                  if (hasNegativeMargin) {
+                    setShowNegativeMarginDialog(true);
+                  } else {
+                    transitionStatus("sent");
+                  }
+                }}
+              >
+                <Send className="h-4 w-4 mr-2" />
+                Envoyer
+              </Button>
+            )}
+            {primaryAction.kind === "create-final" && (
+              <CreateFinalFromEstimateButton quoteId={quote.id} />
+            )}
+            {primaryAction.kind === "edit" && (
+              <Button
+                size="lg"
+                variant="outline"
+                className="w-full min-h-[48px]"
+                onClick={() =>
+                  navigate(
+                    `/projects/${quote.project_id}/quotes/editor?quote_id=${quote.id}`,
+                  )
+                }
+              >
+                <Pencil className="h-4 w-4 mr-2" />
+                Modifier le devis
+              </Button>
+            )}
+            {primaryAction.kind === "sign" && (
+              <Button
+                size="lg"
+                className="w-full min-h-[48px] bg-success text-success-foreground hover:bg-success/90"
+                disabled={primaryAction.disabled || signing}
+                onClick={() => setShowSignConfirm(true)}
+              >
+                <CheckCircle2 className="h-4 w-4 mr-2" />
+                Marquer signé
+              </Button>
+            )}
+            {primaryAction.kind === "view-deposit-invoice" && (
+              <Button
+                size="lg"
+                className="w-full min-h-[48px]"
+                onClick={() => navigate(`/invoices/${primaryAction.invoiceId}`)}
+              >
+                <Receipt className="h-4 w-4 mr-2" />
+                Voir la facture d'acompte
+              </Button>
+            )}
+            {primaryAction.kind === "view-project" && (
+              <Button
+                size="lg"
+                variant="outline"
+                className="w-full min-h-[48px]"
+                onClick={() => navigate(`/projects/${primaryAction.projectId}`)}
+              >
+                <FolderOpen className="h-4 w-4 mr-2" />
+                Voir le projet
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

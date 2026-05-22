@@ -14,6 +14,7 @@ import { billingDb, coreDb, catalogDb } from "@/integrations/supabase/schema-cli
 import { useCreateQuote, type QuoteSummary } from "@/hooks/useCreateQuote";
 import { useCatalogSearch, suggestedVat, type CatalogItem } from "@/hooks/useCatalogSearch";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { formatCurrency } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -242,10 +243,6 @@ const DEV_BYPASS = import.meta.env.VITE_DEV_BYPASS_AUTH === "true";
 
 let _keyCounter = 0;
 function nextKey() { return `row_${++_keyCounter}_${Date.now()}`; }
-
-function fmt(n: number) {
-  return n.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " €";
-}
 
 // ─── Catalog Search Popover ─────────────────────────────────────
 function CatalogPopover({

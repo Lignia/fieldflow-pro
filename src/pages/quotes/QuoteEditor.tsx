@@ -1121,9 +1121,14 @@ export default function QuoteEditor() {
 
           <Card>
             <CardContent className="p-4 grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="space-y-1.5 col-span-full">
-                <Label className="text-xs text-muted-foreground">Objet du devis</Label>
-                <Input value={subject} onChange={(e) => setSubject(e.target.value)} placeholder="ex : Fourniture et pose poêle à granulés + conduit Ø80" className="h-8 text-sm" maxLength={200} />
+              <div className="col-span-full">
+                <Input
+                  value={subject}
+                  onChange={(e) => setSubject(e.target.value)}
+                  placeholder="Titre du devis — ex : Fourniture et pose poêle à granulés"
+                  className="h-10 text-base font-medium placeholder:text-muted-foreground/50"
+                  maxLength={200}
+                />
               </div>
               <div className="space-y-1.5"><Label className="text-xs text-muted-foreground">Date d'émission</Label><Input type="date" value={quoteDate} onChange={(e) => setQuoteDate(e.target.value)} className="h-8 text-sm" /></div>
               <div className="space-y-1.5"><Label className="text-xs text-muted-foreground">Date d'expiration</Label><Input type="date" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} className="h-8 text-sm" /></div>

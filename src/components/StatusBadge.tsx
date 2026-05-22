@@ -34,7 +34,7 @@ const STATUS_COLORS: Record<string, string> = {
   // ── SECONDARY ─────────────────────────────
   lead_new:          "bg-secondary text-secondary-foreground",
   lead_qualified:    "bg-secondary text-secondary-foreground",
-  draft:             "bg-secondary text-secondary-foreground",
+  draft:             "bg-warning/15 text-warning",
   on_hold:           "bg-secondary text-secondary-foreground",
   void:              "bg-secondary text-secondary-foreground",
   canceled:          "bg-secondary text-secondary-foreground",

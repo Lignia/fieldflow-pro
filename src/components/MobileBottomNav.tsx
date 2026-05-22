@@ -24,6 +24,14 @@ const tabs = [
 export function MobileBottomNav() {
   const { pathname } = useLocation();
 
+  // Sur les pages de détail avec action FSM, la sticky action bar
+  // remplace la MobileBottomNav (l'action métier prime sur la nav globale).
+  // Note : startsWith('/projects/') ne matche PAS '/projects' (liste) car
+  // la route liste n'a pas de slash final.
+  const DETAIL_ROUTES = ['/projects/', '/quotes/', '/installations/'];
+  const onDetailPage = DETAIL_ROUTES.some((r) => pathname.startsWith(r));
+  if (onDetailPage) return null;
+
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t bg-card md:hidden">
       <div className="flex items-center justify-around">

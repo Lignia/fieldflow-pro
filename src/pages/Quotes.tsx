@@ -276,7 +276,9 @@ export default function Quotes() {
           showIncompleteOnly={showIncompleteOnly}
         />
       ) : (
-        <div className="rounded-md border">
+        <>
+        {/* Desktop table */}
+        <div className="rounded-md border hidden lg:block">
           <Table>
             <TableHeader>
               <TableRow>
@@ -303,6 +305,13 @@ export default function Quotes() {
             </TableBody>
           </Table>
         </div>
+        {/* Mobile / tablet cards */}
+        <div className="lg:hidden space-y-2">
+          {filtered.map((quote) => (
+            <MobileQuoteCard key={quote.id} quote={quote} />
+          ))}
+        </div>
+        </>
       )}
 
       {/* Delete dialog */}

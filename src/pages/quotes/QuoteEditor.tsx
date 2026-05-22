@@ -11,7 +11,7 @@ import {
 import { toast } from "sonner";
 
 import { billingDb, coreDb, catalogDb } from "@/integrations/supabase/schema-clients";
-import { useCreateQuote } from "@/hooks/useCreateQuote";
+import { useCreateQuote, type QuoteSummary } from "@/hooks/useCreateQuote";
 import { useCatalogSearch, suggestedVat, type CatalogItem } from "@/hooks/useCatalogSearch";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { Button } from "@/components/ui/button";
@@ -607,6 +607,9 @@ export default function QuoteEditor() {
   const { projectId } = useParams<{ projectId: string }>();
   const [searchParams] = useSearchParams();
   const quoteKind = searchParams.get("kind") || "estimate";
+  const existingQuoteId = searchParams.get("quote_id")
+    || searchParams.get("id")
+    || null;
   const navigate = useNavigate();
   const { coreUser, tenantId } = useCurrentUser();
   const { createQuote, quote, error: hookError, setQuote } = useCreateQuote();
@@ -654,23 +657,140 @@ export default function QuoteEditor() {
     })();
   }, [projectId]);
 
+  const loadExistingQuote = useCallback(async (quoteId: string) => {
+    try {
+      const { data: q, error: qErr } = await billingDb
+        .from("quotes")
+        .select("id, quote_number, quote_kind, quote_status, quote_date, expiry_date, total_ht, total_vat, total_ttc, customer_id, property_id, project_id, subject, deposit_pct, global_discount_pct, payload")
+        .eq("id", quoteId)
+        .single();
+
+      if (qErr) throw qErr;
+
+      setQuote(q as QuoteSummary);
+      setQuoteDate(q.quote_date);
+      setExpiryDate(q.expiry_date);
+
+      const qr = q as unknown as Record<string, unknown>;
+      setSubject((qr.subject as string) || "");
+      setDepositPct((qr.deposit_pct as number) ?? null);
+      setGlobalDiscountPct((qr.global_discount_pct as number) ?? 0);
+
+      const payload = (qr.payload as Record<string, unknown>) ?? {};
+      setVisitDate((payload.visit_date as string) || "");
+      setStartDate((payload.start_date as string) || "");
+      if (typeof payload.show_section_totals === "boolean") {
+        setShowSectionTotals(payload.show_section_totals);
+      }
+
+      const { data: sections } = await billingDb
+        .from("quote_sections")
+        .select("id, label, sort_order")
+        .eq("quote_id", quoteId)
+        .order("sort_order");
+
+      const { data: lines, error: lErr } = await billingDb
+        .from("quote_lines")
+        .select("*")
+        .eq("quote_id", quoteId)
+        .order("sort_order");
+
+      if (lErr) throw lErr;
+
+      const editorRows: EditorRow[] = [];
+
+      (sections ?? []).forEach((s) => {
+        editorRows.push({
+          _type: "section",
+          _key: nextKey(),
+          id: s.id,
+          label: s.label,
+          sort_order: s.sort_order,
+        });
+      });
+
+      (lines ?? []).forEach((l) => {
+        if (l.line_type === "text") {
+          editorRows.push({
+            _type: "text",
+            _key: nextKey(),
+            id: l.id,
+            section_id: l.section_id ?? null,
+            label: l.label,
+            sort_order: l.sort_order,
+            line_type: "text",
+          });
+        } else {
+          editorRows.push({
+            _type: "item",
+            _key: nextKey(),
+            id: l.id,
+            section_id: l.section_id ?? null,
+            product_id: l.product_id ?? null,
+            label: l.label,
+            qty: Number(l.qty),
+            unit: l.unit || "u",
+            unit_price_ht: Number(l.unit_price_ht),
+            vat_rate: Number(l.vat_rate),
+            sort_order: l.sort_order,
+            line_type: "item",
+            line_category: l.line_category ?? null,
+            unit_cost_price: l.unit_cost_price != null ? Number(l.unit_cost_price) : null,
+            brand: l.brand ?? null,
+            supplier_ref: l.supplier_ref ?? null,
+            supplier_ref_snapshot: l.supplier_ref_snapshot ?? null,
+            supplier_sku_snapshot: l.supplier_sku_snapshot ?? null,
+            supplier_name_snapshot: l.supplier_name_snapshot ?? null,
+            raw_label_snapshot: l.raw_label_snapshot ?? null,
+            normalized_label_snapshot: l.normalized_label_snapshot ?? null,
+            customer_label: l.customer_label ?? null,
+            metadata: (l.metadata as QuoteLineMetadata) ?? buildManualMetadata(),
+          });
+        }
+      });
+
+      editorRows.sort((a, b) => a.sort_order - b.sort_order);
+      setRows(editorRows);
+    } catch (err: any) {
+      toast.error(err.message ?? "Erreur lors du chargement du devis");
+    } finally {
+      setInitializing(false);
+    }
+  }, [setQuote]);
+
+  /**
+   * QuoteEditor — 4 modes selon les query params :
+   * MODE CREATE  : aucun quote_id → createQuote() → rows=[]
+   * MODE EDIT    : quote_id présent → loadExistingQuote() → rows hydratés
+   * MODE DUPLICATE : géré par handleDuplicate() → navigation séparée
+   * MODE FINAL   : kind=final sans quote_id → createQuote(kind=final)
+   *
+   * INVARIANT : si existingQuoteId est présent, ne jamais appeler createQuote().
+   * Violation = devis fantôme en base.
+   */
   useEffect(() => {
     if (!projectId || initRef.current) return;
     initRef.current = true;
-    createQuote(projectId, quoteKind).then((q) => {
-      if (q) {
-        setQuoteDate(q.quote_date);
-        setExpiryDate(q.expiry_date);
-        const qr = q as unknown as Record<string, unknown>;
-        setSubject(qr.subject as string || "");
-        setDepositPct(qr.deposit_pct as number ?? null);
-        setGlobalDiscountPct(qr.global_discount_pct as number ?? 0);
-        const payload = (qr.payload as Record<string, unknown>) ?? {};
-        if (typeof payload.show_section_totals === "boolean") setShowSectionTotals(payload.show_section_totals);
-      }
-      setInitializing(false);
-    });
-  }, [projectId, createQuote, quoteKind]);
+    if (existingQuoteId) {
+      loadExistingQuote(existingQuoteId);
+    } else {
+      createQuote(projectId, quoteKind).then((q) => {
+        if (q) {
+          setQuoteDate(q.quote_date);
+          setExpiryDate(q.expiry_date);
+          const qr = q as unknown as Record<string, unknown>;
+          setSubject((qr.subject as string) || "");
+          setDepositPct((qr.deposit_pct as number) ?? null);
+          setGlobalDiscountPct((qr.global_discount_pct as number) ?? 0);
+          const payload = (qr.payload as Record<string, unknown>) ?? {};
+          if (typeof payload.show_section_totals === "boolean") {
+            setShowSectionTotals(payload.show_section_totals);
+          }
+        }
+        setInitializing(false);
+      });
+    }
+  }, [projectId, existingQuoteId, createQuote, quoteKind, loadExistingQuote]);
 
   // ─── addItem : seul point d'entrée pour créer une ligne ────────
   const addItem = useCallback(async (

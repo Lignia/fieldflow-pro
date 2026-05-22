@@ -753,3 +753,44 @@ function EmptyState({
     </Card>
   );
 }
+
+/* ── Mobile / tablet card ── */
+
+function MobileQuoteCard({ quote }: { quote: Quote }) {
+  const navigate = useNavigate();
+  const expiryBadge = (() => {
+    if (quote.quote_status !== "sent" || !quote.expiry_date) return null;
+    const now = new Date();
+    const expiry = new Date(quote.expiry_date);
+    if (expiry < now) {
+      return <Badge variant="destructive">Expiré</Badge>;
+    }
+    const days = differenceInDays(expiry, now);
+    if (days >= 0 && days <= 7) {
+      return <Badge variant="warning">Expire dans {days} j</Badge>;
+    }
+    return null;
+  })();
+
+  return (
+    <Card
+      className="p-3 cursor-pointer hover:bg-muted/40 active:bg-muted/60 transition-colors"
+      onClick={() => navigate(`/quotes/${quote.id}`)}
+    >
+      <div className="flex items-center justify-between gap-2">
+        <span className="font-mono text-xs text-muted-foreground">{quote.quote_number}</span>
+        <StatusBadge status={quote.quote_status} type="quote" />
+      </div>
+      <p className="font-medium text-sm truncate mt-1">
+        {quote.customer_name || "Client inconnu"}
+      </p>
+      <div className="flex items-center justify-between gap-2 mt-2">
+        <StatusBadge status={quote.quote_kind} type="quote_kind" />
+        <span className="font-mono font-semibold text-sm">
+          {formatCurrencyFull(quote.total_ttc)}
+        </span>
+      </div>
+      {expiryBadge && <div className="mt-2">{expiryBadge}</div>}
+    </Card>
+  );
+}

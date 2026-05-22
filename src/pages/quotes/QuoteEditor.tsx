@@ -1130,10 +1130,17 @@ export default function QuoteEditor() {
                   maxLength={200}
                 />
               </div>
+              <div className="col-span-full space-y-1.5">
+                <Label className="text-sm">Type de devis</Label>
+                <Select value={quote.quote_kind} onValueChange={(v) => setQuote({ ...quote, quote_kind: v })}>
+                  <SelectTrigger className="w-full sm:w-64 h-9 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectContent>{Object.entries(KIND_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
+                </Select>
+              </div>
               <div className="space-y-1.5"><Label className="text-xs text-muted-foreground">Date d'émission</Label><Input type="date" value={quoteDate} onChange={(e) => setQuoteDate(e.target.value)} className="h-8 text-sm" /></div>
               <div className="space-y-1.5"><Label className="text-xs text-muted-foreground">Date d'expiration</Label><Input type="date" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} className="h-8 text-sm" /></div>
-              <div className="space-y-1.5"><Label className="text-xs text-muted-foreground">Visite préalable</Label><Input type="date" value={visitDate} onChange={(e) => setVisitDate(e.target.value)} className="h-8 text-sm" /></div>
-              <div className="space-y-1.5"><Label className="text-xs text-muted-foreground">Début des travaux</Label><Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="h-8 text-sm" /></div>
+              <div className="space-y-1.5"><Label className="text-xs text-muted-foreground">Visite préalable <span className="text-muted-foreground/60">(optionnel)</span></Label><Input type="date" value={visitDate} onChange={(e) => setVisitDate(e.target.value)} className="h-8 text-sm" /></div>
+              <div className="space-y-1.5"><Label className="text-xs text-muted-foreground">Début des travaux <span className="text-muted-foreground/60">(optionnel)</span></Label><Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="h-8 text-sm" /></div>
             </CardContent>
           </Card>
 
@@ -1154,15 +1161,9 @@ export default function QuoteEditor() {
             )}
           </div>
 
-          <div className="flex items-center gap-3">
-            <Label className="text-sm text-muted-foreground">Type :</Label>
-            <Select value={quote.quote_kind} onValueChange={(v) => setQuote({ ...quote, quote_kind: v })}>
-              <SelectTrigger className="w-40 h-8 text-sm"><SelectValue /></SelectTrigger>
-              <SelectContent>{Object.entries(KIND_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
-            </Select>
-            <span className="mx-2 text-muted-foreground/40">·</span>
-            <Label htmlFor="show-section-totals" className="text-sm text-muted-foreground cursor-pointer">Afficher sous-totaux par bloc (PDF)</Label>
+          <div className="flex items-center gap-2">
             <Switch id="show-section-totals" checked={showSectionTotals} onCheckedChange={setShowSectionTotals} />
+            <Label htmlFor="show-section-totals" className="text-xs text-muted-foreground cursor-pointer">Afficher sous-totaux par bloc (PDF)</Label>
           </div>
 
           <Card className="overflow-x-auto overflow-hidden">

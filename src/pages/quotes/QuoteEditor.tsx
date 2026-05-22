@@ -1215,27 +1215,6 @@ export default function QuoteEditor() {
       <main className="flex-1 overflow-y-auto pb-36">
         <div className="max-w-6xl mx-auto px-4 py-6 space-y-5">
 
-          {projectInfo && (
-            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 px-3 py-2 rounded-md border border-border bg-muted/20 text-sm">
-              <div className="flex items-center gap-2 min-w-0">
-                <Building2 className="h-4 w-4 text-muted-foreground shrink-0" />
-                <span className="font-medium text-foreground truncate">{projectInfo.customer_name}</span>
-              </div>
-              <span className="text-muted-foreground/40">·</span>
-              <div className="flex items-center gap-1.5 min-w-0 text-muted-foreground">
-                <MapPin className="h-3.5 w-3.5 shrink-0" />
-                <span className="text-xs truncate">{projectInfo.address_line1}, {projectInfo.postal_code} {projectInfo.city}</span>
-              </div>
-              <div className="flex items-center gap-1.5 ml-auto flex-wrap">
-                <Badge variant={quote.quote_kind === "final" ? "default" : quote.quote_kind === "service" ? "outline" : "secondary"} className="text-[11px]">
-                  {quote.quote_kind === "final" ? "✅ Final" : quote.quote_kind === "service" ? "🔧 SAV" : "📋 Estimatif"}
-                </Badge>
-                {projectInfo.flue_scenario && <Badge variant="outline" className="text-[11px] text-muted-foreground">🏗️ {projectInfo.flue_scenario}</Badge>}
-                <Button variant="ghost" size="sm" className="h-7 text-xs px-2" onClick={() => navigate(`/projects/${projectId}`)}>Voir le projet <ArrowRight className="h-3 w-3 ml-1" /></Button>
-              </div>
-            </div>
-          )}
-
           <Card>
             <CardContent className="p-4 grid grid-cols-2 md:grid-cols-4 gap-4">
               <div className="col-span-full">
@@ -1247,6 +1226,13 @@ export default function QuoteEditor() {
                   maxLength={200}
                 />
               </div>
+              {projectInfo?.flue_scenario && (
+                <div className="col-span-full -mt-2">
+                  <Badge variant="outline" className="text-[11px] text-muted-foreground font-normal">
+                    🏗️ {projectInfo.flue_scenario}
+                  </Badge>
+                </div>
+              )}
               <div className="col-span-full space-y-1.5">
                 <Label className="text-sm">Type de devis</Label>
                 <Select value={quote.quote_kind} onValueChange={(v) => setQuote({ ...quote, quote_kind: v })}>
@@ -1258,30 +1244,28 @@ export default function QuoteEditor() {
               <div className="space-y-1.5"><Label className="text-xs text-muted-foreground">Date d'expiration</Label><Input type="date" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} className="h-8 text-sm" /></div>
               <div className="space-y-1.5"><Label className="text-xs text-muted-foreground">Visite préalable <span className="text-muted-foreground/60">(optionnel)</span></Label><Input type="date" value={visitDate} onChange={(e) => setVisitDate(e.target.value)} className="h-8 text-sm" /></div>
               <div className="space-y-1.5"><Label className="text-xs text-muted-foreground">Début des travaux <span className="text-muted-foreground/60">(optionnel)</span></Label><Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="h-8 text-sm" /></div>
+              <div className="col-span-full pt-3 mt-1 border-t border-border flex flex-wrap items-center gap-x-6 gap-y-3">
+                <div className="flex items-center gap-2 flex-nowrap">
+                  <Label className="text-sm text-muted-foreground shrink-0">Acompte</Label>
+                  <Input type="number" min={0} max={100} step={1}
+                    value={depositPct ?? ""}
+                    onChange={(e) => setDepositPct(e.target.value === "" ? null : Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))}
+                    className="h-8 w-20 text-sm text-right" placeholder="0" />
+                  <span className="text-sm text-muted-foreground">%</span>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">à la signature</span>
+                  {depositPct != null && depositPct > 0 && (
+                    <span className="font-mono text-sm font-semibold text-foreground whitespace-nowrap">
+                      = {formatCurrency((globalDiscountPct > 0 ? totals.totalTtcAfterDiscount : totals.totalTtc) * depositPct / 100)} TTC
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 flex-nowrap ml-auto">
+                  <Switch id="show-section-totals" checked={showSectionTotals} onCheckedChange={setShowSectionTotals} />
+                  <Label htmlFor="show-section-totals" className="text-xs text-muted-foreground cursor-pointer whitespace-nowrap">Sous-totaux par bloc (PDF)</Label>
+                </div>
+              </div>
             </CardContent>
           </Card>
-
-          <div className="flex items-center gap-3 mt-2">
-            <Label className="text-sm text-muted-foreground shrink-0">Acompte :</Label>
-            <div className="flex items-center gap-1.5">
-              <Input type="number" min={0} max={100} step={1}
-                value={depositPct ?? ""}
-                onChange={(e) => setDepositPct(e.target.value === "" ? null : Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))}
-                className="h-8 w-20 text-sm text-right" placeholder="0" />
-              <span className="text-sm text-muted-foreground">%</span>
-              <span className="text-xs text-muted-foreground">à la signature</span>
-            </div>
-            {depositPct != null && depositPct > 0 && (
-              <span className="font-mono text-sm font-semibold text-foreground ml-2">
-                = {formatCurrency((globalDiscountPct > 0 ? totals.totalTtcAfterDiscount : totals.totalTtc) * depositPct / 100)} TTC
-              </span>
-            )}
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Switch id="show-section-totals" checked={showSectionTotals} onCheckedChange={setShowSectionTotals} />
-            <Label htmlFor="show-section-totals" className="text-xs text-muted-foreground cursor-pointer">Afficher sous-totaux par bloc (PDF)</Label>
-          </div>
 
           {quote.quote_kind === "final" && Object.keys(categorySubtotals).length >= 1 && (
             <div className="flex items-center gap-4 text-xs px-1">

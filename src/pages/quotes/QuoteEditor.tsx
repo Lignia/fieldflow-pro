@@ -1,5 +1,7 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
+// TODO post-MVP : si quote_status = "sent" et devis expiré,
+// afficher aide UX "Prolongez la date de validité avant de renvoyer"
 import {
   ArrowLeft, Plus, Trash2, Save, Send, Loader2,
   MoreHorizontal, Copy, Type, Layers, Building2, MapPin,

@@ -6,7 +6,7 @@ import {
   ArrowLeft, Plus, Trash2, Save, Send, Loader2,
   MoreHorizontal, Copy, Type, Layers, Building2, MapPin,
   ClipboardList, ArrowRight, Tag, Flame, Construction, Wrench,
-  ChevronDown, BookOpen, BookmarkPlus,
+  ChevronDown, BookOpen, BookmarkPlus, Receipt, TrendingUp,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -1295,27 +1295,27 @@ export default function QuoteEditor() {
         <div className="max-w-6xl mx-auto px-4 py-3">
           <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-3 md:gap-6 items-center">
             <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1 text-sm">
-              <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70 font-semibold">💰 Client</span>
-              <div><span className="text-muted-foreground">Total HT </span><span className="font-mono font-semibold text-foreground">{fmt(totals.totalHt)}</span></div>
+              <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground/70 font-semibold"><Receipt className="h-3 w-3" /> Client</span>
+              <div className="text-sm"><span className="text-muted-foreground">Total HT </span><span className="font-mono text-muted-foreground">{fmt(totals.totalHt)}</span></div>
               {globalDiscountPct > 0 && <div className="text-xs text-destructive"><span>Remise {globalDiscountPct} % </span><span className="font-mono">-{fmt(totals.discountAmount)}</span></div>}
               {Object.entries(totals.vatMap).sort(([a],[b])=>Number(a)-Number(b)).map(([rate,amount])=>(
-                <div key={rate} className="text-xs"><span className="text-muted-foreground">TVA {rate}% </span><span className="font-mono text-foreground">{fmt(amount)}</span></div>
+                <div key={rate} className="text-xs"><span className="text-muted-foreground">TVA {rate}% </span><span className="font-mono text-muted-foreground">{fmt(amount)}</span></div>
               ))}
-              <div><span className="text-muted-foreground">Total TTC </span><span className="font-mono font-bold text-base text-foreground">{fmt(globalDiscountPct > 0 ? totals.totalTtcAfterDiscount : totals.totalTtc)}</span></div>
+              <div><span className="text-muted-foreground">Total TTC </span><span className="font-mono font-bold text-xl text-foreground">{fmt(globalDiscountPct > 0 ? totals.totalTtcAfterDiscount : totals.totalTtc)}</span></div>
               {depositPct != null && depositPct > 0 && (
                 <div className="text-xs"><span className="text-muted-foreground">Acompte ({depositPct} %) : </span><span className="font-mono font-semibold text-foreground">{fmt((globalDiscountPct > 0 ? totals.totalTtcAfterDiscount : totals.totalTtc) * depositPct / 100)}</span></div>
               )}
             </div>
             <Separator orientation="vertical" className="h-10 hidden md:block" />
             <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1 text-sm md:justify-end">
-              <span className="text-[10px] uppercase tracking-wider text-muted-foreground/70 font-semibold" title="Information interne — non visible par le client">📈 Rentabilité</span>
+              <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground/70 font-semibold" title="Information interne — non visible par le client"><TrendingUp className="h-3 w-3" /> Rentabilité</span>
               {marginTotals.hasCost ? (
                 <>
-                  <div className="text-xs"><span className="text-muted-foreground">Coût HT </span><span className="font-mono text-foreground">{fmt(totals.totalHt - marginTotals.margin)}</span></div>
+                  <div className="text-xs"><span className="text-muted-foreground">Coût HT </span><span className="font-mono text-muted-foreground">{fmt(totals.totalHt - marginTotals.margin)}</span></div>
                   <div title={marginTotals.fullyCovered ? "Marge HT totale" : "Marge HT — partielle"}>
                     <span className="text-muted-foreground">Marge </span>
-                    <span className={`font-mono font-semibold ${marginTotals.margin < 0 ? "text-destructive" : marginTotals.pct < 15 ? "text-warning" : "text-success"}`}>{fmt(marginTotals.margin)}</span>
-                    <span className={`ml-1 text-xs font-mono ${marginTotals.margin < 0 ? "text-destructive" : marginTotals.pct < 15 ? "text-warning" : "text-success"}`}>({marginTotals.pct.toFixed(0)} %)</span>
+                    <span className={`font-mono font-semibold text-base ${marginTotals.margin < 0 ? "text-destructive" : marginTotals.pct < 15 ? "text-warning" : "text-success"}`}>{fmt(marginTotals.margin)}</span>
+                    <span className={`ml-1 text-base font-mono font-semibold ${marginTotals.margin < 0 ? "text-destructive" : marginTotals.pct < 15 ? "text-warning" : "text-success"}`}>({marginTotals.pct.toFixed(0)} %)</span>
                     {!marginTotals.fullyCovered && <span className="ml-1.5 text-[10px] text-warning" title="Coûts manquants sur certaines lignes">Marge partielle</span>}
                   </div>
                 </>

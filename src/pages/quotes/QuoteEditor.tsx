@@ -4,8 +4,8 @@ import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 // afficher aide UX "Prolongez la date de validité avant de renvoyer"
 import {
   ArrowLeft, Plus, Trash2, Save, Send, Loader2,
-  MoreHorizontal, Copy, Type, Layers, Building2, MapPin,
-  ClipboardList, ArrowRight, Tag, Flame, Construction, Wrench,
+  MoreHorizontal, Copy, Type, Layers,
+  ClipboardList, Tag, Flame, Construction, Wrench,
   ChevronDown, BookOpen, BookmarkPlus, Receipt, TrendingUp,
 } from "lucide-react";
 import { toast } from "sonner";

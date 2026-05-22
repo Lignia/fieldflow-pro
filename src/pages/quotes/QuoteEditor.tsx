@@ -40,6 +40,9 @@ import {
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 // ─── Types ──────────────────────────────────────────────────────
 type UnitType = "u" | "m" | "m2" | "forfait" | "h";
@@ -1070,9 +1073,24 @@ export default function QuoteEditor() {
             <Button variant="outline" size="sm" onClick={() => handleSave(false)} disabled={savingAll}>
               {savingAll ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Save className="h-3.5 w-3.5 mr-1" />} Enregistrer
             </Button>
-            <Button size="sm" onClick={() => handleSave(true)} disabled={savingAll}>
-              {savingAll ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Send className="h-3.5 w-3.5 mr-1" />} Envoyer au client
-            </Button>
+            <TooltipProvider delayDuration={200}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span tabIndex={rows.length === 0 ? 0 : -1}>
+                    <Button
+                      size="sm"
+                      onClick={() => handleSave(true)}
+                      disabled={rows.length === 0 || savingAll}
+                    >
+                      {savingAll ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Send className="h-3.5 w-3.5 mr-1" />} Envoyer au client
+                    </Button>
+                  </span>
+                </TooltipTrigger>
+                {rows.length === 0 && (
+                  <TooltipContent>Ajoutez au moins une ligne pour envoyer ce devis</TooltipContent>
+                )}
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
       </header>

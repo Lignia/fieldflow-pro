@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { format } from "date-fns";
+import { format, differenceInDays } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
   Search, FileText, RefreshCw, Plus, AlertTriangle,
@@ -43,6 +43,8 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { billingDb } from "@/integrations/supabase/schema-clients";
 import { PageContainer } from "@/components/PageContainer";
+import { StatusBadge } from "@/components/StatusBadge";
+import { formatCurrency as formatCurrencyFull } from "@/lib/format";
 
 /* ── Helpers ── */
 

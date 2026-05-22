@@ -480,7 +480,7 @@ function SectionRow({ row, subtotal, onChange, onDuplicate, onDelete }: {
       <Input value={row.label} onChange={(e) => onChange(e.target.value)}
         className="font-semibold text-sm border-none bg-transparent shadow-none focus-visible:ring-0 p-0 h-auto"
         placeholder="Nom de la section" />
-      <span className="ml-auto font-mono text-sm text-muted-foreground shrink-0">{fmt(subtotal)}</span>
+      <span className="ml-auto font-mono text-sm text-muted-foreground shrink-0">{formatCurrency(subtotal)}</span>
       <RowMenu onDuplicate={onDuplicate} onDelete={onDelete} />
     </div>
   );
@@ -573,10 +573,10 @@ function ItemRow({ row, index, onChange, onDuplicate, onDelete }: {
         <SelectContent>{VAT_RATES.map((r) => <SelectItem key={r} value={String(r)}>{r} %</SelectItem>)}</SelectContent>
       </Select>
       <div className="text-right pt-1">
-        <div className="font-mono text-sm font-semibold text-foreground tabular-nums">{fmt(totalHt)}</div>
+        <div className="font-mono text-sm font-semibold text-foreground tabular-nums">{formatCurrency(totalHt)}</div>
         {hasCost && (
           <div className={`font-mono text-[10px] leading-tight tabular-nums ${marginTone}`} title="Marge HT (interne)">
-            Marge {fmt(margin)} ({marginPct.toFixed(0)} %)
+            Marge {formatCurrency(margin)} ({marginPct.toFixed(0)} %)
           </div>
         )}
       </div>
@@ -1273,7 +1273,7 @@ export default function QuoteEditor() {
             </div>
             {depositPct != null && depositPct > 0 && (
               <span className="font-mono text-sm font-semibold text-foreground ml-2">
-                = {fmt((globalDiscountPct > 0 ? totals.totalTtcAfterDiscount : totals.totalTtc) * depositPct / 100)} TTC
+                = {formatCurrency((globalDiscountPct > 0 ? totals.totalTtcAfterDiscount : totals.totalTtc) * depositPct / 100)} TTC
               </span>
             )}
           </div>
@@ -1348,7 +1348,7 @@ export default function QuoteEditor() {
                           <div key={cat}>
                             <div className={`flex items-center justify-between px-3 py-1.5 text-[11px] font-semibold uppercase tracking-wider border-l-2 ${CATEGORY_TONE[cat]}`}>
                               <span>{CATEGORY_LABELS[cat]}</span>
-                              <span className="font-mono tabular-nums opacity-80">{fmt(categorySubtotals[cat] || 0)}</span>
+                              <span className="font-mono tabular-nums opacity-80">{formatCurrency(categorySubtotals[cat] || 0)}</span>
                             </div>
                             {items.map(renderRow)}
                           </div>
@@ -1388,7 +1388,7 @@ export default function QuoteEditor() {
                 {(["device", "flue", "labor", "option", "misc"] as LineCategory[]).map((cat) => {
                   const amount = categorySubtotals[cat];
                   if (amount === undefined) return null;
-                  return (<div key={cat} className="flex flex-col gap-0.5 px-3 py-2 rounded-md border border-border bg-muted/20"><span className="text-xs text-muted-foreground">{CATEGORY_LABELS[cat]}</span><span className="font-mono text-sm font-semibold text-foreground tabular-nums">{fmt(amount)}</span></div>);
+                  return (<div key={cat} className="flex flex-col gap-0.5 px-3 py-2 rounded-md border border-border bg-muted/20"><span className="text-xs text-muted-foreground">{CATEGORY_LABELS[cat]}</span><span className="font-mono text-sm font-semibold text-foreground tabular-nums">{formatCurrency(amount)}</span></div>);
                 })}
               </div>
             </CardContent></Card>
@@ -1403,7 +1403,7 @@ export default function QuoteEditor() {
                 className="h-8 w-20 text-sm text-right" placeholder="0" />
               <span className="text-sm text-muted-foreground">%</span>
             </div>
-            {globalDiscountPct > 0 && <span className="text-xs text-muted-foreground">→ -{fmt(totals.discountAmount)} HT sur le total</span>}
+            {globalDiscountPct > 0 && <span className="text-xs text-muted-foreground">→ -{formatCurrency(totals.discountAmount)} HT sur le total</span>}
           </div>
         </div>
       </main>
@@ -1413,14 +1413,14 @@ export default function QuoteEditor() {
           <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-3 md:gap-6 items-center">
             <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1 text-sm">
               <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground/70 font-semibold"><Receipt className="h-3 w-3" /> Client</span>
-              <div className="text-sm"><span className="text-muted-foreground">Total HT </span><span className="font-mono text-muted-foreground">{fmt(totals.totalHt)}</span></div>
-              {globalDiscountPct > 0 && <div className="text-xs text-destructive"><span>Remise {globalDiscountPct} % </span><span className="font-mono">-{fmt(totals.discountAmount)}</span></div>}
+              <div className="text-sm"><span className="text-muted-foreground">Total HT </span><span className="font-mono text-muted-foreground">{formatCurrency(totals.totalHt)}</span></div>
+              {globalDiscountPct > 0 && <div className="text-xs text-destructive"><span>Remise {globalDiscountPct} % </span><span className="font-mono">-{formatCurrency(totals.discountAmount)}</span></div>}
               {Object.entries(totals.vatMap).sort(([a],[b])=>Number(a)-Number(b)).map(([rate,amount])=>(
-                <div key={rate} className="text-xs"><span className="text-muted-foreground">TVA {rate}% </span><span className="font-mono text-muted-foreground">{fmt(amount)}</span></div>
+                <div key={rate} className="text-xs"><span className="text-muted-foreground">TVA {rate}% </span><span className="font-mono text-muted-foreground">{formatCurrency(amount)}</span></div>
               ))}
-              <div><span className="text-muted-foreground">Total TTC </span><span className="font-mono font-bold text-xl text-foreground">{fmt(globalDiscountPct > 0 ? totals.totalTtcAfterDiscount : totals.totalTtc)}</span></div>
+              <div><span className="text-muted-foreground">Total TTC </span><span className="font-mono font-bold text-xl text-foreground">{formatCurrency(globalDiscountPct > 0 ? totals.totalTtcAfterDiscount : totals.totalTtc)}</span></div>
               {depositPct != null && depositPct > 0 && (
-                <div className="text-xs"><span className="text-muted-foreground">Acompte ({depositPct} %) : </span><span className="font-mono font-semibold text-foreground">{fmt((globalDiscountPct > 0 ? totals.totalTtcAfterDiscount : totals.totalTtc) * depositPct / 100)}</span></div>
+                <div className="text-xs"><span className="text-muted-foreground">Acompte ({depositPct} %) : </span><span className="font-mono font-semibold text-foreground">{formatCurrency((globalDiscountPct > 0 ? totals.totalTtcAfterDiscount : totals.totalTtc) * depositPct / 100)}</span></div>
               )}
             </div>
             <Separator orientation="vertical" className="h-10 hidden md:block" />
@@ -1428,10 +1428,10 @@ export default function QuoteEditor() {
               <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground/70 font-semibold" title="Information interne — non visible par le client"><TrendingUp className="h-3 w-3" /> Rentabilité</span>
               {marginTotals.hasCost ? (
                 <>
-                  <div className="text-xs"><span className="text-muted-foreground">Coût HT </span><span className="font-mono text-muted-foreground">{fmt(totals.totalHt - marginTotals.margin)}</span></div>
+                  <div className="text-xs"><span className="text-muted-foreground">Coût HT </span><span className="font-mono text-muted-foreground">{formatCurrency(totals.totalHt - marginTotals.margin)}</span></div>
                   <div title={marginTotals.fullyCovered ? "Marge HT totale" : "Marge HT — partielle"}>
                     <span className="text-muted-foreground">Marge </span>
-                    <span className={`font-mono font-semibold text-base ${marginTotals.margin < 0 ? "text-destructive" : marginTotals.pct < 15 ? "text-warning" : "text-success"}`}>{fmt(marginTotals.margin)}</span>
+                    <span className={`font-mono font-semibold text-base ${marginTotals.margin < 0 ? "text-destructive" : marginTotals.pct < 15 ? "text-warning" : "text-success"}`}>{formatCurrency(marginTotals.margin)}</span>
                     <span className={`ml-1 text-base font-mono font-semibold ${marginTotals.margin < 0 ? "text-destructive" : marginTotals.pct < 15 ? "text-warning" : "text-success"}`}>({marginTotals.pct.toFixed(0)} %)</span>
                     {!marginTotals.fullyCovered && <span className="ml-1.5 text-[10px] text-warning" title="Coûts manquants sur certaines lignes">Marge partielle</span>}
                   </div>
@@ -1455,7 +1455,7 @@ export default function QuoteEditor() {
             <div className="space-y-1.5"><Label className="text-xs">Notes (optionnel)</Label><Textarea value={bundleNotes} onChange={(e) => setBundleNotes(e.target.value)} placeholder="Conditions d'application…" rows={2} /></div>
             <Card className="bg-muted/30"><CardContent className="p-3 text-xs text-muted-foreground space-y-0.5">
               <p className="font-medium text-foreground mb-1">Lignes incluses ({itemRows.length}) :</p>
-              {itemRows.slice(0,4).map((r,i)=>(<p key={i} className="truncate">• {r.label||"Sans désignation"} — {fmt(r.qty*r.unit_price_ht)}</p>))}
+              {itemRows.slice(0,4).map((r,i)=>(<p key={i} className="truncate">• {r.label||"Sans désignation"} — {formatCurrency(r.qty*r.unit_price_ht)}</p>))}
               {itemRows.length > 4 && <p>+ {itemRows.length-4} autres lignes</p>}
             </CardContent></Card>
           </div>

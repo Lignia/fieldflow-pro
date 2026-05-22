@@ -381,8 +381,17 @@ export default function QuoteDetail() {
       )}`
     : null;
 
+  const primaryAction = getQuotePrimaryAction({
+    kind: quote.quote_kind,
+    status: quote.quote_status,
+    isExpired: expiry.isExpired,
+    canSend,
+    depositInvoice,
+    projectId: quote.project_id,
+  });
+
   return (
-    <div className="max-w-6xl mx-auto space-y-4">
+    <div className="max-w-6xl mx-auto space-y-4 pb-32 xl:pb-0">
       {/* ── Dialogs ── */}
       <DeleteDialog open={showDelete} onOpenChange={setShowDelete} onConfirm={handleDelete} />
       <SignDialog

@@ -137,6 +137,67 @@ function getExpiryInfo(expiryDate: string, status: string) {
    MAIN COMPONENT
    ══════════════════════════════════════════════════════ */
 
+/**
+ * Helper UX mobile uniquement — action primaire recommandée.
+ * NE DOIT PAS devenir la source de vérité du workflow devis.
+ * Aucune règle métier autorisante ici.
+ * La validation FSM réelle reste côté backend (transition_quote_status RPC).
+ * Les handlers onSend / onSign sont la vraie source de validation.
+ */
+type PrimaryAction =
+  | { kind: "send"; disabled: boolean }
+  | { kind: "create-final" }
+  | { kind: "edit" }
+  | { kind: "sign"; disabled: boolean }
+  | { kind: "view-deposit-invoice"; invoiceId: string; invoiceNumber: string }
+  | { kind: "view-project"; projectId: string }
+  | null;
+
+function getQuotePrimaryAction(args: {
+  kind: string;
+  status: string;
+  isExpired: boolean;
+  canSend: boolean;
+  depositInvoice: { id: string; invoice_number: string } | null;
+  projectId: string | null;
+}): PrimaryAction {
+  const { kind, status, isExpired, canSend, depositInvoice, projectId } = args;
+
+  if (status === "draft") {
+    if (kind === "estimate" || kind === "final" || kind === "service") {
+      return { kind: "send", disabled: !canSend };
+    }
+    return null;
+  }
+
+  if (status === "sent") {
+    if (kind === "estimate") {
+      return isExpired ? { kind: "edit" } : { kind: "create-final" };
+    }
+    if (kind === "final") {
+      return isExpired
+        ? { kind: "edit" }
+        : { kind: "sign", disabled: !canSend };
+    }
+    return null;
+  }
+
+  if (status === "signed") {
+    if (depositInvoice) {
+      return {
+        kind: "view-deposit-invoice",
+        invoiceId: depositInvoice.id,
+        invoiceNumber: depositInvoice.invoice_number,
+      };
+    }
+    if (projectId) return { kind: "view-project", projectId };
+    return null;
+  }
+
+  // lost / canceled / void / expired terminal → no CTA
+  return null;
+}
+
 export default function QuoteDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();

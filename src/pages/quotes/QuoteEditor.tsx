@@ -1280,7 +1280,7 @@ export default function QuoteEditor() {
             </div>
           )}
 
-          <Card className="overflow-x-auto overflow-hidden">
+          <Card className="overflow-x-auto">
             <div className="hidden md:grid md:grid-cols-[28px_minmax(0,1fr)_60px_72px_92px_72px_88px_110px_36px] gap-1.5 px-3 py-2 bg-muted/30 border-b border-border text-xs font-medium text-muted-foreground">
               <span className="text-center">N°</span><span>Désignation</span><span className="text-right">Qté</span><span>Unité</span>
               <span className="text-right">Vente HT</span><span className="text-right opacity-60" title="Coût d'achat (interne)">Coût HT</span>
@@ -1361,6 +1361,19 @@ export default function QuoteEditor() {
                 <Button variant="ghost" size="sm" onClick={() => addItem()}><Plus className="h-3.5 w-3.5 mr-1" /> Ligne libre</Button>
                 <Button variant="ghost" size="sm" onClick={addSection}><Layers className="h-3.5 w-3.5 mr-1" /> Section</Button>
                 <Button variant="ghost" size="sm" onClick={addText}><Type className="h-3.5 w-3.5 mr-1" /> Texte</Button>
+                <div className="w-full flex items-center gap-3 border-t border-border/40 pt-2 mt-1">
+                  <Label className="text-sm text-muted-foreground shrink-0">Remise globale</Label>
+                  <Input type="number" min={0} max={50} step={0.5}
+                    value={globalDiscountPct || ""}
+                    onChange={(e) => setGlobalDiscountPct(Math.max(0, Math.min(50, parseFloat(e.target.value) || 0)))}
+                    className="h-7 w-16 text-sm text-right" placeholder="0" />
+                  <span className="text-sm text-muted-foreground">%</span>
+                  {globalDiscountPct > 0 && (
+                    <span className="text-xs text-muted-foreground">
+                      → -{formatCurrency(totals.discountAmount)} HT
+                    </span>
+                  )}
+                </div>
               </div>
             )}
           </Card>
@@ -1377,18 +1390,6 @@ export default function QuoteEditor() {
               </div>
             </CardContent></Card>
           )}
-
-          <div className="flex items-center gap-3 px-3 py-2 border-t border-border bg-muted/10">
-            <Label className="text-sm text-muted-foreground shrink-0">Remise globale :</Label>
-            <div className="flex items-center gap-1.5">
-              <Input type="number" min={0} max={50} step={0.5}
-                value={globalDiscountPct || ""}
-                onChange={(e) => setGlobalDiscountPct(Math.max(0, Math.min(50, parseFloat(e.target.value) || 0)))}
-                className="h-8 w-20 text-sm text-right" placeholder="0" />
-              <span className="text-sm text-muted-foreground">%</span>
-            </div>
-            {globalDiscountPct > 0 && <span className="text-xs text-muted-foreground">→ -{formatCurrency(totals.discountAmount)} HT sur le total</span>}
-          </div>
         </div>
       </main>
 

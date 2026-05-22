@@ -1166,6 +1166,19 @@ export default function QuoteEditor() {
             <Label htmlFor="show-section-totals" className="text-xs text-muted-foreground cursor-pointer">Afficher sous-totaux par bloc (PDF)</Label>
           </div>
 
+          {quote.quote_kind === "final" && Object.keys(categorySubtotals).length >= 1 && (
+            <div className="flex items-center gap-4 text-xs px-1">
+              {(["device","flue","labor"] as const).map((cat) => {
+                const ok = (categorySubtotals[cat] ?? 0) > 0;
+                return (
+                  <span key={cat} className={ok ? "text-success" : "text-muted-foreground/40"}>
+                    {ok ? "✓" : "○"} {cat === "device" ? "Appareil" : cat === "flue" ? "Fumisterie" : "Pose"}
+                  </span>
+                );
+              })}
+            </div>
+          )}
+
           <Card className="overflow-x-auto overflow-hidden">
             <div className="hidden md:grid md:grid-cols-[28px_minmax(0,1fr)_60px_72px_92px_72px_88px_110px_36px] gap-1.5 px-3 py-2 bg-muted/30 border-b border-border text-xs font-medium text-muted-foreground">
               <span className="text-center">N°</span><span>Désignation</span><span className="text-right">Qté</span><span>Unité</span>
@@ -1183,10 +1196,13 @@ export default function QuoteEditor() {
                   </p>
                   <div className="flex flex-col items-center gap-4">
                     <div className="flex flex-wrap items-center justify-center gap-2">
-                      <Button size="sm" variant="outline" className="border-warning/40 text-warning hover:bg-warning/10 hover:text-warning" onClick={() => addItem(undefined, "device")}><Flame className="h-3.5 w-3.5 mr-1.5" /> Ajouter un appareil</Button>
-                      <Button size="sm" variant="outline" className="border-info/40 text-info hover:bg-info/10 hover:text-info" onClick={() => addItem(undefined, "flue")}><Construction className="h-3.5 w-3.5 mr-1.5" /> Ajouter la fumisterie</Button>
-                      <Button size="sm" variant="outline" className="border-success/40 text-success hover:bg-success/10 hover:text-success" onClick={() => addItem(undefined, "labor")}><Wrench className="h-3.5 w-3.5 mr-1.5" /> Ajouter la pose</Button>
+                      <Button size="lg" className="min-h-[48px] px-8 bg-warning text-warning-foreground hover:bg-warning/90" onClick={() => addItem(undefined, "device")}><Flame className="h-4 w-4 mr-2" /> Ajouter un appareil</Button>
+                      <Button size="sm" variant="outline" className="opacity-60 border-info/40 text-info hover:bg-info/10 hover:text-info" onClick={() => addItem(undefined, "flue")}><Construction className="h-3.5 w-3.5 mr-1.5" /> Ajouter la fumisterie</Button>
+                      <Button size="sm" variant="outline" className="opacity-60 border-success/40 text-success hover:bg-success/10 hover:text-success" onClick={() => addItem(undefined, "labor")}><Wrench className="h-3.5 w-3.5 mr-1.5" /> Ajouter la pose</Button>
                     </div>
+                    <p className="text-xs text-muted-foreground mt-3 max-w-xs">
+                      Commencez par l'appareil — la fumisterie et la pose se calibreront dessus. Dans la majorité des devis poêle, on commence par l'appareil.
+                    </p>
                     <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
                       <CatalogPopover onSelect={(item) => addItem(item)} onFreeLine={() => addItem()} triggerLabel="Depuis le catalogue" triggerVariant="ghost" />
                       <span>·</span><Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => addItem()}>Ligne libre</Button>

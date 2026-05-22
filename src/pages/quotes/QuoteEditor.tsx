@@ -1044,8 +1044,8 @@ export default function QuoteEditor() {
           <Button variant="ghost" size="sm" onClick={() => navigate(`/projects/${projectId}?tab=commercial`)} className="shrink-0">
             <ArrowLeft className="h-4 w-4 mr-1" /> Retour au projet
           </Button>
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="font-semibold text-foreground truncate">{quote.quote_number || "Nouveau devis"}</span>
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="font-mono font-semibold text-foreground">{quote.quote_number || "Nouveau devis"}</span>
             <Badge className={statusCfg.className}>{statusCfg.label}</Badge>
           </div>
           {projectInfo && (

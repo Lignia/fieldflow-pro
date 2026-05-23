@@ -739,17 +739,17 @@ export default function QuoteDetail() {
                     <TableHeader>
                       <TableRow>
                         <TableHead className="min-w-[220px]">Désignation</TableHead>
-                        <TableHead className="text-right w-[80px]">Qté</TableHead>
-                        <TableHead className="text-right w-[80px]">Unité</TableHead>
-                        <TableHead className="text-right w-[110px]">Prix HT</TableHead>
-                        <TableHead className="text-right w-[70px]">TVA</TableHead>
-                        <TableHead className="text-right w-[120px]">Total HT</TableHead>
+                        <TableHead className="text-right w-[80px] whitespace-nowrap">Qté</TableHead>
+                        <TableHead className="text-right w-[80px] whitespace-nowrap">Unité</TableHead>
+                        <TableHead className="text-right w-[110px] whitespace-nowrap">Prix HT</TableHead>
+                        <TableHead className="text-right w-[70px] whitespace-nowrap">TVA</TableHead>
+                        <TableHead className="text-right w-[120px] whitespace-nowrap">Total HT</TableHead>
                         {showInternalCols && (
                           <>
-                            <TableHead className="text-right w-[110px] text-xs text-muted-foreground">
+                            <TableHead className="text-right w-[110px] text-xs text-muted-foreground whitespace-nowrap">
                               Coût HT <span className="opacity-60">(interne)</span>
                             </TableHead>
-                            <TableHead className="text-right w-[110px] text-xs text-muted-foreground">
+                            <TableHead className="text-right w-[110px] text-xs text-muted-foreground whitespace-nowrap">
                               Marge <span className="opacity-60">(interne)</span>
                             </TableHead>
                           </>
@@ -1400,23 +1400,23 @@ function LineRow({
           </Collapsible>
         )}
       </TableCell>
-      <TableCell className="text-right font-mono text-sm">{line.qty}</TableCell>
+      <TableCell className="text-right font-mono text-sm whitespace-nowrap">{line.qty}</TableCell>
       <TableCell className="text-right text-sm text-muted-foreground">
         {line.unit ? UNIT_LABELS[line.unit] ?? line.unit : "—"}
       </TableCell>
-      <TableCell className="text-right font-mono text-sm">{formatCurrency(line.unit_price_ht)}</TableCell>
+      <TableCell className="text-right font-mono text-sm whitespace-nowrap">{formatCurrency(line.unit_price_ht)}</TableCell>
       <TableCell className="text-right text-sm text-muted-foreground">
         {line.vat_rate.toLocaleString("fr-FR")}%
       </TableCell>
-      <TableCell className="text-right font-mono text-sm font-semibold">
+      <TableCell className="text-right font-mono text-sm font-semibold whitespace-nowrap">
         {formatCurrency(line.qty * line.unit_price_ht)}
       </TableCell>
       {showCostCols && (
         <>
-          <TableCell className="text-right font-mono text-xs text-muted-foreground">
+          <TableCell className="text-right font-mono text-xs text-muted-foreground whitespace-nowrap">
             {(line.unit_cost_price ?? 0) > 0 ? formatCurrency(costLine) : "—"}
           </TableCell>
-          <TableCell className="text-right">
+          <TableCell className="text-right whitespace-nowrap">
             {(line.unit_cost_price ?? 0) > 0 ? (
               <MarginBadge pct={marginPct} eur={marginEur} />
             ) : (

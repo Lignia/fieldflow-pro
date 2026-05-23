@@ -842,7 +842,7 @@ export default function QuoteDetail() {
               <Separator className="my-1 max-w-sm w-full" />
               <div className="flex items-center justify-between w-full max-w-sm">
                 <span className="font-semibold text-base">Total TTC</span>
-                <span className="font-mono font-bold text-lg">{formatCurrency(displayTotalTtc)}</span>
+                <span className="font-mono font-bold text-2xl md:text-3xl tabular-nums tracking-tight">{formatCurrency(displayTotalTtc)}</span>
               </div>
             </div>
           </Card>

@@ -1153,6 +1153,15 @@ export default function QuoteEditor() {
   if (!quote) return null;
 
   const statusCfg = STATUS_LABELS[quote.quote_status] || STATUS_LABELS.draft;
+  const kindCfg = {
+    label: KIND_LABELS[quote.quote_kind] || quote.quote_kind,
+    className:
+      quote.quote_kind === "service"
+        ? "bg-warning/10 text-warning"
+        : quote.quote_kind === "final"
+          ? "bg-primary/10 text-primary"
+          : "bg-muted text-muted-foreground",
+  };
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
@@ -1161,15 +1170,18 @@ export default function QuoteEditor() {
           <Button variant="ghost" size="sm" onClick={() => navigate(`/projects/${projectId}?tab=commercial`)} className="shrink-0">
             <ArrowLeft className="h-4 w-4 mr-1" /> Retour au projet
           </Button>
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="font-mono font-semibold text-foreground">{quote.quote_number || "Nouveau devis"}</span>
-            <Badge className={statusCfg.className}>{statusCfg.label}</Badge>
+          <div className="flex flex-col gap-0.5 shrink-0 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="font-mono font-semibold text-foreground">{quote.quote_number || "Nouveau devis"}</span>
+              <Badge className={kindCfg.className}>{kindCfg.label}</Badge>
+              <Badge className={statusCfg.className}>{statusCfg.label}</Badge>
+            </div>
+            {projectInfo && (
+              <span className="hidden md:block text-xs text-muted-foreground truncate">
+                {projectInfo.customer_name} · {projectInfo.project_number}
+              </span>
+            )}
           </div>
-          {projectInfo && (
-            <span className="hidden md:block text-sm text-muted-foreground truncate">
-              {projectInfo.project_number} · {projectInfo.customer_name}
-            </span>
-          )}
           <div className="ml-auto flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={handleDuplicate} disabled={duplicating || savingAll || !quote}>
               {duplicating ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : <Copy className="h-3.5 w-3.5 mr-1" />}
@@ -1289,27 +1301,14 @@ export default function QuoteEditor() {
 
             <div className="divide-y divide-border/50">
               {rows.length === 0 && (
-                <div className="py-12 px-6 text-center m-4 rounded-lg bg-muted/10 border-2 border-dashed border-border/60">
-                  <ClipboardList className="h-10 w-10 mx-auto text-muted-foreground/40 mb-4" />
-                  <p className="text-base font-semibold text-foreground mb-1">Commencez votre devis</p>
-                  <p className="text-xs text-muted-foreground mb-6">
-                    Structurez par <span className="font-medium text-foreground">🔥 Appareil</span> · <span className="font-medium text-foreground">🏗️ Fumisterie</span> · <span className="font-medium text-foreground">🔧 Pose</span>
+                <div className="flex flex-col items-center gap-3 py-8 text-center">
+                  <p className="text-sm font-medium">Ce devis est vide</p>
+                  <p className="text-xs text-muted-foreground max-w-xs">
+                    Ajoutez vos lignes depuis le catalogue ou créez une ligne libre.
                   </p>
-                  <div className="flex flex-col items-center gap-4">
-                    <div className="flex flex-wrap items-center justify-center gap-2">
-                      <Button size="lg" className="min-h-[48px] px-8 bg-warning text-warning-foreground hover:bg-warning/90" onClick={() => addItem(undefined, "device")}><Flame className="h-4 w-4 mr-2" /> Ajouter un appareil</Button>
-                      <Button size="sm" variant="outline" className="opacity-60 border-info/40 text-info hover:bg-info/10 hover:text-info" onClick={() => addItem(undefined, "flue")}><Construction className="h-3.5 w-3.5 mr-1.5" /> Ajouter la fumisterie</Button>
-                      <Button size="sm" variant="outline" className="opacity-60 border-success/40 text-success hover:bg-success/10 hover:text-success" onClick={() => addItem(undefined, "labor")}><Wrench className="h-3.5 w-3.5 mr-1.5" /> Ajouter la pose</Button>
-                    </div>
-                    <p className="text-xs text-muted-foreground mt-3 max-w-xs">
-                      Commencez par l'appareil — la fumisterie et la pose se calibreront dessus. Dans la majorité des devis poêle, on commence par l'appareil.
-                    </p>
-                    <div className="flex items-center justify-center gap-1 text-xs text-muted-foreground">
-                      <CatalogPopover onSelect={(item) => addItem(item)} onFreeLine={() => addItem()} triggerLabel="Depuis le catalogue" triggerVariant="ghost" />
-                      <span>·</span><Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => addItem()}>Ligne libre</Button>
-                      <span>·</span><Button variant="ghost" size="sm" className="h-7 text-xs" onClick={addSection}><Layers className="h-3 w-3 mr-1" />Section</Button>
-                      <span>·</span><Button variant="ghost" size="sm" className="h-7 text-xs" onClick={addText}><Type className="h-3 w-3 mr-1" />Texte</Button>
-                    </div>
+                  <div className="flex gap-2">
+                    <CatalogPopover onSelect={(item) => addItem(item)} onFreeLine={() => addItem()} triggerLabel="Depuis le catalogue" triggerVariant="outline" />
+                    <Button variant="outline" size="sm" onClick={() => addItem()}>Ligne libre</Button>
                   </div>
                 </div>
               )}

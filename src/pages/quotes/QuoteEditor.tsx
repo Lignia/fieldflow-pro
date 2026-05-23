@@ -628,6 +628,7 @@ export default function QuoteEditor() {
   const [bundleNotes, setBundleNotes] = useState("");
   const [savingBundle, setSavingBundle] = useState(false);
   const [showSectionTotals, setShowSectionTotals] = useState<boolean>(true);
+  const [paramsExpanded, setParamsExpanded] = useState<boolean>(false);
   const initRef = useRef(false);
 
   useEffect(() => {

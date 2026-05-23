@@ -45,6 +45,7 @@ import { billingDb } from "@/integrations/supabase/schema-clients";
 import { PageContainer } from "@/components/PageContainer";
 import { StatusBadge } from "@/components/StatusBadge";
 import { formatCurrency as formatCurrencyFull } from "@/lib/format";
+import { humanizeErrorMessage } from "@/lib/error-messages";
 
 /* ── Helpers ── */
 
@@ -370,8 +371,8 @@ function QuoteTableRow({ quote, onDelete, refetch, coreUserId }: QuoteTableRowPr
       if (error) throw error;
       toast.success(`Devis ${quote.quote_number} envoyé`);
       refetch();
-    } catch (err: any) {
-      toast.error(err?.message ?? "Erreur lors de l'envoi");
+    } catch (err: unknown) {
+      toast.error(humanizeErrorMessage(err));
     } finally {
       setSending(false);
     }
@@ -566,7 +567,6 @@ function NextActionButton({
   const { quote_kind: kind, quote_status: status } = quote;
   const incomplete = isIncompleteDraft(quote);
 
-  // Incomplete draft → "Compléter"
   if (incomplete) {
     return (
       <Tooltip>
@@ -586,7 +586,6 @@ function NextActionButton({
     );
   }
 
-  // Draft with content → "Envoyer"
   if (status === "draft" && quote.total_ht > 0) {
     return (
       <Tooltip>
@@ -607,7 +606,6 @@ function NextActionButton({
     );
   }
 
-  // Estimate sent → "Créer le définitif"
   if (kind === "estimate" && status === "sent" && quote.project_id) {
     return (
       <Tooltip>
@@ -630,7 +628,6 @@ function NextActionButton({
     );
   }
 
-  // Final sent → "Obtenir la signature"
   if (kind === "final" && status === "sent") {
     return (
       <Tooltip>
@@ -650,7 +647,6 @@ function NextActionButton({
     );
   }
 
-  // Service sent → "Suivre la réponse"
   if (kind === "service" && status === "sent") {
     return (
       <Tooltip>
@@ -670,7 +666,6 @@ function NextActionButton({
     );
   }
 
-  // Signed → "Voir la facture"
   if (status === "signed") {
     return (
       <Tooltip>
@@ -690,7 +685,6 @@ function NextActionButton({
     );
   }
 
-  // Lost / expired / canceled → "Archiver" (disabled)
   if (status === "lost" || status === "expired" || status === "canceled") {
     return (
       <Tooltip>

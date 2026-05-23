@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { billingDb, coreDb } from "@/integrations/supabase/schema-clients";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
+import { humanizeErrorMessage } from "@/lib/error-messages";
 
 export interface QuoteLine {
   id: string;
@@ -114,8 +115,8 @@ export function useCreateQuote() {
       setQuote(q);
       setLines([]);
       return q;
-    } catch (err: any) {
-      setError(err.message || "Erreur lors de la création du devis");
+    } catch (err: unknown) {
+      setError(humanizeErrorMessage(err));
       return null;
     } finally {
       setSaving(false);
@@ -152,8 +153,8 @@ export function useCreateQuote() {
         });
       if (err) throw err;
       await Promise.all([refetchQuote(quoteId), refetchLines(quoteId)]);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(humanizeErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -170,8 +171,8 @@ export function useCreateQuote() {
         .eq("id", lineId);
       if (err) throw err;
       await Promise.all([refetchQuote(quoteId), refetchLines(quoteId)]);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(humanizeErrorMessage(err));
     } finally {
       setSaving(false);
     }
@@ -188,8 +189,8 @@ export function useCreateQuote() {
         .eq("id", lineId);
       if (err) throw err;
       await Promise.all([refetchQuote(quoteId), refetchLines(quoteId)]);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(humanizeErrorMessage(err));
     } finally {
       setSaving(false);
     }

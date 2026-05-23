@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { billingDb, coreDb } from "@/integrations/supabase/schema-clients";
+import { humanizeErrorMessage } from "@/lib/error-messages";
 
 export interface SignQuoteResult {
   quote_id:        string;
@@ -78,10 +79,8 @@ export function useSignQuote(): UseSignQuoteReturn {
 
       return data as SignQuoteResult;
 
-    } catch (err: any) {
-      const msg = err?.message ??
-        "Erreur lors de la signature";
-      setError(msg);
+    } catch (err: unknown) {
+      setError(humanizeErrorMessage(err));
       return null;
     } finally {
       setSigning(false);

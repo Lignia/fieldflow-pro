@@ -640,12 +640,12 @@ export default function QuoteDetail() {
           <div className="space-y-3">
             {/* ── Synthèse dirigeant ── */}
             <Card>
-              <CardContent className="p-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+              <CardContent className="p-4 grid grid-cols-2 md:grid-cols-3 gap-4">
                 <div className="space-y-1">
                   <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
                     Total HT
                   </p>
-                  <p className="text-lg font-semibold font-mono">
+                  <p className="text-sm text-muted-foreground font-mono">
                     {displayTotalHt.toLocaleString("fr-FR", {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
@@ -657,7 +657,7 @@ export default function QuoteDetail() {
                   <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
                     Total TTC
                   </p>
-                  <p className="text-lg font-semibold font-mono">
+                  <p className="text-xl md:text-2xl font-bold font-mono">
                     {displayTotalTtc.toLocaleString("fr-FR", {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
@@ -670,7 +670,7 @@ export default function QuoteDetail() {
                     Marge
                   </p>
                   {hasCostData ? (
-                    <p className={cn("text-lg font-semibold font-mono", marginToneSummary)}>
+                    <p className={cn("text-xl font-semibold font-mono", marginToneSummary)}>
                       {marginEur.toLocaleString("fr-FR", {
                         minimumFractionDigits: 0,
                         maximumFractionDigits: 0,
@@ -685,14 +685,6 @@ export default function QuoteDetail() {
                       Coûts non renseignés
                     </p>
                   )}
-                </div>
-                <div className="space-y-1">
-                  <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                    Lignes
-                  </p>
-                  <p className="text-lg font-semibold font-mono">
-                    {lines.filter((l) => l.line_type === "item").length}
-                  </p>
                 </div>
               </CardContent>
             </Card>

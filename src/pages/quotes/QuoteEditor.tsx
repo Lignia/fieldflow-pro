@@ -1330,16 +1330,28 @@ export default function QuoteEditor() {
 
             <div className="divide-y divide-border/50">
               {rows.length === 0 && (
-                <div className="flex flex-col items-center gap-3 py-8 text-center">
-                  <p className="text-sm font-medium">Ce devis est vide</p>
-                  <p className="text-xs text-muted-foreground max-w-xs">
-                    Ajoutez vos lignes depuis le catalogue ou créez une ligne libre.
-                  </p>
-                  <div className="flex gap-2">
-                    <CatalogPopover onSelect={(item) => addItem(item)} onFreeLine={() => addItem()} triggerLabel="Depuis le catalogue" triggerVariant="outline" />
-                    <Button variant="outline" size="sm" onClick={() => addItem()}>Ligne libre</Button>
+                <>
+                  <div className="hidden md:block">
+                    <div className="flex flex-col items-center justify-center gap-3 py-16 px-4 text-center border-b border-dashed border-border/60">
+                      <p className="text-sm text-muted-foreground">
+                        Aucune ligne — commencez votre chiffrage
+                      </p>
+                      <div className="flex gap-2">
+                        <CatalogPopover onSelect={(item) => addItem(item)} onFreeLine={() => addItem()} triggerLabel="Depuis le catalogue" triggerVariant="outline" />
+                        <Button variant="outline" size="sm" onClick={() => addItem()}>Ligne libre</Button>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                  <div className="md:hidden flex flex-col items-center gap-3 py-8 text-center">
+                    <p className="text-sm text-muted-foreground">
+                      Aucune ligne — commencez votre chiffrage
+                    </p>
+                    <div className="flex gap-2">
+                      <CatalogPopover onSelect={(item) => addItem(item)} onFreeLine={() => addItem()} triggerLabel="Catalogue" triggerVariant="outline" />
+                      <Button variant="outline" size="sm" onClick={() => addItem()}>Ligne libre</Button>
+                    </div>
+                  </div>
+                </>
               )}
 
               {rows.length > 0 && (() => {

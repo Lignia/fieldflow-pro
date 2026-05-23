@@ -5,8 +5,6 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import {
   ArrowLeft,
-  Mail,
-  Phone,
   MapPin,
   User,
   Calendar,
@@ -15,7 +13,6 @@ import {
   CheckCircle2,
   XCircle,
   Pencil,
-  Trash2,
   FileDown,
   Receipt,
   History,
@@ -82,11 +79,14 @@ function fmtDateFull(d: string): string {
   return format(new Date(d), "d MMMM yyyy 'à' HH'h'mm", { locale: fr });
 }
 
-/* ── Normalisation badges ── */
-
-function buildLineBadges(_line: unknown): string[] {
-  return [];
-}
+/* ── C2 : mapping tva_context → libellé lisible ── */
+// Source : UX_CORRECTIONS_P0.md + D-24/D-25 doctrine TVA
+const TVA_CONTEXT_LABELS: Record<string, string> = {
+  renovation_15ans:       "Rénovation > 15 ans",
+  renovation_moins_15ans: "Rénovation < 15 ans",
+  neuf:                   "Construction neuve",
+  non_qualifie:           "Non qualifié",
+};
 
 /* ── Status / Kind config ── */
 
@@ -374,6 +374,11 @@ export default function QuoteDetail() {
         ? "text-warning"
         : "text-success";
 
+  /* ── Lignes sans coût (note UX) ── */
+  const linesWithoutCost = itemLines.filter(
+    (l) => l.unit_cost_price == null || l.unit_cost_price === 0,
+  );
+
   /* ── Google Maps link ── */
   const mapsUrl = property
     ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
@@ -513,12 +518,13 @@ export default function QuoteDetail() {
                   </p>
                 )}
 
+                {/* C2 : tva_context avec mapping lisible */}
                 {(() => {
                   const ctx = (quote as any).tva_context;
                   if (!ctx) return null;
                   const label =
                     typeof ctx === "string"
-                      ? ctx
+                      ? (TVA_CONTEXT_LABELS[ctx] ?? ctx)
                       : [ctx.label, ctx.rate != null ? `TVA ${ctx.rate}%` : null]
                           .filter(Boolean)
                           .join(" — ");
@@ -553,6 +559,7 @@ export default function QuoteDetail() {
             <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm">
               {customer && (
                 <button
+                  type="button"
                   onClick={() => navigate(`/clients/${customer.id}`)}
                   className="flex items-center gap-1.5 text-primary hover:underline"
                 >
@@ -564,6 +571,7 @@ export default function QuoteDetail() {
 
               {project && !isService && (
                 <button
+                  type="button"
                   onClick={() => navigate(`/projects/${project.id}`)}
                   className="flex items-center gap-1.5 text-primary hover:underline"
                 >
@@ -575,6 +583,7 @@ export default function QuoteDetail() {
 
               {isService && quote.service_request_id && (
                 <button
+                  type="button"
                   onClick={() => navigate(`/service-requests/${quote.service_request_id}`)}
                   className="flex items-center gap-1.5 text-warning hover:underline"
                 >
@@ -710,7 +719,8 @@ export default function QuoteDetail() {
                 )}
               </div>
             ) : (
-              <Card className="overflow-hidden">
+              /* C3 : overflow-hidden retiré de la Card — gardé uniquement sur le div interne */
+              <Card>
                 <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
@@ -933,6 +943,7 @@ export default function QuoteDetail() {
                   </span>
                   {depositInvoice ? (
                     <button
+                      type="button"
                       onClick={() => navigate(`/invoices/${depositInvoice.id}`)}
                       className="text-xs font-medium text-accent hover:underline flex items-center gap-1"
                     >
@@ -962,6 +973,7 @@ export default function QuoteDetail() {
                   </span>
                   {installation ? (
                     <button
+                      type="button"
                       onClick={() => navigate(`/installations/${installation.id}`)}
                       className="text-xs font-medium text-accent hover:underline flex items-center gap-1"
                     >
@@ -1018,7 +1030,7 @@ export default function QuoteDetail() {
             </div>
           </Card>
 
-          {/* ── BLOC RENTABILITÉ ── */}
+          {/* C4 : Bloc Rentabilité branché sur hasCostData / marginEur / marginPct */}
           {!isService && (
             <Card className="p-4 space-y-3">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
@@ -1030,14 +1042,31 @@ export default function QuoteDetail() {
                   <span className="text-muted-foreground">Total HT</span>
                   <span className="font-mono font-medium">{formatCurrency(displayTotalHt)}</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Coût estimé</span>
-                  <span className="text-muted-foreground italic text-xs">—</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Marge</span>
-                  <span className="text-muted-foreground italic text-xs">—</span>
-                </div>
+                {hasCostData ? (
+                  <>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Coût estimé</span>
+                      <span className="font-mono text-sm">{formatCurrency(totalCostSummary)}</span>
+                    </div>
+                    <Separator />
+                    <div className="flex justify-between items-baseline">
+                      <span className="text-muted-foreground">Marge</span>
+                      <span className={cn("font-mono font-semibold", marginToneSummary)}>
+                        {formatCurrency(marginEur)}{" "}
+                        <span className="text-xs font-normal">({marginPct.toFixed(0)} %)</span>
+                      </span>
+                    </div>
+                    {linesWithoutCost.length > 0 && (
+                      <p className="text-[11px] text-muted-foreground italic">
+                        {linesWithoutCost.length} ligne{linesWithoutCost.length > 1 ? "s" : ""} sans coût saisi — non incluse{linesWithoutCost.length > 1 ? "s" : ""} dans le calcul
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-xs text-muted-foreground italic">
+                    Renseignez les coûts d'achat dans l'éditeur pour voir la marge
+                  </p>
+                )}
               </div>
             </Card>
           )}
@@ -1805,6 +1834,7 @@ function ManualDepositButton(props: {
 
   return (
     <button
+      type="button"
       onClick={handleCreate}
       disabled={creating}
       className="text-xs font-medium text-primary hover:underline disabled:opacity-50"

@@ -1431,7 +1431,7 @@ export default function QuoteEditor() {
               {Object.entries(totals.vatMap).sort(([a],[b])=>Number(a)-Number(b)).map(([rate,amount])=>(
                 <div key={rate} className="text-xs"><span className="text-muted-foreground">TVA {rate}% </span><span className="font-mono text-muted-foreground">{formatCurrency(amount)}</span></div>
               ))}
-              <div><span className="text-muted-foreground">Total TTC </span><span className="font-mono font-bold text-xl text-foreground">{formatCurrency(globalDiscountPct > 0 ? totals.totalTtcAfterDiscount : totals.totalTtc)}</span></div>
+              <div><span className="text-muted-foreground">Total TTC </span><span className="font-mono font-bold text-2xl md:text-3xl text-foreground tabular-nums tracking-tight">{formatCurrency(globalDiscountPct > 0 ? totals.totalTtcAfterDiscount : totals.totalTtc)}</span></div>
               {depositPct != null && depositPct > 0 && (
                 <div className="text-xs"><span className="text-muted-foreground">Acompte ({depositPct} %) : </span><span className="font-mono font-semibold text-foreground">{formatCurrency((globalDiscountPct > 0 ? totals.totalTtcAfterDiscount : totals.totalTtc) * depositPct / 100)}</span></div>
               )}

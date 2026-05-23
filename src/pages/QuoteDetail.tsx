@@ -78,7 +78,7 @@ function fmtDate(d: string): string {
 }
 
 function fmtDateFull(d: string): string {
-  return format(new Date(d), "d MMMM yyyy 'à' HH'h'mm", { locale: fr });
+  return format(new Date(d), "d MMMM yyyy '\u00e0' HH'h'mm", { locale: fr });
 }
 
 /* ── C2 : mapping tva_context → libellé lisible ── */
@@ -259,7 +259,7 @@ export default function QuoteDetail() {
         newStatus === "sent" ? "Devis envoyé" :
         newStatus === "signed" ? "Devis marqué comme signé" :
         newStatus === "lost" ? "Devis marqué comme perdu" :
-        "Statut mis à jour"
+        "Statut mis \u00e0 jour"
       );
       refetch();
     } catch (err: unknown) {
@@ -284,7 +284,7 @@ export default function QuoteDetail() {
   /* ── Loading ── */
   if (loading) {
     return (
-      <div className="max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="max-w-[1600px] mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-4">
           <Skeleton className="h-8 w-48" />
           <Skeleton className="h-32" />
@@ -302,7 +302,7 @@ export default function QuoteDetail() {
   /* ── Not found ── */
   if (!quote) {
     return (
-      <div className="max-w-[1400px] mx-auto space-y-4">
+      <div className="max-w-[1600px] mx-auto space-y-4">
         <Button variant="ghost" size="sm" onClick={() => navigate(returnTo ?? "/quotes")}>
           <ArrowLeft className="h-4 w-4 mr-1" />
           Devis
@@ -401,7 +401,7 @@ export default function QuoteDetail() {
   });
 
   return (
-    <div className="max-w-[1400px] mx-auto space-y-4 pb-32 xl:pb-0">
+    <div className="max-w-[1600px] mx-auto space-y-4 pb-32 xl:pb-0">
       {/* ── Dialogs ── */}
       <DeleteDialog open={showDelete} onOpenChange={setShowDelete} onConfirm={handleDelete} />
       <SignDialog
@@ -426,9 +426,9 @@ export default function QuoteDetail() {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>⚠️ Devis à perte</AlertDialogTitle>
+            <AlertDialogTitle>⚠️ Devis \u00e0 perte</AlertDialogTitle>
             <AlertDialogDescription>
-              Ce devis génère une marge négative. Vérifiez les coûts d'achat avant d'envoyer.
+              Ce devis g\u00e9n\u00e8re une marge n\u00e9gative. V\u00e9rifiez les co\u00fbts d'achat avant d'envoyer.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -440,7 +440,7 @@ export default function QuoteDetail() {
                 transitionStatus("sent");
               }}
             >
-              Envoyer quand même
+              Envoyer quand m\u00eame
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -620,7 +620,7 @@ export default function QuoteDetail() {
             <div className="flex flex-wrap gap-x-6 gap-y-1 text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Calendar className="h-3 w-3" />
-                Émis le {fmtDate(quote.quote_date)}
+                \u00c9mis le {fmtDate(quote.quote_date)}
               </span>
               <span className="flex items-center gap-1">
                 <Clock className="h-3 w-3" />
@@ -629,13 +629,13 @@ export default function QuoteDetail() {
               {quote.sent_at && (
                 <span className="flex items-center gap-1">
                   <Send className="h-3 w-3" />
-                  Envoyé le {fmtDate(quote.sent_at)}
+                  Envoy\u00e9 le {fmtDate(quote.sent_at)}
                 </span>
               )}
               {quote.signed_at && (
                 <span className="flex items-center gap-1">
                   <CheckCircle2 className="h-3 w-3" />
-                  Signé le {fmtDate(quote.signed_at)}
+                  Sign\u00e9 le {fmtDate(quote.signed_at)}
                 </span>
               )}
             </div>
@@ -650,24 +650,24 @@ export default function QuoteDetail() {
                   <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
                     Total HT
                   </p>
-                  <p className="text-sm text-muted-foreground font-mono">
+                  <p className="text-sm text-muted-foreground font-mono tabular-nums">
                     {displayTotalHt.toLocaleString("fr-FR", {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
                     })}{" "}
-                    €
+                    \u20ac
                   </p>
                 </div>
                 <div className="space-y-1">
                   <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
                     Total TTC
                   </p>
-                  <p className="text-xl md:text-2xl font-bold font-mono">
+                  <p className="text-xl md:text-2xl font-bold font-mono tabular-nums">
                     {displayTotalTtc.toLocaleString("fr-FR", {
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
                     })}{" "}
-                    €
+                    \u20ac
                   </p>
                 </div>
                 <div className="space-y-1">
@@ -675,19 +675,19 @@ export default function QuoteDetail() {
                     Marge
                   </p>
                   {hasCostData ? (
-                    <p className={cn("text-xl font-semibold font-mono", marginToneSummary)}>
+                    <p className={cn("text-xl font-semibold font-mono tabular-nums", marginToneSummary)}>
                       {marginEur.toLocaleString("fr-FR", {
                         minimumFractionDigits: 0,
                         maximumFractionDigits: 0,
                       })}{" "}
-                      €{" "}
+                      \u20ac{" "}
                       <span className="text-xs font-normal">
                         ({marginPct.toFixed(0)} %)
                       </span>
                     </p>
                   ) : (
                     <p className="text-xs text-muted-foreground italic">
-                      Coûts non renseignés
+                      Co\u00fbts non renseign\u00e9s
                     </p>
                   )}
                 </div>
@@ -739,16 +739,16 @@ export default function QuoteDetail() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead className="min-w-[220px]">Désignation</TableHead>
-                        <TableHead className="text-right w-[80px] whitespace-nowrap">Qté</TableHead>
-                        <TableHead className="text-right w-[80px] whitespace-nowrap">Unité</TableHead>
+                        <TableHead className="min-w-[220px]">D\u00e9signation</TableHead>
+                        <TableHead className="text-right w-[80px] whitespace-nowrap">Qt\u00e9</TableHead>
+                        <TableHead className="text-right w-[80px] whitespace-nowrap">Unit\u00e9</TableHead>
                         <TableHead className="text-right w-[110px] whitespace-nowrap">Prix HT</TableHead>
                         <TableHead className="text-right w-[70px] whitespace-nowrap">TVA</TableHead>
                         <TableHead className="text-right w-[120px] whitespace-nowrap">Total HT</TableHead>
                         {showInternalCols && (
                           <>
                             <TableHead className="text-right w-[110px] text-xs text-muted-foreground whitespace-nowrap">
-                              Coût HT <span className="opacity-60">(interne)</span>
+                              Co\u00fbt HT <span className="opacity-60">(interne)</span>
                             </TableHead>
                             <TableHead className="text-right w-[110px] text-xs text-muted-foreground whitespace-nowrap">
                               Marge <span className="opacity-60">(interne)</span>
@@ -770,7 +770,7 @@ export default function QuoteDetail() {
                                   <TableCell colSpan={5} className="font-semibold text-sm py-2 pl-4">
                                     {section.label}
                                   </TableCell>
-                                  <TableCell className="text-right font-mono font-bold text-sm py-2 pr-3">
+                                  <TableCell className="text-right font-mono tabular-nums font-bold text-sm py-2 pr-3">
                                     {formatCurrency(sectionTotal)}
                                   </TableCell>
                                   {showInternalCols && <TableCell colSpan={2} className="py-2" />}
@@ -787,7 +787,7 @@ export default function QuoteDetail() {
                                 <TableCell colSpan={5} className="font-semibold text-sm py-2 pl-4">
                                   Autres
                                 </TableCell>
-                                <TableCell className="text-right font-mono font-bold text-sm py-2 pr-3">
+                                <TableCell className="text-right font-mono tabular-nums font-bold text-sm py-2 pr-3">
                                   {formatCurrency(orphanLines.reduce((s, l) => s + l.qty * l.unit_price_ht, 0))}
                                 </TableCell>
                                 {showInternalCols && <TableCell colSpan={2} className="py-2" />}
@@ -806,10 +806,10 @@ export default function QuoteDetail() {
                           <TableCell colSpan={5} className="text-right font-semibold text-xs text-muted-foreground py-2">
                             Marge totale (interne)
                           </TableCell>
-                          <TableCell className="text-right font-mono text-xs text-muted-foreground py-2">
+                          <TableCell className="text-right font-mono tabular-nums text-xs text-muted-foreground py-2">
                             {formatCurrency(totalSale)}
                           </TableCell>
-                          <TableCell className="text-right font-mono text-xs text-muted-foreground py-2">
+                          <TableCell className="text-right font-mono tabular-nums text-xs text-muted-foreground py-2">
                             {formatCurrency(totalCost)}
                           </TableCell>
                           <TableCell className="text-right py-2">
@@ -829,20 +829,20 @@ export default function QuoteDetail() {
             <div className="flex flex-col items-end gap-2 text-sm">
               <div className="flex items-center justify-between w-full max-w-sm">
                 <span className="text-muted-foreground">Total HT</span>
-                <span className="font-mono font-medium">{formatCurrency(displayTotalHt)}</span>
+                <span className="font-mono tabular-nums font-medium">{formatCurrency(displayTotalHt)}</span>
               </div>
               {Object.entries(vatGroups)
                 .sort(([a], [b]) => Number(a) - Number(b))
                 .map(([rate, vatAmount]) => (
                   <div key={rate} className="flex items-center justify-between w-full max-w-sm">
-                    <span className="text-muted-foreground">TVA {Number(rate).toLocaleString("fr-FR")}%</span>
-                    <span className="font-mono text-sm">{formatCurrency(vatAmount)}</span>
+                    <span className="text-muted-foreground whitespace-nowrap">TVA {Number(rate).toLocaleString("fr-FR")}%</span>
+                    <span className="font-mono tabular-nums text-sm">{formatCurrency(vatAmount)}</span>
                   </div>
                 ))}
               <Separator className="my-1 max-w-sm w-full" />
               <div className="flex items-center justify-between w-full max-w-sm">
                 <span className="font-semibold text-base">Total TTC</span>
-                <span className="font-mono font-bold text-2xl md:text-3xl tabular-nums tracking-tight">{formatCurrency(displayTotalTtc)}</span>
+                <span className="font-mono tabular-nums font-bold text-2xl md:text-3xl tracking-tight">{formatCurrency(displayTotalTtc)}</span>
               </div>
             </div>
           </Card>
@@ -902,10 +902,10 @@ export default function QuoteDetail() {
             />
           </Card>
 
-          {/* ── BLOC 2 — ÉTAT DU DOSSIER ── */}
+          {/* ── BLOC 2 — \u00c9TAT DU DOSSIER ── */}
           {!isService && (
             <Card className="p-4 space-y-3">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">État du dossier</h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">\u00c9tat du dossier</h3>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-muted-foreground flex items-center gap-1.5">
@@ -918,7 +918,7 @@ export default function QuoteDetail() {
                       onClick={() => navigate(`/invoices/${depositInvoice.id}`)}
                       className="text-xs font-medium text-accent hover:underline flex items-center gap-1"
                     >
-                      Créée ✔ <ExternalLink className="h-3 w-3" />
+                      Cr\u00e9\u00e9e \u2714 <ExternalLink className="h-3 w-3" />
                     </button>
                   ) : quote.quote_status === "signed" &&
                     quote.customer?.id &&
@@ -934,7 +934,7 @@ export default function QuoteDetail() {
                       onCreated={refetch}
                     />
                   ) : (
-                    <span className="text-xs text-muted-foreground">Non créée</span>
+                    <span className="text-xs text-muted-foreground">Non cr\u00e9\u00e9e</span>
                   )}
                 </div>
                 <div className="flex items-center justify-between">
@@ -948,10 +948,10 @@ export default function QuoteDetail() {
                       onClick={() => navigate(`/installations/${installation.id}`)}
                       className="text-xs font-medium text-accent hover:underline flex items-center gap-1"
                     >
-                      Créée ✔ <ExternalLink className="h-3 w-3" />
+                      Cr\u00e9\u00e9e \u2714 <ExternalLink className="h-3 w-3" />
                     </button>
                   ) : (
-                    <span className="text-xs text-muted-foreground">Non créée</span>
+                    <span className="text-xs text-muted-foreground">Non cr\u00e9\u00e9e</span>
                   )}
                 </div>
               </div>
@@ -968,12 +968,12 @@ export default function QuoteDetail() {
                     <span tabIndex={0} className="w-full">
                       <Button variant="outline" size="sm" className="w-full justify-start" disabled>
                         <FileDown className="h-3.5 w-3.5 mr-2" />
-                        Générer PDF
+                        G\u00e9n\u00e9rer PDF
                       </Button>
                     </span>
                   </TooltipTrigger>
                   <TooltipContent>
-                    Ajoutez au moins une ligne pour pouvoir générer le PDF
+                    Ajoutez au moins une ligne pour pouvoir g\u00e9n\u00e9rer le PDF
                   </TooltipContent>
                 </Tooltip>
               ) : (
@@ -984,7 +984,7 @@ export default function QuoteDetail() {
                   onClick={handleGeneratePdf}
                 >
                   <FileDown className="h-3.5 w-3.5 mr-2" />
-                  Générer PDF
+                  G\u00e9n\u00e9rer PDF
                 </Button>
               )}
               {depositInvoice && (
@@ -1001,14 +1001,14 @@ export default function QuoteDetail() {
             </div>
           </Card>
 
-          {/* ── SECONDAIRE — RELEVÉ TECHNIQUE ── */}
+          {/* ── SECONDAIRE — RELEV\u00c9 TECHNIQUE ── */}
           {!isService && (
             <div className="flex items-center justify-between px-1">
               {technicalSurvey ? (
                 <>
                   <span className="text-sm text-accent flex items-center gap-1.5">
                     <CheckCircle2 className="h-3.5 w-3.5" />
-                    Relevé réalisé ✔
+                    Relev\u00e9 r\u00e9alis\u00e9 \u2714
                   </span>
                   <Button
                     variant="ghost"
@@ -1028,40 +1028,40 @@ export default function QuoteDetail() {
                     onClick={() => navigate(`/technical-surveys/new?project_id=${quote.project_id}`)}
                   >
                     <FileText className="h-3.5 w-3.5 mr-2" />
-                    Créer un relevé
+                    Cr\u00e9er un relev\u00e9
                   </Button>
                 )
               )}
             </div>
           )}
 
-          {/* ── SECONDAIRE — RENTABILITÉ (uniquement si hasCostData) ── */}
+          {/* ── SECONDAIRE — RENTABILIT\u00c9 (uniquement si hasCostData) ── */}
           {!isService && hasCostData && (
             <Card className="p-3 space-y-3">
               <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
                 <TrendingUp className="h-3.5 w-3.5" />
-                Rentabilité
+                Rentabilit\u00e9
               </h3>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Total HT</span>
-                  <span className="font-mono font-medium">{formatCurrency(displayTotalHt)}</span>
+                  <span className="font-mono tabular-nums font-medium">{formatCurrency(displayTotalHt)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Coût estimé</span>
-                  <span className="font-mono text-sm">{formatCurrency(totalCostSummary)}</span>
+                  <span className="text-muted-foreground">Co\u00fbt estim\u00e9</span>
+                  <span className="font-mono tabular-nums text-sm">{formatCurrency(totalCostSummary)}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between items-baseline">
                   <span className="text-muted-foreground">Marge</span>
-                  <span className={cn("font-mono font-semibold", marginToneSummary)}>
+                  <span className={cn("font-mono tabular-nums font-semibold", marginToneSummary)}>
                     {formatCurrency(marginEur)}{" "}
                     <span className="text-xs font-normal">({marginPct.toFixed(0)} %)</span>
                   </span>
                 </div>
                 {linesWithoutCost.length > 0 && (
                   <p className="text-[11px] text-muted-foreground italic">
-                    {linesWithoutCost.length} ligne{linesWithoutCost.length > 1 ? "s" : ""} sans coût saisi — non incluse{linesWithoutCost.length > 1 ? "s" : ""} dans le calcul
+                    {linesWithoutCost.length} ligne{linesWithoutCost.length > 1 ? "s" : ""} sans co\u00fbt saisi \u2014 non incluse{linesWithoutCost.length > 1 ? "s" : ""} dans le calcul
                   </p>
                 )}
               </div>
@@ -1074,7 +1074,7 @@ export default function QuoteDetail() {
       {/* ── Sticky action bar — mobile/tablette uniquement ── */}
       {primaryAction && (
         <div className="fixed bottom-0 inset-x-0 z-40 border-t bg-background/95 backdrop-blur px-3 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)] xl:hidden">
-          <div className="max-w-[1400px] mx-auto">
+          <div className="max-w-[1600px] mx-auto">
             {primaryAction.kind === "send" && (
               <Button
                 size="lg"
@@ -1118,7 +1118,7 @@ export default function QuoteDetail() {
                 onClick={() => setShowSignConfirm(true)}
               >
                 <CheckCircle2 className="h-4 w-4 mr-2" />
-                Marquer signé
+                Marquer sign\u00e9
               </Button>
             )}
             {primaryAction.kind === "view-deposit-invoice" && (
@@ -1164,7 +1164,7 @@ function DeleteDialog({ open, onOpenChange, onConfirm }: {
         <AlertDialogHeader>
           <AlertDialogTitle>Supprimer ce devis ?</AlertDialogTitle>
           <AlertDialogDescription>
-            Cette action est irréversible. Le devis brouillon sera définitivement supprimé.
+            Cette action est irr\u00e9versible. Le devis brouillon sera d\u00e9finitivement supprim\u00e9.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
@@ -1191,11 +1191,11 @@ function SignDialog({ open, onOpenChange, signing, onConfirm }: {
           <AlertDialogTitle>Confirmer la signature</AlertDialogTitle>
           <AlertDialogDescription asChild>
             <div className="space-y-3">
-              <p>Le client a signé ce devis.</p>
-              <p>Cette action va créer automatiquement :</p>
+              <p>Le client a sign\u00e9 ce devis.</p>
+              <p>Cette action va cr\u00e9er automatiquement :</p>
               <ul className="list-disc pl-5 space-y-1 text-sm">
                 <li>une facture d'acompte (30%)</li>
-                <li>une installation à compléter</li>
+                <li>une installation \u00e0 compl\u00e9ter</li>
               </ul>
               <p>Le client sera converti en client actif.</p>
             </div>
@@ -1211,7 +1211,7 @@ function SignDialog({ open, onOpenChange, signing, onConfirm }: {
               onConfirm();
             }}
           >
-            {signing ? "Signature en cours…" : "Confirmer la signature"}
+            {signing ? "Signature en cours\u2026" : "Confirmer la signature"}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -1248,7 +1248,7 @@ function DuplicateButton({
           ? data
           : (data as any)?.quote_id ?? (data as any)?.id;
       if (!newId) throw new Error("ID du nouveau devis introuvable");
-      toast.success("Devis dupliqué");
+      toast.success("Devis dupliqu\u00e9");
       setOpen(false);
       navigate(`/quotes/${newId}`);
     } catch (e: unknown) {
@@ -1293,7 +1293,7 @@ function DuplicateButton({
           <AlertDialogHeader>
             <AlertDialogTitle>Dupliquer ce devis ?</AlertDialogTitle>
             <AlertDialogDescription>
-              Une copie en brouillon sera créée. Vous serez redirigé vers le nouveau devis pour le modifier.
+              Une copie en brouillon sera cr\u00e9\u00e9e. Vous serez redirig\u00e9 vers le nouveau devis pour le modifier.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1305,7 +1305,7 @@ function DuplicateButton({
                 handleConfirm();
               }}
             >
-              {duplicating ? "Duplication…" : "Dupliquer"}
+              {duplicating ? "Duplication\u2026" : "Dupliquer"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -1349,7 +1349,7 @@ function LineRow({
     line.supplier_sku_snapshot ?? line.supplier_ref_snapshot,
   ]
     .filter(Boolean)
-    .join(" · ");
+    .join(" \u00b7 ");
   if (supplierLine) techParts.push(supplierLine);
 
   const hasTech =
@@ -1369,42 +1369,42 @@ function LineRow({
           {title}
           {line.unit_price_ht === 0 && line.line_type === "item" && (
             <Badge variant="outline" className="text-warning text-[9px] ml-1">
-              Prix à 0 €
+              Prix \u00e0 0 \u20ac
             </Badge>
           )}
         </p>
         {hasTech && (
           <Collapsible>
             <CollapsibleTrigger className="mt-1 text-xs text-muted-foreground hover:text-foreground hover:underline">
-              Détails techniques
+              D\u00e9tails techniques
             </CollapsibleTrigger>
             <CollapsibleContent className="mt-1 font-mono text-xs text-muted-foreground">
-              {techParts.join(" · ")}
+              {techParts.join(" \u00b7 ")}
             </CollapsibleContent>
           </Collapsible>
         )}
       </TableCell>
-      <TableCell className="text-right font-mono text-sm whitespace-nowrap">{line.qty}</TableCell>
-      <TableCell className="text-right text-sm text-muted-foreground">
-        {line.unit ? UNIT_LABELS[line.unit] ?? line.unit : "—"}
+      <TableCell className="text-right font-mono tabular-nums text-sm whitespace-nowrap">{line.qty}</TableCell>
+      <TableCell className="text-right text-sm text-muted-foreground whitespace-nowrap">
+        {line.unit ? UNIT_LABELS[line.unit] ?? line.unit : "\u2014"}
       </TableCell>
-      <TableCell className="text-right font-mono text-sm whitespace-nowrap">{formatCurrency(line.unit_price_ht)}</TableCell>
-      <TableCell className="text-right text-sm text-muted-foreground">
+      <TableCell className="text-right font-mono tabular-nums text-sm whitespace-nowrap">{formatCurrency(line.unit_price_ht)}</TableCell>
+      <TableCell className="text-right font-mono tabular-nums text-sm text-muted-foreground whitespace-nowrap">
         {line.vat_rate.toLocaleString("fr-FR")}%
       </TableCell>
-      <TableCell className="text-right font-mono text-sm font-semibold whitespace-nowrap">
+      <TableCell className="text-right font-mono tabular-nums text-sm font-semibold whitespace-nowrap">
         {formatCurrency(line.qty * line.unit_price_ht)}
       </TableCell>
       {showCostCols && (
         <>
-          <TableCell className="text-right font-mono text-xs text-muted-foreground whitespace-nowrap">
-            {(line.unit_cost_price ?? 0) > 0 ? formatCurrency(costLine) : "—"}
+          <TableCell className="text-right font-mono tabular-nums text-xs text-muted-foreground whitespace-nowrap">
+            {(line.unit_cost_price ?? 0) > 0 ? formatCurrency(costLine) : "\u2014"}
           </TableCell>
           <TableCell className="text-right whitespace-nowrap">
             {(line.unit_cost_price ?? 0) > 0 ? (
               <MarginBadge pct={marginPct} eur={marginEur} />
             ) : (
-              <span className="text-xs text-muted-foreground">—</span>
+              <span className="text-xs text-muted-foreground">\u2014</span>
             )}
           </TableCell>
         </>
@@ -1421,8 +1421,8 @@ function MarginBadge({ pct, eur }: { pct: number; eur: number }) {
         ? "text-warning"
         : "text-destructive";
   return (
-    <Badge variant="outline" className={`${cls} font-mono text-xs`}>
-      {pct.toFixed(0)}% · {formatCurrency(eur)}
+    <Badge variant="outline" className={`${cls} font-mono tabular-nums text-xs whitespace-nowrap`}>
+      {pct.toFixed(0)}% \u00b7 {formatCurrency(eur)}
     </Badge>
   );
 }
@@ -1430,13 +1430,13 @@ function MarginBadge({ pct, eur }: { pct: number; eur: number }) {
 function NextStepBloc({ kind, status }: { kind: string; status: string }) {
   let message: string | null = null;
 
-  if (kind === "estimate" && status === "draft") message = "Étape suivante : envoyer le devis estimatif au client";
-  else if (kind === "estimate" && status === "sent") message = "Étape suivante : réaliser le relevé technique puis créer le devis final";
-  else if (kind === "final" && status === "draft") message = "Étape suivante : envoyer le devis final au client";
-  else if (kind === "final" && status === "sent") message = "Étape suivante : obtenir la signature du client";
-  else if (status === "signed") message = "Étape suivante : planifier l'intervention";
-  else if (kind === "service" && status === "draft") message = "Étape suivante : envoyer le devis SAV";
-  else if (kind === "service" && status === "sent") message = "Étape suivante : suivre la réponse du client";
+  if (kind === "estimate" && status === "draft") message = "\u00c9tape suivante : envoyer le devis estimatif au client";
+  else if (kind === "estimate" && status === "sent") message = "\u00c9tape suivante : r\u00e9aliser le relev\u00e9 technique puis cr\u00e9er le devis final";
+  else if (kind === "final" && status === "draft") message = "\u00c9tape suivante : envoyer le devis final au client";
+  else if (kind === "final" && status === "sent") message = "\u00c9tape suivante : obtenir la signature du client";
+  else if (status === "signed") message = "\u00c9tape suivante : planifier l'intervention";
+  else if (kind === "service" && status === "draft") message = "\u00c9tape suivante : envoyer le devis SAV";
+  else if (kind === "service" && status === "sent") message = "\u00c9tape suivante : suivre la r\u00e9ponse du client";
 
   if (!message) return null;
 
@@ -1519,7 +1519,7 @@ function ActionsBloc({
         onClick={onSign}
       >
         <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
-        Marquer comme signé
+        Marquer comme sign\u00e9
       </Button>
     ) : (
       <Tooltip>
@@ -1527,7 +1527,7 @@ function ActionsBloc({
           <span tabIndex={0} className="w-full">
             <Button variant="success" size="sm" className="w-full min-h-[44px]" disabled>
               <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
-              Marquer comme signé
+              Marquer comme sign\u00e9
             </Button>
           </span>
         </TooltipTrigger>
@@ -1599,7 +1599,7 @@ function ActionsBloc({
     return (
       <div className="space-y-2">
         <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-destructive/15 text-destructive w-full justify-center">
-          Expiré
+          Expir\u00e9
         </span>
         {project_id && (
           <Button
@@ -1607,7 +1607,7 @@ function ActionsBloc({
             className="w-full min-h-[44px]"
             onClick={() => navigate(`/projects/${project_id}/quotes/new?kind=estimate`)}
           >
-            Recréer un devis estimatif
+            Recr\u00e9er un devis estimatif
           </Button>
         )}
         <DuplicateButton quoteId={quote.id} canSend={canSend} />
@@ -1624,7 +1624,7 @@ function ActionsBloc({
     return (
       <div className="space-y-2">
         <span className="inline-flex items-center rounded-md bg-info/10 text-info px-3 py-1.5 text-xs font-medium text-center w-full justify-center">
-          Devis estimatif — non signable
+          Devis estimatif \u2014 non signable
         </span>
         {project_id && (
           <CreateFinalFromEstimateButton quoteId={quote.id} />
@@ -1648,7 +1648,7 @@ function ActionsBloc({
     return (
       <div className="space-y-2">
         <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-medium bg-destructive/15 text-destructive w-full justify-center">
-          Expiré
+          Expir\u00e9
         </span>
         {project_id && (
           <Button
@@ -1656,7 +1656,7 @@ function ActionsBloc({
             className="w-full min-h-[44px]"
             onClick={() => navigate(`/projects/${project_id}/quotes/new?kind=final`)}
           >
-            Recréer un devis final
+            Recr\u00e9er un devis final
           </Button>
         )}
         <DuplicateButton quoteId={quote.id} canSend={canSend} />
@@ -1687,7 +1687,7 @@ function ActionsBloc({
           </Button>
         ) : (
           <Badge variant="secondary" className="w-full justify-center py-1.5 text-xs">
-            Facture en cours de génération
+            Facture en cours de g\u00e9n\u00e9ration
           </Badge>
         )}
         {project_id && (
@@ -1745,7 +1745,7 @@ function CreateFinalFromEstimateButton({ quoteId }: { quoteId: string }) {
         .eq("id", newId);
       if (updErr) throw updErr;
 
-      toast.success("Devis final créé");
+      toast.success("Devis final cr\u00e9\u00e9");
       navigate(`/quotes/${newId}`);
     } catch (e: unknown) {
       toast.error(humanizeErrorMessage(e));
@@ -1756,7 +1756,7 @@ function CreateFinalFromEstimateButton({ quoteId }: { quoteId: string }) {
 
   return (
     <Button size="sm" className="w-full min-h-[44px]" disabled={!ready || loading} onClick={handleClick}>
-      {loading ? "Création..." : "Créer le devis final"}
+      {loading ? "Cr\u00e9ation..." : "Cr\u00e9er le devis final"}
     </Button>
   );
 }
@@ -1824,7 +1824,7 @@ function ManualDepositButton(props: {
         metadata: { is_deposit: true, deposit_pct: 0.3 },
       });
 
-      toast.success("Facture d'acompte créée");
+      toast.success("Facture d'acompte cr\u00e9\u00e9e");
       props.onCreated();
       navigate(`/invoices/${(inv as any).id}`);
     } finally {
@@ -1839,7 +1839,7 @@ function ManualDepositButton(props: {
       disabled={creating}
       className="text-xs font-medium text-primary hover:underline disabled:opacity-50"
     >
-      {creating ? "Création…" : "Créer manuellement"}
+      {creating ? "Cr\u00e9ation\u2026" : "Cr\u00e9er manuellement"}
     </button>
   );
 }

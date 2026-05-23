@@ -414,7 +414,7 @@ function CatalogPopover({
                             {item.supplier_range && ref && <span className="mx-1">·</span>}
                             {ref && <span className="font-mono">réf {ref}</span>}
                           </span>
-                          <span className="font-mono text-foreground shrink-0">
+                          <span className="font-mono tabular-nums text-foreground shrink-0">
                             {item.prix_sur_devis ? "Sur demande" : `${item.unit_price_ht.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} € HT`}
                           </span>
                         </div>
@@ -481,7 +481,7 @@ function SectionRow({ row, subtotal, onChange, onDuplicate, onDelete }: {
       <Input value={row.label} onChange={(e) => onChange(e.target.value)}
         className="font-semibold text-sm border-none bg-transparent shadow-none focus-visible:ring-0 p-0 h-auto"
         placeholder="Nom de la section" />
-      <span className="ml-auto font-mono text-sm text-muted-foreground shrink-0">{formatCurrency(subtotal)}</span>
+      <span className="ml-auto font-mono tabular-nums text-sm text-muted-foreground shrink-0">{formatCurrency(subtotal)}</span>
       <RowMenu onDuplicate={onDuplicate} onDelete={onDelete} />
     </div>
   );
@@ -558,25 +558,25 @@ function ItemRow({ row, index, onChange, onDuplicate, onDelete }: {
           </p>
         )}
       </div>
-      <Input type="number" min={0} step={0.01} value={row.qty || ""} onChange={(e) => onChange("qty", parseFloat(e.target.value) || 0)} className="h-8 text-sm text-right mt-0" />
+      <Input type="number" min={0} step={0.01} value={row.qty || ""} onChange={(e) => onChange("qty", parseFloat(e.target.value) || 0)} className="h-8 text-sm text-right tabular-nums mt-0" />
       <Select value={row.unit} onValueChange={(v) => onChange("unit", v)}>
         <SelectTrigger className="h-8 text-xs mt-0"><SelectValue /></SelectTrigger>
         <SelectContent>{(Object.entries(UNIT_LABELS) as [UnitType, string][]).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
       </Select>
-      <Input type="number" min={0} step={0.01} value={row.unit_price_ht || ""} onChange={(e) => onChange("unit_price_ht", parseFloat(e.target.value) || 0)} className="h-8 text-sm text-right font-medium" placeholder="0.00" />
+      <Input type="number" min={0} step={0.01} value={row.unit_price_ht || ""} onChange={(e) => onChange("unit_price_ht", parseFloat(e.target.value) || 0)} className="h-8 text-sm text-right tabular-nums font-medium" placeholder="0.00" />
       <Input type="number" min={0} step={0.01}
         value={row.unit_cost_price ?? ""}
         onChange={(e) => onChange("unit_cost_price", e.target.value === "" ? null : parseFloat(e.target.value) || 0)}
-        className="h-7 text-xs text-right text-muted-foreground bg-muted/20 border-dashed"
+        className="h-7 text-xs text-right tabular-nums text-muted-foreground bg-muted/20 border-dashed"
         placeholder="—" title="Coût d'achat HT (interne)" />
       <Select value={String(row.vat_rate)} onValueChange={(v) => onChange("vat_rate", parseFloat(v))}>
         <SelectTrigger className="h-8 text-xs mt-0"><SelectValue /></SelectTrigger>
         <SelectContent>{VAT_RATES.map((r) => <SelectItem key={r} value={String(r)}>{r} %</SelectItem>)}</SelectContent>
       </Select>
       <div className="text-right pt-1">
-        <div className="font-mono text-sm font-semibold text-foreground tabular-nums">{formatCurrency(totalHt)}</div>
+        <div className="font-mono text-sm font-semibold text-foreground tabular-nums whitespace-nowrap">{formatCurrency(totalHt)}</div>
         {hasCost && (
-          <div className={`font-mono text-[10px] leading-tight tabular-nums ${marginTone}`} title="Marge HT (interne)">
+          <div className={`font-mono text-[10px] leading-tight tabular-nums whitespace-nowrap ${marginTone}`} title="Marge HT (interne)">
             Marge {formatCurrency(margin)} ({marginPct.toFixed(0)} %)
           </div>
         )}
@@ -1289,11 +1289,11 @@ export default function QuoteEditor() {
                       <Input type="number" min={0} max={100} step={1}
                         value={depositPct ?? ""}
                         onChange={(e) => setDepositPct(e.target.value === "" ? null : Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))}
-                        className="h-8 w-20 text-sm text-right" placeholder="0" />
+                        className="h-8 w-20 text-sm text-right tabular-nums" placeholder="0" />
                       <span className="text-sm text-muted-foreground">%</span>
                       <span className="text-xs text-muted-foreground whitespace-nowrap">à la signature</span>
                       {depositPct != null && depositPct > 0 && (
-                        <span className="font-mono text-sm font-semibold text-foreground whitespace-nowrap">
+                        <span className="font-mono tabular-nums text-sm font-semibold text-foreground whitespace-nowrap">
                           = {formatCurrency((globalDiscountPct > 0 ? totals.totalTtcAfterDiscount : totals.totalTtc) * depositPct / 100)} TTC
                         </span>
                       )}
@@ -1323,9 +1323,15 @@ export default function QuoteEditor() {
 
           <Card className="overflow-x-auto">
             <div className="hidden md:grid md:grid-cols-[28px_minmax(0,1fr)_60px_72px_92px_72px_88px_110px_36px] gap-1.5 px-3 py-2 bg-muted/30 border-b border-border text-xs font-medium text-muted-foreground">
-              <span className="text-center">N°</span><span>Désignation</span><span className="text-right">Qté</span><span>Unité</span>
-              <span className="text-right">Vente HT</span><span className="text-right opacity-60" title="Coût d'achat (interne)">Coût HT</span>
-              <span>TVA</span><span className="text-right">Total HT</span><span />
+              <span className="text-center">N°</span>
+              <span>Désignation</span>
+              <span className="text-right whitespace-nowrap">Qté</span>
+              <span className="whitespace-nowrap">Unité</span>
+              <span className="text-right whitespace-nowrap">Vente HT</span>
+              <span className="text-right whitespace-nowrap opacity-60" title="Coût d'achat (interne)">Coût HT</span>
+              <span className="whitespace-nowrap">TVA</span>
+              <span className="text-right whitespace-nowrap">Total HT</span>
+              <span />
             </div>
 
             <div className="divide-y divide-border/50">
@@ -1406,10 +1412,10 @@ export default function QuoteEditor() {
                   <Input type="number" min={0} max={50} step={0.5}
                     value={globalDiscountPct || ""}
                     onChange={(e) => setGlobalDiscountPct(Math.max(0, Math.min(50, parseFloat(e.target.value) || 0)))}
-                    className="h-7 w-16 text-sm text-right" placeholder="0" />
+                    className="h-7 w-16 text-sm text-right tabular-nums" placeholder="0" />
                   <span className="text-sm text-muted-foreground">%</span>
                   {globalDiscountPct > 0 && (
-                    <span className="text-xs text-muted-foreground">
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">
                       → -{formatCurrency(totals.discountAmount)} HT
                     </span>
                   )}
@@ -1425,7 +1431,7 @@ export default function QuoteEditor() {
                 {(["device", "flue", "labor", "option", "misc"] as LineCategory[]).map((cat) => {
                   const amount = categorySubtotals[cat];
                   if (amount === undefined) return null;
-                  return (<div key={cat} className="flex flex-col gap-0.5 px-3 py-2 rounded-md border border-border bg-muted/20"><span className="text-xs text-muted-foreground">{CATEGORY_LABELS[cat]}</span><span className="font-mono text-sm font-semibold text-foreground tabular-nums">{formatCurrency(amount)}</span></div>);
+                  return (<div key={cat} className="flex flex-col gap-0.5 px-3 py-2 rounded-md border border-border bg-muted/20"><span className="text-xs text-muted-foreground">{CATEGORY_LABELS[cat]}</span><span className="font-mono tabular-nums text-sm font-semibold text-foreground">{formatCurrency(amount)}</span></div>);
                 })}
               </div>
             </CardContent></Card>
@@ -1438,14 +1444,14 @@ export default function QuoteEditor() {
           <div className="grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] gap-3 md:gap-6 items-center">
             <div className="flex flex-wrap items-baseline gap-x-5 gap-y-1 text-sm">
               <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground/70 font-semibold"><Receipt className="h-3 w-3" /> Client</span>
-              <div className="text-sm"><span className="text-muted-foreground">Total HT </span><span className="font-mono text-muted-foreground">{formatCurrency(totals.totalHt)}</span></div>
-              {globalDiscountPct > 0 && <div className="text-xs text-destructive"><span>Remise {globalDiscountPct} % </span><span className="font-mono">-{formatCurrency(totals.discountAmount)}</span></div>}
+              <div className="text-sm"><span className="text-muted-foreground">Total HT </span><span className="font-mono tabular-nums text-muted-foreground">{formatCurrency(totals.totalHt)}</span></div>
+              {globalDiscountPct > 0 && <div className="text-xs text-destructive whitespace-nowrap"><span>Remise {globalDiscountPct} % </span><span className="font-mono tabular-nums">-{formatCurrency(totals.discountAmount)}</span></div>}
               {Object.entries(totals.vatMap).sort(([a],[b])=>Number(a)-Number(b)).map(([rate,amount])=>(
-                <div key={rate} className="text-xs"><span className="text-muted-foreground">TVA {rate}% </span><span className="font-mono text-muted-foreground">{formatCurrency(amount)}</span></div>
+                <div key={rate} className="text-xs whitespace-nowrap"><span className="text-muted-foreground">TVA {rate}% </span><span className="font-mono tabular-nums text-muted-foreground">{formatCurrency(amount)}</span></div>
               ))}
-              <div><span className="text-muted-foreground">Total TTC </span><span className="font-mono font-bold text-2xl md:text-3xl text-foreground tabular-nums tracking-tight">{formatCurrency(globalDiscountPct > 0 ? totals.totalTtcAfterDiscount : totals.totalTtc)}</span></div>
+              <div><span className="text-muted-foreground">Total TTC </span><span className="font-mono tabular-nums font-bold text-2xl md:text-3xl text-foreground tracking-tight">{formatCurrency(globalDiscountPct > 0 ? totals.totalTtcAfterDiscount : totals.totalTtc)}</span></div>
               {depositPct != null && depositPct > 0 && (
-                <div className="text-xs"><span className="text-muted-foreground">Acompte ({depositPct} %) : </span><span className="font-mono font-semibold text-foreground">{formatCurrency((globalDiscountPct > 0 ? totals.totalTtcAfterDiscount : totals.totalTtc) * depositPct / 100)}</span></div>
+                <div className="text-xs whitespace-nowrap"><span className="text-muted-foreground">Acompte ({depositPct} %) : </span><span className="font-mono tabular-nums font-semibold text-foreground">{formatCurrency((globalDiscountPct > 0 ? totals.totalTtcAfterDiscount : totals.totalTtc) * depositPct / 100)}</span></div>
               )}
             </div>
             <Separator orientation="vertical" className="h-10 hidden md:block" />
@@ -1453,11 +1459,11 @@ export default function QuoteEditor() {
               <span className="inline-flex items-center gap-1 text-[10px] uppercase tracking-wider text-muted-foreground/70 font-semibold" title="Information interne — non visible par le client"><TrendingUp className="h-3 w-3" /> Rentabilité</span>
               {marginTotals.hasCost ? (
                 <>
-                  <div className="text-xs"><span className="text-muted-foreground">Coût HT </span><span className="font-mono text-muted-foreground">{formatCurrency(totals.totalHt - marginTotals.margin)}</span></div>
+                  <div className="text-xs whitespace-nowrap"><span className="text-muted-foreground">Coût HT </span><span className="font-mono tabular-nums text-muted-foreground">{formatCurrency(totals.totalHt - marginTotals.margin)}</span></div>
                   <div title={marginTotals.fullyCovered ? "Marge HT totale" : "Marge HT — partielle"}>
                     <span className="text-muted-foreground">Marge </span>
-                    <span className={`font-mono font-semibold text-base ${marginTotals.margin < 0 ? "text-destructive" : marginTotals.pct < 15 ? "text-warning" : "text-success"}`}>{formatCurrency(marginTotals.margin)}</span>
-                    <span className={`ml-1 text-base font-mono font-semibold ${marginTotals.margin < 0 ? "text-destructive" : marginTotals.pct < 15 ? "text-warning" : "text-success"}`}>({marginTotals.pct.toFixed(0)} %)</span>
+                    <span className={`font-mono tabular-nums font-semibold text-base ${marginTotals.margin < 0 ? "text-destructive" : marginTotals.pct < 15 ? "text-warning" : "text-success"}`}>{formatCurrency(marginTotals.margin)}</span>
+                    <span className={`ml-1 text-base font-mono tabular-nums font-semibold ${marginTotals.margin < 0 ? "text-destructive" : marginTotals.pct < 15 ? "text-warning" : "text-success"}`}>({marginTotals.pct.toFixed(0)} %)</span>
                     {!marginTotals.fullyCovered && <span className="ml-1.5 text-[10px] text-warning" title="Coûts manquants sur certaines lignes">Marge partielle</span>}
                   </div>
                 </>

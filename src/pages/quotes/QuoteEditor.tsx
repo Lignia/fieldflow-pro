@@ -980,6 +980,22 @@ export default function QuoteEditor() {
     const itemLines = rows.filter((r): r is EditorItem => r._type === "item");
     if (itemLines.length === 0) { toast.error("Ajoutez au moins une ligne avant d'enregistrer"); return; }
 
+    // Garde : aucune ligne item sans désignation ET sans prix ET sans product_id
+    // (= ligne fantôme créée puis non remplie par l'utilisateur)
+    const emptyLines = itemLines.filter((l) => {
+      const label = resolveDisplayLabel(l).trim();
+      const hasNoLabel = label === "";
+      const hasNoPrice = (l.unit_price_ht ?? 0) === 0;
+      const hasNoCatalogLink = l.product_id == null;
+      return hasNoLabel && hasNoPrice && hasNoCatalogLink;
+    });
+    if (emptyLines.length > 0) {
+      toast.error(
+        `${emptyLines.length} ligne${emptyLines.length > 1 ? "s" : ""} sans désignation ni prix. Complétez ou supprimez avant d'enregistrer.`,
+      );
+      return;
+    }
+
     // GARDE CRITIQUE : aucune ligne catalogue sans metadata.pricing valide
     const missingPricing = itemLines.filter(
       (l) => l.product_id !== null && l.metadata.pricing.status === "manual",

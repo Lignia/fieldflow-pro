@@ -54,6 +54,10 @@ export interface GeneratePdfOptions {
   totalHt: number;
   totalTtc: number;
   showSectionTotals?: boolean;
+  /** A2 : ventilation TVA par taux — clé = taux (ex: 5.5), valeur = montant TVA */
+  vatBreakdown?: Record<number, number>;
+  /** A3 : sections nommées de l'éditeur, triées par sort_order */
+  quoteSections?: Array<{ id: string; label: string; sort_order: number }>;
 }
 
 export function generateQuotePdf({
@@ -62,12 +66,14 @@ export function generateQuotePdf({
   totalHt,
   totalTtc,
   showSectionTotals = true,
+  vatBreakdown,
+  quoteSections,
 }: GeneratePdfOptions): jsPDF {
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 40;
 
-  // Header
+  // ── En-tête ──
   doc.setFont("helvetica", "bold");
   doc.setFontSize(18);
   doc.text("DEVIS", margin, 50);
@@ -78,7 +84,7 @@ export function generateQuotePdf({
   doc.text(`Date : ${fmtDate(quote.quote_date)}`, margin, 82);
   doc.text(`Validité : ${fmtDate(quote.expiry_date)}`, margin, 96);
 
-  // Client
+  // ── Client ──
   doc.setFont("helvetica", "bold");
   doc.text("Client", pageWidth - margin - 200, 68);
   doc.setFont("helvetica", "normal");
@@ -93,44 +99,28 @@ export function generateQuotePdf({
     if (addr) doc.text(addr, pageWidth - margin - 200, 96);
   }
 
-  // Filter item lines only, group by category
   const itemLines = lines.filter((l) => l.line_type === "item");
-  const grouped = new Map<string, { title: string; lines: QuoteLine[] }>();
-  for (const g of CATEGORY_GROUPS) grouped.set(g.key, { title: g.title, lines: [] });
-  grouped.set(FALLBACK_GROUP.key, { title: FALLBACK_GROUP.title, lines: [] });
-
-  for (const l of itemLines) {
-    const cat = l.line_category;
-    const g = CATEGORY_GROUPS.find((g) => g.match(cat));
-    if (g) grouped.get(g.key)!.lines.push(l);
-    else grouped.get(FALLBACK_GROUP.key)!.lines.push(l);
-  }
-
   let cursorY = 130;
 
-  // Render each group as a table
-  const orderedKeys = [...CATEGORY_GROUPS.map((g) => g.key), FALLBACK_GROUP.key];
-  for (const key of orderedKeys) {
-    const grp = grouped.get(key)!;
-    if (grp.lines.length === 0) continue;
+  // ── Helper : rendre un groupe de lignes comme tableau ──
+  function renderGroup(title: string, groupLines: QuoteLine[]) {
+    if (groupLines.length === 0) return;
 
-    // Block title
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11);
     doc.setFillColor(240, 240, 240);
     doc.rect(margin, cursorY, pageWidth - margin * 2, 20, "F");
-    doc.text(grp.title, margin + 8, cursorY + 14);
+    doc.text(title, margin + 8, cursorY + 14);
     cursorY += 24;
 
-    const body = grp.lines.flatMap((l) => {
+    const body = groupLines.flatMap((l) => {
       const label = pickLabel(l);
       const tech = pickTechnical(l);
       const cellLabel = tech ? `${label}\n${tech}` : label;
-      const unitLabel = l.unit ?? "";
       return [[
         cellLabel,
         String(l.qty),
-        unitLabel,
+        l.unit ?? "",
         fmtMoney(l.unit_price_ht),
         `${l.vat_rate}%`,
         fmtMoney(l.qty * l.unit_price_ht),
@@ -155,9 +145,7 @@ export function generateQuotePdf({
       didParseCell: (data) => {
         if (data.section === "body" && data.column.index === 0 && typeof data.cell.raw === "string") {
           const parts = (data.cell.raw as string).split("\n");
-          if (parts.length > 1) {
-            data.cell.text = parts;
-          }
+          if (parts.length > 1) data.cell.text = parts;
         }
       },
     });
@@ -166,44 +154,101 @@ export function generateQuotePdf({
     cursorY = (doc as any).lastAutoTable.finalY + 6;
 
     if (showSectionTotals) {
-      const subtotal = grp.lines.reduce((s, l) => s + l.qty * l.unit_price_ht, 0);
+      const subtotal = groupLines.reduce((s, l) => s + l.qty * l.unit_price_ht, 0);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(10);
-      const txt = `Sous-total ${grp.title} : ${fmtMoney(subtotal)}`;
+      const txt = `Sous-total ${title} : ${fmtMoney(subtotal)}`;
       const w = doc.getTextWidth(txt);
       doc.text(txt, pageWidth - margin - w, cursorY + 10);
       cursorY += 18;
     }
 
-    // Separator
     doc.setDrawColor(220);
     doc.line(margin, cursorY + 4, pageWidth - margin, cursorY + 4);
     cursorY += 16;
 
-    // Page break if needed
     if (cursorY > doc.internal.pageSize.getHeight() - 160) {
       doc.addPage();
       cursorY = 60;
     }
   }
 
-  // Totals
-  const totalVat = totalTtc - totalHt;
+  // ── A3 : sections nommées si disponibles, sinon fallback par line_category ──
+  if (quoteSections && quoteSections.length > 0) {
+    const sorted = [...quoteSections].sort((a, b) => a.sort_order - b.sort_order);
+    const bySection = new Map<string | null, QuoteLine[]>();
+    bySection.set(null, []);
+    sorted.forEach((s) => bySection.set(s.id, []));
+
+    for (const l of itemLines) {
+      const key = l.section_id ?? null;
+      if (bySection.has(key)) bySection.get(key)!.push(l);
+      else bySection.get(null)!.push(l);
+    }
+
+    for (const section of sorted) {
+      const sLines = bySection.get(section.id) ?? [];
+      renderGroup(section.label, sLines);
+    }
+
+    const orphans = bySection.get(null) ?? [];
+    if (orphans.length > 0) renderGroup("Autres", orphans);
+  } else {
+    // Fallback : groupement par line_category (comportement original)
+    const grouped = new Map<string, { title: string; lines: QuoteLine[] }>();
+    for (const g of CATEGORY_GROUPS) grouped.set(g.key, { title: g.title, lines: [] });
+    grouped.set(FALLBACK_GROUP.key, { title: FALLBACK_GROUP.title, lines: [] });
+
+    for (const l of itemLines) {
+      const cat = l.line_category;
+      const g = CATEGORY_GROUPS.find((g) => g.match(cat));
+      if (g) grouped.get(g.key)!.lines.push(l);
+      else grouped.get(FALLBACK_GROUP.key)!.lines.push(l);
+    }
+
+    const orderedKeys = [...CATEGORY_GROUPS.map((g) => g.key), FALLBACK_GROUP.key];
+    for (const key of orderedKeys) {
+      const grp = grouped.get(key)!;
+      renderGroup(grp.title, grp.lines);
+    }
+  }
+
+  // ── Totaux ──
   if (cursorY > doc.internal.pageSize.getHeight() - 140) {
     doc.addPage();
     cursorY = 60;
   }
+
   const tx = pageWidth - margin - 200;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
+
   doc.text("Total HT", tx, cursorY + 14);
   doc.text(fmtMoney(totalHt), pageWidth - margin, cursorY + 14, { align: "right" });
-  doc.text("TVA", tx, cursorY + 30);
-  doc.text(fmtMoney(totalVat), pageWidth - margin, cursorY + 30, { align: "right" });
+
+  // A2 : ventilation TVA par taux si plusieurs taux, sinon ligne unique
+  let vatOffset = 30;
+  const vatEntries = vatBreakdown
+    ? Object.entries(vatBreakdown).sort(([a], [b]) => Number(a) - Number(b))
+    : null;
+
+  if (vatEntries && vatEntries.length > 1) {
+    for (const [rate, amount] of vatEntries) {
+      doc.text(`TVA ${Number(rate).toLocaleString("fr-FR")} %`, tx, cursorY + vatOffset);
+      doc.text(fmtMoney(amount), pageWidth - margin, cursorY + vatOffset, { align: "right" });
+      vatOffset += 16;
+    }
+  } else {
+    const totalVat = totalTtc - totalHt;
+    doc.text("TVA", tx, cursorY + vatOffset);
+    doc.text(fmtMoney(totalVat), pageWidth - margin, cursorY + vatOffset, { align: "right" });
+    vatOffset += 16;
+  }
+
   doc.setFont("helvetica", "bold");
   doc.setFontSize(12);
-  doc.text("Total TTC", tx, cursorY + 50);
-  doc.text(fmtMoney(totalTtc), pageWidth - margin, cursorY + 50, { align: "right" });
+  doc.text("Total TTC", tx, cursorY + vatOffset + 4);
+  doc.text(fmtMoney(totalTtc), pageWidth - margin, cursorY + vatOffset + 4, { align: "right" });
 
   return doc;
 }

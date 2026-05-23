@@ -103,6 +103,13 @@ export function humanizeError(err: unknown): HumanError {
 
   for (const pattern of PATTERNS) {
     if (pattern.match.test(raw)) {
+      if (typeof console !== "undefined") {
+        console.error("[humanizeError]", {
+          raw,
+          hadPattern: true,
+          severity: pattern.severity,
+        });
+      }
       return {
         message: pattern.message,
         severity: pattern.severity,
@@ -114,8 +121,8 @@ export function humanizeError(err: unknown): HumanError {
   // Pas de match : on retourne le message brut.
   // C'est VOLONTAIRE : préserve l'observabilité, l'artisan signalera le bug
   // au support et on ajoutera un pattern à ce moment.
-  if (import.meta.env.DEV) {
-    console.warn("[humanizeError] message non mappé (raw retourné) :", raw);
+  if (typeof console !== "undefined") {
+    console.error("[humanizeError]", { raw, hadPattern: false });
   }
 
   return {

@@ -33,6 +33,7 @@ import { generateQuotePdf } from "@/lib/quote-pdf";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { useSignQuote } from "@/hooks/useSignQuote";
 import { formatCurrency } from "@/lib/format";
+import { humanizeErrorMessage } from "@/lib/error-messages";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -261,8 +262,8 @@ export default function QuoteDetail() {
         "Statut mis à jour"
       );
       refetch();
-    } catch (err: any) {
-      toast.error(err.message ?? "Erreur lors de la transition");
+    } catch (err: unknown) {
+      toast.error(humanizeErrorMessage(err));
     } finally {
       setTransitioning(false);
     }
@@ -273,7 +274,7 @@ export default function QuoteDetail() {
     if (!quote) return;
     const { error: delErr } = await billingDb.from("quotes").delete().eq("id", quote.id);
     if (delErr) {
-      toast.error(delErr.message);
+      toast.error(humanizeErrorMessage(delErr));
       return;
     }
     toast.success("Devis supprimé");
@@ -1250,8 +1251,8 @@ function DuplicateButton({
       toast.success("Devis dupliqué");
       setOpen(false);
       navigate(`/quotes/${newId}`);
-    } catch (e: any) {
-      toast.error(e?.message ?? "Échec de la duplication");
+    } catch (e: unknown) {
+      toast.error(humanizeErrorMessage(e));
     } finally {
       setDuplicating(false);
     }
@@ -1746,8 +1747,8 @@ function CreateFinalFromEstimateButton({ quoteId }: { quoteId: string }) {
 
       toast.success("Devis final créé");
       navigate(`/quotes/${newId}`);
-    } catch (e: any) {
-      toast.error(e?.message ?? "Échec de la création du devis final");
+    } catch (e: unknown) {
+      toast.error(humanizeErrorMessage(e));
     } finally {
       setLoading(false);
     }
@@ -1807,7 +1808,7 @@ function ManualDepositButton(props: {
         .single();
 
       if (insErr || !inv) {
-        toast.error(insErr?.message ?? "Échec de la création");
+        toast.error(humanizeErrorMessage(insErr));
         return;
       }
 

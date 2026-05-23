@@ -15,6 +15,7 @@ import { useCreateQuote, type QuoteSummary } from "@/hooks/useCreateQuote";
 import { useCatalogSearch, suggestedVat, type CatalogItem } from "@/hooks/useCatalogSearch";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { formatCurrency } from "@/lib/format";
+import { humanizeErrorMessage } from "@/lib/error-messages";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -749,8 +750,8 @@ export default function QuoteEditor() {
 
       editorRows.sort((a, b) => a.sort_order - b.sort_order);
       setRows(editorRows);
-    } catch (err: any) {
-      toast.error(err.message ?? "Erreur lors du chargement du devis");
+    } catch (err: unknown) {
+      toast.error(humanizeErrorMessage(err));
     } finally {
       setInitializing(false);
     }
@@ -1078,7 +1079,7 @@ export default function QuoteEditor() {
         toast.success("Devis enregistré");
       }
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Erreur lors de l'enregistrement");
+      toast.error(humanizeErrorMessage(err));
     } finally {
       setSavingAll(false);
     }
@@ -1097,7 +1098,7 @@ export default function QuoteEditor() {
       toast.success(`Devis dupliqué : ${result.new_quote_number}`, { description: "Ouverture du nouveau devis…" });
       navigate(`/projects/${result.project_id || projectId}/quotes/editor?id=${result.new_quote_id}`);
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Erreur lors de la duplication");
+      toast.error(humanizeErrorMessage(err));
     } finally {
       setDuplicating(false);
     }
@@ -1119,7 +1120,7 @@ export default function QuoteEditor() {
       toast.success("Ouvrage enregistré dans votre catalogue", { description: bundleName });
       setSaveToLibOpen(false); setBundleName(""); setBundleNotes("");
     } catch (err: unknown) {
-      toast.error(err instanceof Error ? err.message : "Erreur lors de l'enregistrement");
+      toast.error(humanizeErrorMessage(err));
     } finally {
       setSavingBundle(false);
     }

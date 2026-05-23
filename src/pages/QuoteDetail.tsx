@@ -38,6 +38,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 import {
   Table,
@@ -215,6 +216,8 @@ export default function QuoteDetail() {
   const [showSignConfirm, setShowSignConfirm] = useState(false);
   const [showNegativeMarginDialog, setShowNegativeMarginDialog] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
+  /* A1 : toggle Vue interne — masqué par défaut, visible uniquement si des coûts existent */
+  const [showInternalCols, setShowInternalCols] = useState(false);
   const { signQuote, signing, error: signError } = useSignQuote();
 
   if (error && !loading) {
@@ -280,7 +283,7 @@ export default function QuoteDetail() {
   /* ── Loading ── */
   if (loading) {
     return (
-      <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-4">
           <Skeleton className="h-8 w-48" />
           <Skeleton className="h-32" />
@@ -298,7 +301,7 @@ export default function QuoteDetail() {
   /* ── Not found ── */
   if (!quote) {
     return (
-      <div className="max-w-6xl mx-auto space-y-4">
+      <div className="max-w-[1400px] mx-auto space-y-4">
         <Button variant="ghost" size="sm" onClick={() => navigate(returnTo ?? "/quotes")}>
           <ArrowLeft className="h-4 w-4 mr-1" />
           Devis
@@ -345,7 +348,8 @@ export default function QuoteDetail() {
 
   /* ── Colonnes coût/marge (interne) ── */
   const itemLines = lines.filter((l) => l.line_type === "item");
-  const showCostCols = itemLines.some((l) => (l.unit_cost_price ?? 0) > 0);
+  /* A1 : hasCostData conditionne l'affichage du Switch, showInternalCols conditionne les colonnes */
+  const hasCostInLines = itemLines.some((l) => (l.unit_cost_price ?? 0) > 0);
   const totalCost = itemLines.reduce(
     (s, l) => s + (l.unit_cost_price ?? 0) * l.qty,
     0,
@@ -353,7 +357,7 @@ export default function QuoteDetail() {
   const totalSale = itemLines.reduce((s, l) => s + l.qty * l.unit_price_ht, 0);
   const totalMarginEur = totalSale - totalCost;
   const totalMarginPct = totalSale > 0 ? (totalMarginEur / totalSale) * 100 : 0;
-  const totalCols = 6 + (showCostCols ? 2 : 0);
+  const totalCols = 6 + (showInternalCols ? 2 : 0);
 
   /* ── Marge négative (à perte) ── */
   const hasNegativeMargin =
@@ -396,7 +400,7 @@ export default function QuoteDetail() {
   });
 
   return (
-    <div className="max-w-6xl mx-auto space-y-4 pb-32 xl:pb-0">
+    <div className="max-w-[1400px] mx-auto space-y-4 pb-32 xl:pb-0">
       {/* ── Dialogs ── */}
       <DeleteDialog open={showDelete} onOpenChange={setShowDelete} onConfirm={handleDelete} />
       <SignDialog
@@ -689,10 +693,28 @@ export default function QuoteDetail() {
               </CardContent>
             </Card>
 
-            <h2 className="text-base font-semibold">
-              Lignes du devis
-              <span className="text-muted-foreground font-normal ml-2 text-sm">({lines.length})</span>
-            </h2>
+            {/* A1 : Toggle Vue interne — visible uniquement si des coûts existent dans les lignes */}
+            <div className="flex items-center justify-between">
+              <h2 className="text-base font-semibold">
+                Lignes du devis
+                <span className="text-muted-foreground font-normal ml-2 text-sm">({lines.length})</span>
+              </h2>
+              {hasCostInLines && (
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="show-internal-cols"
+                    checked={showInternalCols}
+                    onCheckedChange={setShowInternalCols}
+                  />
+                  <label
+                    htmlFor="show-internal-cols"
+                    className="text-xs text-muted-foreground cursor-pointer select-none"
+                  >
+                    Vue interne
+                  </label>
+                </div>
+              )}
+            </div>
 
             {lines.length === 0 ? (
               <div className="py-12 text-center border-2 border-dashed border-border rounded-lg mx-4">
@@ -711,7 +733,6 @@ export default function QuoteDetail() {
                 )}
               </div>
             ) : (
-              /* C3 : overflow-hidden retiré de la Card — gardé uniquement sur le div interne */
               <Card>
                 <div className="overflow-x-auto">
                   <Table>
@@ -723,7 +744,7 @@ export default function QuoteDetail() {
                         <TableHead className="text-right w-[110px]">Prix HT</TableHead>
                         <TableHead className="text-right w-[70px]">TVA</TableHead>
                         <TableHead className="text-right w-[120px]">Total HT</TableHead>
-                        {showCostCols && (
+                        {showInternalCols && (
                           <>
                             <TableHead className="text-right w-[110px] text-xs text-muted-foreground">
                               Coût HT <span className="opacity-60">(interne)</span>
@@ -744,42 +765,42 @@ export default function QuoteDetail() {
                             const sectionTotal = sectionLines.reduce((s, l) => s + l.qty * l.unit_price_ht, 0);
                             return (
                               <>
-                                <TableRow key={`sec-${section.id}`} className="bg-muted/40 hover:bg-muted/40">
-                                  <TableCell colSpan={5} className="font-semibold text-sm py-2">
+                                <TableRow key={`sec-${section.id}`} className="bg-muted/60 hover:bg-muted/60 border-l-4 border-border">
+                                  <TableCell colSpan={5} className="font-semibold text-sm py-2 pl-4">
                                     {section.label}
                                   </TableCell>
-                                  <TableCell className="text-right font-mono font-semibold text-sm py-2">
+                                  <TableCell className="text-right font-mono font-bold text-sm py-2 pr-3">
                                     {formatCurrency(sectionTotal)}
                                   </TableCell>
-                                  {showCostCols && <TableCell colSpan={2} className="py-2" />}
+                                  {showInternalCols && <TableCell colSpan={2} className="py-2" />}
                                 </TableRow>
                                 {sectionLines.map((line) => (
-                                  <LineRow key={line.id} line={line} showCostCols={showCostCols} />
+                                  <LineRow key={line.id} line={line} showCostCols={showInternalCols} />
                                 ))}
                               </>
                             );
                           })}
                           {orphanLines.length > 0 && (
                             <>
-                              <TableRow key="sec-others" className="bg-muted/40 hover:bg-muted/40">
-                                <TableCell colSpan={5} className="font-semibold text-sm py-2">
+                              <TableRow key="sec-others" className="bg-muted/60 hover:bg-muted/60 border-l-4 border-border">
+                                <TableCell colSpan={5} className="font-semibold text-sm py-2 pl-4">
                                   Autres
                                 </TableCell>
-                                <TableCell className="text-right font-mono font-semibold text-sm py-2">
+                                <TableCell className="text-right font-mono font-bold text-sm py-2 pr-3">
                                   {formatCurrency(orphanLines.reduce((s, l) => s + l.qty * l.unit_price_ht, 0))}
                                 </TableCell>
-                                {showCostCols && <TableCell colSpan={2} className="py-2" />}
+                                {showInternalCols && <TableCell colSpan={2} className="py-2" />}
                               </TableRow>
                               {orphanLines.map((line) => (
-                                <LineRow key={line.id} line={line} showCostCols={showCostCols} />
+                                <LineRow key={line.id} line={line} showCostCols={showInternalCols} />
                               ))}
                             </>
                           )}
                         </>
                       ) : (
-                        lines.map((line) => <LineRow key={line.id} line={line} showCostCols={showCostCols} />)
+                        lines.map((line) => <LineRow key={line.id} line={line} showCostCols={showInternalCols} />)
                       )}
-                      {showCostCols && (
+                      {showInternalCols && (
                         <TableRow className="bg-muted/30 hover:bg-muted/30">
                           <TableCell colSpan={5} className="text-right font-semibold text-xs text-muted-foreground py-2">
                             Marge totale (interne)
@@ -1069,7 +1090,7 @@ export default function QuoteDetail() {
       {/* ── Sticky action bar — mobile/tablette uniquement ── */}
       {primaryAction && (
         <div className="fixed bottom-0 inset-x-0 z-40 border-t bg-background/95 backdrop-blur px-3 pt-3 pb-[calc(env(safe-area-inset-bottom)+12px)] xl:hidden">
-          <div className="max-w-6xl mx-auto">
+          <div className="max-w-[1400px] mx-auto">
             {primaryAction.kind === "send" && (
               <Button
                 size="lg"

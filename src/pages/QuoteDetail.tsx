@@ -1436,12 +1436,12 @@ function NextStepBloc({ kind, status }: { kind: string; status: string }) {
   if (!message) return null;
 
   return (
-    <Card className="p-4">
-      <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-        <CircleDot className="h-3 w-3 text-primary shrink-0" />
+    <div className="rounded-lg border border-primary/20 bg-primary/5 px-4 py-3">
+      <p className="text-xs text-primary flex items-center gap-1.5">
+        <CircleDot className="h-3 w-3 shrink-0" />
         {message}
       </p>
-    </Card>
+    </div>
   );
 }
 

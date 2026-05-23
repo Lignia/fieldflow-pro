@@ -1568,7 +1568,8 @@ function ActionsBloc({
           Modifier
         </Button>
         <DuplicateButton quoteId={quote.id} canSend={canSend} />
-        <Button variant="outline" size="sm" className="w-full" disabled={transitioning} onClick={onLost}>
+        <Separator className="my-1" />
+        <Button variant="ghost" size="sm" className="w-full text-destructive hover:bg-destructive/10 hover:text-destructive" disabled={transitioning} onClick={onLost}>
           <XCircle className="h-3.5 w-3.5 mr-1" />
           Marquer perdu
         </Button>
@@ -1605,7 +1606,8 @@ function ActionsBloc({
           </Button>
         )}
         <DuplicateButton quoteId={quote.id} canSend={canSend} />
-        <Button variant="outline" size="sm" className="w-full" disabled={transitioning} onClick={onLost}>
+        <Separator className="my-1" />
+        <Button variant="ghost" size="sm" className="w-full text-destructive hover:bg-destructive/10 hover:text-destructive" disabled={transitioning} onClick={onLost}>
           <XCircle className="h-3.5 w-3.5 mr-1" />
           Marquer perdu
         </Button>
@@ -1628,7 +1630,8 @@ function ActionsBloc({
           Modifier
         </Button>
         <DuplicateButton quoteId={quote.id} canSend={canSend} />
-        <Button variant="outline" size="sm" className="w-full" disabled={transitioning} onClick={onLost}>
+        <Separator className="my-1" />
+        <Button variant="ghost" size="sm" className="w-full text-destructive hover:bg-destructive/10 hover:text-destructive" disabled={transitioning} onClick={onLost}>
           <XCircle className="h-3.5 w-3.5 mr-1" />
           Marquer perdu
         </Button>

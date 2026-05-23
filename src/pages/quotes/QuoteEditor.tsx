@@ -1229,54 +1229,65 @@ export default function QuoteEditor() {
         <div className="max-w-6xl mx-auto px-4 py-6 space-y-5">
 
           <Card>
-            <CardContent className="p-4 grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="col-span-full">
+            <CardContent className="p-3 space-y-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Input
                   value={subject}
                   onChange={(e) => setSubject(e.target.value)}
                   placeholder="Titre du devis — ex : Fourniture et pose poêle à granulés"
-                  className="h-10 text-base font-medium placeholder:text-muted-foreground/50"
+                  className="h-9 text-sm font-medium placeholder:text-muted-foreground/50 flex-1 min-w-[240px]"
                   maxLength={200}
                 />
-              </div>
-              {projectInfo?.flue_scenario && (
-                <div className="col-span-full -mt-2">
-                  <Badge variant="outline" className="text-[11px] text-muted-foreground font-normal">
-                    🏗️ {projectInfo.flue_scenario}
-                  </Badge>
-                </div>
-              )}
-              <div className="col-span-full space-y-1.5">
-                <Label className="text-sm">Type de devis</Label>
                 <Select value={quote.quote_kind} onValueChange={(v) => setQuote({ ...quote, quote_kind: v })}>
-                  <SelectTrigger className="w-full sm:w-64 h-9 text-sm"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="w-40 h-9 text-sm shrink-0"><SelectValue /></SelectTrigger>
                   <SelectContent>{Object.entries(KIND_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
                 </Select>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-9 text-xs text-muted-foreground shrink-0"
+                  onClick={() => setParamsExpanded((v) => !v)}
+                >
+                  {paramsExpanded ? "Masquer" : "Plus d'options"}
+                  <ChevronDown className={`h-3.5 w-3.5 ml-1 transition-transform ${paramsExpanded ? "rotate-180" : ""}`} />
+                </Button>
               </div>
-              <div className="space-y-1.5"><Label className="text-xs text-muted-foreground">Date d'émission</Label><Input type="date" value={quoteDate} onChange={(e) => setQuoteDate(e.target.value)} className="h-8 text-sm" /></div>
-              <div className="space-y-1.5"><Label className="text-xs text-muted-foreground">Date d'expiration</Label><Input type="date" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} className="h-8 text-sm" /></div>
-              <div className="space-y-1.5"><Label className="text-xs text-muted-foreground">Visite préalable <span className="text-muted-foreground/60">(optionnel)</span></Label><Input type="date" value={visitDate} onChange={(e) => setVisitDate(e.target.value)} className="h-8 text-sm" /></div>
-              <div className="space-y-1.5"><Label className="text-xs text-muted-foreground">Début des travaux <span className="text-muted-foreground/60">(optionnel)</span></Label><Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="h-8 text-sm" /></div>
-              <div className="col-span-full pt-3 mt-1 border-t border-border flex flex-wrap items-center gap-x-6 gap-y-3">
-                <div className="flex items-center gap-2 flex-nowrap">
-                  <Label className="text-sm text-muted-foreground shrink-0">Acompte</Label>
-                  <Input type="number" min={0} max={100} step={1}
-                    value={depositPct ?? ""}
-                    onChange={(e) => setDepositPct(e.target.value === "" ? null : Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))}
-                    className="h-8 w-20 text-sm text-right" placeholder="0" />
-                  <span className="text-sm text-muted-foreground">%</span>
-                  <span className="text-xs text-muted-foreground whitespace-nowrap">à la signature</span>
-                  {depositPct != null && depositPct > 0 && (
-                    <span className="font-mono text-sm font-semibold text-foreground whitespace-nowrap">
-                      = {formatCurrency((globalDiscountPct > 0 ? totals.totalTtcAfterDiscount : totals.totalTtc) * depositPct / 100)} TTC
-                    </span>
-                  )}
+              {projectInfo?.flue_scenario && (
+                <Badge variant="outline" className="text-[11px] text-muted-foreground font-normal">
+                  🏗️ {projectInfo.flue_scenario}
+                </Badge>
+              )}
+              {paramsExpanded && (
+                <div className="pt-2 border-t border-border space-y-3">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="space-y-1.5"><Label className="text-xs text-muted-foreground">Date d'émission</Label><Input type="date" value={quoteDate} onChange={(e) => setQuoteDate(e.target.value)} className="h-8 text-sm" /></div>
+                    <div className="space-y-1.5"><Label className="text-xs text-muted-foreground">Date d'expiration</Label><Input type="date" value={expiryDate} onChange={(e) => setExpiryDate(e.target.value)} className="h-8 text-sm" /></div>
+                    <div className="space-y-1.5"><Label className="text-xs text-muted-foreground">Visite préalable <span className="text-muted-foreground/60">(optionnel)</span></Label><Input type="date" value={visitDate} onChange={(e) => setVisitDate(e.target.value)} className="h-8 text-sm" /></div>
+                    <div className="space-y-1.5"><Label className="text-xs text-muted-foreground">Début des travaux <span className="text-muted-foreground/60">(optionnel)</span></Label><Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="h-8 text-sm" /></div>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+                    <div className="flex items-center gap-2 flex-nowrap">
+                      <Label className="text-sm text-muted-foreground shrink-0">Acompte</Label>
+                      <Input type="number" min={0} max={100} step={1}
+                        value={depositPct ?? ""}
+                        onChange={(e) => setDepositPct(e.target.value === "" ? null : Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))}
+                        className="h-8 w-20 text-sm text-right" placeholder="0" />
+                      <span className="text-sm text-muted-foreground">%</span>
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">à la signature</span>
+                      {depositPct != null && depositPct > 0 && (
+                        <span className="font-mono text-sm font-semibold text-foreground whitespace-nowrap">
+                          = {formatCurrency((globalDiscountPct > 0 ? totals.totalTtcAfterDiscount : totals.totalTtc) * depositPct / 100)} TTC
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2 flex-nowrap ml-auto">
+                      <Switch id="show-section-totals" checked={showSectionTotals} onCheckedChange={setShowSectionTotals} />
+                      <Label htmlFor="show-section-totals" className="text-xs text-muted-foreground cursor-pointer whitespace-nowrap">Sous-totaux par bloc (PDF)</Label>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 flex-nowrap ml-auto">
-                  <Switch id="show-section-totals" checked={showSectionTotals} onCheckedChange={setShowSectionTotals} />
-                  <Label htmlFor="show-section-totals" className="text-xs text-muted-foreground cursor-pointer whitespace-nowrap">Sous-totaux par bloc (PDF)</Label>
-                </div>
-              </div>
+              )}
             </CardContent>
           </Card>
 

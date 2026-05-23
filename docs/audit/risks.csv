@@ -1,0 +1,26 @@
+domain,risk,severity,probability,impact,recommendation
+SECURITE,anon peut appeler sign_quote_and_initialize via REST API sans auth,P0,HAUTE,CRITIQUE — création facture et installation sans authentification,REVOKE EXECUTE ON FUNCTION billing.sign_quote_and_initialize FROM anon
+SECURITE,anon peut appeler replace_quote_lines — vidage devis sans auth,P0,HAUTE,CRITIQUE — destruction données devis,REVOKE EXECUTE FROM anon sur toutes les RPCs billing/catalog
+SECURITE,anon peut appeler duplicate_quote — création de devis sans auth,P0,HAUTE,ÉLEVÉ — pollution données,REVOKE EXECUTE FROM anon sur duplicate_quote
+SECURITE,catalog._archive_joncoux_legacy_20260520 — RLS désactivée exposée publiquement,P0,HAUTE,ÉLEVÉ — fuite données fournisseur,ENABLE RLS ou DROP TABLE
+SECURITE,35+ fonctions SECURITY DEFINER sans search_path fixé,P1,MOYENNE,Moyen — risque injection search_path si schémas compromis,SET search_path = 'billing'\, 'core'\, 'extensions'\, 'public' sur chaque fonction
+SECURITE,Leaked password protection désactivée,P1,HAUTE,Faible — mots de passe compromis acceptés,Activer dans Supabase Auth dashboard
+SECURITE,import_supplier_items exécutable par anon — peut écraser le catalogue central,P0,MOYENNE,CRITIQUE — remplacement catalogue sans auth,REVOKE EXECUTE FROM anon
+SECURITE,transition_quote_status exécutable par anon — manipulation statut FSM,P0,HAUTE,ÉLEVÉ,REVOKE EXECUTE FROM anon
+PERFORMANCE,70+ foreign keys sans index couvrant — billing.invoices/quotes/quote_lines,P1,CERTAINE,Moyen à court terme — impact à partir de 1000+ devis,CREATE INDEX CONCURRENTLY sur FK critiques (project_id\, customer_id\, quote_id)
+PERFORMANCE,RLS auth.uid() non wrappé — re-évaluation par ligne sur core.users et catalog.heating_appliances,P1,CERTAINE,Moyen — +20-40% latence requêtes sur tables concernées,Remplacer auth.uid() par (select auth.uid()) dans les policies
+PERFORMANCE,search_keywords NULL sur 6093 articles Joncoux — fulltext catalogue dégradé,P0,CERTAINE,ÉLEVÉ — recherche catalogue ne fonctionne pas correctement,Enrichissement search_keywords via UPDATE batch
+PERFORMANCE,catalog_items 47 MB — index tsvector inutilisé (idx_catalog_items_search_vector),P1,CERTAINE,Moyen — la recherche passe par un autre chemin que prévu,Vérifier quel index est réellement utilisé par search_quote_items_v2
+PERFORMANCE,Duplicate indexes core.projects (2 index identiques project_number),P2,CERTAINE,Faible — écriture plus lente\, maintenance inutile,DROP un des deux
+PERFORMANCE,Multiple permissive policies sur catalog.catalog_items (INSERT/UPDATE/DELETE),P1,CERTAINE,Moyen — toutes les policies évaluées à chaque write,Fusionner en policies uniques
+FRONTEND,Fichiers pages >50 KB (ProjectDetail 54KB\, InterventionDetail 52KB\, LandingPage 53KB\, QuoteDetail 70KB),P1,CERTAINE,Moyen — bundle size\, maintenabilité\, régression Lovable,Surveiller\, ne pas aggraver
+FRONTEND,Zéro test automatisé — régressions Lovable incontrôlées,P0,HAUTE,ÉLEVÉ — chaque génération Lovable peut casser du code existant,Smoke tests visuels minimum + vérification SHA après génération
+FRONTEND,CreateQuote.tsx présent mais plus routé — fichier orphelin,P2,CERTAINE,Faible,Supprimer
+FRONTEND,DesignSystem.tsx et IconShowcase.tsx en production — routes de dev exposées,P2,MOYENNE,Faible,Retirer des routes en prod ou protéger par role
+FRONTEND,isDesynced = false hardcodé dans QuoteDetail — alerte désync jamais affichée,P1,CERTAINE,Moyen — artisan ne voit pas les désyncs réelles,Implémenter la logique ou supprimer l'alert mort
+FRONTEND,PDF génère des sections par line_category hardcodé\, ignore les sections réelles,P1,CERTAINE,ÉLEVÉ — PDF ne correspond pas à ce que l'artisan a construit,Reécrire generateQuotePdf pour lire section_id
+FRONTEND,PDF TVA agrégée sur une ligne — taux multiples non ventilés,P1,CERTAINE,Moyen — non conforme fiscalement\, client ne peut pas vérifier,Ventiler par taux dans le PDF
+DONNEES,Aucun environnement staging — migrations testées directement en prod,P0,CERTAINE,ÉLEVÉ — une migration erronée casse la prod,Créer branche Supabase staging
+DONNEES,Rollback migrations non testé,P1,HAUTE,ÉLEVÉ — si migration échoue\, retour arrière incertain,Tester le rollback sur une branche
+DONNEES,Fragment sans key dans sections.map() de QuoteDetail — réconciliation React future,P2,FAIBLE,Faible maintenant\, bug avec drag&drop futur,Ajouter key sur les fragments
+PWA,Aucun service worker\, aucun manifest\, pas installable,P2,CERTAINE,Faible V1 — artisans peuvent utiliser via navigateur,Ne pas faire en V1 sans décision produit

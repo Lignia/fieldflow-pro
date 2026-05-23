@@ -1,0 +1,23 @@
+file_or_area,issue,severity,before_v1,notes
+src/pages/QuoteDetail.tsx,Fichier 70 KB — 1000+ lignes\, sub-components non exportés\, 3 blocs calcul marge imbriqués,P1,NON,Ne pas aggraver\, surveiller
+src/pages/ProjectDetail.tsx,Fichier 54 KB — tabs + sticky bar + FSM inline,P1,NON,Même pattern que QuoteDetail
+src/pages/InterventionDetail.tsx,Fichier 52 KB,P2,NON,Surveiller
+src/pages/QuoteDetail.tsx,isDesynced = false hardcodé — alert mort dans le DOM,P1,NON,Implémenter ou supprimer
+src/pages/QuoteDetail.tsx,Fragment sans key dans sections.map(),P2,NON,Bug futur si réordonnancement
+src/pages/QuoteDetail.tsx,LineRow non mémorisé — perf sur 50+ lignes,P2,NON,React.memo quand Lovable stabilise
+src/lib/quote-pdf.ts,Sections groupées par line_category hardcodé — ignore section_id,P1,OUI,Risque commercial direct — PDF ≠ devis affiché
+src/lib/quote-pdf.ts,TVA agrégée sur une ligne — non ventilée par taux,P1,OUI,Non conforme fiscalement
+src/lib/quote-pdf.ts,Logo artisan absent — header DEVIS hardcodé,P2,NON,Avant clients payants
+src/pages/CreateQuote.tsx,Fichier orphelin — plus routé dans App.tsx,P2,NON,DELETE
+src/pages/DesignSystem.tsx,Route de développement exposée en production,P2,NON,Retirer ou protéger
+src/pages/IconShowcase.tsx,Route de développement exposée en production,P2,NON,Retirer ou protéger
+catalog.catalog_items,search_keywords NULL sur 6093 articles Joncoux — recherche dégradée,P0,OUI,UPDATE batch nécessaire
+catalog._archive_joncoux_legacy_20260520,Table sans RLS exposée publiquement,P0,OUI,ENABLE RLS ou DROP
+billing/* (35+ fonctions),SECURITY DEFINER exécutables par anon,P0,OUI,REVOKE EXECUTE FROM anon — migration SQL pure
+core.users + catalog.heating_appliances,RLS avec auth.uid() non wrappé — perf dégradée par ligne,P1,NON,Remplacer par (select auth.uid())
+core.documents,2 index identiques idx_documents_scope + idx_documents_tenant_scope,P2,NON,DROP un
+core.projects,2 index identiques projects_number_unique + projects_project_number_uniq,P2,NON,DROP un
+billing.quotes + invoice_lines + quote_lines,70+ FK sans index — impact à partir de 1000 lignes,P1,NON,CREATE INDEX CONCURRENTLY progressif
+GLOBAL,Aucun test automatisé — Vitest\, Playwright\, Cypress absent,P0,OUI,Smoke tests minimum avant V1
+GLOBAL,Aucun monitoring erreurs frontend (Sentry etc.),P0,OUI,Ajouter avant premiers vrais utilisateurs
+GLOBAL,Pas d'environnement staging Supabase,P0,OUI,Créer branche staging

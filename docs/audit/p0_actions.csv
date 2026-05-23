@@ -1,0 +1,14 @@
+priority,action,impact,effort,risk,blocking
+P0-1,REVOKE EXECUTE ON toutes les RPCs billing/catalog/operations FROM anon,Critique — ferme la surface d'attaque anon sur sign/duplicate/replace,30 min SQL,Très faible — les RPCs restent accessibles aux authenticated,OUI — avant tout utilisateur réel
+P0-2,ENABLE RLS sur catalog._archive_joncoux_legacy_20260520 (ou DROP),Élevé — table publique sans isolation,5 min,Faible,OUI
+P0-3,UPDATE search_keywords sur les 6093 articles Joncoux (batch),Élevé — recherche catalogue fonctionnelle,1h SQL,Faible — UPDATE SET\, pas de schema change,OUI — avant démonstration catalogue
+P0-4,Activer Leaked Password Protection dans Supabase Auth dashboard,Faible effort\, bonne pratique,1 clic,Aucun,OUI
+P0-5,Créer branche Supabase staging,Élevé — migrations testables sans risque prod,1h setup,Faible,OUI — avant toute migration structurelle
+P0-6,Ajouter monitoring erreurs frontend (Sentry DSN dans Vite env),Élevé — visibilité sur les erreurs utilisateurs réels,2h,Faible,OUI — avant premiers utilisateurs
+P0-7,Réécrire generateQuotePdf pour lire sections réelles (section_id + sort_order),Élevé — PDF = devis contractuel\, cohérence édition↔PDF,2h frontend,Moyen — tester sur plusieurs devis,OUI — risque commercial
+P0-8,Smoke tests : vérification SHA QuoteDetail + QuoteEditor après chaque génération Lovable,Élevé — détection régression,30 min process,Aucun,OUI — discipline de déploiement
+P1-1,FK indexes critiques : billing.quote_lines(quote_id)\, billing.quotes(project_id)\, core.projects(customer_id),Moyen — performance à 500+ devis,1h SQL CONCURRENTLY,Très faible — CREATE INDEX CONCURRENTLY non bloquant,NON
+P1-2,RLS auth.uid() → (select auth.uid()) sur core.users et catalog.heating_appliances,Moyen — perf RLS à l'échelle,30 min SQL,Faible\, tester les policies,NON
+P1-3,Ventiler TVA par taux dans le PDF,Moyen — conformité fiscale,1h frontend,Faible,NON — avant clients payants
+P1-4,Supprimer CreateQuote.tsx orphelin,Faible — bundle size\, clarté,5 min,Aucun,NON
+P1-5,SET search_path fixé sur les 18 fonctions sans search_path,Faible — sécurité hardening,1h SQL batch,Très faible,NON

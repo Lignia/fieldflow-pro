@@ -91,7 +91,7 @@ const TVA_CONTEXT_LABELS: Record<string, string> = {
 /* ── Status / Kind config ── */
 
 const STATUS_CONFIG: Record<string, { label: string; className: string }> = {
-  draft:    { label: "Brouillon", className: "bg-muted text-muted-foreground" },
+  draft:    { label: "Brouillon", className: "bg-warning/15 text-warning" },
   sent:     { label: "Envoyé",    className: "bg-info/15 text-info" },
   signed:   { label: "Signé",     className: "bg-accent/15 text-accent" },
   lost:     { label: "Perdu",     className: "bg-destructive/15 text-destructive" },

@@ -251,6 +251,37 @@ SUPPLIER_CONFIGS = {
             "Jeremias multi-variantes : 1 ligne source = N diamètres."
         ),
     },
+    # BLOC 1 — Lorflex : distributeur multi-fabricants
+    # manufacturer_name_column = "frs" : le fabricant réel est lu
+    # depuis la colonne CSV "frs" et écrase manufacturer_name par ligne.
+    "lorflex": {
+        "manufacturer_name": "Lorflex",
+        "distributor_name": "Lorflex",
+        "brand": "Lorflex",
+        "ean_candidates": [
+            "ean/upc",
+            "code_interne_joncoux",
+        ],
+        "supplier_ref_candidates": [
+            "code_interne_joncoux",
+            "ean/upc",
+        ],
+        "name_column": "designation_article",
+        "name_fallback_candidates": [
+            "designation_hp",
+            "name",
+            "designation",
+            "libelle",
+        ],
+        "tarif_price_candidates": [
+            "prix_tarif_2026",
+            "prix_public",
+            "tarif_price",
+        ],
+        "vat_default": 20,
+        "fix_mojibake_labels": True,
+        "manufacturer_name_column": "frs",
+    },
 }
 
 
@@ -692,6 +723,15 @@ def map_row(
         or row.get("color")
     )
 
+    # BLOC 2 — description_fabricant : colonne directe ou variante Odoo multi-niveau
+    description_fabricant = clean_string(
+        row.get("description_fabricant")
+        or row.get(
+            "product_variant_ids/description_fabricant"
+        ),
+        fix_encoding=fix_encoding,
+    )
+
     # MODIFICATION 2 — vat_rate depuis config uniquement (read_vat_rate_from_file supprimé)
     vat_rate = config["vat_default"]
 
@@ -725,6 +765,8 @@ def map_row(
         "technology_type": technology_type,
         "component_role": component_role,
         "finish_color": finish_color,
+        # BLOC 2 — description_fabricant dans le JSON de sortie
+        "description_fabricant": description_fabricant,
         "source_file": source_file,
         "source_system": "CSV_SUPPLIER_IMPORT",
         "import_batch_id": import_batch_id,
@@ -734,6 +776,18 @@ def map_row(
         # À valider côté RPC LOT 0 : nom exact attendu.
         "ignored_field_names": detect_ignored_field_names(row),
     }
+
+    # BLOC 3 — manufacturer_name_column : écrase manufacturer_name par ligne
+    # si la colonne CSV est présente et contient une valeur valide.
+    # Filtre les valeurs parasites Odoo (#N/A, N/A).
+    if config.get("manufacturer_name_column"):
+        col = config["manufacturer_name_column"]
+        val = clean_string(
+            row.get(col),
+            fix_encoding=fix_encoding
+        )
+        if val and val not in ("#N/A", "N/A", ""):
+            item["manufacturer_name"] = val
 
     return item, None
 

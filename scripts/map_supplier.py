@@ -634,8 +634,9 @@ def map_row(
         )
     )
 
+    # supplier_ref = code brut fournisseur, jamais uppercasé
     supplier_ref = (
-        re.sub(r"\s+", "", supplier_ref_raw.strip()).upper()
+        re.sub(r"\s+", "", supplier_ref_raw.strip())
         if supplier_ref_raw
         else ean
     )

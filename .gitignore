@@ -22,3 +22,13 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment variables — ne jamais commiter
+.env
+.env.local
+.env.*.local
+
+# Fichiers d'import fournisseurs (volumieux, temporaires)
+*_import.json
+scripts/output/
+chunks/

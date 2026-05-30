@@ -45,6 +45,7 @@ import {
 import {
   Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { ApplianceSearchTab, type HeatingAppliance } from "@/components/ApplianceSearchTab";
 
 // ─── Types ──────────────────────────────────────────────────────
 type UnitType = "u" | "m" | "m2" | "forfait" | "h";
@@ -166,6 +167,9 @@ interface EditorItem {
   normalized_label_snapshot: string | null;
   customer_label: string | null;
   metadata: QuoteLineMetadata;  // non optionnel
+  // Champ optionnel — présent uniquement pour les lignes appareils
+  appliance_id?: string | null;
+  catalog_domain?: "APPAREIL" | null;
 }
 
 interface EditorText {
@@ -249,12 +253,17 @@ function nextKey() { return `row_${++_keyCounter}_${Date.now()}`; }
 function CatalogPopover({
   onSelect,
   onFreeLine,
+  onSelectAppliance,
+  tenantId,
   triggerLabel = "Nouvelle ligne",
   triggerVariant = "outline",
   triggerSize = "sm",
 }: {
   onSelect: (item: CatalogItem) => void;
   onFreeLine: () => void;
+  /** Callback dédié pour l'onglet Appareils */
+  onSelectAppliance: (appliance: HeatingAppliance) => void;
+  tenantId: string | null;
   triggerLabel?: string;
   triggerVariant?: "default" | "outline" | "ghost" | "secondary";
   triggerSize?: "sm" | "default" | "lg";
@@ -262,7 +271,7 @@ function CatalogPopover({
   const [open, setOpen] = useState(false);
   const [term, setTerm] = useState("");
   const [includeLowPriority, setIncludeLowPriority] = useState(false);
-  const [activeTab, setActiveTab] = useState<"all" | "conduits" | "terminaux" | "raccords" | "labor">("all");
+  const [activeTab, setActiveTab] = useState<"all" | "conduits" | "terminaux" | "raccords" | "labor" | "appareils">("all");
   const { results, loading } = useCatalogSearch(term, null, includeLowPriority);
 
   const categorize = (item: CatalogItem): "conduits" | "terminaux" | "raccords" | "labor" | "other" => {
@@ -287,11 +296,19 @@ function CatalogPopover({
 
   const filtered = useMemo(() => {
     if (activeTab === "all") return results;
+    if (activeTab === "appareils") return []; // géré par ApplianceSearchTab
     return results.filter((r) => categorize(r) === activeTab);
   }, [results, activeTab]);
 
   const handleSelect = (item: CatalogItem) => {
     onSelect(item);
+    setOpen(false);
+    setTerm("");
+    setActiveTab("all");
+  };
+
+  const handleSelectAppliance = (appliance: HeatingAppliance) => {
+    onSelectAppliance(appliance);
     setOpen(false);
     setTerm("");
     setActiveTab("all");
@@ -310,7 +327,7 @@ function CatalogPopover({
           onKeyDown={(e) => { if (e.key === "Escape") { e.preventDefault(); setOpen(false); } }}
         >
           <CommandInput
-            placeholder="Référence, désignation ou diamètre (ex: 80/130)…"
+            placeholder={activeTab === "appareils" ? "Marque ou modèle (ex: Poêle granulés)…" : "Référence, désignation ou diamètre (ex: 80/130)…"}
             value={term}
             onValueChange={setTerm}
             autoFocus
@@ -333,111 +350,128 @@ function CatalogPopover({
                 <TabsTrigger value="labor" className="h-7 px-2.5 text-xs data-[state=active]:bg-muted">
                   Main d'œuvre {counts.labor > 0 && <span className="ml-1 text-[10px] text-muted-foreground">{counts.labor}</span>}
                 </TabsTrigger>
+                {/* ── NOUVEL ONGLET APPAREILS ── */}
+                <TabsTrigger value="appareils" className="h-7 px-2.5 text-xs data-[state=active]:bg-muted">
+                  🔥 Appareils
+                </TabsTrigger>
               </TabsList>
             </Tabs>
           </div>
 
           <ScrollArea style={{ maxHeight: "65vh" }} className="overflow-y-auto">
             <CommandList className="max-h-none overflow-visible">
-              {loading && (
-                <div className="p-3 space-y-2">
-                  {[0, 1, 2].map((i) => (
-                    <div key={i} className="space-y-1.5">
-                      <Skeleton className="h-4 w-3/5" />
-                      <Skeleton className="h-3 w-2/5" />
-                      <Skeleton className="h-3 w-1/3" />
-                      {i < 2 && <Separator className="!my-2" />}
-                    </div>
-                  ))}
-                </div>
-              )}
 
-              {!loading && term.length < 2 && (
-                <div className="p-6 text-center text-xs text-muted-foreground">
-                  Tape au moins 2 caractères pour rechercher.
-                </div>
-              )}
-
-              {!loading && term.length >= 2 && filtered.length === 0 && (
-                <CommandEmpty className="py-6">
-                  <div className="space-y-2 text-center">
-                    <p className="text-sm text-muted-foreground">Aucun résultat dans cette catégorie.</p>
-                    {activeTab !== "all" && results.length > 0 && (
-                      <Button variant="ghost" size="sm" className="text-xs" onClick={() => setActiveTab("all")}>
-                        Voir tous les résultats ({results.length})
-                      </Button>
-                    )}
-                    {activeTab === "all" && !includeLowPriority && (
-                      <Button variant="ghost" size="sm" className="text-xs" onClick={() => setIncludeLowPriority(true)}>
-                        Élargir aux familles secondaires
-                      </Button>
-                    )}
-                  </div>
-                </CommandEmpty>
-              )}
-
-              {!loading && filtered.length > 0 && (
-                <CommandGroup className="px-1 py-1">
-                  {filtered.map((item) => {
-                    const title = item.normalized_name ?? item.name;
-                    const ref = item.sku_code ?? item.sku ?? item.supplier_ref;
-                    const specs = [
-                      item.diameter_outer_mm ? `Ø${item.diameter_inner_mm ?? "?"}/${item.diameter_outer_mm}` : item.diameter_inner_mm ? `Ø${item.diameter_inner_mm}` : null,
-                      item.length_mm ? `${item.length_mm}mm` : null,
-                      item.angle_deg ? `${item.angle_deg}°` : null,
-                      item.finish_color,
-                      item.technology_type,
-                    ].filter((x): x is string => x !== null && x !== undefined && x !== "");
-
-                    return (
-                      <CommandItem
-                        key={item.id}
-                        value={`${item.id}__${title}__${ref ?? ""}`}
-                        onSelect={() => handleSelect(item)}
-                        className="flex flex-col items-stretch gap-1 px-2.5 py-2 cursor-pointer aria-selected:bg-accent/40 data-[selected=true]:bg-accent/40 rounded-md"
-                      >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="text-sm font-medium text-foreground truncate flex-1 min-w-0">{title}</span>
-                          {item.needs_human_review && (
-                            <span title="Vérification obligatoire — DTA / DTU" className="text-[10px] text-warning font-semibold shrink-0">⚠️</span>
-                          )}
-                          {item.supplier_name && (
-                            <Badge variant="outline" className="text-[9px] py-0 h-4 px-1.5 font-normal shrink-0">{item.supplier_name}</Badge>
-                          )}
-                        </div>
-                        {specs.length > 0 && (
-                          <div className="text-xs text-muted-foreground font-mono leading-tight truncate">{specs.join(" · ")}</div>
-                        )}
-                        <div className="flex items-center justify-between gap-2 text-xs">
-                          <span className="text-muted-foreground truncate min-w-0">
-                            {item.supplier_range && <span className="text-foreground/70">{item.supplier_range}</span>}
-                            {item.supplier_range && ref && <span className="mx-1">·</span>}
-                            {ref && <span className="font-mono">réf {ref}</span>}
-                          </span>
-                          <span className="font-mono tabular-nums text-foreground shrink-0">
-                            {item.prix_sur_devis ? "Sur demande" : `${item.unit_price_ht.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} € HT`}
-                          </span>
-                        </div>
-                      </CommandItem>
-                    );
-                  })}
-                </CommandGroup>
-              )}
-
-              {!loading && term.length >= 2 && (
+              {/* ── Onglet Appareils — rendu délégué à ApplianceSearchTab ── */}
+              {activeTab === "appareils" ? (
+                <ApplianceSearchTab
+                  term={term}
+                  tenantId={tenantId}
+                  onSelect={handleSelectAppliance}
+                />
+              ) : (
                 <>
-                  <Separator />
-                  <div className="px-2 py-1.5 text-center">
-                    <button
-                      type="button"
-                      className="text-[11px] text-muted-foreground hover:text-foreground"
-                      onClick={() => setIncludeLowPriority((v) => !v)}
-                    >
-                      {includeLowPriority ? "Masquer les familles secondaires" : "Afficher les familles secondaires (gaz, ventilation…)"}
-                    </button>
-                  </div>
+                  {loading && (
+                    <div className="p-3 space-y-2">
+                      {[0, 1, 2].map((i) => (
+                        <div key={i} className="space-y-1.5">
+                          <Skeleton className="h-4 w-3/5" />
+                          <Skeleton className="h-3 w-2/5" />
+                          <Skeleton className="h-3 w-1/3" />
+                          {i < 2 && <Separator className="!my-2" />}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {!loading && term.length < 2 && (
+                    <div className="p-6 text-center text-xs text-muted-foreground">
+                      Tape au moins 2 caractères pour rechercher.
+                    </div>
+                  )}
+
+                  {!loading && term.length >= 2 && filtered.length === 0 && (
+                    <CommandEmpty className="py-6">
+                      <div className="space-y-2 text-center">
+                        <p className="text-sm text-muted-foreground">Aucun résultat dans cette catégorie.</p>
+                        {activeTab !== "all" && results.length > 0 && (
+                          <Button variant="ghost" size="sm" className="text-xs" onClick={() => setActiveTab("all")}>
+                            Voir tous les résultats ({results.length})
+                          </Button>
+                        )}
+                        {activeTab === "all" && !includeLowPriority && (
+                          <Button variant="ghost" size="sm" className="text-xs" onClick={() => setIncludeLowPriority(true)}>
+                            Élargir aux familles secondaires
+                          </Button>
+                        )}
+                      </div>
+                    </CommandEmpty>
+                  )}
+
+                  {!loading && filtered.length > 0 && (
+                    <CommandGroup className="px-1 py-1">
+                      {filtered.map((item) => {
+                        const title = item.normalized_name ?? item.name;
+                        const ref = item.sku_code ?? item.sku ?? item.supplier_ref;
+                        const specs = [
+                          item.diameter_outer_mm ? `Ø${item.diameter_inner_mm ?? "?"}/${item.diameter_outer_mm}` : item.diameter_inner_mm ? `Ø${item.diameter_inner_mm}` : null,
+                          item.length_mm ? `${item.length_mm}mm` : null,
+                          item.angle_deg ? `${item.angle_deg}°` : null,
+                          item.finish_color,
+                          item.technology_type,
+                        ].filter((x): x is string => x !== null && x !== undefined && x !== "");
+
+                        return (
+                          <CommandItem
+                            key={item.id}
+                            value={`${item.id}__${title}__${ref ?? ""}`}
+                            onSelect={() => handleSelect(item)}
+                            className="flex flex-col items-stretch gap-1 px-2.5 py-2 cursor-pointer aria-selected:bg-accent/40 data-[selected=true]:bg-accent/40 rounded-md"
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span className="text-sm font-medium text-foreground truncate flex-1 min-w-0">{title}</span>
+                              {item.needs_human_review && (
+                                <span title="Vérification obligatoire — DTA / DTU" className="text-[10px] text-warning font-semibold shrink-0">⚠️</span>
+                              )}
+                              {item.supplier_name && (
+                                <Badge variant="outline" className="text-[9px] py-0 h-4 px-1.5 font-normal shrink-0">{item.supplier_name}</Badge>
+                              )}
+                            </div>
+                            {specs.length > 0 && (
+                              <div className="text-xs text-muted-foreground font-mono leading-tight truncate">{specs.join(" · ")}</div>
+                            )}
+                            <div className="flex items-center justify-between gap-2 text-xs">
+                              <span className="text-muted-foreground truncate min-w-0">
+                                {item.supplier_range && <span className="text-foreground/70">{item.supplier_range}</span>}
+                                {item.supplier_range && ref && <span className="mx-1">·</span>}
+                                {ref && <span className="font-mono">réf {ref}</span>}
+                              </span>
+                              <span className="font-mono tabular-nums text-foreground shrink-0">
+                                {item.prix_sur_devis ? "Sur demande" : `${item.unit_price_ht.toLocaleString("fr-FR", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} € HT`}
+                              </span>
+                            </div>
+                          </CommandItem>
+                        );
+                      })}
+                    </CommandGroup>
+                  )}
+
+                  {!loading && term.length >= 2 && (
+                    <>
+                      <Separator />
+                      <div className="px-2 py-1.5 text-center">
+                        <button
+                          type="button"
+                          className="text-[11px] text-muted-foreground hover:text-foreground"
+                          onClick={() => setIncludeLowPriority((v) => !v)}
+                        >
+                          {includeLowPriority ? "Masquer les familles secondaires" : "Afficher les familles secondaires (gaz, ventilation…)"}
+                        </button>
+                      </div>
+                    </>
+                  )}
                 </>
               )}
+
             </CommandList>
           </ScrollArea>
 
@@ -744,6 +778,8 @@ export default function QuoteEditor() {
             normalized_label_snapshot: l.normalized_label_snapshot ?? null,
             customer_label: l.customer_label ?? null,
             metadata: (l.metadata as QuoteLineMetadata) ?? buildManualMetadata(),
+            appliance_id: (l as any).appliance_id ?? null,
+            catalog_domain: (l as any).catalog_domain ?? null,
           });
         }
       });
@@ -757,16 +793,6 @@ export default function QuoteEditor() {
     }
   }, [setQuote]);
 
-  /**
-   * QuoteEditor — 4 modes selon les query params :
-   * MODE CREATE  : aucun quote_id → createQuote() → rows=[]
-   * MODE EDIT    : quote_id présent → loadExistingQuote() → rows hydratés
-   * MODE DUPLICATE : géré par handleDuplicate() → navigation séparée
-   * MODE FINAL   : kind=final sans quote_id → createQuote(kind=final)
-   *
-   * INVARIANT : si existingQuoteId est présent, ne jamais appeler createQuote().
-   * Violation = devis fantôme en base.
-   */
   useEffect(() => {
     if (!projectId || initRef.current) return;
     initRef.current = true;
@@ -791,7 +817,7 @@ export default function QuoteEditor() {
     }
   }, [projectId, existingQuoteId, createQuote, quoteKind, loadExistingQuote]);
 
-  // ─── addItem : seul point d'entrée pour créer une ligne ────────
+  // ─── addItem : seul point d'entrée pour créer une ligne catalogue ──
   const addItem = useCallback(async (
     catalogItem?: CatalogItem,
     forcedCategory?: LineCategory | null,
@@ -801,7 +827,6 @@ export default function QuoteEditor() {
     let costPrice: number | null = null;
 
     if (catalogItem) {
-      // Catégorie automatique
       const pt = catalogItem.product_type;
       if (!autoCategory) {
         if (pt === "service") autoCategory = "labor";
@@ -811,7 +836,6 @@ export default function QuoteEditor() {
       }
 
       if (DEV_BYPASS || !tenantId) {
-        // Mode dev — metadata minimal sans appel réseau
         metadata = buildCatalogMetadata(
           {
             status: "dev_bypass", public_price_ht: catalogItem.unit_price_ht,
@@ -822,14 +846,11 @@ export default function QuoteEditor() {
         );
         costPrice = catalogItem.cost_price ?? null;
       } else {
-        // Production — resolve_item_price est la SEULE source de pricing
-        // Fail hard : si la RPC échoue, la ligne N'EST PAS ajoutée
         let priceData: Record<string, unknown>;
         try {
           const { data, error } = await catalogDb.rpc("resolve_item_price", {
             p_item_id: catalogItem.id,
             p_tenant_id: tenantId,
-            // Passer supplier_name améliore la résolution des remises distributeur
             p_purchase_supplier_name: catalogItem.supplier_name ?? null,
           });
           if (error) throw error;
@@ -838,10 +859,9 @@ export default function QuoteEditor() {
         } catch (err) {
           console.error("[QuoteEditor] resolve_item_price failed:", err);
           toast.error("Impossible de résoudre le prix de cet article. L'article n'a pas été ajouté.");
-          return; // Fail hard — on n'ajoute pas la ligne
+          return;
         }
 
-        // net_price_ht doit être présent
         if (priceData.net_price_ht == null) {
           toast.error("Prix achat non disponible pour cet article. L'article n'a pas été ajouté.");
           return;
@@ -851,7 +871,6 @@ export default function QuoteEditor() {
         metadata = buildCatalogMetadata(priceData, catalogItem);
       }
     } else {
-      // Ligne manuelle — metadata complet avec source="manual"
       metadata = buildManualMetadata();
     }
 
@@ -882,6 +901,48 @@ export default function QuoteEditor() {
     };
     setRows((prev) => [...prev, newRow]);
   }, [rows.length, tenantId]);
+
+  // ─── addAppliance : point d'entrée pour les lignes appareils ────
+  const addAppliance = useCallback((appliance: HeatingAppliance) => {
+    const label = [
+      appliance.normalized_brand,
+      appliance.commercial_name || appliance.normalized_model,
+    ]
+      .filter(Boolean)
+      .join(" ");
+
+    const newRow: EditorItem = {
+      _type: "item",
+      _key: nextKey(),
+      line_type: "item",
+      product_id: null,           // pas un catalog_item
+      appliance_id: appliance.id, // tracé dans la ligne
+      catalog_domain: "APPAREIL",
+      label,
+      qty: 1,
+      unit: "u",
+      unit_price_ht: 0,           // prix à renseigner manuellement
+      vat_rate: 20,               // TVA par défaut — à ajuster
+      sort_order: rows.length,
+      line_category: "device",    // catégorie automatique
+      unit_cost_price: null,
+      brand: appliance.normalized_brand ?? null,
+      supplier_ref: null,
+      supplier_ref_snapshot: null,
+      supplier_sku_snapshot: null,
+      supplier_name_snapshot: null,
+      raw_label_snapshot: label,
+      normalized_label_snapshot: label,
+      customer_label: null,
+      // metadata manuel — le vendeur renseignera le prix sur la ligne
+      metadata: buildManualMetadata(),
+    };
+    setRows((prev) => [...prev, newRow]);
+    toast(
+      `${label} ajouté — pensez à renseigner le prix de vente HT.`,
+      { duration: 4000 },
+    );
+  }, [rows.length]);
 
   const addSection = useCallback(() => {
     setRows((prev) => [...prev, { _type: "section", _key: nextKey(), label: "Nouvelle section", sort_order: prev.length }]);
@@ -980,13 +1041,11 @@ export default function QuoteEditor() {
     const itemLines = rows.filter((r): r is EditorItem => r._type === "item");
     if (itemLines.length === 0) { toast.error("Ajoutez au moins une ligne avant d'enregistrer"); return; }
 
-    // Garde : aucune ligne item sans désignation ET sans prix ET sans product_id
-    // (= ligne fantôme créée puis non remplie par l'utilisateur)
     const emptyLines = itemLines.filter((l) => {
       const label = resolveDisplayLabel(l).trim();
       const hasNoLabel = label === "";
       const hasNoPrice = (l.unit_price_ht ?? 0) === 0;
-      const hasNoCatalogLink = l.product_id == null;
+      const hasNoCatalogLink = l.product_id == null && !l.appliance_id;
       return hasNoLabel && hasNoPrice && hasNoCatalogLink;
     });
     if (emptyLines.length > 0) {
@@ -996,9 +1055,8 @@ export default function QuoteEditor() {
       return;
     }
 
-    // GARDE CRITIQUE : aucune ligne catalogue sans metadata.pricing valide
     const missingPricing = itemLines.filter(
-      (l) => l.product_id !== null && l.metadata.pricing.status === "manual",
+      (l) => l.product_id !== null && !l.appliance_id && l.metadata.pricing.status === "manual",
     );
     if (missingPricing.length > 0) {
       toast.error(
@@ -1063,7 +1121,6 @@ export default function QuoteEditor() {
             normalized_label_snapshot: li?.normalized_label_snapshot ?? null,
             customer_label: li?.customer_label ?? null,
             display_label: isItem ? resolveDisplayLabel(li!) : null,
-            // metadata toujours complet — jamais {} ni null
             metadata: li?.metadata ?? buildManualMetadata(),
           };
         }),
@@ -1343,7 +1400,7 @@ export default function QuoteEditor() {
                         Aucune ligne — commencez votre chiffrage
                       </p>
                       <div className="flex gap-2">
-                        <CatalogPopover onSelect={(item) => addItem(item)} onFreeLine={() => addItem()} triggerLabel="Depuis le catalogue" triggerVariant="outline" />
+                        <CatalogPopover onSelect={(item) => addItem(item)} onFreeLine={() => addItem()} onSelectAppliance={addAppliance} tenantId={tenantId} triggerLabel="Depuis le catalogue" triggerVariant="outline" />
                         <Button variant="outline" size="sm" onClick={() => addItem()}>Ligne libre</Button>
                       </div>
                     </div>
@@ -1353,7 +1410,7 @@ export default function QuoteEditor() {
                       Aucune ligne — commencez votre chiffrage
                     </p>
                     <div className="flex gap-2">
-                      <CatalogPopover onSelect={(item) => addItem(item)} onFreeLine={() => addItem()} triggerLabel="Catalogue" triggerVariant="outline" />
+                      <CatalogPopover onSelect={(item) => addItem(item)} onFreeLine={() => addItem()} onSelectAppliance={addAppliance} tenantId={tenantId} triggerLabel="Catalogue" triggerVariant="outline" />
                       <Button variant="outline" size="sm" onClick={() => addItem()}>Ligne libre</Button>
                     </div>
                   </div>
@@ -1403,7 +1460,7 @@ export default function QuoteEditor() {
                 <Button size="sm" variant="outline" className="h-8 border-info/40 text-info hover:bg-info/10 hover:text-info" onClick={() => addItem(undefined, "flue")}><Construction className="h-3.5 w-3.5 mr-1" /> Fumisterie</Button>
                 <Button size="sm" variant="outline" className="h-8 border-success/40 text-success hover:bg-success/10 hover:text-success" onClick={() => addItem(undefined, "labor")}><Wrench className="h-3.5 w-3.5 mr-1" /> Pose</Button>
                 <Separator orientation="vertical" className="h-6 mx-1" />
-                <CatalogPopover onSelect={(item) => addItem(item)} onFreeLine={() => addItem()} triggerLabel="Catalogue" />
+                <CatalogPopover onSelect={(item) => addItem(item)} onFreeLine={() => addItem()} onSelectAppliance={addAppliance} tenantId={tenantId} triggerLabel="Catalogue" />
                 <Button variant="ghost" size="sm" onClick={() => addItem()}><Plus className="h-3.5 w-3.5 mr-1" /> Ligne libre</Button>
                 <Button variant="ghost" size="sm" onClick={addSection}><Layers className="h-3.5 w-3.5 mr-1" /> Section</Button>
                 <Button variant="ghost" size="sm" onClick={addText}><Type className="h-3.5 w-3.5 mr-1" /> Texte</Button>

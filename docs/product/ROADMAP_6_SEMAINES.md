@@ -18,6 +18,30 @@
 
 ---
 
+## RÉSERVE OFFLINE — DÉCISION VALIDÉE
+
+```
+DÉCISION : L'offline n'est PAS implémenté pour les 5 premiers pilotes.
+
+RÈGLE pour tous les écrans terrain (Interventions, Installations, Chantier) :
+  ✅ NE PAS implémenter le Service Worker offline maintenant
+  ✅ NE PAS créer de dépendance qui rendrait l'offline impossible plus tard
+  ✅ Concevoir les écrans mobiles pour un futur cache local (offline-compatible)
+
+CONCRÈTEMENT pour chaque écran terrain :
+  - Données chargées via des hooks React Query (pas de fetch inline)
+  - État local UI séparé des données distantes
+  - Pas de localStorage, pas de sessionStorage (voir contrainte artifacts)
+  - Pas d'API calls dans les composants directement
+  → Ces patterns permettront d'injecter un cache offline en V2 sans réécriture
+
+OFFLINE V2 : Service Worker + background sync + IndexedDB
+  Couvrira : fiche intervention, clôture chantier, signature, photos
+  Déclencheur : retour terrain des pilotes confirmant la douleur "zone blanche"
+```
+
+---
+
 ## RÉALITÉ DE DÉPART (audit factuel)
 
 ```
@@ -37,7 +61,7 @@ Ce qui MARCHE aujourd'hui :
 Les 3 vrais gaps V1 :
   🚨 Onglet Appareils non branché → Arnaud ne peut pas vendre de poêles
   🚨 Planning.tsx = stub 679 octets → Amélie ne peut pas planifier
-  🚨 Mobile PWA offline → Yohan ne peut pas travailler sans réseau
+  🔶 Mobile offline → reporté en V2 (voir RÉSERVE OFFLINE)
 ```
 
 ---
@@ -382,30 +406,42 @@ SQL :
 
 ---
 
-### S3-T4 — Fiche intervention mobile (lecture seule offline) [B] [M]
+### S3-T4 — Fiche intervention mobile (online, offline-compatible) [A] [M]
 
 ```
-Objectif métier : Yohan ouvre sa journée sur son téléphone sans réseau.
+Objectif métier : Yohan ouvre sa journée sur son téléphone.
 Backend : Aucun
-Frontend : Ajouter Service Worker dans InterventionDetail.tsx
-           Cache les interventions du jour au moment de la connexion
-           Accessible en offline lecture seule
+Frontend : InterventionDetail.tsx (52 Ko, existant) — optimisation mobile
+           Mise en page responsive pour écran 390px
+           Données chargées via React Query (offline-compatible par architecture)
 Dépendances : InterventionDetail.tsx (52 Ko, existant)
 Effort : M (2-3 jours)
-Risque : Moyen — PWA service worker, à tester sur vrai mobile
+Risque : Faible — pas de Service Worker, juste responsive + React Query
 
-SCOPE V1 (lecture seule) :
-  InterventionDetail.tsx → cacheable offline
-  Client + adresse + notes briefing + type → lisibles sans réseau
-  Écriture offline (photos, compte-rendu) → S4
+SCOPE V1 (online, offline-compatible par conception) :
+  InterventionDetail.tsx → responsive mobile
+  Client + adresse + notes briefing + type → lisibles sur téléphone
+  Photos + compte-rendu → formulaire mobile optimisé
+  Données via React Query hooks → prêt pour cache offline V2
+
+OFFLINE V2 (hors scope maintenant) :
+  Service Worker + background sync + IndexedDB
+  Déclencheur : retour terrain pilotes
+
+RÈGLE D'ARCHITECTURE MOBILE :
+  Tout hook de données = React Query (queryClient.prefetchQuery possible en V2)
+  Pas de fetch() inline dans les composants
+  Pas de localStorage pour les données métier
 
 TEST :
-  Ouvrir InterventionDetail, passer en mode avion → fiche toujours lisible
+  Ouvrir InterventionDetail sur mobile (iPhone/Android)
+  → Interface lisible et utilisable sur écran 390px
+  → Photos uploadables depuis le téléphone
 ```
 
 ---
 
-**Livrable semaine 3 :** Amélie a un vrai planning. Yohan peut voir ses interventions du jour sur mobile.
+**Livrable semaine 3 :** Amélie a un vrai planning. Yohan peut utiliser ses interventions sur mobile (connexion requise, architecture prête pour offline V2).
 
 ---
 
@@ -422,10 +458,16 @@ Backend : core.installations table prête (3 rows)
           warranty_manufacturer_end, warranty_provider_end,
           serial_number, installed_on, diameter_installed_mm
 Frontend : InstallationDetail.tsx (26 Ko, existant) — formulaire de clôture chantier
+           Interface mobile responsive (offline-compatible par architecture)
            Accessible depuis l'intervention POSE terminée
 Dépendances : S3-T2 (intervention POSE créée)
 Effort : M (2-3 jours)
 Risque : Faible — InstallationDetail.tsx existe, migration légère
+
+RÈGLE MOBILE (voir RÉSERVE OFFLINE) :
+  Données via React Query, pas de fetch inline
+  Formulaire clôture utilisable sur mobile online
+  Offline V2 : cache + sync ajoutés sans réécriture
 
 TEST :
   Clôturer une installation → saisir N° série + garantie 24 mois
@@ -645,6 +687,10 @@ CRITÈRES D'UN PILOTE ACTIF :
   ✅ A créé au moins 1 devis réel envoyé à un client
   ✅ A planifié au moins 1 intervention
   ✅ Revient seul dans LIGNIA sans aide
+
+NOTE OFFLINE :
+  Si plusieurs pilotes mentionnent spontanément la douleur "zone blanche" →
+  déclenche l'implémentation offline V2 en priorité haute.
 ```
 
 ---
@@ -697,7 +743,7 @@ Risque de NE PAS le faire : Très élevé — Lovable casse silencieusement
 | S3 | Vue planning bureau | A | L | 🔥🔥🔥 | Douleur #1 entreprise |
 | S3 | Intervention depuis devis signé | A | M | 🔥🔥 | Flow complet |
 | S3 | analytic_code interventions | C | S | 🔥 | Comptabilité V2 |
-| S3 | Fiche mobile offline (lecture) | B | M | 🔥🔥 | Yohan terrain |
+| S3 | Fiche mobile (online, offline-compatible) | A | M | 🔥🔥 | Yohan terrain |
 | S4 | Garanties à la clôture | A | M | 🔥🔥🔥 | SAV intelligent |
 | S4 | Badge garantie | A | S | 🔥🔥🔥 | Amélie en SAV |
 | S4 | Devis SAV depuis installation | A | M | 🔥🔥🔥 | SAV en 2 clics |
@@ -714,25 +760,27 @@ Risque de NE PAS le faire : Très élevé — Lovable casse silencieusement
 
 ---
 
-## CE QUI N'EST PAS DANS CE PLAN (D — Vision future)
+## CE QUI N'EST PAS DANS CE PLAN
 
 ```
-RESPECTER LE PÉRIMÈTRE V1 — Ces features attendent validation pilotes :
+V2 — Après validation 5 pilotes :
+  Offline complet (Service Worker + IndexedDB + background sync)
+  Remises par famille (supplier_family_code)
+  Portail client signature électronique
+  Timeline installation complète
+  Site/Location persistant
+  Tags métier
+  Comparaison versions tarifaires
+  Habilitations techniciens
 
-  Remises par famille (supplier_family_code) → V2
-  Portail client signature électronique → V2
-  Timeline installation complète → V2
-  Site/Location persistant → V2
-  Tags métier → V2
-  Comparaison versions tarifaires → V2
-  Export FEC / Facture-X complet → V3
-  Catalogue SAV fabricants (MCZ...) → V3
-  Assistant vocal → V3
-  Réseau / franchise → V3
-  Prédiction fin de vie appareils → V3
-  Habilitations techniciens → V2
-  IA interactions → V3
-  DTU rules → V3
+V3 :
+  Export FEC / Facture-X complet
+  Catalogue SAV fabricants (MCZ...)
+  Assistant vocal
+  Réseau / franchise
+  Prédiction fin de vie appareils
+  IA interactions
+  DTU rules
 ```
 
 ---
@@ -747,4 +795,10 @@ Avant de demander à Claude Exec ou Lovable de créer quelque chose :
   4. Jamais 2 features en parallèle
   5. Après chaque semaine → 1 vraie session terrain (même 30 minutes)
      Le feedback terrain > 10 heures de spécification
+
+RÈGLE MOBILE (RÉSERVE OFFLINE) :
+  Tout hook de données sur écran terrain = React Query
+  Pas de fetch() inline dans les composants mobiles
+  Pas de localStorage pour les données métier
+  → Ces patterns permettent d'injecter le cache offline V2 sans réécriture
 ```

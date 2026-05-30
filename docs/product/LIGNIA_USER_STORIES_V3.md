@@ -1,6 +1,6 @@
 # LIGNIA — User Stories Complètes
-> Document de référence — v3.3
-> Claude Analytics + OpenAI + Analyse ServiceTitan — Mai 2026
+> Document de référence — v3.4
+> Claude Analytics + OpenAI + ServiceTitan + Evoliz — Mai 2026
 > Pour : Claude Exec, Claude Read, Lovable, développeurs
 
 ---
@@ -12,31 +12,31 @@ LIGNIA est un OS opérationnel pour entreprises bois énergie.
 
 Pas un CRM générique. Pas un logiciel de devis. Pas un ERP.
 Un outil conçu pour les réalités quotidiennes d'une entreprise
-qui fait 1 à 5 M€ avec patron, assistante, poseurs et techniciens SAV.
+qui fait 1 à 5 M€ avec patron, secrétaire/ADV, commerciaux et poseurs.
 ```
 
 **4 PILIERS — dans l'ordre de valeur pour le client :**
 
 ```
-PILIER 1 — CRM + DEVIS
+PILIER 1 — VENTE ET ORGANISATION COMMERCIALE
   C'est ce qui vend LIGNIA.
-  Gain de temps devis, catalogue, relances, pipeline commercial.
+  Gain de temps devis, ouvrages pré-remplis, catalogue, relances automatiques.
   70% du CA des clients vient de la vente + installation.
 
 PILIER 2 — PLANNING + CHANTIER + MOBILE
   C'est ce qui fait tourner l'entreprise au quotidien.
-  La secrétaire orchestre, les poseurs exécutent sur mobile.
+  La secrétaire orchestre depuis son bureau, les poseurs exécutent sur mobile.
   La douleur principale : "Qui va où, quand, avec quoi ?"
 
 PILIER 3 — CATALOGUE + COMMANDE FOURNISSEUR
   C'est ce qui différencie LIGNIA.
-  100 fournisseurs, remises par famille, import industriel,
-  bon de commande depuis le devis signé.
+  Architecture compatible 100+ fournisseurs, remises par famille,
+  bon de commande depuis le devis signé, export comptable.
 
 PILIER 4 — PARC INSTALLÉ + ENTRETIEN + SAV
   C'est ce qui crée la récurrence.
-  Contrats entretien granulés, ramonage annuel, SAV.
-  Moteur de long terme, pas argument de vente V1.
+  Contrats entretien granulés, ramonage annuel, SAV avec historique.
+  Moteur de long terme — valeur V2/V3, pas argument de vente V1.
 ```
 
 ---
@@ -53,6 +53,7 @@ ICP PRIORITAIRE — Entreprise bois énergie multi-utilisateurs
     - Planning illisible et verbal
     - Commandes fournisseurs manuelles
     - SAV sans historique
+    - Comptabilité qui prend du temps à la clôture
 
 ICP SECONDAIRE — Artisan installateur solo
   CA : 200k-800k€
@@ -71,15 +72,15 @@ ICP TERTIAIRE — Ramoneur pur
 ## ACTIFS STRATÉGIQUES DE LIGNIA
 
 ```
-ACTIF #1 — PARC INSTALLÉ
-  30 000 installations historisées = actif impossible à reproduire
-  Base de récurrence : ramonage, entretien, SAV, remplacement
-  Donnée propriétaire — VALEUR V2/V3
+ACTIF #1 — CATALOGUE NORMALISÉ MULTI-FOURNISSEURS
+  Architecture compatible 100+ fournisseurs, 4 domaines, pipeline d'import industriel
+  Recherche contextualisée par catalog_domain — VALEUR V1 (argument de vente immédiat)
+  Remises par famille configurées par artisan
 
-ACTIF #2 — CATALOGUE NORMALISÉ MULTI-FOURNISSEURS
-  100 fournisseurs, 4 domaines, pipeline d'import industriel
-  Recherche contextualisée par catalog_domain
-  Remises par famille configurées par artisan — VALEUR V1
+ACTIF #2 — PARC INSTALLÉ
+  OBJECTIF STRATÉGIQUE : constituer le plus grand parc installé bois énergie indépendant
+  Base de récurrence : ramonage, entretien, SAV, remplacement
+  Donnée propriétaire — VALEUR V2/V3 (se construit avec chaque installation clôturée)
 
 ACTIF #3 — HISTORIQUE SAV & INTERVENTIONS
   Timeline complète par installation sur 10-20 ans
@@ -104,26 +105,77 @@ PATTERN 2 — Contacts multiples par client
 PATTERN 3 — Garantie fabricant ≠ garantie prestataire
   ServiceTitan : manufacturerWarrantyStart/End + serviceProviderWarrantyStart/End
   LIGNIA : warranty_manufacturer_end + warranty_provider_end sur l'installation
-  Impact : savoir immédiatement en SAV si la panne est sous garantie
 
 PATTERN 4 — Historique des prix (Pricebook versioning)
   ServiceTitan : ClientSpecificPricing avec rate sheets versionnés
-  LIGNIA : import_batch_id + import_date = traçabilité du tarif utilisé
-  Impact : audit légal, litige client, comparaison tarifs annuels
+  LIGNIA : import_batch_id = traçabilité du tarif utilisé par devis
 
 PATTERN 5 — AP Bills pour les achats fournisseurs
-  ServiceTitan : AP Bills + purchaseOrderId + MarkAsExported vers Sage/Pennylane
-  LIGNIA : Bon de commande → export vers logiciel comptable
-  Impact : clôture le cycle devis → commande → facture fournisseur → comptabilité
+  ServiceTitan : AP Bills + MarkAsExported vers Sage/Pennylane
+  LIGNIA : Bon de commande → export comptable fournisseurs
 
 PATTERN 6 — Le centre n'est pas le client, c'est l'équipement installé
   ServiceTitan : Customer → Location → InstalledEquipment → History
-  LIGNIA : Client → Site → Installation → Timeline
-  Impact en V2/V3 : parc intelligent, suggestion pièces, alertes remplacement
+  LIGNIA : Client → Site → Installation → Timeline (V2/V3)
+```
 
-CE QUE LIGNIA NE FERA PAS
-  ❌ Dispatch GPS techniciens   ❌ Flotte véhicules   ❌ Payroll
-  ❌ Call center                ❌ Campagnes marketing ❌ Comptabilité interne
+---
+
+## CE QU'EVOLIZ APPREND À LIGNIA — COMPATIBILITÉ COMPTABLE FRANÇAISE
+
+```
+Evoliz est un logiciel comptable français (API v1.43).
+Il révèle les patterns de rigueur comptable que LIGNIA doit prévoir
+dès V1 dans son modèle de données, même sans faire la comptabilité.
+
+PATTERN EVOLIZ 1 — Classifications comptables par ligne
+  Evoliz : sale_classificationid / purchase_classificationid
+           chaque ligne de document est liée à un compte comptable
+  LIGNIA : catalog_items.accounting_code (706/707/607...)
+           Pré-rempli par catalog_domain, overridable sur la ligne de devis
+
+PATTERN EVOLIZ 2 — Axe analytique
+  Evoliz : analyticid sur documents et lignes
+  LIGNIA : analytic_code sur les interventions et les devis
+           "Installation", "Entretien", "SAV", "Ramonage"
+           Permet au comptable de sortir le CA par activité sans retraitement
+
+PATTERN EVOLIZ 3 — Conditions de paiement snapshotées
+  Evoliz : paytermid sur chaque document (30j fin de mois, comptant, date fixe...)
+           paytypeid (virement, chèque, prélèvement...)
+  LIGNIA : payment_term_label + payment_due_date snapshotés sur la facture
+           Pas de date libre saisie manuellement, mais un terme choisi
+
+PATTERN EVOLIZ 4 — Types de documents de facturation
+  Evoliz : typedoc = invoice | retention | situation | advance | benefit
+           - advance = facture d'acompte
+           - situation = facturation à l'avancement (travaux en plusieurs tranches)
+           - retention = retenue de garantie (5% BTP, levée à la fin)
+  LIGNIA : invoice_type = ACOMPTE | SITUATION | SOLDE | AVOIR | RETENUE
+           Modèle de données à prévoir dès V1, même si la gestion complète est V2
+
+PATTERN EVOLIZ 5 — Numérotation et documents
+  Evoliz : document_number avec séquences configurables par type
+           CGV (conditions générales de vente) attachées
+           Modèles PDF avec logo, mentions légales
+  LIGNIA :
+           Numérotation devis : D-2026-0001
+           Numérotation facture : F-2026-0001
+           Numérotation avoir : A-2026-0001
+           Toutes les séquences configurables par TENANT_ADMIN
+
+PATTERN EVOLIZ 6 — Achats fournisseurs (Buys)
+  Evoliz : /buys avec supplierid, classificationid, status, billable
+           external_document_number = numéro de facture fournisseur
+  LIGNIA : purchase_order + supplier_invoice_number
+           Lier la commande à la facture fournisseur reçue
+           Indispensable pour la réconciliation comptable
+
+CE QUE LIGNIA NE FERA PAS (même avec Evoliz comme référence)
+  ❌ Grand livre / balance comptable interne
+  ❌ Journaux bancaires
+  ❌ Rapprochement bancaire
+  ❌ Comptabilité complète → déléguer à Evoliz / Pennylane / Sage
 ```
 
 ---
@@ -157,6 +209,10 @@ RÈGLE B — Installation = actif persistant, le devis est transitoire
 RÈGLE C — Mobile first pour le terrain, Desktop first pour l'administratif
   Poseurs et ramoneurs : PWA mobile, offline obligatoire
   Secrétaire, patron, commercial : desktop, fonctionnalités complètes
+
+RÈGLE D — Champs comptables prévus dès V1, utilisés en V2
+  accounting_code, analytic_code, payment_term, invoice_type
+  Ne jamais obliger une migration destructive pour ajouter la comptabilité
 ```
 
 ---
@@ -165,7 +221,8 @@ RÈGLE C — Mobile first pour le terrain, Desktop first pour l'administratif
 
 ```
 FUMISTERIE      Conduits, accessoires, sorties de toit, tubage
-                Fournisseurs : Poujoulat, Lorflex, Joncoux, Dinak, Bofill...
+                Fournisseurs principaux : Poujoulat, Lorflex, Joncoux, Dinak, Bofill
+                Architecture compatible avec 100+ fournisseurs
 
 APPAREIL        Poêles bois/granulés, inserts, chaudières
                 Source : ADEME + catalogues fabricants
@@ -188,7 +245,7 @@ PIECE_DETACHEE  Joints, vitres, bougies, cartes, pressostats, sondes
 |---|---|---|---|
 | PER003a | Arnaud | Patron | Dashboard, validation devis, planning équipe |
 | PER003b | Sophie | Commerciale showroom | Devis estimatifs, suivi prospects, relances |
-| **PER003d** | **Amélie** | **Secrétaire / ADV** | **Hub opérationnel : planning, relances, facturation, commandes** |
+| **PER003d** | **Amélie** | **Secrétaire / ADV** | **Hub opérationnel : planning, relances, facturation, commandes, documents** |
 | PER003c | Yohan/Félicien | Poseurs terrain | Fiche chantier mobile, photos, signature, clôture |
 
 ### ICP Secondaire — Artisan solo
@@ -214,7 +271,6 @@ PIECE_DETACHEE  Joints, vitres, bougies, cartes, pressostats, sondes
 
 | ID | Prénom | Rôle |
 |---|---|---|
-| PER004 | Joris | Franchisé de marque |
 | PER011 | Sabrina | Comptable externe |
 | PER012 | Claire-Marie | Responsable réseau franchise |
 
@@ -223,13 +279,14 @@ PIECE_DETACHEE  Joints, vitres, bougies, cartes, pressostats, sondes
 | ID | Rôle |
 |---|---|
 | SUPER_ADMIN | Solopreneur — imports, mapping, maintenance globale |
-| TENANT_ADMIN | Gérant artisan — remises, fournisseurs, paramétrage |
+| TENANT_ADMIN | Gérant artisan — remises, fournisseurs, paramétrage comptable |
 | TENANT_USER | Vendeur, poseur, secrétaire — usage quotidien |
 
 **Note sur Amélie (PER003d) :**
 Dans les entreprises bois énergie à 1 M€+, la secrétaire est le hub opérationnel.
 Elle gère : appels entrants, planning, relances devis, pièces SAV, facturation,
-classement. LIGNIA doit être conçu pour elle autant que pour le patron ou le poseur.
+classement documentaire, export comptable.
+LIGNIA doit être autant conçu pour elle que pour le patron ou le poseur.
 
 ---
 
@@ -237,17 +294,15 @@ classement. LIGNIA doit être conçu pour elle autant que pour le patron ou le p
 
 ```
 CYCLE 1 — Vente et installation (70% du CA)
-  Lead → Qualification → Estimatif → Visite → Définitif → Signé → Chantier → Facture
+  Lead → Estimatif → Visite → Définitif → Signé → Commande → Chantier → Facture
   Acteurs bureau : Sophie + Amélie
   Acteurs terrain : Yohan/Félicien
 
 CYCLE 2 — Entretien récurrent (20% du CA)
-  Installation → Appointment (entretien/ramonage) → Certificat → Rappel → Facturation
-  Acteurs : Luc + Amélie
+  Installation → Intervention (entretien/ramonage) → Certificat → Facture → Rappel
 
 CYCLE 3 — SAV (10% du CA + fidélisation)
-  Panne → Appointment (SAV) → Diagnostic → Pièce → Facture → Timeline installation
-  Acteurs : Thierry/Yohan + Amélie
+  Panne → Intervention (SAV) → Diagnostic → Pièce → Facture → Timeline installation
 
 CYCLE 4 — Maintenance catalogue (SUPER_ADMIN)
   Import → Vérif → Remises → Monitoring
@@ -259,8 +314,8 @@ CYCLE 4 — Maintenance catalogue (SUPER_ADMIN)
 
 ```
 V1 — PILIER 1 + PILIER 2 + début PILIER 3
-  [CRM + Devis]
-    Import Poujoulat + Lorflex (fumisterie)
+  [Vente et organisation commerciale]
+    Import Poujoulat + Lorflex (architecture multi-fournisseurs)
     Devis estimatif et final avec remise globale fournisseur
     Recherche catalogue filtrée par catalog_domain
     Kits / Ouvrages pré-remplis
@@ -268,6 +323,9 @@ V1 — PILIER 1 + PILIER 2 + début PILIER 3
     Contacts multiples par client
     Relance automatique devis (J+7, J+15, J+30)
     Appareils dans devis (heating_appliances → QuoteEditor)
+    Numérotation devis/facture configurée (D-AAAA-NNNN)
+    CGV attachable au devis
+    Champs comptables prévus dans le modèle (accounting_code, analytic_code)
 
   [Planning + Chantier + Mobile]
     Intervention (Appointment) comme objet unique — VT/Pose/Ramonage/SAV/Entretien
@@ -282,27 +340,29 @@ V1 — PILIER 1 + PILIER 2 + début PILIER 3
 
 V2 — PILIER 4 + fin PILIER 2 + fin PILIER 3
   Remises par famille (supplier_family_code)
-  Bon de commande fournisseur + export AP Bills vers Pennylane/Sage
+  Bon de commande fournisseur + réception + export comptable achats
+  Facturation avec types (ACOMPTE / SITUATION / SOLDE / AVOIR)
+  Conditions de paiement snapshotées (paytermid)
+  Classifications comptables par type de ligne
+  Axe analytique (Installation / Entretien / SAV / Ramonage)
+  Export vers Pennylane / Evoliz / Sage (factures + achats)
   Comparaison versions tarifaires
-  Facturation et relances automatiques
   Portail client (signature, suivi)
   Timeline installation complète
   Site/Location comme objet persistant
   Parc installé complet (multi-appareils, multi-sites)
   Permissions multi-utilisateurs + rôles
-  Compatibilité appareil ↔ fumisterie
   Tags métier
-  Tarif contrat d'entretien (MemberPrice)
-  Contrat entretien granulés récurrent
+  Tarif contrat d'entretien
 
 V3 — RÉCURRENCE + RÉSEAU + IA
   Assistant vocal devis chantier
-  Export FEC / Facture-X
+  Export FEC / Facture-X complet
   Réseau marques / franchises
   LIGNIA Manufacturer
-  Parc installé intelligent (suggestion pièces, alertes remplacement)
-  Catalogue SAV fabricants (MCZ, Edilkamin, Jotul...)
-  Mini-ERP complet
+  Parc installé intelligent
+  Catalogue SAV fabricants
+  Mini-ERP avec comptabilité connectée
 ```
 
 ---
@@ -322,11 +382,11 @@ MOBILE / PWA — terrain
   Synchronisation à la reconnexion
 
 DESKTOP — bureau
-  CRM, devis, catalogue, planning, facturation : desktop first
+  Devis, catalogue, planning, facturation : desktop first
   Navigation rapide entre clients, projets, devis
 
 INTÉGRATIONS TIERCES
-  Comptabilité : Pennylane / Sage (export AP Bills)
+  Comptabilité : Pennylane / Evoliz / Sage (export V2)
   Email / SMS : relances et rappels
   Signature électronique : portail client V2
   ADEME : import mensuel
@@ -346,36 +406,24 @@ BESOIN MÉTIER
   Le gardien : prévenir par SMS avant intervention
   L'architecte : copier sur les devis de travaux
 
-  C'est la réalité des chantiers. Un seul contact = erreurs et oublis.
-
 MODÈLE
   customer → contacts (N)
   contact : prénom, nom, rôle, is_primary
   contact_method : type (email/tel/sms), préférence (facturation/rdv/info)
 
 CRITÈRES D'ACCEPTATION V1
-✅ N contacts par client (minimum 2)
-✅ Contact principal identifié
+✅ N contacts par client
 ✅ Email facturation distinct de l'email de contact RDV
 ✅ Rôle libre (propriétaire, comptable, locataire, architecte...)
 ```
 
 ---
 
-### US-CRM-02 — Tags métier sur clients et installations (V2)
-**En tant qu'Amélie, je veux filtrer rapidement mes clients par tag.**
+### US-CRM-02 — Tags métier (V2)
 
 ```
-EXEMPLES DE TAGS
-  VIP — client premium, priorité intervention
-  RGE requis — installation éligible aux aides
-  Prescripteur — architecte, agent immo
-  Litige — contentieux en cours
-  Contrat entretien — abonné au contrat annuel
-
-CRITÈRES D'ACCEPTATION V2
-✅ Tags configurables par TENANT_ADMIN (pas hardcodés)
-✅ Filtre par tag dans la liste clients
+EXEMPLES : VIP | RGE requis | Prescripteur | Litige | Contrat entretien
+CRITÈRES V2 : Tags configurables par TENANT_ADMIN, filtre dans liste clients
 ```
 
 ---
@@ -383,15 +431,9 @@ CRITÈRES D'ACCEPTATION V2
 ### US-CRM-03 — Site / Location persistant (V2)
 
 ```
-BESOIN MÉTIER
-  M. Dupont a une maison principale et un chalet.
-  Le chalet a sa propre installation, son historique, ses échéances.
-  Si M. Dupont vend la maison, le chalet reste.
-
-CRITÈRES D'ACCEPTATION V2
+CRITÈRES V2
 ✅ Site persiste après clôture du projet
-✅ N sites par client
-✅ Historique installations par site
+✅ N sites par client, historique installations par site
 ```
 
 ---
@@ -400,33 +442,22 @@ CRITÈRES D'ACCEPTATION V2
 **En tant qu'Amélie, je veux ne plus oublier de relancer les devis sans réponse.**
 
 ```
-BESOIN MÉTIER
-  Amélie gère 30-50 devis en cours. Elle ne peut pas tout suivre manuellement.
-  Un devis sans réponse depuis 2 semaines = opportunité en train de mourir.
-
 SCÉNARIO
   Devis envoyé → J+7 : notification Amélie "Relancer M. Dupont ?"
               → J+15 : email automatique client + notification Amélie
               → J+30 : devis proposé à archiver
 
-CRITÈRES D'ACCEPTATION V1
+CRITÈRES V1
 ✅ Vue "Devis à relancer" dans le dashboard Amélie
-✅ Notification interne à J+7
-✅ Email client automatique à J+15 (configurable)
 ✅ Délais configurables par TENANT_ADMIN
 ```
 
 ---
 
 ### US-CRM-05 — Pipeline commercial (V1)
-**En tant qu'Arnaud, je veux voir l'état de mon activité commerciale.**
 
 ```
-CRITÈRES D'ACCEPTATION V1
-✅ CA signé / en cours / perdu ce mois
-✅ Taux de transformation devis
-✅ Pipeline par statut (Prospect / Qualifié / Devis envoyé / Signé)
-✅ Top articles et fournisseurs
+CRITÈRES V1 : CA signé/en cours/perdu, taux transformation, pipeline par statut
 ```
 
 ---
@@ -437,34 +468,17 @@ CRITÈRES D'ACCEPTATION V1
 **En tant qu'Amélie, je veux planifier toutes les interventions depuis un seul endroit.**
 
 ```
-BESOIN MÉTIER
-  Aujourd'hui Amélie gère le planning à la voix ou sur un agenda papier.
-  Elle ne sait pas qui est libre, ni si Yohan a le bon matériel.
-  La douleur quotidienne des entreprises 1M€ : "Qui va où, quand, avec quoi ?"
-
-  ServiceTitan a résolu ça avec un seul objet : Appointment.
-  Pour LIGNIA : une Intervention = tout RDV terrain, quel que soit son type.
-
-TYPES D'INTERVENTION
-  VT        → Visite Technique (avant devis)
-  POSE      → Installation (après devis signé)
-  RAMONAGE  → Ramonage annuel
-  ENTRETIEN → Entretien préventif granulés
-  SAV       → Dépannage / réparation
-  AUTRE     → Déplacement divers
-
-STATUTS
-  PLANIFIEE → CONFIRMEE → EN_COURS → TERMINEE
-  ANNULEE (avec motif) | REPORTEE (avec nouvelle date)
+TYPES : VT | POSE | RAMONAGE | ENTRETIEN | SAV | AUTRE
+STATUTS : PLANIFIEE → CONFIRMEE → EN_COURS → TERMINEE | ANNULEE | REPORTEE
 
 DONNÉES D'UNE INTERVENTION
   type, statut, technicien(s), client, adresse
   date_heure_debut, date_heure_fin
-  notes_avant (briefing pour le technicien)
-  notes_apres + photos (compte-rendu terrain)
-  installation_id (nullable — lié au parc installé si SAV/entretien)
+  notes_avant (briefing), notes_apres + photos (compte-rendu)
+  installation_id (nullable)
+  analytic_code (pour export comptable : INSTALLATION/ENTRETIEN/SAV/RAMONAGE)
 
-CRITÈRES D'ACCEPTATION V1
+CRITÈRES V1
 ✅ Créer une intervention en 30 secondes (bureau ou mobile)
 ✅ Vue planning semaine par technicien (desktop Amélie)
 ✅ Alerte double-booking
@@ -475,40 +489,25 @@ CRITÈRES D'ACCEPTATION V1
 ---
 
 ### US-PLN-02 — Vue planning bureau (V1 — Amélie)
-**En tant qu'Amélie, je veux voir et gérer le planning de toute l'équipe.**
 
 ```
-CRITÈRES D'ACCEPTATION V1
-✅ Vue calendrier semaine / mois
-✅ Par technicien (filtre individuel ou vue globale)
-✅ Couleurs par type d'intervention
-✅ Glisser-déposer pour replanifier
-✅ Accès desktop principal
+CRITÈRES V1 : Vue calendrier semaine/mois, par technicien, couleurs par type, glisser-déposer
 ```
 
 ---
 
 ### US-PLN-03 — Fiche intervention mobile (V1 — Yohan, Luc)
-**En tant que Poseur (Yohan), je veux avoir ma journée sur mon téléphone.**
+**En tant que Poseur (Yohan), je veux avoir ma journée sur mon téléphone sans réseau.**
 
 ```
-BESOIN MÉTIER
-  Yohan n'ouvre pas un CRM complet.
-  Il ouvre : sa journée, son chantier, ses photos, son bon d'intervention.
-  Il doit pouvoir travailler sans réseau (chantier en zone blanche).
-
-CONTENU DE LA FICHE (sur mobile)
+CONTENU (mobile simplifié)
   Client + adresse + accès (code portail, digicode...)
-  Type d'intervention + notes du briefing (Amélie a rempli)
-  Matériel à apporter (issu du devis ou de la commande)
-  Photos avant/après
-  Compte-rendu post-intervention
-  Signature client
+  Notes briefing d'Amélie + matériel à apporter
+  Photos avant/après + compte-rendu + signature client
 
-CRITÈRES D'ACCEPTATION V1 — MOBILE FIRST
-✅ Accessible OFFLINE (PWA, service worker)
-✅ Interface simplifiée — pas de menus complexes
-✅ Photos en 2 clics
+CRITÈRES V1 — MOBILE FIRST
+✅ Accessible OFFLINE (PWA service worker)
+✅ Interface simplifiée, photos en 2 clics
 ✅ Signature client sur écran tactile
 ✅ Sync automatique à la reconnexion
 ```
@@ -518,14 +517,11 @@ CRITÈRES D'ACCEPTATION V1 — MOBILE FIRST
 ## BLOC APP — APPAREILS ET PARC INSTALLÉ
 
 ### US-APP-01 — Ajouter un appareil au devis (V1 — PRIORITÉ HAUTE)
-**En tant que Sophie, je veux ajouter un poêle au devis et voir la fumisterie compatible.**
 
 ```
-CRITÈRES D'ACCEPTATION V1
+CRITÈRES V1
 ✅ heating_appliances branché au CatalogPopover (onglet "Appareils")
-✅ Appareil ajouté avec catalog_domain='APPAREIL'
-✅ Prix via resolve_item_price
-✅ Diamètre sortie stocké dans le snapshot
+✅ catalog_domain='APPAREIL', prix via resolve_item_price
 ```
 
 ---
@@ -533,65 +529,40 @@ CRITÈRES D'ACCEPTATION V1
 ### US-APP-02 — Suggestion fumisterie compatible (V2)
 
 ```
-CRITÈRES D'ACCEPTATION V2
-✅ Filtre automatique sur diamètre après ajout appareil
-✅ Warning non bloquant si incompatibilité
+CRITÈRES V2 : Filtre auto sur diamètre, warning si incompatibilité
 ```
 
 ---
 
 ### US-APP-03 — Enregistrement appareil + garanties à la clôture (V1)
-**En tant que Yohan, je ferme le chantier et enregistre les garanties.**
 
 ```
-BESOIN MÉTIER (ServiceTitan Equipment Systems — warranty fields)
-  Quand Michel appellera dans 18 mois pour une panne,
-  Amélie doit voir en 2 secondes : "sous garantie fabricant ? oui/non ?"
-  Sans cette info, elle envoie un technicien pour rien — coût direct.
+DONNÉES (mobile offline)
+  Marque, modèle, N° série, diamètre buse, date mise en service
+  Garantie fabricant : X mois | Garantie artisan : X mois | Photos finales
 
-DONNÉES SAISIES (sur mobile, offline possible)
-  Marque + modèle, numéro de série
-  Diamètre buse réel installé
-  Date mise en service
-  Garantie fabricant : X mois (ex: 24)
-  Garantie artisan/pose : X mois (ex: 12)
-  Photos finales
+CALCULS AUTO
+  warranty_manufacturer_end | warranty_provider_end | next_sweep_date
 
-CALCULS AUTOMATIQUES
-  warranty_manufacturer_end = mise_en_service + garantie_fabricant_mois
-  warranty_provider_end = mise_en_service + garantie_artisan_mois
-  next_sweep_date = mise_en_service + 12 mois
-
-CRITÈRES D'ACCEPTATION V1
-✅ Saisie terrain < 2 minutes (PWA offline)
-✅ Badge "SOUS GARANTIE" / "HORS GARANTIE" sur la fiche installation
-✅ Alerte automatique en SAV si sous garantie
+CRITÈRES V1
+✅ Saisie < 2 min (PWA offline)
+✅ Badge "SOUS GARANTIE" / "HORS GARANTIE" visible
+✅ Alerte en SAV si sous garantie
 ```
 
 ---
 
 ### US-APP-04 — Parc installé et timeline (V1/V2)
-**En tant qu'Amélie, quand Michel appelle, je vois son installation en 3 secondes.**
 
 ```
-CONTENU DE LA FICHE INSTALLATION
-  Appareil : marque, modèle, N° série, date pose
-  Garanties : fabricant (expire le...) + artisan (expire le...)
-  Dernier ramonage + prochaine échéance
-  Actions rapides : [Créer intervention] [Créer devis SAV] [Voir timeline]
+FICHE INSTALLATION V1
+  Appareil, garanties, dernier ramonage, actions rapides
 
 TIMELINE V2
-  Toutes les interventions, devis, commandes, SAV liés
-  sur 10-20 ans = actif inestimable pour le SAV et la fidélisation
+  Toutes interventions/devis/commandes sur 10-20 ans
 
-CRITÈRES D'ACCEPTATION V1
-✅ Fiche installation en lecture depuis la fiche client
-✅ Garanties visibles immédiatement
-✅ Lien direct vers création d'une intervention
-
-CRITÈRES D'ACCEPTATION V2
-✅ Timeline chronologique complète
-✅ Multi-appareils par site
+CRITÈRES V1 : Fiche lisible depuis client, garanties visibles, lien vers intervention
+CRITÈRES V2 : Timeline complète, multi-appareils par site
 ```
 
 ---
@@ -599,36 +570,21 @@ CRITÈRES D'ACCEPTATION V2
 ### US-APP-05 — Fin de vie estimée (V3)
 
 ```
-CRITÈRES V3
-✅ Alerte si âge appareil > durée de vie estimée
-✅ Vue "Appareils à remplacer dans 12 mois" pour Sophie
+CRITÈRES V3 : Alerte âge > durée de vie, vue "Appareils à remplacer dans 12 mois"
 ```
 
 ---
 
 ## BLOC SAV — SERVICE APRÈS-VENTE
 
-### US-SAV-01 — Créer un devis SAV depuis la fiche installation (V1)
-**En tant qu'Amélie, quand un client appelle en panne, je crée le devis SAV en 2 clics.**
+### US-SAV-01 — Devis SAV depuis la fiche installation (V1)
 
 ```
-SCÉNARIO RÉEL
-  Michel appelle : "Mon poêle MCZ fait une erreur A05."
-  Amélie ouvre la fiche Michel.
-  Elle voit : MCZ Ego, installé 06/02/2024, garantie fabricant ✅ jusqu'au 06/02/2026.
-  Elle crée un devis SAV : tout est pré-rempli (client, adresse, appareil).
-  Elle ajoute la pièce depuis le catalogue privé ou en ligne libre.
-  Elle programme une intervention SAV pour Yohan.
+SCÉNARIO : Michel appelle → Amélie voit le MCZ Ego + statut garantie → crée devis SAV
+           pré-rempli en 2 clics → programme intervention SAV pour Yohan
 
-RÈGLE V1
-  Catalogue privé artisan pour les pièces récurrentes
-  Ligne libre pour les pièces rares
-  Pas d'import massif de pièces détachées
-
-CRITÈRES D'ACCEPTATION V1
-✅ Devis SAV créé en < 3 minutes depuis la fiche client
-✅ Statut garantie affiché AVANT de créer le devis
-✅ Intervention SAV créée et planifiée dans la foulée
+CRITÈRES V1
+✅ Devis SAV en < 3 min, statut garantie visible, intervention planifiée dans la foulée
 ```
 
 ---
@@ -636,15 +592,8 @@ CRITÈRES D'ACCEPTATION V1
 ### US-SAV-02 — Catalogue privé pièces détachées (V1)
 
 ```
-EXEMPLES
-  "Joint porte MCZ Ego" → 18€
-  "Vitre Edilkamin 40x25" → 45€
-
 MODÈLE : catalog_items (supplier_name='TENANT_PRIVATE', catalog_domain='PIECE_DETACHEE')
-
-CRITÈRES V1
-✅ Pièce créée en 30 secondes
-✅ catalog_domain='PIECE_DETACHEE' → invisible dans la recherche fumisterie
+CRITÈRES V1 : Pièce créée en 30s, invisible dans la recherche fumisterie
 ```
 
 ---
@@ -652,7 +601,7 @@ CRITÈRES V1
 ### US-SAV-03 — Catalogue SAV fabricants (V3)
 
 ```
-CRITÈRES V3 : Import pièces MCZ, Edilkamin, Jotul → recherche "MCZ Ego" → pièces compatibles
+CRITÈRES V3 : Import pièces MCZ/Edilkamin/Jotul, recherche par modèle
 ```
 
 ---
@@ -660,20 +609,19 @@ CRITÈRES V3 : Import pièces MCZ, Edilkamin, Jotul → recherche "MCZ Ego" → 
 ## BLOC D — DEVIS
 
 ### US-D01 — Créer un devis estimatif (V1)
-**En tant que Sophie, je crée un devis complet en < 5 minutes.**
 
 ```
 DEVIS RÉEL LIGNIA :
   Poêle Jotul F163 (APPAREIL)
-  + Ouvrage "Raccordement étanche Ø80/130" (8 lignes insérées en 1 clic)
+  + Ouvrage "Raccordement étanche Ø80/130" (8 lignes, 2 clics)
   + Conduit concentrique Poujoulat (FUMISTERIE)
   + Main d'œuvre pose (PRESTATION)
 
 CRITÈRES V1
 ✅ Devis en < 5 min grâce aux ouvrages pré-remplis
-✅ Appareils + fumisterie + prestations dans le même devis
-✅ Prix correct (resolve_item_price)
 ✅ TVA correcte (5.5% rénovation / 20% neuf)
+✅ Numéro de devis automatique (D-2026-NNNN)
+✅ CGV attachable en PDF
 ```
 
 ---
@@ -681,7 +629,7 @@ CRITÈRES V1
 ### US-D02 — Convertir estimatif en devis final (V1)
 
 ```
-CRITÈRES V1 : Duplication, lignes modifiables, prix recalculés, numérotation distincte
+CRITÈRES V1 : Duplication, prix recalculés, numérotation distincte
 ```
 
 ---
@@ -690,8 +638,7 @@ CRITÈRES V1 : Duplication, lignes modifiables, prix recalculés, numérotation 
 
 ```
 CRITÈRES V1
-✅ Recherche fulltext < 500ms
-✅ Filtrage par fournisseurs actifs + catalog_domain
+✅ Recherche fulltext < 500ms, filtrage domain + fournisseurs actifs
 ✅ Onglets : Appareils | Fumisterie | Prestations | SAV/Pièces | Maison
 ```
 
@@ -700,7 +647,7 @@ CRITÈRES V1
 ### US-D04 — Remise fournisseur automatique (V1)
 
 ```
-CRITÈRES V1 : Remise appliquée à l'ajout, marge interne visible (jamais dans PDF)
+CRITÈRES V1 : Remise à l'ajout, marge interne visible, jamais dans PDF client
 ```
 
 ---
@@ -710,7 +657,7 @@ CRITÈRES V1 : Remise appliquée à l'ajout, marge interne visible (jamais dans 
 ```
 CE QUI SE PASSE
   1. quote_status → signed
-  2. Facture acompte créée automatiquement
+  2. Facture acompte créée (invoice_type=ACOMPTE)
   3. Installation créée dans le parc installé (status=draft)
   4. quote_lines = snapshot immuable (INVARIANT 4)
 ```
@@ -718,17 +665,12 @@ CE QUI SE PASSE
 ---
 
 ### US-D06 — Créer un ouvrage / kit (V1)
-**En tant que Sophie, je veux réutiliser mes configurations types.**
+**Argument de vente #1 : gain de temps devis.**
 
 ```
-BESOIN MÉTIER — PILIER 1 CRITIQUE
-  "Raccordement granulés étanche Ø80/130" : ouvrage de 8 lignes.
-  Sans ouvrage : Sophie cherche 8 fois. Avec ouvrage : 2 clics.
-  C'est l'argument de vente #1 pour le gain de temps devis.
-
 CRITÈRES V1
 ✅ Créer ouvrage depuis devis existant (1 clic)
-✅ Insérer ouvrage = insérer toutes ses lignes avec prix recalculés
+✅ Insérer ouvrage = toutes ses lignes avec prix recalculés
 ✅ Catalogue d'ouvrages partagé dans le tenant
 ```
 
@@ -737,34 +679,19 @@ CRITÈRES V1
 ### US-D07 — Fiche technique ADEME dans le PDF (V2)
 
 ```
-CRITÈRES V2 : Données ADEME (puissance, rendement, Flamme Verte) dans le PDF devis
+CRITÈRES V2 : Puissance, rendement, Flamme Verte générés automatiquement dans le PDF
 ```
 
 ---
 
 ## BLOC C — CATALOGUE ET IMPORTS
 
-### US-C01 à C03 — Import fournisseurs (V1)
+### US-C01 à C05 — Pipeline import fournisseurs (V1)
 
 ```
+Architecture compatible 100+ fournisseurs (Poujoulat, Lorflex, Joncoux, Dinak, Bofill...)
 RÈGLES : supplier_ref brut, cost_price jamais importé, catalog_domain par fournisseur
-CRITÈRES : taux ignorés < 10%, 0 cost_price, mapping réutilisable
-```
-
----
-
-### US-C04 — Comparer versions tarifaires (V2)
-
-```
-CRITÈRES V2 : Rapport écarts 2 batch_id, alerte > 15%, GO/NO GO avant import
-```
-
----
-
-### US-C05 — Fournisseurs actifs par tenant (V1)
-
-```
-CRITÈRES V1 : Activation/désactivation, recherche filtrée sur actifs uniquement
+ROLLBACK : par batch_id, devis signés non affectés
 ```
 
 ---
@@ -773,32 +700,28 @@ CRITÈRES V1 : Activation/désactivation, recherche filtrée sur actifs uniqueme
 
 ```
 SOURCE : xlsx mensuel ADEME — catalog_domain='APPAREIL', is_central=true
-CRITÈRES V1 : Appareils dans CatalogPopover onglet "Appareils"
+CRITÈRES V1 : Appareils dans CatalogPopover onglet "Appareils", import reproductible
 ```
 
 ---
 
-## BLOC P — PROJET ET CHANTIER
-
-### US-P01 à P04 — Cycle projet (V1)
+## BLOC P — PROJET ET CHANTIER (V1)
 
 ```
-US-P01 Créer un projet  → lié à un client + site, statuts prospect→completed
-US-P02 Visite technique → Intervention VT, formulaire mobile offline, photos
-US-P03 Suivre projets   → Vue pipeline, montant HT par stade
-US-P04 Clôturer         → Attestation, numéro série + garanties (→ US-APP-03), facturation
+US-P01 Créer un projet  → client + site, statuts prospect→completed
+US-P02 Visite technique → Intervention VT, mobile offline, photos
+US-P03 Suivre projets   → Pipeline, montant HT par stade
+US-P04 Clôturer         → Attestation, N° série + garanties, facturation solde
 ```
 
 ---
 
-## BLOC R — RAMONAGE
-
-### US-R01 à R03 — Cycle ramonage (V1)
+## BLOC R — RAMONAGE (V1)
 
 ```
-US-R01 Tournée → Liste clients en retard, interventions RAMONAGE créées, SMS client
-US-R02 Certifier → Formulaire < 2 min, signature, PDF, prochaine échéance MAJ
-US-R03 Rappels  → Notif 2 mois avant, email client 1 mois avant (configurable)
+US-R01 Tournée    → Liste retards, interventions RAMONAGE, SMS client
+US-R02 Certifier  → Formulaire < 2 min, signature, PDF, échéance MAJ
+US-R03 Rappels    → Notif 2 mois avant, email client 1 mois (configurable)
 ```
 
 ---
@@ -808,62 +731,212 @@ US-R03 Rappels  → Notif 2 mois avant, email client 1 mois avant (configurable)
 ### US-O01 — Bon de commande depuis devis signé (V2)
 
 ```
-RÈGLE CRITIQUE : BC utilise supplier_ref_snapshot (pas catalog_items)
+RÈGLE CRITIQUE : BC utilise supplier_ref_snapshot (INVARIANT 4)
 
 CRITÈRES V2
-✅ Regroupement par fournisseur depuis les lignes du devis
-✅ Quantités agrégées si même référence
+✅ Regroupement par fournisseur, quantités agrégées
 ✅ Export PDF ou email commercial
 ```
 
 ---
 
-### US-O02 — Export AP Bills comptabilité (V2)
-**En tant que Sabrina, je veux exporter les achats fournisseurs vers Pennylane.**
+### US-O02 — Réception et facture fournisseur (V2)
+**En tant qu'Amélie, je veux lier la facture fournisseur à ma commande.**
 
 ```
-BESOIN MÉTIER : fermer le cycle achat → paiement fournisseur → comptabilité
+BESOIN MÉTIER (appris de Evoliz — /buys avec external_document_number)
+  Quand Poujoulat envoie sa facture, Amélie doit pouvoir la lier
+  à la commande passée et l'enregistrer avec son numéro de document.
+  C'est ce qui permet la réconciliation comptable sans ressaisie.
+
+DONNÉES
+  purchase_order_id (lié au devis signé)
+  supplier_invoice_number (numéro externe Poujoulat)
+  supplier_invoice_date
+  montant_ht + TVA (vérification vs commande)
+  statut : RECU | PARTIEL | LITIGE
 
 CRITÈRES V2
-✅ Export CSV compatible Pennylane / Sage
-✅ Statut "exporté" anti-doublons
-✅ N° facture fournisseur enregistrable
+✅ Facture fournisseur liée à la commande en 1 clic
+✅ Numéro de facture fournisseur enregistré
+✅ Alerte si montant facture ≠ commande
+✅ Export vers Pennylane / Evoliz / Sage
 ```
 
 ---
 
-## BLOC FAC — FACTURATION
+## BLOC FAC — FACTURATION (V2)
 
-### US-FAC-01 — Conversion devis → facture (V2)
+### US-FAC-01 — Types de factures (V2)
+**En tant qu'Amélie, je veux créer des factures adaptées au BTP.**
 
 ```
-CRITÈRES V2 : 1 clic, numérotation auto, TVA 5.5%/20%, PDF propre
+BESOIN MÉTIER (appris de Evoliz — typedoc : advance | situation | retention | invoice)
+  Dans le BTP, la facturation suit des étapes :
+  1. Facture d'acompte (30% à la commande) — ACOMPTE
+  2. Facture de situation (facturation à l'avancement) — SITUATION
+  3. Facture de solde (fin de chantier) — SOLDE
+  4. Retenue de garantie (5% libérée après délai) — RETENUE
+  5. Avoir si annulation partielle — AVOIR
+
+CRITÈRES V2
+✅ Types de factures : ACOMPTE | SITUATION | SOLDE | AVOIR | RETENUE
+✅ Numérotation automatique par type (F-2026-NNNN, A-2026-NNNN...)
+✅ Ventilation TVA par taux (5.5% rénovation / 20% neuf)
+✅ PDF propre avec logo + CGV + mentions légales
 ```
 
 ---
 
-### US-FAC-02 — Export FEC / Facture-X (V3)
+### US-FAC-02 — Export comptable (V2)
+**En tant que Sabrina, je veux exporter vers mon logiciel comptable.**
 
 ```
-CRITÈRES V3 : FEC compatible logiciels comptables, format Facture-X, séparation installation/SAV
+BESOIN MÉTIER (appris de Evoliz — classifications + analytique + paytermid)
+  Pour que l'export soit exploitable sans ressaisie, chaque ligne de facture
+  doit porter : compte comptable, TVA, axe analytique, conditions de paiement.
+
+  Ces champs sont préparés dès V1 dans le modèle.
+
+DONNÉES EXPORTÉES
+  N° document, date, client, montant HT, TVA, TTC
+  accounting_code par ligne (706 pose / 707 fumisterie / 607 achat...)
+  analytic_code par intervention (INSTALLATION / ENTRETIEN / SAV / RAMONAGE)
+  payment_term (30j fin de mois, comptant...)
+  statut paiement
+
+COMPATIBILITÉ
+  Export CSV / JSON compatible Pennylane, Evoliz, Sage
+  Statut "exporté" anti-doublons
+
+CRITÈRES V2
+✅ Export factures ventes + factures achats fournisseurs
+✅ Champs comptables remplis sans ressaisie
+✅ Statut export traçable
+```
+
+---
+
+### US-FAC-03 — Paramétrage comptable par TENANT_ADMIN (V2)
+**En tant que Sabrina (ou Arnaud), je veux paramétrer les comptes comptables de l'entreprise.**
+
+```
+BESOIN MÉTIER (appris de Evoliz — sale-classifications + purchase-classifications)
+  Chaque type de ligne a son compte comptable.
+  Le TENANT_ADMIN configure une fois, toutes les factures suivent.
+
+PARAMÈTRES À CONFIGURER
+  Compte vente pose : 706 (valeur par défaut pour PRESTATION)
+  Compte vente fumisterie : 707 (valeur par défaut pour FUMISTERIE)
+  Compte vente ramonage : 706
+  Compte achat fournisseur : 607
+  Taux TVA par défaut : 20% (neuf) / 5.5% (rénovation)
+  Conditions de paiement par défaut : 30j fin de mois
+
+CRITÈRES V2
+✅ Configuration en 10 minutes par le comptable
+✅ Compte comptable visible sur chaque ligne de facture
+✅ Override possible ligne par ligne
+```
+
+---
+
+### US-FAC-04 — Numérotation et modèles de documents (V1)
+**En tant que TENANT_ADMIN, je veux paramétrer la numérotation et le PDF des documents.**
+
+```
+BESOIN MÉTIER (appris de Evoliz — admin_docs + admin_perso)
+  Un document professionnel doit avoir :
+  Numérotation cohérente, logo, CGV, mentions légales.
+  Un artisan qui envoie un devis sans CGV ou avec numérotation incohérente
+  perd en crédibilité.
+
+PARAMÈTRES V1
+  Format numérotation devis : D-{ANNEE}-{NNNN} (configurable)
+  Format numérotation facture : F-{ANNEE}-{NNNN}
+  Logo entreprise
+  CGV PDF attachable
+  Mentions légales (SIRET, TVA intracommunautaire, RCS)
+
+CRITÈRES V1
+✅ Numérotation auto sans doublon garanti
+✅ Logo visible sur PDF devis et facture
+✅ CGV attachables au devis
+```
+
+---
+
+## BLOC DOC — GESTION DOCUMENTAIRE (V1/V2)
+
+### US-DOC-01 — Documents liés à une intervention ou un projet (V1)
+**En tant qu'Amélie, je veux retrouver tous les documents d'un dossier au même endroit.**
+
+```
+BESOIN MÉTIER
+  Sur un chantier de 50 000€, les documents s'accumulent :
+  Devis signé, bon de commande, bon de livraison, photos de pose,
+  attestation de fin de travaux, facture acompte, facture solde,
+  certificat de ramonage, facture SAV...
+
+  Aujourd'hui dans les PME : email + drive + classeur papier.
+  Douleur réelle quand un client réclame un document 2 ans après.
+
+DOCUMENTS GÉRÉS V1
+  Devis (PDF généré)
+  Factures (PDF généré)
+  Certificat de ramonage (PDF généré)
+  Attestation de fin de travaux (PDF généré)
+  Photos chantier (uploadées par Yohan)
+
+DOCUMENTS GÉRÉS V2
+  Bon de commande fournisseur (PDF généré)
+  Facture fournisseur (uploadée ou liée)
+  Notice technique appareil
+  Bon de livraison
+
+CRITÈRES V1
+✅ Tous les documents d'un projet accessibles depuis la fiche projet
+✅ Recherche par client ou par date
+✅ Téléchargement en 1 clic
+
+CRITÈRES V2
+✅ Upload de documents externes (factures fournisseurs, notices)
+✅ Historique documentaire lié à l'installation
+```
+
+---
+
+## BLOC TEAM — GESTION ÉQUIPE (V2)
+
+### US-TEAM-01 — Profils techniciens et habilitations (V2)
+**En tant qu'Arnaud, je veux affecter les bonnes personnes aux bons chantiers.**
+
+```
+BESOIN MÉTIER
+  Yohan est qualifié RGE + ramonage. Félicien est en formation ramonage.
+  Certains chantiers requièrent une habilitation spécifique.
+  Arnaud doit pouvoir voir la charge de travail de chacun.
+
+DONNÉES D'UN TECHNICIEN
+  Nom, prénom, rôle (poseur / ramoneur / SAV / polyvalent)
+  Habilitations : RGE | QUALIBOIS | Ramonage certifié
+  Charge : nombre d'interventions cette semaine
+  Historique des chantiers réalisés
+
+CRITÈRES V2
+✅ Profil technicien avec habilitations
+✅ Vue "Charge par technicien" (semaine en cours)
+✅ Historique des interventions par technicien
+✅ Alerte si affectation sans habilitation requise
 ```
 
 ---
 
 ## BLOC MAIN — MAINTENANCE SUPER_ADMIN
 
-### US-MAIN-01 — Monitoring imports (V2)
-
 ```
-CRITÈRES V2 : import_runs avec status, counts, timestamps, répartition par domain
-```
-
----
-
-### US-MAIN-02 — Rollback import (V1)
-
-```
-CRITÈRES V1 : Rollback par batch_id, devis signés non affectés
+US-MAIN-01 (V2) : import_runs, status, counts, répartition par domain
+US-MAIN-02 (V1) : Rollback par batch_id, devis signés non affectés
 ```
 
 ---
@@ -871,7 +944,7 @@ CRITÈRES V1 : Rollback par batch_id, devis signés non affectés
 ## BLOC NORM — GOUVERNANCE NORMALISATION (V2)
 
 ```
-US-NORM-01 : Vue normalization_status='needs_review' par domain
+US-NORM-01 : normalization_status='needs_review' par domain
 US-NORM-02 : Familles canoniques LIGNIA (conduit_double_paroi, tubage_flexible...)
 ```
 
@@ -880,8 +953,8 @@ US-NORM-02 : Familles canoniques LIGNIA (conduit_double_paroi, tubage_flexible..
 ## BLOC V — VOIX ET IA (V3)
 
 ```
-US-V01 : "Coude 45° inox 150 Poujoulat" → extraction entités → search → ajout < 2s
-         Prérequis : angle_deg + diameter_inner_mm remplis (V2 normalization job)
+US-V01 : "Coude 45° inox 150 Poujoulat" → extraction → search domain='FUMISTERIE' → < 2s
+         Prérequis : angle_deg + diameter_inner_mm remplis (V2)
 ```
 
 ---
@@ -889,8 +962,7 @@ US-V01 : "Coude 45° inox 150 Poujoulat" → extraction entités → search → 
 ## BLOC RÉSEAU — FRANCHISE (V3)
 
 ```
-US-RESEAU-01 : Vue agrégée multi-tenants pour PER012 (Jotul France)
-               Appareils vendus, taux entretien, données anonymisées
+US-RESEAU-01 : Vue agrégée multi-tenants pour PER012, données anonymisées
 ```
 
 ---
@@ -907,6 +979,7 @@ US-RESEAU-01 : Vue agrégée multi-tenants pour PER012 (Jotul France)
 | manufacturer_name | Fabricant réel (INVARIANT 8) | ✅ |
 | unit_price_ht | Prix public (INVARIANT 3) | ✅ |
 | cost_price | TOUJOURS NULL + CHECK SQL (INVARIANT 2) | ✅ |
+| accounting_code | Compte comptable (706/707/607...) — RÈGLE D | ❌ À créer V1 |
 | technology_type | Techno construction (INVARIANT 9) | ⚠️ Null Poujoulat V1 |
 | supplier_family_code | Famille commerciale | ❌ À créer V2 |
 | diameter_inner_mm | Diamètre → compatibilité | ⚠️ Null Poujoulat V1 |
@@ -920,21 +993,34 @@ US-RESEAU-01 : Vue agrégée multi-tenants pour PER012 (Jotul France)
 | Champ | Usage | Source |
 |---|---|---|
 | appliance_id | Lien vers heating_appliances | Clôture chantier |
-| serial_number | N° série — obligatoire pour garantie | Saisie technicien mobile |
-| installed_on | Date mise en service | Saisie technicien mobile |
+| serial_number | N° série — obligatoire pour garantie | Saisie technicien |
+| installed_on | Date mise en service | Saisie technicien |
 | warranty_manufacturer_end | Fin garantie fabricant | Calculé auto |
 | warranty_provider_end | Fin garantie artisan | Calculé auto |
 | next_sweep_date | Prochaine échéance ramonage | Calculé auto |
-| diameter_installed_mm | Diamètre réel posé | Saisie technicien mobile |
+| diameter_installed_mm | Diamètre réel posé | Saisie technicien |
+
+### Champs facture / document (comptabilité)
+
+| Champ | Usage | Source Evoliz |
+|---|---|---|
+| invoice_type | ACOMPTE / SITUATION / SOLDE / AVOIR / RETENUE | typedoc |
+| document_number | Numérotation auto sans doublon | admin_docs |
+| payment_term | 30j fin de mois, comptant, date fixe... | paytermid |
+| payment_type | Virement, chèque, prélèvement... | paytypeid |
+| analytic_code | INSTALLATION / ENTRETIEN / SAV / RAMONAGE | analyticid |
+| accounting_code | 706 / 707 / 607 par ligne | sale_classificationid |
+| export_status | NULL / PENDING / EXPORTED | MarkAsExported |
+| synced_at | Date d'export vers logiciel comptable | — |
 
 ### Valeurs catalog_domain
 
-| Valeur | Usage | Recherche |
+| Valeur | Compte comptable défaut | Usage |
 |---|---|---|
-| FUMISTERIE | Conduits, accessoires, tubage | Mode devis installation |
-| APPAREIL | Poêles, inserts, chaudières | Mode devis installation |
-| PRESTATION | Pose, ramonage, entretien | Mode devis (tous) |
-| PIECE_DETACHEE | Joints, vitres, cartes électroniques | Mode SAV uniquement |
+| FUMISTERIE | 707 | Conduits, accessoires |
+| APPAREIL | 707 | Poêles, inserts |
+| PRESTATION | 706 | Pose, ramonage, entretien |
+| PIECE_DETACHEE | 607 (achat) / 707 (revente) | SAV |
 
 ### Champs quote_lines (snapshots INVARIANT 4)
 
@@ -945,6 +1031,7 @@ US-RESEAU-01 : Vue agrégée multi-tenants pour PER012 (Jotul France)
 | unit_cost_price | Coût net figé (marge) | ✅ |
 | metadata.pricing | Pricing complet figé | ✅ |
 | vat_rate | TVA figée | ✅ |
+| accounting_code | Compte comptable figé | ❌ À ajouter V1 |
 
 ---
 
@@ -955,13 +1042,16 @@ US-RESEAU-01 : Vue agrégée multi-tenants pour PER012 (Jotul France)
 | Dette | Action |
 |---|---|
 | catalog_domain absent de catalog_items | Migration SQL + DEFAULT 'FUMISTERIE' |
-| catalog_domain absent de map_supplier.py | Patch script + tous les SUPPLIER_CONFIGS |
+| catalog_domain absent de map_supplier.py | Patch + tous les SUPPLIER_CONFIGS |
 
 ### PILIER 1 — V1 imminent
 
 | Dette | Action |
 |---|---|
 | heating_appliances non branché au QuoteEditor | Lovable — CatalogPopover onglet Appareils |
+| Numérotation documents non configurée | TENANT_ADMIN settings |
+| CGV non attachable au devis | Upload PDF + lien devis |
+| accounting_code absent de catalog_items | Champ nullable — DEFAULT par catalog_domain |
 | Relance devis automatique manquante | Backend + dashboard Amélie |
 | Contacts multiples par client manquants | Modèle + UI fiche client |
 
@@ -977,21 +1067,26 @@ US-RESEAU-01 : Vue agrégée multi-tenants pour PER012 (Jotul France)
 
 | Dette | Action |
 |---|---|
+| Types de factures (ACOMPTE/SITUATION/SOLDE) | invoice_type + facturation V2 |
+| Classifications comptables par ligne | sale_classificationid → accounting_code |
+| Axe analytique | analytic_code sur interventions + factures |
+| Conditions de paiement snapshotées | paytermid → payment_term |
+| Facture fournisseur liée à commande | purchase_order + supplier_invoice_number |
+| Export Evoliz / Pennylane / Sage | CSV/JSON normalisé + statut export |
 | technology_type null Poujoulat | Normalization job |
-| diameter_inner_mm null | Normalization job |
 | supplier_family_code absent | Avant remises par famille |
 | Timeline installation | V2 |
 | Site/Location persistant | V2 |
-| AP Bills / export comptable | V2 |
+| Gestion documentaire complète | Upload factures fournisseurs + notices |
+| Profils techniciens + habilitations | V2 |
 | Tests E2E Playwright | Avant terrain |
 | Wrap RLS (SELECT auth.jwt()) | Avant 50k articles |
-| Index tenant_supplier_discounts | Avant 200 remises |
 
 ### V3
 
 | Dette | Action |
 |---|---|
-| Export FEC / Facture-X | V3 |
+| Export FEC / Facture-X complet | V3 |
 | Catalogue SAV fabricants | V3 |
 | Predicted replacement date | V3 |
 | Réseau / franchise | V3 |

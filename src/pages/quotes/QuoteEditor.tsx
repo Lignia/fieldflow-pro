@@ -1393,28 +1393,11 @@ export default function QuoteEditor() {
 
             <div className="divide-y divide-border/50">
               {rows.length === 0 && (
-                <>
-                  <div className="hidden md:block">
-                    <div className="flex flex-col items-center justify-center gap-3 py-16 px-4 text-center border-b border-dashed border-border/60">
-                      <p className="text-sm text-muted-foreground">
-                        Aucune ligne — commencez votre chiffrage
-                      </p>
-                      <div className="flex gap-2">
-                        <CatalogPopover onSelect={(item) => addItem(item)} onFreeLine={() => addItem()} onSelectAppliance={addAppliance} tenantId={tenantId} triggerLabel="Depuis le catalogue" triggerVariant="outline" />
-                        <Button variant="outline" size="sm" onClick={() => addItem()}>Ligne libre</Button>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="md:hidden flex flex-col items-center gap-3 py-8 text-center">
-                    <p className="text-sm text-muted-foreground">
-                      Aucune ligne — commencez votre chiffrage
-                    </p>
-                    <div className="flex gap-2">
-                      <CatalogPopover onSelect={(item) => addItem(item)} onFreeLine={() => addItem()} onSelectAppliance={addAppliance} tenantId={tenantId} triggerLabel="Catalogue" triggerVariant="outline" />
-                      <Button variant="outline" size="sm" onClick={() => addItem()}>Ligne libre</Button>
-                    </div>
-                  </div>
-                </>
+                <div className="flex flex-col items-center justify-center gap-2 py-12 px-4 text-center border-b border-dashed border-border/60">
+                  <p className="text-sm text-muted-foreground">
+                    Aucune ligne — commencez votre chiffrage avec les actions ci-dessous
+                  </p>
+                </div>
               )}
 
               {rows.length > 0 && (() => {
@@ -1454,16 +1437,16 @@ export default function QuoteEditor() {
               })()}
             </div>
 
-            {rows.length > 0 && (
-              <div className="flex flex-wrap items-center gap-2 px-3 py-3 border-t border-border bg-muted/20">
-                <Button size="sm" variant="outline" className="h-8 border-warning/40 text-warning hover:bg-warning/10 hover:text-warning" onClick={() => addItem(undefined, "device")}><Flame className="h-3.5 w-3.5 mr-1" /> Appareil</Button>
-                <Button size="sm" variant="outline" className="h-8 border-info/40 text-info hover:bg-info/10 hover:text-info" onClick={() => addItem(undefined, "flue")}><Construction className="h-3.5 w-3.5 mr-1" /> Fumisterie</Button>
-                <Button size="sm" variant="outline" className="h-8 border-success/40 text-success hover:bg-success/10 hover:text-success" onClick={() => addItem(undefined, "labor")}><Wrench className="h-3.5 w-3.5 mr-1" /> Pose</Button>
-                <Separator orientation="vertical" className="h-6 mx-1" />
-                <CatalogPopover onSelect={(item) => addItem(item)} onFreeLine={() => addItem()} onSelectAppliance={addAppliance} tenantId={tenantId} triggerLabel="Catalogue" />
-                <Button variant="ghost" size="sm" onClick={() => addItem()}><Plus className="h-3.5 w-3.5 mr-1" /> Ligne libre</Button>
-                <Button variant="ghost" size="sm" onClick={addSection}><Layers className="h-3.5 w-3.5 mr-1" /> Section</Button>
-                <Button variant="ghost" size="sm" onClick={addText}><Type className="h-3.5 w-3.5 mr-1" /> Texte</Button>
+            <div className="flex flex-wrap items-center gap-2 px-3 py-3 border-t border-border bg-muted/20">
+              <Button size="sm" variant="outline" className="h-8 border-warning/40 text-warning hover:bg-warning/10 hover:text-warning" onClick={() => addItem(undefined, "device")}><Flame className="h-3.5 w-3.5 mr-1" /> Appareil</Button>
+              <Button size="sm" variant="outline" className="h-8 border-info/40 text-info hover:bg-info/10 hover:text-info" onClick={() => addItem(undefined, "flue")}><Construction className="h-3.5 w-3.5 mr-1" /> Fumisterie</Button>
+              <Button size="sm" variant="outline" className="h-8 border-success/40 text-success hover:bg-success/10 hover:text-success" onClick={() => addItem(undefined, "labor")}><Wrench className="h-3.5 w-3.5 mr-1" /> Pose</Button>
+              <Separator orientation="vertical" className="h-6 mx-1" />
+              <CatalogPopover onSelect={(item) => addItem(item)} onFreeLine={() => addItem()} onSelectAppliance={addAppliance} tenantId={tenantId} triggerLabel="Catalogue" />
+              <Button variant="ghost" size="sm" onClick={() => addItem()}><Plus className="h-3.5 w-3.5 mr-1" /> Ligne libre</Button>
+              <Button variant="ghost" size="sm" onClick={addSection}><Layers className="h-3.5 w-3.5 mr-1" /> Section</Button>
+              <Button variant="ghost" size="sm" onClick={addText}><Type className="h-3.5 w-3.5 mr-1" /> Texte</Button>
+              {rows.length > 0 && (
                 <div className="w-full flex items-center gap-3 border-t border-border/40 pt-2 mt-1">
                   <Label className="text-sm text-muted-foreground shrink-0">Remise globale</Label>
                   <Input type="number" min={0} max={50} step={0.5}
@@ -1477,8 +1460,8 @@ export default function QuoteEditor() {
                     </span>
                   )}
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </Card>
 
           {hasAnyCategory && (

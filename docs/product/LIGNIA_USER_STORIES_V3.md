@@ -1,6 +1,6 @@
 # LIGNIA — User Stories Complètes
-> Document de référence — v3.1
-> Claude Analytics + OpenAI + Chapeau Noir — Mai 2026
+> Document de référence — v3.2
+> Claude Analytics + OpenAI + Analyse ServiceTitan (CRM/Pricebook/Equipment/Accounting/JPM) — Mai 2026
 > Pour : Claude Exec, Claude Read, Lovable, développeurs
 
 ---
@@ -25,6 +25,75 @@ LIGNIA est 3 choses simultanément :
 
 ---
 
+## ACTIFS STRATÉGIQUES DE LIGNIA
+
+```
+ACTIF #1 — PARC INSTALLÉ
+  30 000 installations historisées = actif impossible à reproduire
+  Base de récurrence : ramonage, entretien, SAV, remplacement
+  Donnée propriétaire, non téléchargeable
+
+ACTIF #2 — CATALOGUE NORMALISÉ MULTI-FOURNISSEURS
+  100 fournisseurs, 4 domaines, pipeline d'import industriel
+  Recherche contextualisée par catalog_domain
+  Remises par famille configurées par artisan
+
+ACTIF #3 — HISTORIQUE SAV & INTERVENTIONS
+  Timeline complète par installation sur 10-20 ans
+  Preuve légale, outil de diagnostic, source de recommandations
+  Valeur croissante avec le temps
+```
+
+---
+
+## CE QUE SERVICETITAN APPREND À LIGNIA — SANS LE COPIER
+
+**Contexte :** analyse des specs CRM v2, Pricebook v2, Equipment Systems v2, Accounting v2 et JPM v2.
+
+**Les 6 patterns retenus (adaptés au contexte LIGNIA) :**
+
+```
+PATTERN 1 — Le centre du système n'est pas le client, c'est l'équipement installé
+  ServiceTitan : Customer → Location → InstalledEquipment → History
+  LIGNIA :       Client   → Site     → Installation        → Timeline
+  Impact : heating_appliances doit devenir un actif, pas seulement un catalogue
+
+PATTERN 2 — Appointment comme objet métier unique
+  ServiceTitan : Appointment (Scheduled/Dispatched/Working/Hold/Done/Canceled)
+  LIGNIA :       Intervention (Planifiée/Confirmée/En cours/Terminée/Annulée)
+  Impact : tous les RDV terrain (VT, pose, ramonage, SAV) partagent le même objet
+
+PATTERN 3 — Contacts multiples par client
+  ServiceTitan : Customer → Contacts (email, phone, SMS) + ContactPreferences
+  LIGNIA :       Client → Contacts (propriétaire, comptable, gardien, architecte)
+  Impact : facturer Mme Dupont, appeler M. Dupont, prévenir le gardien
+
+PATTERN 4 — Garantie fabricant ≠ garantie prestataire
+  ServiceTitan : manufacturerWarrantyStart/End + serviceProviderWarrantyStart/End
+  LIGNIA :       warranty_manufacturer_end + warranty_provider_end sur l'installation
+  Impact : savoir en SAV si la panne est sous garantie avant d'envoyer quelqu'un
+
+PATTERN 5 — Historique des prix (Pricebook history)
+  ServiceTitan : ClientSpecificPricing avec rate sheets versionnés
+  LIGNIA :       batch_id + import_date = quelle version du tarif a été utilisée
+  Impact : audit légal, litige client, comparaison tarifs annuels
+
+PATTERN 6 — AP Bills pour les achats fournisseurs (Accounting)
+  ServiceTitan : AP Bills avec purchaseOrderId, batchId, MarkAsExported vers Sage/Pennylane
+  LIGNIA :       Bon de commande fournisseur → export vers logiciel comptable
+  Impact : clôture le cycle devis → commande → facture fournisseur → comptabilité
+
+CE QUE LIGNIA NE FERA PAS (hors scope)
+  ❌ Dispatch GPS des techniciens
+  ❌ Gestion de flotte véhicules
+  ❌ Payroll / gestion RH
+  ❌ Call center
+  ❌ Campagnes marketing
+  ❌ Comptabilité interne complète (→ déléguer à Pennylane/Sage)
+```
+
+---
+
 ## INVARIANTS SYSTÈME — Jamais violés
 
 ```
@@ -44,12 +113,21 @@ INVARIANT 9   technology_type = technologie de construction
               ≠ supplier_family_code = famille commerciale fournisseur
               (DEKO BOIS, FLEX, DUAL/EI, Apollo)
               Ne pas confondre ces deux concepts.
-INVARIANT 10  catalog_domain sépare les 4 univers produit
-              FUMISTERIE | APPAREIL | PRESTATION | PIECE_DETACHEE
-              search_quote_items_v2 filtre toujours par domain selon le contexte
-              Ne JAMAIS mélanger les domaines dans une recherche sans contexte explicite
-              Exemple : en mode devis installation → FUMISTERIE + APPAREIL + PRESTATION
-                        en mode SAV → PIECE_DETACHEE + PRESTATION
+```
+
+**RÈGLE D'ARCHITECTURE (non immuable, évolutive) :**
+
+```
+RÈGLE A — catalog_domain sépare les univers produit
+  Valeurs actuelles : FUMISTERIE | APPAREIL | PRESTATION | PIECE_DETACHEE
+  Valeurs futures possibles : CONSOMMABLE | COMBUSTIBLE | EPI | OUTILLAGE
+  search_quote_items_v2 filtre toujours par domain selon le contexte
+  Ne JAMAIS mélanger les domaines dans une recherche sans contexte explicite
+
+RÈGLE B — Installation = actif central, pas le devis
+  L'installation persiste après le devis et la facture
+  Elle porte la garantie, l'historique, les interventions
+  Le devis est un état transitoire ; l'installation est permanente
 ```
 
 ---
@@ -60,39 +138,23 @@ INVARIANT 10  catalog_domain sépare les 4 univers produit
 DOMAINE A — FUMISTERIE          (catalog_domain = 'FUMISTERIE')
   Conduits (simple paroi, double paroi, concentrique, flexible)
   Accessoires (coudes, tés, raccords, collerettes)
-  Sorties de toit, terminaux
-  Tubage flexible
-  Ventilation aéraulique
+  Sorties de toit, terminaux, tubage flexible
   Fournisseurs : Poujoulat, Lorflex, Joncoux, Dinak, Bofill, Jeremias, Tubest...
 
 DOMAINE B — APPAREILS           (catalog_domain = 'APPAREIL')
-  Poêles bois / granulés
-  Inserts bois / granulés
-  Chaudières biomasse
+  Poêles bois / granulés, inserts, chaudières biomasse
   (V2) PAC, chauffe-eau, solutions hybrides
   Source : base ADEME (éligibles MaPrimeRénov') + catalogues fabricants
 
 DOMAINE C — PRESTATIONS         (catalog_domain = 'PRESTATION')
-  Pose et installation
-  Ramonage
-  Entretien annuel
-  SAV / dépannage
-  Visites techniques
-  Main d'œuvre
+  Pose, ramonage, entretien annuel, SAV, visites techniques, main d'œuvre
 
 DOMAINE D — PIÈCES DÉTACHÉES    (catalog_domain = 'PIECE_DETACHEE')
-  Joints, vitres, bougies d'allumage
-  Cartes électroniques, pressostats, sondes
-  Vis sans fin, moteurs, ventilateurs
-  Télécommandes, modules WiFi
+  Joints, vitres, bougies, cartes électroniques, pressostats, sondes
+  Vis sans fin, moteurs, ventilateurs, télécommandes, modules WiFi
   NE PAS IMPORTER MASSIVEMENT EN V1
-  Approche : catalogue privé artisan + ligne libre pour SAV exceptionnel
+  Approche V1 : catalogue privé artisan + ligne libre pour SAV exceptionnel
 ```
-
-**POURQUOI catalog_domain est critique :**
-Sans ce champ, un artisan qui tape "joint" dans la recherche reçoit
-des joints SAV, des joints fumisterie et des joints d'étanchéité mélangés.
-Avec catalog_domain, la recherche est toujours filtrée sur le contexte courant.
 
 ---
 
@@ -118,13 +180,13 @@ Avec catalog_domain, la recherche est toujours filtrée sur le contexte courant.
 | PER004 | Joris | Franchisé de marque | Jotul Saillagouse |
 | PER005 | Paul | Distributeur | Joncoux |
 | PER011 | Sabrina | Comptable | Cabinet Bâtiment |
+| PER012 | Claire-Marie | Responsable réseau / franchise | Jotul France |
 
 ### Écosystème fabricants — P2
 
 | ID | Prénom | Rôle | Entreprise |
 |---|---|---|---|
 | PER006 | Marc | Fabricant poêles | Turbo Fonte |
-| PER007 | Claire-Marie | Tête de réseau | Jotul France |
 | PER008 | Olivier | Fabricant conduits | Poujoulat |
 | PER010 | Lucie | Formateur RGE | CAPEB |
 
@@ -142,24 +204,19 @@ Avec catalog_domain, la recherche est toujours filtrée sur le contexte courant.
 
 ```
 CYCLE 1 — Installation (CRM / devis)
-  Prospect → Estimatif → Visite → Définitif → Signé → Chantier → Facture
-  Acteurs : Sophie, Thierry, Yohan, Amélie
-  Objets : Appareil + Fumisterie + Prestation
+  Lead → Qualification → Estimatif → Visite → Définitif → Signé → Chantier → Facture
+  Objets : Lead → Customer → Location → Appointment → Quote → Installation
 
 CYCLE 2 — Entretien récurrent
-  Parc installé → Ramonage → Entretien annuel → Rappel → Renouvellement
-  Acteurs : Luc, Michel
-  Objets : Installation existante
+  Installation → Appointment (ramonage) → Certificat → Rappel → Renouvellement
+  Objet central : Installation (actif persistant)
 
 CYCLE 3 — SAV
-  Panne → Diagnostic → Pièce détachée → Intervention → Facture → Historique
-  Acteurs : Thierry, Yohan, Amélie
-  Objets : Pièces détachées (catalogue privé ou ligne libre en V1)
+  Panne → Appointment (SAV) → Diagnostic → Pièce → Intervention → Facture → Timeline
+  Objet central : Installation (garantie + historique)
 
 CYCLE 4 — Maintenance catalogue (SUPER_ADMIN)
   Import → Dry-run → Vérif → Remises → Monitoring → Comparaison versions
-  Acteurs : SUPER_ADMIN
-  Objets : catalog_items, heating_appliances
 ```
 
 ---
@@ -174,35 +231,39 @@ V1 — En cours / imminent
   Kits / Ouvrages pré-remplis
   Fournisseurs actifs/inactifs par tenant
   Catalogue privé artisan (lignes maison, pièces SAV basiques)
+  Intervention (Appointment) comme objet unique — VT/Pose/Ramonage/SAV
   Fiche chantier mobile basique
   Cycle ramonage simple
   Appareils dans devis (branchement heating_appliances → QuoteEditor)
-  Enregistrement appareil à la clôture chantier (parc installé V1)
+  Enregistrement appareil + garanties à la clôture chantier
   Import base ADEME → heating_appliances
+  Contacts multiples par client
+  Relance automatique devis (J+7, J+15, J+30)
 
 V2 — Après validation terrain (1-3 mois)
   Remises par famille (supplier_family_code importé)
-  Bon de commande fournisseur
-  Monitoring imports + comparaison versions tarifaires
+  Bon de commande fournisseur avec export comptable (AP Bills)
+  Monitoring imports + comparaison versions tarifaires (historique prix)
   Archivage articles disparus automatique
   Facturation et relances automatiques
   Portail client (signature, suivi)
-  Historique installation complet par client (parc installé V2)
+  Timeline installation complète
+  Parc installé complet (multi-appareils, multi-sites, location)
   Permissions multi-utilisateurs (rôles)
   Compatibilité appareil ↔ fumisterie (suggestion automatique)
   Gouvernance normalisation catalogue
   Déclenchement SAV depuis fiche installation
-  Catalogue pièces détachées (import sélectif par marque)
+  Tags métier sur clients/installations
+  Tarif contrat d'entretien (MemberPrice distinct du tarif public)
 
 V3 — Après terrain artisans (3-12 mois)
   Assistant vocal devis chantier
-  Alertes compatibilité technique avancées
   Variantes produits
   Export comptable FEC / Facture-X
-  Réseau marques (fabricants, franchisés)
-  Reporting multi-sites
+  Réseau marques / franchises (PER012 Claire-Marie)
   LIGNIA Manufacturer (portail fabricants)
-  Parc installé intelligent (suggestion pièces compatibles par modèle)
+  Parc installé intelligent (suggestion pièces compatibles, predictedReplacement)
+  Catalogue SAV fabricants (MCZ, Edilkamin, Jotul...)
   Mini-ERP complet avec comptabilité connectée
 ```
 
@@ -218,7 +279,7 @@ PERFORMANCE
   Chargement fiche chantier < 1s (mode offline)
 
 OFFLINE (PWA)
-  Fiche chantier : accessible hors connexion
+  Fiche chantier / Appointment : accessible hors connexion
   Devis en brouillon : consultable hors connexion
   Synchronisation à la reconnexion
 
@@ -227,280 +288,202 @@ FIABILITÉ
   Rollback import possible par batch_id
   Idempotence : réimporter = safe
 
-VOLUME CIBLE
-  100 fournisseurs maximum en base
-  20 fournisseurs actifs par artisan en moyenne
-  600 000 articles maximum (100 fournisseurs × 6 000 articles)
-  catalog_domain évite la pollution inter-domaines dans la recherche
+INTÉGRATIONS TIERCES
+  Comptabilité : Pennylane / Sage (export via AP Bills)
+  Email / SMS : notifications relances et rappels
+  Signature électronique : portail client (V2)
+  ADEME : import mensuel appareils éligibles
 ```
 
 ---
 
-## BLOC C — CATALOGUE ET IMPORTS (SUPER_ADMIN)
+## BLOC CRM — CLIENTS, CONTACTS, LEADS
 
-### US-C01 — Importer un nouveau catalogue fournisseur (V1)
-**En tant que SUPER_ADMIN, je veux intégrer un nouveau catalogue fournisseur dans LIGNIA.**
+### US-CRM-01 — Contacts multiples par client (V1)
+**En tant que Vendeuse (Sophie), je veux gérer plusieurs interlocuteurs pour un même client.**
 
 ```
-BESOIN MÉTIER
-  Un fournisseur m'envoie son tarif annuel.
-  Je dois le rendre disponible pour tous les artisans
-  qui travaillent avec ce fournisseur.
+BESOIN MÉTIER (appris de ServiceTitan CRM v2 — Contacts + ContactMethods)
+  M. Dupont est le propriétaire → RDV techniques
+  Mme Dupont gère la comptabilité → factures
+  Le gardien doit être prévenu → SMS avant intervention
+  L'architecte référent → copie des devis
 
-RÈGLES MÉTIER
-- supplier_ref = code brut fournisseur (INVARIANT 1)
-- manufacturer_name ≠ supplier_name (INVARIANT 8)
-- cost_price JAMAIS importé (INVARIANT 2)
-- technology_type ≠ supplier_family_code (INVARIANT 9)
-- catalog_domain défini par fournisseur (INVARIANT 10)
-- import_batch_id UUID unique par campagne
-- Devis signés non affectés (INVARIANT 4)
+  Un client peut avoir N contacts avec des rôles différents.
+  Chaque contact a ses propres méthodes de contact (email, téléphone, SMS)
+  et ses préférences de communication.
 
-RÉSULTAT ATTENDU
-  N articles disponibles dans la recherche (filtrés par domain)
-  Prix cohérents (min/max vérifiés)
-  cost_price = NULL sur 100%
-  Rollback possible par batch_id
+MODÈLE
+  customer → contacts (N)
+  contact : prénom, nom, rôle, is_primary
+  contact_method : type (email/tel/sms), valeur, préférence (marketing/facturation/rdv)
 
-ROLLBACK
-  Supprimer tous les articles d'une campagne via batch_id
-  Les devis signés utilisant ces articles restent valides
+CRITÈRES D'ACCEPTATION V1
+✅ Au moins 2 contacts par client
+✅ Contact principal identifié
+✅ Rôle du contact (propriétaire, comptable, locataire, architecte...)
+✅ Email de facturation distinct de l'email de contact
 ```
 
 ---
 
-### US-C02 — Mettre à jour les tarifs annuels (V1)
-**En tant que SUPER_ADMIN, je veux mettre à jour les prix sans détruire l'historique.**
+### US-CRM-02 — Tags métier sur clients et installations (V2)
+**En tant que Vendeuse (Sophie), je veux étiqueter les clients pour filtrer facilement.**
 
 ```
-COMPORTEMENT ATTENDU
-  Articles existants → prix mis à jour (UPDATE via supplier_ref)
-  Nouveaux articles → créés (INSERT)
-  Articles disparus → archivés (is_active=false)
-  Devis signés → inchangés (snapshots immuables)
-  V2 : warning UI "prix mis à jour depuis dernière modification"
+BESOIN MÉTIER (appris de ServiceTitan CRM v2 — BulkTags)
+  VIP (client premium, priorité intervention)
+  RGE requis (installation nécessite certification)
+  Prescripteur (architecte, agence immo qui recommande)
+  Litige (client avec contentieux en cours)
+  Contrat entretien (abonné au contrat annuel)
 
-CRITÈRES D'ACCEPTATION
-✅ Aucun devis signé modifié
-✅ Articles disparus non proposés dans la recherche
-✅ Option "archiver les articles manquants" disponible
-```
-
----
-
-### US-C03 — Paramétrer le mapping d'une nouvelle marque (V1)
-**En tant que SUPER_ADMIN, je veux configurer comment importer les données d'un nouveau fournisseur.**
-
-```
-CONFIGURATION À DÉFINIR PAR FOURNISSEUR
-  - Quelle colonne CSV = code article (supplier_ref)
-  - Quelle colonne CSV = libellé
-  - Quelle colonne CSV = prix public
-  - TVA par défaut
-  - catalog_domain par défaut pour ce fournisseur
-  - Si distributeur multi-marques : quelle colonne = fabricant réel
-  - Encodage du fichier
-
-CRITÈRES D'ACCEPTATION
-✅ Vérification avant import : taux d'articles ignorés < 10%
-✅ 0 article avec cost_price
-✅ catalog_domain renseigné sur 100% des articles
-✅ Mapping réutilisable pour les prochains imports
-```
-
----
-
-### US-C04 — Comparer deux versions d'un tarif (V2)
-**En tant que SUPER_ADMIN, je veux voir les écarts entre l'ancien et le nouveau tarif.**
-
-```
-CRITÈRES D'ACCEPTATION V2
-✅ Rapport : N nouveaux, N mis à jour (+X% moyen), N disparus
-✅ Alerte si hausse > 15% sur un article stratégique
-✅ Import optionnel après validation du rapport
-```
-
----
-
-### US-C05 — Gérer les fournisseurs actifs par tenant (V1)
-**En tant que TENANT_ADMIN (Arnaud), je veux activer ou désactiver des fournisseurs.**
-
-```
-CRITÈRES D'ACCEPTATION
-✅ Liste des fournisseurs disponibles par tenant
-✅ Activation / désactivation sans perte de données
-✅ Recherche filtrée sur fournisseurs actifs uniquement
-```
-
----
-
-### US-C06 — Importer la base ADEME dans heating_appliances (V1)
-**En tant que SUPER_ADMIN, je veux importer les appareils éligibles MaPrimeRénov' depuis le fichier ADEME officiel.**
-
-```
-BESOIN MÉTIER
-  Le fichier ADEME (mensuel, xlsx) liste tous les appareils
-  éligibles aux aides (MaPrimeRénov', CEE, Flamme Verte).
-  Ces appareils doivent être disponibles pour tous les artisans
-  dans l'onglet "Appareils" du CatalogPopover.
-
-SOURCE
-  Fichier ADEME officiel (xlsx mensuel)
-  Données : marque, modèle, puissance, rendement,
-            Flamme Verte (nb étoiles), classe énergétique,
-            type combustible, étanchéité, diamètre buse
-
-RÈGLES
-  catalog_domain = 'APPAREIL' (INVARIANT 10)
-  is_central = true (visible par tous les tenants)
-  Import idempotent (même pipeline que catalog_items)
-  Pas de cost_price
-  Pas de fournisseur (fabricant = manufacturer_name)
-
-POURQUOI C'EST IMPORTANT
-  Artisans ont besoin des données ADEME pour les dossiers MaPrimeRénov'
-  LIGNIA peut générer automatiquement la fiche technique dans le PDF devis
-  Différenciateur fort vs outils génériques
-
-CRITÈRES D'ACCEPTATION
-✅ Appareils visibles dans CatalogPopover onglet "Appareils"
-✅ Données ADEME complètes (puissance, rendement, Flamme Verte)
-✅ Import mensuel reproductible en une commande
-```
-
----
-
-## BLOC D — DEVIS (CORE FLOW)
-
-### US-D01 — Créer un devis estimatif (V1)
-**En tant que Vendeuse (PER003b — Sophie), je veux créer un devis rapide pour un prospect.**
-
-```
-FLOW
-  1. Nouveau projet → client → créer devis estimatif
-  2. Rechercher articles — catalog_domain filtre auto sur APPAREIL + FUMISTERIE + PRESTATION
-  3. Ajouter lignes (prix public résolu par resolve_item_price)
-  4. Remise globale fournisseur appliquée automatiquement
-  5. Enregistrer et envoyer au client
-
-UN DEVIS RÉEL RESSEMBLE À :
-  Poêle Jotul F163 (APPAREIL)
-  + Kit raccordement étanche Ø80/130 (PRESTATION = ouvrage)
-  + Conduit concentrique Poujoulat 1m (FUMISTERIE)
-  + Sortie toiture (FUMISTERIE)
-  + Main d'œuvre pose (PRESTATION)
-  ────────────────────────────────
-  Ces 4 domaines coexistent dans UN SEUL devis
-
-CRITÈRES D'ACCEPTATION
-✅ Devis créé en < 5 min pour un cas standard
-✅ Appareils + fumisterie + prestations dans le même devis
-✅ Prix correct (remise appliquée via resolve_item_price)
-✅ TVA correcte (5.5% rénovation / 20% neuf selon contexte)
-```
-
----
-
-### US-D02 — Convertir un estimatif en devis final (V1)
-**En tant que Vendeuse (Sophie), après la visite technique je crée le devis définitif.**
-
-```
-CRITÈRES D'ACCEPTATION
-✅ Duplication estimatif → devis final (kind=final)
-✅ Prix recalculés à la sauvegarde
-✅ Numérotation distincte
-```
-
----
-
-### US-D03 — Rechercher un article dans le catalogue (V1)
-**En tant qu'utilisateur, je veux trouver rapidement un article.**
-
-```
-CRITÈRES D'ACCEPTATION
-✅ Recherche fulltext < 500ms
-✅ Filtrage par fournisseurs actifs du tenant
-✅ Filtrage par catalog_domain selon le contexte (INVARIANT 10)
-✅ Articles archivés exclus
-✅ Onglets : Appareils | Fumisterie | Prestations | Maison
-```
-
----
-
-### US-D04 — Appliquer une remise fournisseur (V1)
-**En tant que TENANT_ADMIN, je veux que mes remises s'appliquent automatiquement.**
-
-```
-CRITÈRES D'ACCEPTATION
-✅ Remise appliquée automatiquement à l'ajout
-✅ net_price_ht < unit_price_ht
-✅ Marge visible (interne, non transmise au client)
-```
-
----
-
-### US-D05 — Signer un devis (V1)
-**En tant que Gérant (Arnaud), je veux enregistrer la signature du client.**
-
-```
-CE QUI SE PASSE À LA SIGNATURE
-  1. quote_status → signed
-  2. Facture d'acompte créée automatiquement
-  3. Installation créée (status=draft) → alimente le parc installé
-  4. Client converti de prospect → actif
-  5. quote_lines = snapshot immuable (INVARIANT 4)
-
-CRITÈRES D'ACCEPTATION
-✅ Données figées après signature
-✅ Facture acompte générée
-✅ Installation créée dans le parc installé
-```
-
----
-
-### US-D06 — Remise ligne par ligne (V2)
-**En tant que Vendeuse, je veux ajuster la remise sur une ligne spécifique.**
-
-```
-CRITÈRES D'ACCEPTATION V2
-✅ Remise unitaire par ligne (discount_allowed=true requis)
-✅ Lignes main d'œuvre non remisables
-✅ Marge recalculée en temps réel
-```
-
----
-
-### US-D07 — Créer un kit / ouvrage (V1)
-**En tant que Vendeuse, je veux réutiliser une configuration type.**
-
-```
-BESOIN MÉTIER
-  "Raccordement granulés étanche Ø80/130" revient à chaque devis.
-  Un ouvrage = N lignes insérées en 2 clics avec les bons prix.
-  L'artisan ne cherche plus : il sélectionne son ouvrage.
-
-CRITÈRES D'ACCEPTATION
-✅ Créer un ouvrage depuis des lignes de devis existant
-✅ Insérer un ouvrage = insérer toutes ses lignes en 1 clic
-✅ Prix recalculé au moment de l'ajout (resolve_item_price)
-✅ Ouvrages filtrés par catalog_domain si besoin
-```
-
----
-
-### US-D08 — Fiche technique appareil dans le devis (V2)
-**En tant qu'Artisan, je veux que le PDF devis inclue les données techniques ADEME.**
-
-```
-BESOIN MÉTIER
-  Pour une demande MaPrimeRénov', l'artisan doit fournir
-  les données techniques : puissance, rendement, Flamme Verte.
-  LIGNIA les génère automatiquement depuis heating_appliances.
+MODÈLE
+  tags : liste libre configurable par le TENANT_ADMIN
+  Attachables à : Customer, Installation, Lead
 
 CRITÈRES D'ACCEPTATION V2
-✅ Données ADEME dans le PDF devis (puissance, rendement, Flamme Verte)
-✅ Génération automatique si appareil depuis heating_appliances
-✅ Mention classe énergétique visible sur le devis client
+✅ Tags configurables par le TENANT_ADMIN (pas hardcodés)
+✅ Filtre sur les tags dans la liste clients
+✅ Tags visibles sur la fiche client
+```
+
+---
+
+### US-CRM-03 — Site / Location comme objet persistant (V2)
+**En tant qu'Artisan, je veux qu'une adresse d'installation persiste indépendamment des projets.**
+
+```
+BESOIN MÉTIER (appris de ServiceTitan Equipment Systems — locationId)
+  M. Dupont a une maison principale et un chalet.
+  Chaque site a ses propres équipements et son historique.
+  Si M. Dupont vend sa maison, le chalet reste dans LIGNIA
+  avec tout son historique.
+
+  Aujourd'hui LIGNIA lie les installations à un projet.
+  Un projet peut se terminer mais le site reste.
+
+MODÈLE
+  customer → sites (N)
+  site : adresse, type (principal/secondaire), actif
+  installation → site (N installations par site possible)
+
+CRITÈRES D'ACCEPTATION V2
+✅ Site persiste après clôture du projet
+✅ Un client peut avoir plusieurs sites
+✅ Historique des installations par site
+```
+
+---
+
+### US-CRM-04 — Relance automatique des devis (V1)
+**En tant que Secrétaire (Amélie), je veux que LIGNIA relance automatiquement les devis sans réponse.**
+
+```
+BESOIN MÉTIER (appris de ServiceTitan CRM v2 — Leads + follow-up)
+  Un devis envoyé sans réponse = opportunité perdue silencieusement.
+  ServiceTitan a un module Lead distinct avec suivi des follow-ups.
+  Pour LIGNIA V1 : relance simple sur les devis envoyés.
+
+SCÉNARIO
+  Devis envoyé le 01/06
+  → J+7 (08/06)  : notification Amélie "Relancer M. Dupont ?"
+  → J+15 (16/06) : si toujours pas de réponse, notification + email automatique client
+  → J+30 (01/07) : si toujours pas de réponse, devis proposé comme "à archiver"
+
+RÈGLE
+  Les délais sont configurables par TENANT_ADMIN
+  L'email de relance est paramétrable (template)
+  L'artisan peut désactiver la relance manuellement
+
+CRITÈRES D'ACCEPTATION V1
+✅ Notification interne à J+7 et J+15
+✅ Email client automatique à J+15 (configurable)
+✅ Statut devis "En attente de réponse" visible
+✅ Vue "Devis à relancer" dans le dashboard Amélie
+```
+
+---
+
+### US-CRM-05 — Tableau de bord commercial et pipeline (V1)
+**En tant que Gérant (Arnaud), je veux voir les KPIs et le pipeline commercial.**
+
+```
+CRITÈRES D'ACCEPTATION
+✅ CA signé / en cours / perdu ce mois
+✅ Taux de transformation devis (envoyés → signés)
+✅ Pipeline par statut (Prospect/Qualifié/Devis envoyé/Signé)
+✅ Top articles et fournisseurs
+✅ Marge moyenne (si costs renseignés)
+```
+
+---
+
+## BLOC PLN — INTERVENTIONS (APPOINTMENT)
+
+### US-PLN-01 — Objet Intervention unique (V1 — IMPORTANT)
+**En tant qu'Artisan, tous mes rendez-vous terrain partagent le même objet.**
+
+```
+BESOIN MÉTIER (appris de ServiceTitan JPM v2 — Appointments)
+  Aujourd'hui dans LIGNIA :
+    Visite technique = formulaire projet
+    Pose            = clôture chantier
+    Ramonage        = module séparé
+    SAV             = demande SAV
+    Entretien       = module séparé
+
+  ServiceTitan a résolu ça avec un seul objet : Appointment.
+
+  Pour LIGNIA : une "Intervention" est un RDV terrain,
+  quel que soit son type. Ça simplifie le planning,
+  la notification client, et l'historique.
+
+TYPES D'INTERVENTION
+  VT           → Visite Technique
+  POSE         → Installation
+  RAMONAGE     → Ramonage annuel
+  ENTRETIEN    → Entretien préventif
+  SAV          → Dépannage / réparation
+  AUTRE        → Déplacement non catégorisé
+
+STATUTS (inspirés de ServiceTitan JPM)
+  PLANIFIEE    → date fixée, pas encore confirmée
+  CONFIRMEE    → client a confirmé le RDV
+  EN_COURS     → technicien sur place
+  TERMINEE     → intervention clôturée
+  ANNULEE      → annulée (avec motif)
+  REPORTEE     → replanifiée (avec nouvelle date)
+
+DONNÉES D'UNE INTERVENTION
+  type, statut, date_heure_debut, date_heure_fin
+  technicien_id, client_id, installation_id (nullable)
+  notes_avant (briefing), notes_apres (compte-rendu)
+  photos_avant[], photos_apres[]
+
+AVANTAGES
+  Planning unifié : Arnaud voit TOUS les RDV de son équipe
+  Notification client unifiée : 1 système pour tous les types
+  Historique installation : timeline complète par appareil
+
+CRITÈRES D'ACCEPTATION V1
+✅ Créer une intervention de n'importe quel type en 30 secondes
+✅ Vue planning semaine/mois pour le gérant
+✅ Fiche intervention accessible offline (PWA)
+✅ Compte-rendu post-intervention (notes + photos)
+```
+
+---
+
+### US-PLN-02 — Planning techniciens (V1)
+**En tant que Gérant (Arnaud), je veux voir toutes les interventions de mon équipe.**
+
+```
+CRITÈRES D'ACCEPTATION V1
+✅ Vue calendrier semaine par technicien
+✅ Glisser-déposer pour replanifier
+✅ Couleurs par type d'intervention
+✅ Alerte si double-booking
 ```
 
 ---
@@ -516,15 +499,6 @@ BESOIN MÉTIER
   heating_appliances existe en base mais n'est pas branché au QuoteEditor.
   C'est le principal gap V1 après l'import Poujoulat.
 
-DONNÉES D'UN APPAREIL
-  Marque, modèle, référence
-  Puissance nominale (kW)
-  Combustible (bois / granulés / mixte)
-  Diamètre de sortie fumée (mm) → clé pour la compatibilité
-  Étanchéité (étanche / non étanche)
-  Flamme Verte (nb étoiles)
-  Prix public HT
-
 CRITÈRES D'ACCEPTATION
 ✅ heating_appliances branché au CatalogPopover (onglet "Appareils")
 ✅ Appareil ajouté avec catalog_domain='APPAREIL'
@@ -534,77 +508,107 @@ CRITÈRES D'ACCEPTATION
 
 ---
 
-### US-APP-02 — Suggestion fumisterie compatible après ajout appareil (V2)
+### US-APP-02 — Suggestion fumisterie compatible (V2)
 **En tant qu'Artisan, après avoir ajouté un appareil, je veux voir les conduits compatibles.**
 
 ```
-COMPORTEMENT V2
-  Poêle Jotul F163 → sortie Ø80, étanche
-  → LIGNIA filtre automatiquement sur diameter_inner_mm=80, concentrique
-  → Warning si l'artisan ajoute un conduit incompatible (non bloquant)
-
 CRITÈRES D'ACCEPTATION V2
 ✅ Filtre automatique sur diamètre après ajout appareil
-✅ Warning non bloquant si incompatibilité
+✅ Warning non bloquant si incompatibilité détectée
 ```
 
 ---
 
-### US-APP-03 — Enregistrement appareil à la clôture chantier (V1)
-**En tant que Poseur (Yohan), quand je clôture une installation, je veux enregistrer l'appareil pour déclencher le cycle d'entretien.**
+### US-APP-03 — Enregistrement appareil + garanties à la clôture (V1)
+**En tant que Poseur (Yohan), je veux enregistrer l'appareil ET ses garanties à la fin du chantier.**
 
 ```
-BESOIN MÉTIER
-  C'est la clé de voûte du parc installé.
-  Sans appareil correctement enregistré, le ramonage ne peut pas
-  être automatisé et le SAV n'a pas de contexte.
+BESOIN MÉTIER (appris de ServiceTitan Equipment Systems — warranty fields)
+  ServiceTitan trace 4 dates de garantie :
+    manufacturerWarrantyStart + manufacturerWarrantyEnd
+    serviceProviderWarrantyStart + serviceProviderWarrantyEnd
 
-DONNÉES SAISIES SUR MOBILE
+  Pour LIGNIA :
+    Garantie fabricant appareil : généralement 2-5 ans
+    Garantie main d'œuvre artisan : généralement 1-2 ans
+
+  Quand un client appelle pour un SAV, l'artisan doit savoir
+  immédiatement si la réparation est sous garantie ou facturée.
+
+DONNÉES SAISIES À LA CLÔTURE
   Marque + modèle (depuis heating_appliances ou saisie libre)
-  Numéro de série
+  Numéro de série (obligatoire pour la garantie fabricant)
   Diamètre buse réel installé
-  Date de mise en service
-  Étanchéité confirmée
+  Date de mise en service (= début garanties)
+  Garantie fabricant : durée en mois (ex: 24)
+  Garantie artisan (pose) : durée en mois (ex: 12)
   Photos finales
 
-DÉCLENCHEMENTS AUTOMATIQUES
-  Prochaine date ramonage = date mise en service + 12 mois
-  Rappel client programmé (Luc, PER002)
-  Lien installation ↔ client créé (Michel, PER009C)
-  Historique accessible depuis la fiche client
+CALCULS AUTOMATIQUES
+  warranty_manufacturer_end = date_mise_en_service + garantie_fabricant_mois
+  warranty_provider_end = date_mise_en_service + garantie_artisan_mois
+  Prochaine date ramonage = date_mise_en_service + 12 mois
 
 CRITÈRES D'ACCEPTATION
 ✅ Saisie terrain < 2 minutes sur mobile (PWA offline)
-✅ Installation créée dans le parc installé
-✅ Date ramonage calculée automatiquement
-✅ Notification patron à la clôture
+✅ Garanties calculées et stockées automatiquement
+✅ Badge "SOUS GARANTIE" visible sur la fiche installation
+✅ Alerte en SAV : "Appareil sous garantie fabricant jusqu'au JJ/MM/AAAA"
 ```
 
 ---
 
-### US-APP-04 — Parc installé client (V1/V2)
-**En tant qu'Artisan (Thierry), je veux voir l'historique complet d'un client depuis sa fiche.**
+### US-APP-04 — Parc installé et timeline (V1/V2)
+**En tant qu'Artisan (Thierry), je veux voir l'historique complet d'une installation.**
 
 ```
-CONTENU DU PARC INSTALLÉ
-  Appareil(s) installé(s) : marque, modèle, N° série, date
-  Diamètre conduit installé
-  Dernier ramonage (date + technicien)
-  Prochain entretien recommandé
-  Historique SAV
+BESOIN MÉTIER (appris de ServiceTitan Equipment Systems + JPM Export_JobHistory)
+  ServiceTitan exporte une timeline complète par équipement.
+  Pour LIGNIA : chaque installation a une timeline chronologique.
 
-ACTIONS RAPIDES DEPUIS LE PARC
-  → Créer devis ramonage
+TIMELINE D'UNE INSTALLATION (exemple)
+  14/01/2026 → Devis estimatif envoyé
+  18/01/2026 → Devis définitif signé
+  20/01/2026 → Commande Poujoulat passée
+  05/02/2026 → Pose (Yohan) — 6h
+  06/02/2026 → Mise en service — garantie jusqu'au 06/02/2028 (fabricant)
+  10/02/2026 → Certificat de conformité remis
+  15/10/2026 → Ramonage annuel (Luc)
+  03/03/2027 → SAV : joint porte remplacé (sous garantie artisan)
+  01/11/2027 → Ramonage annuel (Luc)
+
+ACTIONS DEPUIS LE PARC
+  → Créer intervention (ramonage / SAV / entretien)
+  → Voir timeline complète
+  → Vérifier statut garanties
   → Créer devis SAV
-  → Voir historique complet
-  → Programmer rappel client
 
 CRITÈRES D'ACCEPTATION V1
-✅ Fiche client avec au moins 1 installation visible
-✅ Lien direct vers création SAV ou ramonage
+✅ Fiche installation avec appareil + garanties + dernier ramonage
+✅ Lien direct vers création d'une intervention
 CRITÈRES D'ACCEPTATION V2
-✅ Historique chronologique complet
-✅ Parc multi-appareils (client avec plusieurs installations)
+✅ Timeline chronologique complète et exportable
+✅ Multi-appareils par site (maison avec 2 poêles)
+```
+
+---
+
+### US-APP-05 — Fin de vie estimée et remplacement (V3)
+**En tant que LIGNIA, je veux alerter proactivement quand un appareil approche de sa fin de vie.**
+
+```
+BESOIN MÉTIER (appris de ServiceTitan Equipment Systems — predictedReplacementDate)
+  ServiceTitan calcule : predictedReplacementMonths / predictedReplacementDate
+  Pour LIGNIA : poêle installé en 2012, 14 ans d'âge → recommander remplacement
+
+  C'est exactement le type de signalement qui génère une vente proactive.
+  L'artisan peut contacter le client avant que la panne survienne.
+
+CRITÈRES D'ACCEPTATION V3
+✅ Calcul automatique : âge_appareil = today - date_mise_en_service
+✅ Alerte si âge > durée_de_vie_estimée_par_type (configurable)
+✅ Vue "Appareils à remplacer dans les 12 mois" pour le commercial
+✅ Déclenchement campagne de renouvellement (email client)
 ```
 
 ---
@@ -612,93 +616,224 @@ CRITÈRES D'ACCEPTATION V2
 ## BLOC SAV — SERVICE APRÈS-VENTE
 
 ### US-SAV-01 — Créer un devis SAV depuis la fiche installation (V1)
-**En tant qu'Artisan (Thierry), quand un client appelle pour une panne, je veux créer un devis SAV en 2 clics.**
+**En tant qu'Artisan (Thierry), je veux créer un devis SAV en 2 clics avec le contexte pré-rempli.**
 
 ```
-BESOIN MÉTIER
-  Michel appelle : "Mon poêle MCZ Ego affiche l'erreur A05."
-  Thierry ouvre sa fiche, voit le modèle, crée le devis SAV.
-  Le devis est pré-rempli avec le contexte de l'installation.
-
 SCÉNARIO
-1. Ouvrir fiche client Michel
-2. Voir son poêle MCZ Ego (marque, modèle, date installation)
-3. Cliquer "Créer devis SAV"
-4. Devis pré-rempli : client, adresse, appareil, type = SAV
-5. Ajouter les pièces :
-   - Pièce récurrente → catalogue privé artisan (catalog_domain='PIECE_DETACHEE')
-   - Pièce rare       → ligne libre avec coût interne
-6. Envoyer le devis
+1. Michel appelle : "Mon poêle MCZ Ego affiche l'erreur A05."
+2. Thierry ouvre la fiche client → voit le poêle MCZ Ego
+3. Badge : "Garantie fabricant : expire 06/02/2028 ✅" ou "Hors garantie ⚠️"
+4. Crée devis SAV : client + adresse + appareil + type=SAV pré-remplis
+5. Ajoute les pièces (catalogue privé ou ligne libre)
 
 RÈGLE V1
   Pas d'import massif de pièces détachées
-  Catalogue privé artisan pour les pièces récurrentes (joint porte, vitre standard)
-  Ligne libre pour les pièces rares ou premières fois
-  Cette approche couvre 90% des cas SAV V1
+  Catalogue privé artisan pour pièces récurrentes
+  Ligne libre pour pièces rares
 
 CRITÈRES D'ACCEPTATION
 ✅ Devis SAV créé en < 3 minutes
-✅ Contexte appareil pré-rempli depuis le parc installé
-✅ Pièces détachées depuis catalogue privé ou ligne libre
+✅ Statut garantie visible avant création du devis
 ✅ catalog_domain='PIECE_DETACHEE' pour les pièces catalogue
 ```
 
 ---
 
 ### US-SAV-02 — Catalogue privé pièces détachées (V1)
-**En tant qu'Artisan, je veux créer mes propres pièces récurrentes dans mon catalogue.**
+**En tant qu'Artisan, je veux créer mes pièces récurrentes dans mon catalogue.**
 
 ```
-BESOIN MÉTIER
-  Thierry pose souvent des MCZ et Edilkamin.
-  Il a 10-15 pièces qu'il commande régulièrement.
-  Il les crée une fois dans son catalogue privé.
-  Il les réutilise dans tous ses devis SAV.
-
 EXEMPLES
   "Joint porte MCZ Ego" → 18€
   "Vitre Edilkamin 40x25" → 45€
-  "Bougie allumage granulés universelle" → 12€
   "Pressostat MCZ 0-5 mbar" → 35€
 
 MODÈLE
-  catalog_items avec :
-    supplier_name = 'TENANT_PRIVATE'
-    catalog_domain = 'PIECE_DETACHEE'
-    tenant_id = uuid_artisan
+  catalog_items : supplier_name='TENANT_PRIVATE', catalog_domain='PIECE_DETACHEE'
 
 CRITÈRES D'ACCEPTATION
-✅ Artisan crée une pièce en 30 secondes
-✅ Visible dans CatalogPopover onglet "SAV / Pièces"
-✅ Non visible par d'autres artisans (isolation tenant)
-✅ catalog_domain = 'PIECE_DETACHEE' pour ne pas polluer la recherche fumisterie
+✅ Pièce créée en 30 secondes
+✅ Visible dans onglet "SAV / Pièces" uniquement
+✅ catalog_domain = 'PIECE_DETACHEE' → pas de pollution fumisterie
 ```
 
 ---
 
 ### US-SAV-03 — Catalogue SAV fabricants (V3)
-**En tant que SUPER_ADMIN, je veux importer les catalogues de pièces détachées des fabricants.**
+**En tant que SUPER_ADMIN, je veux importer les catalogues pièces détachées des fabricants.**
+
+```
+CRITÈRES D'ACCEPTATION V3
+✅ Import pièces MCZ, Edilkamin, Jotul disponible
+✅ Recherche "MCZ Ego" → pièces compatibles uniquement
+✅ Suggestion automatique depuis le parc installé
+```
+
+---
+
+## BLOC D — DEVIS (CORE FLOW)
+
+### US-D01 — Créer un devis estimatif (V1)
+**En tant que Vendeuse (Sophie), je veux créer un devis rapide pour un prospect.**
+
+```
+UN DEVIS RÉEL RESSEMBLE À :
+  Poêle Jotul F163 (APPAREIL)
+  + Kit raccordement étanche Ø80/130 (ouvrage = PRESTATION)
+  + Conduit concentrique Poujoulat 1m (FUMISTERIE)
+  + Sortie toiture (FUMISTERIE)
+  + Main d'œuvre pose (PRESTATION)
+
+CRITÈRES D'ACCEPTATION
+✅ Devis créé en < 5 min
+✅ Appareils + fumisterie + prestations dans le même devis
+✅ Prix correct (remise appliquée via resolve_item_price)
+✅ TVA correcte (5.5% rénovation / 20% neuf)
+```
+
+---
+
+### US-D02 — Convertir un estimatif en devis final (V1)
+
+```
+CRITÈRES D'ACCEPTATION
+✅ Duplication estimatif → devis final (kind=final)
+✅ Prix recalculés à la sauvegarde
+✅ Numérotation distincte
+```
+
+---
+
+### US-D03 — Rechercher un article dans le catalogue (V1)
+
+```
+CRITÈRES D'ACCEPTATION
+✅ Recherche fulltext < 500ms
+✅ Filtrage par fournisseurs actifs + catalog_domain
+✅ Onglets : Appareils | Fumisterie | Prestations | SAV/Pièces | Maison
+```
+
+---
+
+### US-D04 — Remise fournisseur automatique (V1)
+
+```
+CRITÈRES D'ACCEPTATION
+✅ Remise appliquée automatiquement à l'ajout
+✅ Marge visible en interne (jamais dans le PDF client)
+```
+
+---
+
+### US-D05 — Signer un devis (V1)
+
+```
+CE QUI SE PASSE À LA SIGNATURE
+  1. quote_status → signed
+  2. Facture d'acompte créée automatiquement
+  3. Installation créée dans le parc installé (status=draft)
+  4. Client converti de prospect → actif
+  5. quote_lines = snapshot immuable (INVARIANT 4)
+```
+
+---
+
+### US-D06 — Créer un kit / ouvrage (V1)
 
 ```
 BESOIN MÉTIER
-  À terme, quand l'artisan fait un SAV MCZ, il peut chercher
-  "pressostat MCZ Ego" et trouver la bonne référence directement.
-  Cela nécessite l'import du catalogue SAV MCZ, Edilkamin, Jotul...
+  "Raccordement granulés étanche Ø80/130" = ouvrage de 8 lignes.
+  Inséré en 2 clics, prix recalculés au moment de l'ajout.
 
-VOLUME ESTIMÉ
-  ~500 références par marque × 10 marques = 5 000 pièces minimum
-  Potentiellement 50 000-200 000 références à long terme
-  catalog_domain = 'PIECE_DETACHEE' isole totalement de la fumisterie
+CRITÈRES D'ACCEPTATION
+✅ Créer ouvrage depuis devis existant
+✅ Insérer ouvrage = insérer toutes ses lignes en 1 clic
+✅ Prix recalculé (resolve_item_price)
+```
 
-APPROCHE
-  Même pipeline import que fumisterie (map_supplier.py + import_supplier_direct.py)
-  catalog_domain = 'PIECE_DETACHEE' obligatoire
-  Recherche SAV filtrée sur domain + marque appareil du client
+---
 
-CRITÈRES D'ACCEPTATION V3
-✅ Import pièces MCZ disponible
-✅ Recherche "MCZ Ego" → pièces compatibles uniquement
-✅ Suggestion automatique depuis le parc installé (appareil connu)
+### US-D07 — Fiche technique ADEME dans le PDF (V2)
+
+```
+CRITÈRES D'ACCEPTATION V2
+✅ Données ADEME dans le PDF devis (puissance, rendement, Flamme Verte)
+✅ Génération automatique depuis heating_appliances
+```
+
+---
+
+## BLOC C — CATALOGUE ET IMPORTS (SUPER_ADMIN)
+
+### US-C01 — Importer un nouveau catalogue fournisseur (V1)
+
+```
+RÈGLES MÉTIER
+  supplier_ref brut (INVARIANT 1), cost_price jamais importé (INVARIANT 2)
+  catalog_domain défini par fournisseur (RÈGLE A)
+  import_batch_id UUID unique, devis signés non affectés (INVARIANT 4)
+```
+
+---
+
+### US-C02 — Mettre à jour les tarifs annuels (V1)
+
+```
+COMPORTEMENT
+  Articles existants → UPDATE (via supplier_ref)
+  Nouveaux → INSERT, disparus → archivés (is_active=false)
+  Devis signés → inchangés (snapshots immuables)
+```
+
+---
+
+### US-C03 — Paramétrer le mapping d'une nouvelle marque (V1)
+
+```
+CRITÈRES D'ACCEPTATION
+✅ catalog_domain renseigné sur 100% des articles
+✅ 0 article avec cost_price
+✅ Mapping réutilisable pour les prochains imports
+```
+
+---
+
+### US-C04 — Comparer deux versions d'un tarif (V2)
+
+```
+BESOIN MÉTIER (appris de ServiceTitan Pricebook — versioning des tarifs)
+  LIGNIA sait déjà QUEL tarif a été utilisé via import_batch_id.
+  La V2 ajoute la comparaison visuelle : +8%, -3%, articles disparus.
+  Audit légal possible : "ce devis utilisait le tarif Poujoulat de janvier 2026."
+
+CRITÈRES D'ACCEPTATION V2
+✅ Rapport écarts entre 2 batch_id du même fournisseur
+✅ Alerte si hausse > 15% sur un article stratégique
+✅ GO/NO GO avant import
+```
+
+---
+
+### US-C05 — Gérer les fournisseurs actifs par tenant (V1)
+
+```
+CRITÈRES D'ACCEPTATION
+✅ Activation / désactivation sans perte de données
+✅ Recherche filtrée sur fournisseurs actifs uniquement
+```
+
+---
+
+### US-C06 — Importer la base ADEME (V1)
+
+```
+SOURCE : fichier ADEME mensuel (xlsx)
+DONNÉES : marque, modèle, puissance, rendement, Flamme Verte, diamètre buse
+RÈGLES : catalog_domain='APPAREIL', is_central=true, pas de cost_price
+
+CRITÈRES D'ACCEPTATION
+✅ Appareils visibles dans CatalogPopover onglet "Appareils"
+✅ Import mensuel reproductible en une commande
 ```
 
 ---
@@ -706,50 +841,43 @@ CRITÈRES D'ACCEPTATION V3
 ## BLOC P — PROJET ET CHANTIER
 
 ### US-P01 — Créer un projet (V1)
-**En tant que Vendeuse (Sophie), je veux créer un projet pour un client.**
 
 ```
 CRITÈRES D'ACCEPTATION
-✅ Projet lié à un client et une adresse chantier
+✅ Projet lié à un client et une adresse (site/location)
 ✅ Statuts : prospect → qualified → signed → in_progress → completed
-✅ Un projet peut avoir plusieurs devis (estimatif + final)
+✅ Un projet peut avoir plusieurs devis + plusieurs interventions
 ```
 
 ---
 
-### US-P02 — Réaliser la visite technique (V1)
-**En tant que Technicien (Yohan), je veux documenter la visite technique sur mobile.**
+### US-P02 — Visite technique sur mobile (V1)
 
 ```
 CRITÈRES D'ACCEPTATION
-✅ Formulaire mobile optimisé
-✅ Photos jointes
-✅ Scénario de fumisterie noté (type conduit, diamètre, longueur)
-✅ Sync automatique quand connexion rétablie
+✅ Intervention de type VT créée et accessible offline
+✅ Photos + notes + scénario fumisterie (diamètre, longueur)
+✅ Sync automatique à la reconnexion
 ```
 
 ---
 
-### US-P03 — Suivre l'avancement du chantier (V1)
-**En tant que Gérant (Arnaud), je veux voir l'état de tous les projets en cours.**
+### US-P03 — Suivre l'avancement des projets (V1)
 
 ```
 CRITÈRES D'ACCEPTATION
 ✅ Vue pipeline par statut
-✅ Filtres par période, technicien, fournisseur
 ✅ Montant HT par stade
 ```
 
 ---
 
 ### US-P04 — Clôturer une installation (V1)
-**En tant que Technicien (Yohan), je veux enregistrer la fin de chantier.**
 
 ```
 CRITÈRES D'ACCEPTATION
 ✅ Attestation de fin de travaux
-✅ Numéro de série appareil enregistré
-✅ Date mise en service → déclenche US-APP-03 (parc installé)
+✅ Numéro de série + garanties enregistrés (→ US-APP-03)
 ✅ Déclenchement facturation solde
 ```
 
@@ -758,94 +886,117 @@ CRITÈRES D'ACCEPTATION
 ## BLOC R — RAMONAGE (V1)
 
 ### US-R01 — Planifier une tournée de ramonage (V1)
-**En tant que Ramoneur (Luc), je veux organiser mes interventions annuelles.**
 
 ```
-CRITÈRES D'ACCEPTATION V1
-✅ Liste des clients en retard de ramonage
-✅ Planification par zone géographique
+CRITÈRES D'ACCEPTATION
+✅ Liste clients en retard → création interventions de type RAMONAGE
 ✅ Notification client (SMS ou email)
-✅ Bon de ramonage généré sur place (mobile)
 ```
 
 ---
 
 ### US-R02 — Enregistrer un ramonage sur mobile (V1)
-**En tant que Ramoneur (Luc) sur chantier, je veux certifier le ramonage.**
 
 ```
 CRITÈRES D'ACCEPTATION
-✅ Formulaire rapide (< 2 min)
-✅ Signature client sur écran
-✅ Certificat PDF généré
-✅ Historique ramonage lié à l'installation (parc installé)
+✅ Formulaire < 2 min
+✅ Signature client + certificat PDF
 ✅ Prochaine échéance mise à jour automatiquement
 ```
 
 ---
 
 ### US-R03 — Rappels automatiques d'échéances (V1)
-**En tant que Ramoneur, je veux être rappelé 2 mois avant l'échéance de chaque client.**
 
 ```
 CRITÈRES D'ACCEPTATION
-✅ Notification Luc 2 mois avant échéance
-✅ Email automatique client 1 mois avant (configurable)
-✅ Calcul automatique basé sur date mise en service
+✅ Notification 2 mois avant
+✅ Email client 1 mois avant (configurable)
 ```
 
 ---
 
-## BLOC CRM — CLIENTS ET FACTURATION
+## BLOC O — COMMANDE FOURNISSEUR (V2)
 
-### US-CRM01 — Fiche client complète (V1)
-**En tant que Vendeuse (Sophie), je veux avoir une vue complète d'un client.**
+### US-O01 — Générer un bon de commande depuis un devis signé (V2)
 
 ```
+RÈGLE CRITIQUE
+  Le BC utilise supplier_ref_snapshot (figé à la création du devis)
+  et NON supplier_ref de catalog_items.
+
 CRITÈRES D'ACCEPTATION
-✅ Coordonnées complètes
-✅ Historique projets et devis
-✅ Parc installé (appareils + dates)
-✅ Statut : prospect / actif / inactif
+✅ BC utilise supplier_ref_snapshot
+✅ Regroupement par supplier_name_snapshot
+✅ Quantités agrégées si même ref sur plusieurs lignes
+✅ Export PDF ou email commercial
 ```
 
 ---
 
-### US-CRM02 — Tableau de bord commercial (V1)
-**En tant que Gérant (Arnaud), je veux voir les KPIs de mon activité.**
+### US-O02 — Export AP Bills vers logiciel comptable (V2)
+**En tant que Comptable (Sabrina), je veux exporter les achats fournisseurs vers Pennylane.**
 
 ```
-CRITÈRES D'ACCEPTATION
-✅ CA signé / en cours / perdu
-✅ Taux de transformation devis
-✅ Marge moyenne
-✅ Top articles et fournisseurs
+BESOIN MÉTIER (appris de ServiceTitan Accounting v2 — AP Bills + MarkAsExported)
+  ServiceTitan synchronise les achats fournisseurs vers les logiciels comptables
+  via un mécanisme AP Bills avec statut d'export (MarkAsExported).
+
+  Pour LIGNIA : les bons de commande fournisseurs doivent être exportables
+  vers Pennylane, Sage ou tout logiciel compatible.
+
+MODÈLE
+  purchase_order → ap_bill (quand la commande est reçue et facturée)
+  ap_bill : numero_facture_fournisseur, montant_ht, TVA, statut_export
+  Export : CSV/JSON compatible Pennylane ou FEC
+
+CRITÈRES D'ACCEPTATION V2
+✅ Export bons de commande fournisseurs vers CSV comptable
+✅ Statut "exporté" pour éviter les doubles exports
+✅ Numéro de facture fournisseur enregistrable
 ```
 
 ---
+
+## BLOC FAC — FACTURATION
 
 ### US-FAC-01 — Conversion devis en facture (V2)
-**En tant que Secrétaire (Amélie), je veux convertir un devis signé en facture.**
 
 ```
 CRITÈRES D'ACCEPTATION
 ✅ Conversion en 1 clic
 ✅ Numérotation automatique
 ✅ Ventilation TVA par taux (5.5% rénovation / 20% neuf)
-✅ PDF facture propre
 ```
 
 ---
 
 ### US-FAC-02 — Export comptable FEC / Facture-X (V3)
-**En tant que Comptable (Sabrina), je veux exporter en format comptable standardisé.**
 
 ```
 CRITÈRES D'ACCEPTATION V3
 ✅ Export FEC compatible logiciels comptables
 ✅ Format Facture-X (norme française e-facture)
-✅ Ventilation TVA correcte
 ✅ Séparation installation / maintenance / SAV
+```
+
+---
+
+## BLOC PLN-RÉSEAU — FRANCHISE / RÉSEAU (V3)
+
+### US-RESEAU-01 — Vue agrégée réseau (V3)
+**En tant que Responsable réseau (PER012 — Claire-Marie), je veux voir les KPIs consolidés.**
+
+```
+BESOIN MÉTIER
+  Jotul France veut voir combien de Jotul ont été vendus sur son réseau,
+  quelles installations sont actives, quel est le taux d'entretien.
+
+CRITÈRES D'ACCEPTATION V3
+✅ Vue agrégée multi-tenants (franchisés autorisés)
+✅ Appareils vendus par marque par période
+✅ Taux de contrat d'entretien
+✅ Données anonymisées (pas d'infos client exposées)
 ```
 
 ---
@@ -853,57 +1004,12 @@ CRITÈRES D'ACCEPTATION V3
 ## BLOC AUTH — MULTI-TENANT
 
 ### US-AUTH01 — Isolation multi-tenant (V1)
-**En tant que SUPER_ADMIN, je veux que les données de chaque artisan soient isolées.**
 
 ```
 CRITÈRES D'ACCEPTATION
 ✅ RLS activée sur toutes les tables (INVARIANT 6)
-✅ Aucune donnée d'un tenant visible par un autre
 ✅ Catalogue central partagé (is_central=true, tenant_id=NULL)
 ✅ JWT contient tenant_id (non forgeable)
-```
-
----
-
-## BLOC V — VOIX ET IA (V3)
-
-### US-V01 — Créer une ligne devis par la voix (V3)
-**En tant qu'Artisan sur chantier, je veux ajouter un article en parlant.**
-
-```
-SCÉNARIO
-"Ajoute un coude 45° inox 150 double paroi Poujoulat"
-→ Extraction entités : type, angle_deg, matière, diamètre, marque
-→ search_quote_items_v2 filtré sur catalog_domain='FUMISTERIE'
-→ Résultat en < 2s
-
-PRÉREQUIS CRITIQUES (non satisfaits en V1)
-  angle_deg, diameter_inner_mm, technology_type = null pour Poujoulat V1
-  → À remplir en V2 (normalization job)
-```
-
----
-
-### US-V02 — Alertes compatibilité (V3)
-**En tant qu'Artisan, LIGNIA doit signaler les incompatibilités évidentes.**
-
-```
-CRITÈRES V3
-✅ Warning non bloquant basé sur diameter_inner_mm et technology_type
-```
-
----
-
-## BLOC FAB — FABRICANTS (V3)
-
-### US-FAB-01 — Publication catalogue par le fabricant (V3)
-**En tant que Fabricant (Olivier — Poujoulat), je veux publier directement dans LIGNIA.**
-
-```
-CRITÈRES V3
-✅ Interface dédiée fabricants
-✅ Catalogue publié → disponible pour les tenants autorisés
-✅ Versioning et date de validité
 ```
 
 ---
@@ -911,52 +1017,60 @@ CRITÈRES V3
 ## BLOC MAIN — MAINTENANCE SUPER_ADMIN
 
 ### US-MAIN-01 — Monitoring imports (V2)
-**En tant que SUPER_ADMIN, je veux un tableau de bord de l'état de tous mes imports.**
 
 ```
 CRITÈRES D'ACCEPTATION V2
 ✅ Table import_runs avec status, counts, timestamps
-✅ Alerte si import partiel ou en échec
 ✅ Répartition par catalog_domain
+✅ Alerte si import partiel ou en échec
 ```
 
 ---
 
 ### US-MAIN-02 — Rollback import (V1)
-**En tant que SUPER_ADMIN, je veux annuler un import si erreur.**
 
 ```
 CRITÈRES D'ACCEPTATION
-✅ Rollback par batch_id
-✅ Devis signés non affectés
+✅ Rollback par batch_id, devis signés non affectés
 ```
 
 ---
 
 ## BLOC NORM — GOUVERNANCE NORMALISATION (V2)
 
-### US-NORM-01 — Identifier les articles non normalisés (V2)
-**En tant que SUPER_ADMIN, je veux voir les articles dont le libellé n'est pas normalisé.**
+### US-NORM-01 — Articles non normalisés
 
 ```
 CRITÈRES D'ACCEPTATION V2
-✅ Vue filtrée sur normalization_status='needs_review' par domain
-✅ SUPER_ADMIN peut marquer comme 'validated' ou 'ai_normalized'
+✅ Vue par domain, normalization_status='needs_review'
+✅ SUPER_ADMIN peut valider ou marquer 'ai_normalized'
 ```
 
 ---
 
-### US-NORM-02 — Gouvernance supplier_family_code (V2)
-**En tant que SUPER_ADMIN, je veux harmoniser les familles commerciales.**
+### US-NORM-02 — Familles canoniques LIGNIA
 
 ```
-FAMILLES CANONIQUES LIGNIA
-  conduit_double_paroi | conduit_simple_paroi | conduit_concentrique
-  tubage_flexible | sortie_de_toit | raccordement | accessoire
+FAMILLES : conduit_double_paroi | conduit_simple_paroi | conduit_concentrique
+           tubage_flexible | sortie_de_toit | raccordement | accessoire
 
 CRITÈRES D'ACCEPTATION V2
-✅ Table de correspondance famille_fournisseur → famille_canonique_LIGNIA
-✅ tenant_supplier_discounts peut utiliser les deux niveaux
+✅ Table famille_fournisseur → famille_canonique_LIGNIA
+```
+
+---
+
+## BLOC V — VOIX ET IA (V3)
+
+### US-V01 — Ligne devis par la voix (V3)
+
+```
+PRÉREQUIS (non satisfaits en V1)
+  angle_deg, diameter_inner_mm, technology_type = null pour Poujoulat V1
+  → Remplir en V2 (normalization job)
+
+CRITÈRES V3
+✅ Extraction entités → search filtré sur catalog_domain='FUMISTERIE' → ajout < 2s
 ```
 
 ---
@@ -968,29 +1082,41 @@ CRITÈRES D'ACCEPTATION V2
 | Champ | Usage | Statut |
 |---|---|---|
 | supplier_ref | Code fournisseur brut (INVARIANT 1) | ✅ |
-| catalog_domain | Domaine produit (INVARIANT 10) | ⚠️ À migrer V1 |
+| catalog_domain | Domaine produit (RÈGLE A) | ⚠️ À migrer V1 |
 | supplier_name | Distributeur (INVARIANT 8) | ✅ |
 | manufacturer_name | Fabricant réel (INVARIANT 8) | ✅ |
 | unit_price_ht | Prix public (INVARIANT 3) | ✅ |
 | cost_price | TOUJOURS NULL + CHECK SQL (INVARIANT 2) | ✅ |
 | technology_type | Techno construction (INVARIANT 9) | ⚠️ Null Poujoulat V1 |
-| supplier_family_code | Famille commerciale fournisseur | ❌ À créer V2 |
-| diameter_inner_mm | Diamètre → recherche + compatibilité | ⚠️ Null Poujoulat V1 |
-| angle_deg | Angle → recherche vocale | ⚠️ Null Poujoulat V1 |
+| supplier_family_code | Famille commerciale | ❌ À créer V2 |
+| diameter_inner_mm | Diamètre → compatibilité | ⚠️ Null Poujoulat V1 |
+| angle_deg | Angle → voix | ⚠️ Null Poujoulat V1 |
 | unit | Unité (u/m/m²/forfait/h) | ⚠️ Null Poujoulat V1 |
-| is_active | Archivage articles disparus | ✅ |
+| is_active | Archivage | ✅ |
 | discount_allowed | Remise interdite | ✅ |
 | normalization_status | needs_review / ai_normalized | ✅ |
-| import_batch_id | Traçabilité / rollback | ✅ |
+| import_batch_id | Traçabilité / rollback + historique prix | ✅ |
 
-### Valeurs catalog_domain
+### Champs installation (parc installé)
 
-| Valeur | Usage | Fournisseurs types |
+| Champ | Usage | Source |
 |---|---|---|
-| FUMISTERIE | Conduits, accessoires, tubage | Poujoulat, Lorflex, Dinak, Bofill |
-| APPAREIL | Poêles, inserts, chaudières | ADEME, catalogues fabricants |
-| PRESTATION | Pose, ramonage, entretien, SAV | Catalogue privé artisan |
-| PIECE_DETACHEE | Joints, vitres, cartes électroniques | Catalogue privé ou import V3 |
+| appliance_id | Lien vers heating_appliances | Clôture chantier |
+| serial_number | N° série pour garantie fabricant | Saisie technicien |
+| installed_on | Date mise en service | Saisie technicien |
+| warranty_manufacturer_end | Fin garantie fabricant | Calculé auto |
+| warranty_provider_end | Fin garantie artisan | Calculé auto |
+| next_sweep_date | Prochaine échéance ramonage | Calculé auto |
+| diameter_installed_mm | Diamètre réel posé | Saisie technicien |
+
+### Valeurs catalog_domain (RÈGLE A)
+
+| Valeur | Usage |
+|---|---|
+| FUMISTERIE | Conduits, accessoires, tubage |
+| APPAREIL | Poêles, inserts, chaudières |
+| PRESTATION | Pose, ramonage, entretien, SAV |
+| PIECE_DETACHEE | Joints, vitres, cartes électroniques |
 
 ### Champs quote_lines (snapshots INVARIANT 4)
 
@@ -1000,7 +1126,7 @@ CRITÈRES D'ACCEPTATION V2
 | supplier_name_snapshot | Fournisseur figé | ✅ |
 | unit_cost_price | Coût net figé (marge) | ✅ |
 | metadata.pricing | Pricing complet figé | ✅ |
-| vat_rate | TVA figée (colonne dédiée) | ✅ |
+| vat_rate | TVA figée | ✅ |
 
 ---
 
@@ -1011,17 +1137,22 @@ CRITÈRES D'ACCEPTATION V2
 | catalog_domain absent de catalog_items | CRITIQUE | V1 — avant import Lorflex |
 | catalog_domain absent de map_supplier.py | CRITIQUE | V1 — avant import Lorflex |
 | heating_appliances non branché au QuoteEditor | Critique | V1 après import Poujoulat |
+| Objet Intervention (Appointment) non formalisé | Important | V1 |
+| Garanties non stockées sur l'installation | Important | V1 clôture chantier |
+| Contacts multiples par client non implémentés | Important | V1 |
+| Relance devis automatique non implémentée | Important | V1 |
 | technology_type null (Poujoulat) | Moyen | V2 |
 | diameter_inner_mm null | Moyen | V2 |
-| unit null pour Poujoulat | Moyen | V2 |
 | supplier_family_code absent | Fort | V2 avant remises famille |
 | Table import_runs absente | Faible | V2 |
+| Timeline installation complète | Important | V2 |
+| Location/Site comme objet persistant | Important | V2 |
+| Tags métier | Faible | V2 |
+| AP Bills / export comptable achats | Moyen | V2 |
 | Wrap RLS (SELECT auth.jwt()) | Moyen | V2 avant 50k articles |
 | Index tenant_supplier_discounts | Moyen | V2 avant 200 remises |
 | Tests E2E Playwright | Critique | V2 avant terrain |
-| description_fabricant → technical_description | Moyen | V2 |
-| Trigger immutabilité quote_lines | Moyen | V2 |
-| Variantes produits | Fort | V3 |
 | Export FEC / Facture-X | Moyen | V3 |
-| Portail client | Moyen | V2 |
-| Import catalogue SAV fabricants | Fort | V3 |
+| Catalogue SAV fabricants | Fort | V3 |
+| Predicted replacement date | Faible | V3 |
+| Réseau / franchise (PER012) | Faible | V3 |

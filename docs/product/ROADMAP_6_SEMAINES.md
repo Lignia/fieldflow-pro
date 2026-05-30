@@ -5,6 +5,19 @@
 
 ---
 
+## ⛔ VÉRITÉ DU MOMENT — À LIRE EN PREMIER
+
+```
+SELECT COUNT(*) FROM catalog.catalog_items WHERE supplier_name='Poujoulat';
+→ RÉSULTAT ACTUEL : 3 articles (pas 16 529)
+
+S1-T1 N'EST PAS TERMINÉ.
+Toute la roadmap ci-dessous est conditionnelle à cet import.
+Aucune autre tâche ne vaut d'être lancée avant que ce COUNT = 16 529.
+```
+
+---
+
 ## PRINCIPES D'EXÉCUTION
 
 ```
@@ -14,6 +27,8 @@
 - Solo founder : max 1-2 Claude Exec / Lovable par session
 - Toujours vérifier ce qui est déjà codé avant de créer
 - 5 artisans pilotes = seul critère de succès final
+- RÈGLE D'OR : ne pas produire de nouvelles analyses tant que S1-T1
+  n'affiche pas COUNT(*) = 16 529 dans Supabase
 ```
 
 ---
@@ -31,12 +46,10 @@ RÈGLE pour tous les écrans terrain (Interventions, Installations, Chantier) :
 CONCRÈTEMENT pour chaque écran terrain :
   - Données chargées via des hooks React Query (pas de fetch inline)
   - État local UI séparé des données distantes
-  - Pas de localStorage, pas de sessionStorage (voir contrainte artifacts)
-  - Pas d'API calls dans les composants directement
+  - Pas de localStorage pour les données métier
   → Ces patterns permettront d'injecter un cache offline en V2 sans réécriture
 
 OFFLINE V2 : Service Worker + background sync + IndexedDB
-  Couvrira : fiche intervention, clôture chantier, signature, photos
   Déclencheur : retour terrain des pilotes confirmant la douleur "zone blanche"
 ```
 
@@ -55,13 +68,13 @@ Ce qui MARCHE aujourd'hui :
   ✅ InterventionCreate/Detail — 84 Ko de code, table existe
   ✅ ServiceRequestCreate/Detail — 52 Ko, table prête
   ✅ InstallationDetail — 26 Ko, table prête
-  ✅ InvoiceDetail — table avec 3 factures test
+  ✅ billing.invoices + billing.purchase_orders — tables prêtes (0 row)
   ✅ 47 tables Postgres — architecture V1 + V2 déjà modélisée
 
 Les 3 vrais gaps V1 :
+  🚨 S1-T1 non terminé → 3 articles Poujoulat au lieu de 16 529
   🚨 Onglet Appareils non branché → Arnaud ne peut pas vendre de poêles
   🚨 Planning.tsx = stub 679 octets → Amélie ne peut pas planifier
-  🔶 Mobile offline → reporté en V2 (voir RÉSERVE OFFLINE)
 ```
 
 ---
@@ -81,25 +94,31 @@ D — Vision future (V2/V3 — ne pas toucher maintenant)
 
 **Objectif :** Un devis complet Poujoulat avec un poêle Jotul peut être créé et envoyé.
 
-### S1-T1 — Importer Poujoulat 16 529 articles [C] [S]
+### S1-T1 — Importer Poujoulat 16 529 articles [C] [S] ⛔ BLOQUANT
 
 ```
 Objectif métier : Les 16 529 articles Poujoulat disponibles dans la recherche.
+ÉTAT ACTUEL : 3 articles en base. Import non terminé.
 Backend : RPC import_supplier_items, JSON poujoulat_import.json prêt
-Frontend : Aucun (invisible pour l'artisan, juste de la data)
-Dépendances : JSON poujoulat_import.json (070e0e2f) disponible dans Codespaces
+Frontend : Aucun
+Dépendances : JSON poujoulat_import.json disponible dans Codespaces
 Effort : S (30 minutes)
-Risque : Faible — RPC testée sur 3 lignes, rollback par batch_id
+Risque : Faible — rollback par batch_id
 
-EXÉCUTION :
-  cd Codespaces
+EXÉCUTION (depuis Codespaces) :
   git pull
   python scripts/import_supplier_direct.py \
     poujoulat_import.json Poujoulat dbd5a19f-9d11-4ba8-93f7-046b642192ed
 
-TEST :
-  Rechercher "coude inox 150" dans le QuoteEditor → articles Poujoulat apparaissent
-RÉVERSIBILITÉ : DELETE FROM catalog.catalog_items WHERE import_batch_id = '{batch}'
+VÉRIFICATION OBLIGATOIRE :
+  SELECT COUNT(*), MIN(unit_price_ht), MAX(unit_price_ht)
+  FROM catalog.catalog_items
+  WHERE supplier_name = 'Poujoulat';
+  → COUNT = 16 529 (± 50)
+  → MIN entre 1€ et 15€
+  → MAX entre 5 000€ et 15 000€
+
+RÉVERSIBILITÉ : DELETE FROM catalog.catalog_items WHERE import_batch_id = '{batch}';
 ```
 
 ---
@@ -108,20 +127,18 @@ RÉVERSIBILITÉ : DELETE FROM catalog.catalog_items WHERE import_batch_id = '{ba
 
 ```
 Objectif métier : Prix nets Poujoulat calculés automatiquement. Sans ça, marge 0%.
-Backend : INSERT dans catalog.tenant_supplier_discounts
-Frontend : Aucun
 Dépendances : S1-T1 terminé
-Effort : S (5 minutes, Claude Exec Supabase)
-Risque : Zéro — 1 INSERT réversible
+Effort : S (5 minutes)
 
 SQL :
   INSERT INTO catalog.tenant_supplier_discounts
     (tenant_id, supplier_name, discount_pct, is_active)
   VALUES
-    ('dbd5a19f-9d11-4ba8-93f7-046b642192ed', 'Poujoulat', 40, true);
+    ('dbd5a19f-9d11-4ba8-93f7-046b642192ed', 'Poujoulat', 40, true)
+  ON CONFLICT (tenant_id, supplier_name) DO UPDATE
+    SET discount_pct = 40, is_active = true;
 
-TEST :
-  Ajouter article Poujoulat au devis → net_price_ht < unit_price_ht, discount_pct = 40
+TEST : article Poujoulat → net_price_ht < unit_price_ht, discount_pct = 40
 ```
 
 ---
@@ -129,22 +146,17 @@ TEST :
 ### S1-T3 — CHECK SQL cost_price IS NULL [C] [S]
 
 ```
-Objectif métier : Blindage INVARIANT 2 — aucun script ne peut importer un cost_price.
-Backend : ALTER TABLE catalog.catalog_items ADD CONSTRAINT chk_cost_price_null
-Frontend : Aucun
-Dépendances : S1-T1 terminé (sinon la contrainte bloque l'import)
+Objectif métier : Blindage INVARIANT 2.
+Dépendances : S1-T1 terminé
 Effort : S (5 minutes)
-Risque : Très faible — contrainte CHECK pure
 
 SQL :
   ALTER TABLE catalog.catalog_items
     ADD CONSTRAINT chk_catalog_items_cost_price_null
     CHECK (cost_price IS NULL);
 
-TEST :
-  INSERT INTO catalog.catalog_items (supplier_ref, cost_price) VALUES ('test', 10);
-  → doit échouer avec violates check constraint
-RÉVERSIBILITÉ : ALTER TABLE catalog.catalog_items DROP CONSTRAINT chk_catalog_items_cost_price_null;
+TEST : INSERT avec cost_price > 0 → doit échouer
+RÉVERSIBILITÉ : DROP CONSTRAINT chk_catalog_items_cost_price_null;
 ```
 
 ---
@@ -153,209 +165,165 @@ RÉVERSIBILITÉ : ALTER TABLE catalog.catalog_items DROP CONSTRAINT chk_catalog_
 
 ```
 Objectif métier : Sophie peut ajouter un poêle Jotul à son devis. Gap V1 réel.
-Backend : RPC search_heating_appliances existe + 1 516 appareils ADEME en base
-Frontend : Lovable — ajouter onglet "Appareils" dans CatalogPopover existant
+Backend : RPC search_heating_appliances + 1 516 appareils ADEME = déjà en base
+Frontend : Lovable — ajout onglet "Appareils" dans CatalogPopover existant
 Dépendances : Aucune (RPC déjà prête)
 Effort : M (1-2 jours Lovable)
-Risque : Faible — ajout d'onglet dans composant existant, pas de refacto
 
 SPEC LOVABLE :
-  Dans CatalogPopover, ajouter un onglet "Appareils" qui :
-  - Appelle search_heating_appliances avec la query utilisateur
+  Onglet "Appareils" dans CatalogPopover :
+  - Appelle search_heating_appliances avec la query
   - Affiche marque, modèle, puissance_kw, flamme_verte, prix HT
   - Ajoute l'article avec catalog_domain='APPAREIL'
   - Stocke appliance_id dans la ligne de devis
-  Ne pas toucher aux onglets existants.
+  NE PAS toucher aux onglets existants.
 
-TEST :
-  Ouvrir CatalogPopover → onglet "Appareils" visible
-  Chercher "Jotul" → résultats apparaissent
-  Ajouter → ligne dans le devis avec prix ADEME
+TEST : Chercher "Jotul" → résultats → ajouter → ligne dans le devis
 ```
 
 ---
 
-### S1-T5 — Numérotation devis/facture active [A] [S]
-
-```
-Objectif métier : Les devis ont un vrai numéro D-2026-0001. Crédibilité client.
-Backend : billing.document_sequences (4 rows) existe déjà mais non branché
-Frontend : Vérifier que la RPC de création devis appelle la séquence
-Dépendances : Aucune
-Effort : S (1-2h Claude Exec)
-Risque : Faible — séquences déjà créées, juste à brancher à la création
-
-TEST :
-  Créer 3 devis → numéros D-2026-0001, D-2026-0002, D-2026-0003
-RÉVERSIBILITÉ : UPDATE billing.document_sequences SET last_number = 0;
-```
-
----
-
-### S1-T6 — 5 vrais devis de validation terrain [B] [S]
-
-```
-Objectif métier : Validation que le produit est utilisable par un vrai artisan.
-Backend : Aucun
-Frontend : Aucun
-Dépendances : S1-T1, S1-T2, S1-T4
-Effort : S (2h de ta part)
-Risque : Zéro tech — risque produit uniquement
-
-CRITÈRES :
-  Devis 1 : Poêle granulés + fumisterie concentrique + pose (Arnaud / Ambiance Chaleur)
-  Devis 2 : Insert bois + tubage flexible + sortie toit + main d'œuvre
-  Devis 3 : Ramonage seul (Luc — PER002)
-  Devis 4 : SAV pièce détachée simple (ligne libre)
-  Devis 5 : Devis estimatif en 3 minutes (stress test vitesse)
-
-RAPPORT ATTENDU :
-  Que manque-t-il ? Qu'est-ce qui est lent ? Qu'est-ce qui bloque ?
-  → Alimente directement les semaines 2-4
-```
-
----
-
-**Livrable semaine 1 :** Arnaud peut créer un devis complet (poêle + conduit + pose) en moins de 10 minutes et l'envoyer en PDF.
-
----
-
-## SEMAINE 2 — Ouvrages et expérience devis
-
-**Objectif :** Le devis passe de 10 minutes à moins de 5 minutes grâce aux ouvrages.
-
-### S2-T1 — catalog_domain colonne + migration [C] [M]
-
-```
-Objectif métier : La recherche ne mélange plus fumisterie et pièces SAV.
-Backend : ALTER TABLE catalog.catalog_items ADD COLUMN catalog_domain
-Frontend : Patch search_quote_items_v2 pour accepter p_catalog_domain
-Dépendances : S1-T1 terminé (sinon migration UPDATE de masse)
-Effort : M (2-3h Claude Exec)
-Risque : Moyen — migration + patch RPC, mais réversible
-
-SQL MIGRATION :
-  ALTER TABLE catalog.catalog_items
-    ADD COLUMN catalog_domain text
-    NOT NULL DEFAULT 'FUMISTERIE'
-    CHECK (catalog_domain IN ('FUMISTERIE','APPAREIL','PRESTATION','PIECE_DETACHEE'));
-
-  CREATE INDEX idx_catalog_items_domain
-    ON catalog.catalog_items (catalog_domain, supplier_name, is_active);
-
-  -- Appareils ADEME → déjà dans heating_appliances, pas dans catalog_items
-  -- Tous les articles actuels = FUMISTERIE par défaut : correct
-
-PATCH map_supplier.py :
-  Ajouter catalog_domain = 'FUMISTERIE' dans tous les SUPPLIER_CONFIGS
-
-TEST :
-  SELECT catalog_domain, COUNT(*) FROM catalog.catalog_items GROUP BY 1;
-  → FUMISTERIE = 6270+
-RÉVERSIBILITÉ : ALTER TABLE catalog.catalog_items DROP COLUMN catalog_domain;
-```
-
----
-
-### S2-T2 — Ouvrages / Kits [B] [L]
+### S1-T5 — Ouvrages / Kits [B] [L] ← remonté de S2
 
 ```
 Objectif métier : Argument de vente #1. "Raccordement granulés Ø80/130" = 2 clics.
-Backend : Nouvelle table catalog.quote_kits + catalog.quote_kit_lines
+Sans ouvrage : Sophie cherche 8 articles un par un. Avec ouvrage : 2 clics.
+Les artisans achètent du temps — c'est la première chose qu'ils veulent voir.
+
+Backend : Nouvelles tables catalog.quote_kits + catalog.quote_kit_lines
           RPC create_kit_from_lines, insert_kit_to_quote
 Frontend : Lovable — bouton "Sauvegarder en ouvrage" dans QuoteEditor
-           Dropdown "Insérer un ouvrage" au-dessus de la liste d'articles
-Dépendances : S1-T1 (données Poujoulat)
-Effort : L (5-7 jours total — la feature la plus haute valeur du PILIER 1)
-Risque : Moyen — nouvelle table, mais zéro impact sur l'existant
+           Dropdown "Insérer un ouvrage" dans CatalogPopover
+Dépendances : S1-T1 (données Poujoulat pour créer les premiers ouvrages réels)
+Effort : L (5-7 jours)
+Risque : Moyen — nouvelles tables, zéro impact sur l'existant
 
 MODÈLE :
-  catalog.quote_kits :
-    id, tenant_id, name, catalog_domain, description, created_by
-  catalog.quote_kit_lines :
-    id, kit_id, catalog_item_id, quantity, position, notes
+  catalog.quote_kits : id, tenant_id, name, catalog_domain, description, created_by
+  catalog.quote_kit_lines : id, kit_id, catalog_item_id, quantity, position
 
 TEST :
   Créer ouvrage "Raccordement granulés Ø80/130" depuis un devis
-  Nouveau devis → insérer l'ouvrage → 8 lignes apparaissent avec prix calculés
+  Nouveau devis → insérer l'ouvrage → 8 lignes avec prix calculés
 RÉVERSIBILITÉ : DROP TABLE cascade (nouvelles tables seulement)
 ```
 
 ---
 
-### S2-T3 — Relance automatique devis J+7/J+15 [B] [M]
+### S1-T6 — Numérotation devis/facture active [A] [S]
+
+```
+Objectif métier : Devis avec vrai numéro D-2026-0001. Crédibilité client.
+Backend : billing.document_sequences (4 rows) — non branché
+Effort : S (1-2h Claude Exec)
+
+TEST : Créer 3 devis → D-2026-0001, D-2026-0002, D-2026-0003
+RÉVERSIBILITÉ : UPDATE billing.document_sequences SET last_number = 0;
+```
+
+---
+
+### S1-T7 — 5 vrais devis de validation terrain [B] [S]
+
+```
+Dépendances : S1-T1, S1-T2, S1-T4
+Effort : S (2h)
+
+CRITÈRES :
+  Devis 1 : Poêle granulés + fumisterie concentrique + pose
+  Devis 2 : Insert bois + tubage flexible + sortie toit
+  Devis 3 : Ramonage seul
+  Devis 4 : SAV ligne libre
+  Devis 5 : Estimatif en 3 minutes (stress test)
+
+RAPPORT : Que manque-t-il ? Qu'est-ce qui est lent ? → Alimente S2-S4
+```
+
+---
+
+**Livrable semaine 1 :** Arnaud crée un devis complet (poêle + conduit + ouvrage + pose) en moins de 5 minutes.
+
+---
+
+## SEMAINE 2 — Qualité devis et CRM de base
+
+**Objectif :** Amélie ne perd plus de devis. Sophie a des contacts multiples par client.
+
+### S2-T1 — catalog_domain colonne + migration [C] [M]
+
+```
+Dépendances : S1-T1 terminé
+Effort : M (2-3h Claude Exec)
+
+SQL :
+  ALTER TABLE catalog.catalog_items
+    ADD COLUMN catalog_domain text NOT NULL DEFAULT 'FUMISTERIE'
+    CHECK (catalog_domain IN ('FUMISTERIE','APPAREIL','PRESTATION','PIECE_DETACHEE'));
+
+  CREATE INDEX idx_catalog_items_domain
+    ON catalog.catalog_items (catalog_domain, supplier_name, is_active);
+
+PATCH map_supplier.py : catalog_domain = 'FUMISTERIE' dans tous les SUPPLIER_CONFIGS
+TEST : SELECT catalog_domain, COUNT(*) FROM catalog.catalog_items GROUP BY 1;
+RÉVERSIBILITÉ : DROP COLUMN catalog_domain;
+```
+
+---
+
+### S2-T2 — Relance automatique devis J+7/J+15 [B] [M]
 
 ```
 Objectif métier : Amélie ne perd plus de devis silencieusement.
-Backend : Supabase Edge Function relance-devis (cron daily)
+Backend : Edge Function relance-devis (cron daily)
           Table billing.quote_followups (devis_id, sent_at, type)
-Frontend : Badge "À relancer" dans liste devis + dashboard Amélie
-Dépendances : Numérotation S1-T5
+Frontend : Badge "À relancer" + dashboard Amélie
 Effort : M (2-3 jours)
-Risque : Faible — Edge Function isolée, n'affecte pas le QuoteEditor
 
-LOGIQUE :
-  Quotidien 8h : SELECT quotes WHERE status='sent' AND updated_at < now()-interval '7 days'
-  → Notification interne + email optionnel
-
-TEST :
-  Envoyer un devis, attendre (ou simuler date) → notification apparaît dans le dashboard
+TEST : Devis envoyé → simuler J+7 → notification apparaît
 ```
 
 ---
 
-### S2-T4 — Contacts multiples par client [B] [M]
+### S2-T3 — Contacts multiples par client [B] [M]
 
 ```
-Objectif métier : Facturer Mme Dupont, appeler M. Dupont. Réalité terrain.
-Backend : Nouvelle table core.customer_contacts
+Objectif métier : Facturer Mme Dupont, appeler M. Dupont.
+Backend : Table core.customer_contacts
           (id, customer_id, tenant_id, prenom, nom, role, email, tel, is_primary, is_billing)
 Frontend : Section "Contacts" dans ClientDetail.tsx
-Dépendances : Aucune
 Effort : M (2-3 jours)
-Risque : Faible — table nouvelle, ClientDetail.tsx à enrichir
 
-TEST :
-  Client Michel → ajouter contact Mme Dupont (comptable, billing email)
-  Devis → email d'envoi = email facturation du contact billing
+TEST : Client Michel → ajouter Mme Dupont → email facturation séparé
 ```
 
 ---
 
-**Livrable semaine 2 :** Sophie crée un devis complet en moins de 5 minutes grâce aux ouvrages pré-remplis. Amélie voit les devis à relancer.
+**Livrable semaine 2 :** Amélie voit les devis à relancer. Contacts multiples par client.
 
 ---
 
 ## SEMAINE 3 — Planning Amélie
 
-**Objectif :** Amélie peut planifier les interventions de son équipe depuis un vrai calendrier.
+**Objectif :** Amélie planifie les interventions depuis un vrai calendrier.
 
 ### S3-T1 — Vue planning bureau [A] [L]
 
 ```
-Objectif métier : Amélie voit qui va où, quand. Douleur #1 des entreprises 1M€.
-Backend : operations.interventions existe (1 row), 84 Ko de code frontend existe
+Objectif métier : "Qui va où, quand ?" — douleur #1 des entreprises 1M€.
+Backend : operations.interventions existe, 84 Ko de code frontend existe
 Frontend : Lovable — Planning.tsx (stub 679 octets) → vraie vue calendrier
-           Composant semaine avec couleurs par type d'intervention
-Dépendances : InterventionCreate.tsx déjà existant (32 Ko)
-Effort : L (5-7 jours Lovable — c'est la feature la plus visible)
-Risque : Moyen — Planning.tsx à écrire, mais le modèle de données est prêt
+Effort : L (5-7 jours Lovable)
 
 SPEC LOVABLE :
-  Planning.tsx doit afficher :
-  - Vue semaine (lundi→dimanche)
-  - Colonnes par technicien (Yohan, Félicien, Luc...)
+  - Vue semaine lundi→dimanche
+  - Colonnes par technicien
   - Carte par intervention : client, adresse, type (couleur), durée
-  - Clic sur carte → InterventionDetail.tsx
+  - Clic → InterventionDetail.tsx
   - Bouton + → InterventionCreate.tsx
   - Navigation semaine précédente/suivante
-  Utiliser les données de operations.interventions
   NE PAS réécrire InterventionCreate ni InterventionDetail (déjà 84 Ko)
 
-TEST :
-  Créer 3 interventions pour Yohan cette semaine → apparaissent dans le planning
-  Cliquer → détail
-RÉVERSIBILITÉ : Planning.tsx peut être remis à stub sans affecter les données
+TEST : 3 interventions Yohan → planning, clic → détail
 ```
 
 ---
@@ -363,17 +331,13 @@ RÉVERSIBILITÉ : Planning.tsx peut être remis à stub sans affecter les donné
 ### S3-T2 — Branchement Intervention depuis devis signé [A] [M]
 
 ```
-Objectif métier : Signature du devis → installation planifiable immédiatement.
-Backend : Enrichir la RPC sign_quote pour créer automatiquement
-          1 intervention de type POSE liée au projet
-Frontend : Après signature → redirection vers Planning avec l'intervention pré-créée
-Dépendances : S3-T1, InterventionCreate.tsx (existant)
+Objectif métier : Signature → intervention POSE créée automatiquement.
+Backend : Enrichir sign_quote → crée 1 intervention POSE liée au projet
+Frontend : Redirection vers Planning après signature
+Dépendances : S3-T1
 Effort : M (2-3 jours)
-Risque : Faible — enrichissement RPC, pas de réécriture
 
-TEST :
-  Signer un devis → intervention POSE apparaît dans le planning
-  L'intervention est en statut PLANIFIEE avec le bon client et adresse
+TEST : Signer devis → intervention POSE en statut PLANIFIEE dans le planning
 ```
 
 ---
@@ -381,13 +345,9 @@ TEST :
 ### S3-T3 — analytic_code sur interventions [C] [S]
 
 ```
-Objectif métier : Comptable peut sortir le CA par activité sans ressaisie.
-Backend : ALTER TABLE operations.interventions ADD COLUMN analytic_code text
-          DEFAULT dérivé du type (POSE=INSTALLATION, RAMONAGE=RAMONAGE, etc.)
-Frontend : Aucun (invisible en V1)
-Dépendances : Aucune
+Objectif métier : Export comptable par activité sans ressaisie.
+Backend : GENERATED COLUMN analytic_code dérivé du type
 Effort : S (30 minutes)
-Risque : Zéro — colonne nullable
 
 SQL :
   ALTER TABLE operations.interventions
@@ -410,353 +370,264 @@ SQL :
 
 ```
 Objectif métier : Yohan ouvre sa journée sur son téléphone.
-Backend : Aucun
-Frontend : InterventionDetail.tsx (52 Ko, existant) — optimisation mobile
-           Mise en page responsive pour écran 390px
-           Données chargées via React Query (offline-compatible par architecture)
-Dépendances : InterventionDetail.tsx (52 Ko, existant)
+Frontend : InterventionDetail.tsx → responsive 390px + React Query hooks
 Effort : M (2-3 jours)
-Risque : Faible — pas de Service Worker, juste responsive + React Query
 
-SCOPE V1 (online, offline-compatible par conception) :
-  InterventionDetail.tsx → responsive mobile
-  Client + adresse + notes briefing + type → lisibles sur téléphone
-  Photos + compte-rendu → formulaire mobile optimisé
-  Données via React Query hooks → prêt pour cache offline V2
+RÈGLE ARCHITECTURE MOBILE (voir RÉSERVE OFFLINE) :
+  Données via React Query uniquement — pas de fetch() inline
+  → Prêt pour cache offline V2 sans réécriture
 
-OFFLINE V2 (hors scope maintenant) :
-  Service Worker + background sync + IndexedDB
-  Déclencheur : retour terrain pilotes
+TEST : InterventionDetail lisible sur iPhone/Android + photos uploadables
+```
 
-RÈGLE D'ARCHITECTURE MOBILE :
-  Tout hook de données = React Query (queryClient.prefetchQuery possible en V2)
-  Pas de fetch() inline dans les composants
-  Pas de localStorage pour les données métier
+---
+
+**Livrable semaine 3 :** Amélie a un vrai planning. Yohan utilise ses fiches sur mobile.
+
+---
+
+## SEMAINE 4 — Commande fournisseur + Parc installé + SAV
+
+**Objectif :** Le cycle commercial est complet. Quand Michel appelle, Amélie a l'historique.
+
+> Note : Commande fournisseur remontée en S4 (vs S5 précédemment).
+> Le cycle artisan est : chiffre → signe → commande → pose → facture.
+> La commande est plus critique que la facture pour le quotidien terrain.
+
+### S4-T1 — Bon de commande fournisseur depuis devis signé [B] [L]
+
+```
+Objectif métier : Amélie passe la commande Poujoulat en 2 clics après signature.
+Backend : billing.purchase_orders + purchase_order_lines (tables prêtes, 0 row)
+          RPC create_purchase_orders_from_quote
+          RÈGLE : supplier_ref_snapshot (INVARIANT 4) — jamais supplier_ref live
+Frontend : Page PurchaseOrders.tsx (à créer)
+           Bouton "Créer commandes fournisseurs" sur QuoteDetail signé
+Effort : L (5-7 jours)
 
 TEST :
-  Ouvrir InterventionDetail sur mobile (iPhone/Android)
-  → Interface lisible et utilisable sur écran 390px
-  → Photos uploadables depuis le téléphone
+  Devis avec 5 articles Poujoulat + 2 KEMP
+  → 2 BCs : 1 Poujoulat, 1 KEMP
+  → PDF avec refs + quantités
 ```
 
 ---
 
-**Livrable semaine 3 :** Amélie a un vrai planning. Yohan peut utiliser ses interventions sur mobile (connexion requise, architecture prête pour offline V2).
-
----
-
-## SEMAINE 4 — Parc installé et SAV
-
-**Objectif :** Quand Michel appelle, Amélie voit le poêle + les garanties en 3 secondes.
-
-### S4-T1 — Enregistrement appareil + garanties à la clôture [A] [M]
+### S4-T2 — Garanties à la clôture chantier [A] [M]
 
 ```
-Objectif métier : Chaque installation a un appareil + 2 dates de garantie.
-Backend : core.installations table prête (3 rows)
-          Ajouter colonnes si absentes :
-          warranty_manufacturer_end, warranty_provider_end,
-          serial_number, installed_on, diameter_installed_mm
-Frontend : InstallationDetail.tsx (26 Ko, existant) — formulaire de clôture chantier
-           Interface mobile responsive (offline-compatible par architecture)
-           Accessible depuis l'intervention POSE terminée
-Dépendances : S3-T2 (intervention POSE créée)
+Objectif métier : warranty_manufacturer_end + warranty_provider_end sur chaque installation.
+Backend : Colonnes à ajouter sur core.installations si absentes
+Frontend : InstallationDetail.tsx — formulaire clôture, React Query, mobile responsive
 Effort : M (2-3 jours)
-Risque : Faible — InstallationDetail.tsx existe, migration légère
 
-RÈGLE MOBILE (voir RÉSERVE OFFLINE) :
-  Données via React Query, pas de fetch inline
-  Formulaire clôture utilisable sur mobile online
-  Offline V2 : cache + sync ajoutés sans réécriture
-
-TEST :
-  Clôturer une installation → saisir N° série + garantie 24 mois
-  → warranty_manufacturer_end = installed_on + 24 mois calculé auto
-RÉVERSIBILITÉ : Colonnes nullables, zéro impact si vide
+TEST : Clôturer → N° série + garantie 24 mois → date fin calculée auto
 ```
 
 ---
 
-### S4-T2 — Badge garantie dans fiche installation [A] [S]
+### S4-T3 — Badge garantie + SAV en 2 clics [A] [S+M]
 
 ```
-Objectif métier : Amélie voit en 2 secondes si la panne est sous garantie.
-Backend : Aucun (colonnes déjà là après S4-T1)
-Frontend : InstallationDetail.tsx — ajouter badge dynamique :
-           🟢 "Sous garantie fabricant jusqu'au JJ/MM/AAAA"
-           🔴 "Hors garantie depuis JJ/MM/AAAA"
-Dépendances : S4-T1
-Effort : S (2-4h Lovable)
-Risque : Zéro — affichage pur
+Objectif métier : Amélie voit la garantie en 2 secondes. SAV créé sans ressaisie.
+Frontend :
+  InstallationDetail → badge 🟢/🔴 SOUS GARANTIE/HORS GARANTIE
+  InstallationDetail → bouton "Créer devis SAV" → ServiceRequestCreate pré-rempli
+Effort : S badge + M branchement SAV
 
 TEST :
-  Installation avec warranty_manufacturer_end demain → badge vert
-  Installation avec warranty_manufacturer_end hier → badge rouge
+  warranty_end = demain → badge vert
+  warranty_end = hier → badge rouge
+  Clic SAV → formulaire pré-rempli client + appareil
 ```
 
 ---
 
-### S4-T3 — Devis SAV pré-rempli depuis fiche installation [A] [M]
+### S4-T4 — Catalogue privé pièces détachées [A] [S]
 
 ```
-Objectif métier : SAV créé en 2 clics. 52 Ko de code ServiceRequest existe déjà.
-Backend : ServiceRequestCreate.tsx existe (32 Ko)
-          Ajouter paramètre installation_id au flow de création
-Frontend : InstallationDetail.tsx → bouton "Créer devis SAV"
-           → ServiceRequestCreate pré-rempli (client, adresse, appareil, type=SAV)
-Dépendances : S4-T1, ServiceRequestCreate.tsx (existant)
-Effort : M (2-3 jours)
-Risque : Faible — branchement entre pages existantes
-
-TEST :
-  Fiche installation → clic "Créer devis SAV" → formulaire pré-rempli
-  Ajouter pièce (ligne libre) → devis envoyable
-```
-
----
-
-### S4-T4 — Catalogue privé pièces détachées (TENANT_PRIVATE) [A] [S]
-
-```
-Objectif métier : Yohan crée une fois "Joint porte MCZ Ego 18€", réutilisable.
-Backend : catalog.catalog_items supporte déjà supplier_name='TENANT_PRIVATE'
-Frontend : UI dans Catalog.tsx — section "Mes articles" avec formulaire de création
+Objectif métier : Yohan crée une fois "Joint MCZ Ego 18€", réutilisable partout.
+Backend : catalog_items supporte supplier_name='TENANT_PRIVATE' — déjà là
+Frontend : UI "Mes articles" dans Catalog.tsx
 Dépendances : S2-T1 (catalog_domain)
 Effort : S (1-2h Lovable)
-Risque : Faible — pas de nouveau modèle, juste UI création
 
-TEST :
-  Créer "Joint porte MCZ Ego" → 18€ → PIECE_DETACHEE
-  Ouvrir CatalogPopover → onglet "SAV/Pièces" → article visible
+TEST : Créer pièce → PIECE_DETACHEE → visible dans onglet SAV/Pièces
 ```
 
 ---
 
-### S4-T5 — Prochain ramonage calculé automatiquement [A] [S]
+### S4-T5 — Next sweep date auto + génération facture [A+B] [S+M]
 
 ```
-Objectif métier : Luc voit automatiquement les clients à ramoner.
-Backend : core.installations — vérifier/ajouter next_sweep_date
-          TRIGGER : next_sweep_date = installed_on + 12 mois
-          Mise à jour après chaque ramonage
-Frontend : Onglet dans Installations.tsx : "Ramonages à planifier"
-Dépendances : S4-T1
-Effort : S (2-4h)
-Risque : Faible
+S4-T5a — Ramonage :
+  next_sweep_date = installed_on + 12 mois (TRIGGER)
+  Onglet "Ramonages à planifier" dans Installations.tsx
+  Effort : S
 
-TEST :
-  Installation du 01/02/2025 → next_sweep_date = 01/02/2026
-  Enregistrer ramonage 01/11/2025 → next_sweep_date recalculé = 01/11/2026
+S4-T5b — Facture depuis devis signé :
+  billing.invoices + RPC create_invoice_from_quote
+  INVOICE_TYPE V1 : ACOMPTE (signature) + SOLDE (clôture)
+  Bouton "Générer facture" sur QuoteDetail signé
+  Effort : M (2-3 jours)
 ```
 
 ---
 
-**Livrable semaine 4 :** Amélie voit les garanties. Quand Michel appelle, devis SAV créé en 2 clics. Luc voit les ramonages à planifier.
+**Livrable semaine 4 :** Devis → commande fournisseur → facture. Garanties visibles. SAV en 2 clics.
 
 ---
 
-## SEMAINE 5 — Facturation et commande fournisseur
+## SEMAINE 5 — Export comptable + 5 pilotes
 
-**Objectif :** Le cycle devis → facture → commande fournisseur est fermé.
+**Objectif :** Sabrina peut exporter. 5 pilotes actifs.
 
-### S5-T1 — Génération facture depuis devis signé [A] [M]
-
-```
-Objectif métier : Sabrina convertit un devis signé en facture en 1 clic.
-Backend : billing.invoices existe (3 rows)
-          billing.invoice_lines existe (3 rows)
-          RPC create_invoice_from_quote (à créer)
-Frontend : InvoiceDetail.tsx (11 Ko, existant) à enrichir
-           Bouton "Générer facture" sur QuoteDetail (devis signé)
-Dépendances : S1-T5 (numérotation)
-Effort : M (2-3 jours)
-Risque : Moyen — nouvelle RPC, mais modèle de données prêt
-
-INVOICE_TYPE V1 :
-  ACOMPTE = facture d'acompte à la signature
-  SOLDE = facture de solde à la clôture
-  (SITUATION et RETENUE reportées en V2)
-
-TEST :
-  Signer devis → bouton "Facture acompte" → F-2026-0001 générée
-  Clôturer installation → bouton "Facture solde" → F-2026-0002
-```
-
----
-
-### S5-T2 — accounting_code + analytic_code sur quote_lines/invoice_lines [C] [S]
+### S5-T1 — accounting_code + analytic_code [C] [S]
 
 ```
-Objectif métier : Export comptable sans ressaisie. Prévu RÈGLE D.
 Backend :
   ALTER TABLE billing.quote_lines ADD COLUMN accounting_code text;
   ALTER TABLE billing.invoice_lines ADD COLUMN accounting_code text;
-  DEFAULT dérivé de catalog_domain :
-    FUMISTERIE → '707'
-    APPAREIL → '707'
-    PRESTATION → '706'
-    PIECE_DETACHEE → '607'
-Frontend : Aucun (V1 invisible)
-Dépendances : S2-T1 (catalog_domain doit être rempli)
+  DEFAULT : FUMISTERIE→'707', APPAREIL→'707', PRESTATION→'706', PIECE_DETACHEE→'607'
+Dépendances : S2-T1 (catalog_domain)
 Effort : S (30 minutes)
-Risque : Faible — colonnes nullables
 ```
 
 ---
 
-### S5-T3 — Bon de commande fournisseur (génération depuis devis) [B] [L]
+### S5-T2 — Export CSV comptable basique [B] [M]
 
 ```
-Objectif métier : Après signature, Amélie passe la commande Poujoulat en 2 clics.
-Backend : billing.purchase_orders et purchase_order_lines existent (0 row)
-          RPC create_purchase_orders_from_quote
-          Règle : utiliser supplier_ref_snapshot, regrouper par supplier_name_snapshot
-Frontend : Page PurchaseOrders.tsx (à créer)
-           Bouton "Créer commandes fournisseurs" sur QuoteDetail signé
-Dépendances : S1-T1 (articles Poujoulat), S5-T1 (facture)
-Effort : L (5-7 jours)
-Risque : Moyen — RPC à écrire, page à créer, mais tables prêtes
-
-SUPPLIER_REF_SNAPSHOT RÈGLE :
-  Le BC utilise TOUJOURS supplier_ref_snapshot de quote_lines
-  JAMAIS supplier_ref de catalog_items (peut avoir changé)
-
-TEST :
-  Devis avec 5 articles Poujoulat + 2 articles KEMP
-  → 2 BCs générés : 1 Poujoulat, 1 KEMP
-  → export PDF avec refs + quantités
-```
-
----
-
-### S5-T4 — Export comptable CSV basique (Pennylane/Sage) [B] [M]
-
-```
-Objectif métier : Sabrina exporte les factures sans ressaisie.
 Backend : Edge Function export-invoices-csv
-          Colonnes : N° facture, date, client, HT, TVA, TTC, accounting_code, analytic_code
 Frontend : Bouton "Export comptable" dans Invoices.tsx
-Dépendances : S5-T1, S5-T2
+Colonnes : N° facture, date, client, HT, TVA, TTC, accounting_code, analytic_code
+Compatible : import manuel Pennylane / Sage
 Effort : M (2-3 jours)
-Risque : Faible — Edge Function isolée, lecture seule
 
-FORMAT CSV :
-  Compatible import manuel Pennylane
-  Statut export_status = 'EXPORTED' après téléchargement
-
-TEST :
-  3 factures → export CSV → ouvrir dans Excel → colonnes correctes
+TEST : 3 factures → CSV → colonnes correctes dans Excel
 ```
 
 ---
 
-**Livrable semaine 5 :** Devis → facture → commande fournisseur → export comptable. Le cycle est fermé.
-
----
-
-## SEMAINE 6 — Onboarding 5 artisans pilotes
-
-**Objectif :** 5 artisans pilotes actifs. Pas de nouveau dev — correction terrain uniquement.
-
-### S6-T1 — Préparer l'onboarding de chaque pilote [B] [S]
+### S5-T3 — Onboarding 5 pilotes [B] [S×5]
 
 ```
-Objectif métier : Chaque pilote peut démarrer en moins de 2h.
-Pour chaque artisan pilote :
-  1. Créer son tenant Supabase (5 tenants)
-  2. Importer ses fournisseurs actifs (Poujoulat minimum)
+Pour chaque pilote :
+  1. Créer son tenant
+  2. Importer ses fournisseurs
   3. Configurer ses remises
-  4. Créer son premier ouvrage type (Raccordement granulés Ø80/130)
-  5. Lui faire créer son premier vrai devis client
+  4. Créer son premier ouvrage type
+  5. Créer son premier vrai devis client
 Effort : S par pilote (2h/artisan)
 ```
 
 ---
 
-### S6-T2 — Session terrain avec chaque pilote (2h) [B] [S]
+### S5-T4 — Sessions terrain 2h × 5 pilotes [B] [S×5]
 
 ```
-Objectif métier : Identifier les frictions réelles vs les frictions imaginées.
-Format :
-  30 min : créer un devis sur son vrai chantier en cours
-  30 min : planifier les 3 prochaines interventions
+Format par session :
+  30 min : vrai devis sur vrai chantier
+  30 min : planifier 3 interventions
   30 min : enregistrer une installation existante
-  30 min : debriefing — qu'est-ce qui manque ?
+  30 min : debriefing frictions
 
-CRITÈRES D'UN PILOTE ACTIF :
-  ✅ A créé au moins 1 devis réel envoyé à un client
-  ✅ A planifié au moins 1 intervention
-  ✅ Revient seul dans LIGNIA sans aide
+CRITÈRES PILOTE ACTIF :
+  ✅ 1 devis réel envoyé à un client
+  ✅ 1 intervention planifiée
+  ✅ Revient seul dans LIGNIA
 
 NOTE OFFLINE :
-  Si plusieurs pilotes mentionnent spontanément la douleur "zone blanche" →
-  déclenche l'implémentation offline V2 en priorité haute.
+  Si 2+ pilotes mentionnent "zone blanche" spontanément
+  → offline V2 passe en priorité haute
 ```
 
 ---
 
-### S6-T3 — Corrections terrain (budget 3 jours) [B] [M]
+## SEMAINE 6 — Corrections terrain + Tests E2E
+
+**Objectif :** Corrections des frictions réelles. Protection Lovable.
+
+### S6-T1 — Corrections terrain (budget 3 jours) [B] [M]
 
 ```
-Objectif métier : Corriger les 3 frictions les plus courantes identifiées en S6-T2.
-Backend/Frontend : À définir après S6-T2
-Règle : Aucune feature nouvelle. Seulement corrections UX et bugs.
-Effort : M (3 jours max)
+Règle : Aucune feature nouvelle. Corrections UX et bugs uniquement.
+À définir après les sessions terrain S5-T4.
 ```
 
 ---
 
-### S6-T4 — Tests E2E Playwright 5 flows critiques [C] [L]
+### S6-T2 — Tests E2E Playwright 5 flows critiques [C] [L]
 
 ```
-Objectif métier : Filet anti-régression Lovable. Sans ça, chaque session Lovable peut casser.
-Flows à couvrir :
+Flows :
   1. Créer devis → ajouter appareil + fumisterie → signer → PDF
-  2. Import fournisseur → vérifier COUNT + cost_price=NULL
+  2. Import fournisseur → COUNT + cost_price=NULL
   3. Créer intervention → apparaît dans planning
   4. Clôturer installation → garanties calculées
   5. Login multi-tenant → isolation RLS
 Effort : L (5-7 jours)
-Risque de NE PAS le faire : Très élevé — Lovable casse silencieusement
+Risque de NE PAS le faire : Lovable casse silencieusement
 ```
 
 ---
 
-**Livrable semaine 6 :** 5 artisans pilotes actifs. Tests E2E qui protègent le produit.
+## VERSIONS TARIFAIRES — DETTE V2 IDENTIFIÉE
+
+```
+Contexte : identifié par OpenAI comme angle mort important.
+
+Dans 6-12 mois, LIGNIA recevra :
+  Poujoulat 2027, Lorflex 2027, Joncoux 2027, Dinak 2027...
+
+La gestion de versions tarifaires (US-C04) est absente de la roadmap V1.
+À implémenter en V2, après validation des 5 pilotes.
+
+ÉPIC V2 — VERSIONS TARIFAIRES :
+  1. Comparer batch_id N vs N+1 (nouveaux, modifiés, supprimés)
+  2. Rapport diff : +8%, -3%, 127 articles disparus
+  3. Alerte si hausse > 15% sur article stratégique
+  4. GO/NO GO avant activation
+  5. Archivage articles disparus (is_active=false) au lieu de DELETE
+  6. Historique devis : "ce devis utilisait le tarif Poujoulat du 15/01/2026"
+
+DÉPENDANCES :
+  import_batch_id existe déjà sur catalog_items ✅
+  is_active existe déjà ✅
+  Reste à créer : catalog.import_runs (log des imports) + UI comparaison
+```
 
 ---
 
 ## TABLEAU RÉCAPITULATIF
 
-| Sem | Tâche | Cat | Effort | Valeur | Objectif pilotes |
-|---|---|---|---|---|---|
-| S1 | Import Poujoulat 16529 articles | C | S | 🔥🔥🔥 | Débloque devis fumisterie |
-| S1 | Remise Poujoulat 40% | C | S | 🔥🔥🔥 | Prix nets corrects |
-| S1 | CHECK cost_price IS NULL | C | S | 🔥 | Sécurité invariant |
-| S1 | Onglet Appareils CatalogPopover | A | M | 🔥🔥🔥 | Vente de poêles |
-| S1 | Numérotation documents | A | S | 🔥🔥 | Crédibilité client |
-| S1 | 5 vrais devis validation | B | S | 🔥🔥🔥 | Validation terrain |
-| S2 | catalog_domain migration | C | M | 🔥🔥 | Recherche propre |
-| S2 | Ouvrages / Kits | B | L | 🔥🔥🔥 | Argument vente #1 |
-| S2 | Relance auto devis | B | M | 🔥🔥 | Amélie ne perd plus |
-| S2 | Contacts multiples | B | M | 🔥🔥 | Réalité terrain |
-| S3 | Vue planning bureau | A | L | 🔥🔥🔥 | Douleur #1 entreprise |
-| S3 | Intervention depuis devis signé | A | M | 🔥🔥 | Flow complet |
-| S3 | analytic_code interventions | C | S | 🔥 | Comptabilité V2 |
-| S3 | Fiche mobile (online, offline-compatible) | A | M | 🔥🔥 | Yohan terrain |
-| S4 | Garanties à la clôture | A | M | 🔥🔥🔥 | SAV intelligent |
-| S4 | Badge garantie | A | S | 🔥🔥🔥 | Amélie en SAV |
-| S4 | Devis SAV depuis installation | A | M | 🔥🔥🔥 | SAV en 2 clics |
-| S4 | Catalogue privé TENANT_PRIVATE | A | S | 🔥🔥 | Pièces récurrentes |
-| S4 | Next sweep date auto | A | S | 🔥🔥 | Luc ramonage |
-| S5 | Facture depuis devis signé | A | M | 🔥🔥 | Cycle fermé |
-| S5 | accounting_code / analytic_code | C | S | 🔥 | Export comptable V2 |
-| S5 | Bon de commande fournisseur | B | L | 🔥🔥 | Commande Poujoulat |
-| S5 | Export CSV comptable | B | M | 🔥🔥 | Sabrina sans ressaisie |
-| S6 | Onboarding 5 pilotes | B | S×5 | 🔥🔥🔥 | OBJECTIF FINAL |
-| S6 | Sessions terrain 2h chacun | B | S×5 | 🔥🔥🔥 | Validation réelle |
-| S6 | Corrections terrain | B | M | 🔥🔥🔥 | Frictions réelles |
-| S6 | Tests E2E Playwright | C | L | 🔥🔥 | Protection Lovable |
+| Sem | Tâche | Cat | Effort | Valeur |
+|---|---|---|---|---|
+| S1 | ⛔ Import Poujoulat 16529 | C | S | 🔥🔥🔥 |
+| S1 | Remise Poujoulat 40% | C | S | 🔥🔥🔥 |
+| S1 | CHECK cost_price IS NULL | C | S | 🔥 |
+| S1 | Onglet Appareils CatalogPopover | A | M | 🔥🔥🔥 |
+| S1 | **Ouvrages / Kits** ← remonté | B | L | 🔥🔥🔥 |
+| S1 | Numérotation documents | A | S | 🔥🔥 |
+| S1 | 5 vrais devis validation | B | S | 🔥🔥🔥 |
+| S2 | catalog_domain migration | C | M | 🔥🔥 |
+| S2 | Relance auto devis | B | M | 🔥🔥 |
+| S2 | Contacts multiples | B | M | 🔥🔥 |
+| S3 | Vue planning bureau | A | L | 🔥🔥🔥 |
+| S3 | Intervention depuis devis signé | A | M | 🔥🔥 |
+| S3 | analytic_code interventions | C | S | 🔥 |
+| S3 | Fiche mobile (online, offline-compatible) | A | M | 🔥🔥 |
+| S4 | **Bon de commande** ← remonté | B | L | 🔥🔥🔥 |
+| S4 | Garanties à la clôture | A | M | 🔥🔥🔥 |
+| S4 | Badge garantie + SAV 2 clics | A | S+M | 🔥🔥🔥 |
+| S4 | Catalogue privé TENANT_PRIVATE | A | S | 🔥🔥 |
+| S4 | Next sweep date + Facture | A+B | S+M | 🔥🔥 |
+| S5 | accounting_code / analytic_code | C | S | 🔥 |
+| S5 | Export CSV comptable | B | M | 🔥🔥 |
+| S5 | Onboarding 5 pilotes | B | S×5 | 🔥🔥🔥 |
+| S5 | Sessions terrain | B | S×5 | 🔥🔥🔥 |
+| S6 | Corrections terrain | B | M | 🔥🔥🔥 |
+| S6 | Tests E2E Playwright | C | L | 🔥🔥 |
 
 ---
 
@@ -764,23 +635,21 @@ Risque de NE PAS le faire : Très élevé — Lovable casse silencieusement
 
 ```
 V2 — Après validation 5 pilotes :
-  Offline complet (Service Worker + IndexedDB + background sync)
-  Remises par famille (supplier_family_code)
-  Portail client signature électronique
+  Versions tarifaires fournisseurs (Epic complète ci-dessus)
+  Offline complet (Service Worker + IndexedDB)
+  Remises par famille
+  Portail client signature
   Timeline installation complète
   Site/Location persistant
   Tags métier
-  Comparaison versions tarifaires
   Habilitations techniciens
 
 V3 :
-  Export FEC / Facture-X complet
-  Catalogue SAV fabricants (MCZ...)
+  Export FEC / Facture-X
+  Catalogue SAV fabricants
   Assistant vocal
   Réseau / franchise
-  Prédiction fin de vie appareils
-  IA interactions
-  DTU rules
+  Prédiction fin de vie
 ```
 
 ---
@@ -791,14 +660,13 @@ V3 :
 Avant de demander à Claude Exec ou Lovable de créer quelque chose :
   1. Vérifier Section 2 de l'audit — est-ce déjà codé ?
   2. Si oui → brancher (A) avant de développer (B)
-  3. Chaque session Lovable = 1 feature, 1 test, 1 commit
-  4. Jamais 2 features en parallèle
-  5. Après chaque semaine → 1 vraie session terrain (même 30 minutes)
+  3. Chaque session Claude Exec / Lovable = 1 tâche, 1 test, 1 commit
+  4. Jamais 2 tâches en parallèle
+  5. Après chaque semaine → 1 session terrain (même 30 minutes)
      Le feedback terrain > 10 heures de spécification
 
 RÈGLE MOBILE (RÉSERVE OFFLINE) :
   Tout hook de données sur écran terrain = React Query
   Pas de fetch() inline dans les composants mobiles
-  Pas de localStorage pour les données métier
-  → Ces patterns permettent d'injecter le cache offline V2 sans réécriture
+  → Cache offline V2 injectable sans réécriture
 ```

@@ -14,7 +14,15 @@ Exemple:
 
 Pré-requis:
   pip install supabase python-dotenv
-  Fichier .env avec VITE_SUPABASE_URL et VITE_SUPABASE_PUBLISHABLE_KEY
+  Fichier .env avec :
+    VITE_SUPABASE_URL
+    SUPABASE_SERVICE_KEY   ← clé service_role (jamais la clé anon/publishable)
+
+IMPORTANT — Sécurité :
+  Ce script utilise la clé service_role pour bypass l'auth JWT.
+  C'est un outil d'administration batch interne, pas une opération frontend.
+  Ne jamais committer SUPABASE_SERVICE_KEY dans Git.
+  Ne jamais exposer cette clé dans des logs ou des écrans partagés.
 """
 
 import json
@@ -36,6 +44,7 @@ except ImportError:
 
 
 CHUNK_SIZE = 200
+
 SAFE_FIELDS = {
     "ean",
     "supplier_ref",
@@ -91,12 +100,20 @@ def info(msg):
 def load_env():
     load_dotenv()
     url = os.getenv("VITE_SUPABASE_URL")
-    key = os.getenv("VITE_SUPABASE_PUBLISHABLE_KEY")
+    # P0.1 — utiliser service_role, pas la clé anon/publishable
+    # La RPC import_supplier_items n'accorde pas EXECUTE au rôle anon.
+    # GRANT EXECUTE existe pour : authenticated, service_role, postgres.
+    # Un script batch administratif doit utiliser service_role.
+    key = os.getenv("SUPABASE_SERVICE_KEY")
+
     if not url or not url.startswith("https://"):
         err("VITE_SUPABASE_URL manquant ou invalide dans .env")
         sys.exit(1)
     if not key:
-        err("VITE_SUPABASE_PUBLISHABLE_KEY manquant dans .env")
+        err("SUPABASE_SERVICE_KEY manquant dans .env")
+        err("Ce script nécessite la clé service_role (pas la clé anon).")
+        err("Ajouter SUPABASE_SERVICE_KEY=eyJ... dans le fichier .env")
+        err("Trouver cette clé dans : Supabase Dashboard > Project Settings > API > service_role key")
         sys.exit(1)
     return url, key
 
@@ -131,7 +148,9 @@ def check_forbidden_fields(items):
         for field in FORBIDDEN_FIELDS:
             val = item.get(field)
             if val is not None:
-                violations.append(f"  Article {i+1} (ref={item.get('supplier_ref','?')}) : {field}={val!r}")
+                violations.append(
+                    f"  Article {i+1} (ref={item.get('supplier_ref','?')}) : {field}={val!r}"
+                )
     if violations:
         err("STOP — champs sensibles détectés (cost_price ou équivalent) :")
         for v in violations[:10]:
@@ -142,7 +161,7 @@ def check_forbidden_fields(items):
 
 
 def strip_unknown_fields(item):
-    """Ne conserve que les champs connus. Retire les champs hors liste blanche."""
+    """Ne conserve que les champs de la liste blanche."""
     return {k: v for k, v in item.items() if k in SAFE_FIELDS}
 
 
@@ -152,7 +171,6 @@ def chunks(lst, size):
 
 
 def extract_batch_id(items):
-    """Extrait le batch_id du premier article."""
     for item in items:
         bid = item.get("import_batch_id")
         if bid:
@@ -180,7 +198,7 @@ def run_import(supabase, tenant_id, supplier_name, items):
                     "p_tenant_id": tenant_id,
                     "p_supplier_name": supplier_name,
                     "p_items": safe_chunk,
-                    "p_margin_pct": None,
+                    "p_margin_pct": 0,  # DEFAULT 0, ne pas envoyer NULL
                 }
             ).execute()
         except Exception as e:
@@ -203,70 +221,42 @@ def run_import(supabase, tenant_id, supplier_name, items):
 
 
 def verify_import(supabase, supplier_name):
+    """
+    Vérification post-import via le schéma catalog.
+    P0.2 — execute_sql n'existe pas dans cette base.
+    On interroge directement catalog.catalog_items via postgrest schema switching.
+    """
     info("\n[VÉRIFICATION] Comptage en base...")
 
     try:
-        result = supabase.rpc(
-            "execute_sql",
-            {"query": f"""
-                SELECT
-                  COUNT(*) AS total,
-                  COUNT(cost_price) AS cost_price_non_null,
-                  MIN(unit_price_ht) AS prix_min,
-                  MAX(unit_price_ht) AS prix_max
-                FROM catalog.catalog_items
-                WHERE supplier_name = '{supplier_name}'
-            """}
-        ).execute()
-    except Exception:
-        # La RPC execute_sql peut ne pas exister — fallback via table directe
-        result = None
+        # supabase-py >= 2.0 : .schema("catalog") pour cibler le bon schéma
+        count_result = (
+            supabase.schema("catalog")
+            .table("catalog_items")
+            .select("id", count="exact")
+            .eq("supplier_name", supplier_name)
+            .execute()
+        )
+        total = count_result.count if hasattr(count_result, "count") and count_result.count is not None else None
 
-    if result is None or (hasattr(result, 'error') and result.error):
-        # Fallback : requête via la table
-        try:
-            count_result = (
-                supabase.table("catalog_items")
-                .select("id", count="exact")
-                .eq("supplier_name", supplier_name)
-                .execute()
-            )
-            total = count_result.count if hasattr(count_result, 'count') else "?"
+        if total is not None:
             info(f"  Total {supplier_name} en base : {total}")
-            info("  (vérification MIN/MAX prix non disponible via cette méthode)")
-            info("  Vérifier manuellement dans Supabase :")
+            info("")
+            info("  Pour MIN/MAX prix, lancer dans Supabase :")
             info(f"  SELECT COUNT(*), MIN(unit_price_ht), MAX(unit_price_ht)")
             info(f"  FROM catalog.catalog_items WHERE supplier_name = '{supplier_name}';")
             return total
-        except Exception as e:
-            err(f"Impossible de vérifier le comptage : {e}")
-            info("  Vérifier manuellement dans Supabase :")
-            info(f"  SELECT COUNT(*) FROM catalog.catalog_items WHERE supplier_name = '{supplier_name}';")
-            return None
-
-    data = result.data
-    if data and len(data) > 0:
-        row = data[0]
-        total = row.get("total", "?")
-        cost_price_non_null = int(row.get("cost_price_non_null", 0) or 0)
-        prix_min = row.get("prix_min", "?")
-        prix_max = row.get("prix_max", "?")
-
-        info(f"  Total articles {supplier_name} : {total}")
-        info(f"  cost_price non null        : {cost_price_non_null}  (doit être 0)")
-        info(f"  Prix min                   : {prix_min}€")
-        info(f"  Prix max                   : {prix_max}€")
-
-        if cost_price_non_null > 0:
-            err(f"ALERTE — {cost_price_non_null} articles ont un cost_price non null !")
-            err("Cela ne devrait pas être possible avec la contrainte CHECK.")
-            err("Vérifier immédiatement.")
         else:
-            info("  ✅ cost_price = NULL sur 100% des articles")
+            raise ValueError("count est None")
 
-        return total
-    else:
-        info("  (résultat de vérification indisponible)")
+    except Exception as e:
+        # Fallback texte : guider l'opérateur
+        info(f"  (comptage automatique indisponible : {e})")
+        info("")
+        info("  Vérifier manuellement dans Supabase Dashboard > SQL Editor :")
+        info(f"  SELECT COUNT(*), MIN(unit_price_ht), MAX(unit_price_ht)")
+        info(f"  FROM catalog.catalog_items")
+        info(f"  WHERE supplier_name = '{supplier_name}';")
         return None
 
 
@@ -281,7 +271,7 @@ def main():
 
     json_path, supplier_name, tenant_id = args
 
-    # 1. Charger l'env
+    # 1. Charger l'env (service_role requis)
     url, key = load_env()
 
     # 2. Charger le JSON
@@ -294,14 +284,15 @@ def main():
     check_forbidden_fields(items)
     info("  ✅ Aucun champ sensible détecté.")
 
-    # 4. Afficher le batch_id prévu
+    # 4. Afficher le batch_id
     batch_id = extract_batch_id(items)
     if batch_id:
         info(f"  batch_id : {batch_id}")
-        info(f"  (rollback possible : DELETE FROM catalog.catalog_items WHERE import_batch_id = '{batch_id}';)")
+        info(f"  Rollback si nécessaire :")
+        info(f"    DELETE FROM catalog.catalog_items WHERE import_batch_id = '{batch_id}';")
 
-    # 5. Connexion Supabase
-    info("[CONNEXION] Supabase...")
+    # 5. Connexion Supabase (service_role)
+    info("[CONNEXION] Supabase (service_role)...")
     try:
         supabase = create_client(url, key)
         info("  ✅ Connecté.")
@@ -309,7 +300,7 @@ def main():
         err(f"Impossible de se connecter à Supabase : {e}")
         sys.exit(1)
 
-    # 6. Import
+    # 6. Import par chunks
     run_import(supabase, tenant_id, supplier_name, items)
 
     # 7. Vérification post-import
@@ -324,7 +315,7 @@ def main():
     info(f"  Articles en base      : {total if total is not None else '(vérifier manuellement)'}")
     if batch_id:
         info(f"  batch_id              : {batch_id}")
-        info(f"  Rollback si nécessaire :")
+        info(f"  Rollback :")
         info(f"    DELETE FROM catalog.catalog_items")
         info(f"    WHERE import_batch_id = '{batch_id}';")
     info("═" * 50)
@@ -333,7 +324,7 @@ def main():
     if total is not None and isinstance(total, int):
         if total < len(items) * 0.95:
             err(f"ALERTE — Seulement {total} articles en base pour {len(items)} dans le JSON.")
-            err("L'import semble incomplet. Vérifier les logs RPC et relancer.")
+            err("L'import semble incomplet. Relancer (idempotent).")
             sys.exit(1)
         else:
             info("✅ Import terminé avec succès.")

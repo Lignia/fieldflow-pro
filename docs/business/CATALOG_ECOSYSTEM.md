@@ -42,6 +42,7 @@ Ces rôles ne doivent jamais être confondus.
 | Référence fabricant | Référence officielle du fabricant |
 | Référence fournisseur | Référence utilisée pour commander chez ce fournisseur |
 | Canal d'approvisionnement | Voie par laquelle l'artisan achète : direct, distributeur spécialisé, réseau, généraliste |
+| Gamme | Ensemble cohérent de produits d'un même fabricant partageant une technologie ou un usage (ex : DEKO BOIS, FLEX, THERMINOX, ORION, APOLLO) |
 
 > Un même produit logique peut avoir une référence fabricant différente
 > de la référence fournisseur. LIGNIA gère les deux niveaux.
@@ -100,6 +101,13 @@ Artisan installateur
 ```
 Le même appareil peut avoir une référence fabricant ET une référence importateur.
 
+> À noter : l'éligibilité aux aides MaPrimeRénov' dépend de deux conditions
+> distinctes : l'appareil doit figurer dans la base ADEME,
+> ET l'artisan installateur doit être certifié RGE.
+> La certification RGE est une caractéristique de l'artisan, pas du fabricant.
+> LIGNIA doit pouvoir relier ces deux conditions pour générer
+> les documents nécessaires aux dossiers d'aide.
+
 ---
 
 ## Réseaux et franchises bois énergie
@@ -120,6 +128,11 @@ Ils ne sont ni fabricants au sens strict, ni distributeurs classiques.
 
 > Les membres d'un réseau peuvent bénéficier de conditions commerciales spécifiques.
 > Le mode de gestion de ces conditions dans LIGNIA sera défini ultérieurement.
+
+> Un artisan peut être simultanément membre d'un réseau
+> et acheter en direct auprès d'autres fabricants ou distributeurs.
+> L'appartenance à un réseau n'est jamais exclusive dans LIGNIA.
+> Exemple : un artisan Jøtul Partner achète aussi du Joncoux chez Lorflex.
 
 ---
 

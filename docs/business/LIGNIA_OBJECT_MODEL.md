@@ -130,6 +130,10 @@ Le parc installé est la vue métier qui regroupe pour chaque artisan :
 > Chaque installation clôturée alimente le parc installé
 > et déclenche automatiquement le cycle de récurrence.
 
+> Le parc installé est aussi la source des opportunités commerciales proactives :
+> échéances dépassées, appareils vieillissants, garanties expirées.
+> C'est lui qui transforme LIGNIA d'un outil de vente en outil de fidélisation.
+
 ### Installation
 
 | | |
@@ -162,6 +166,10 @@ Source principale : base ADEME mensuelle (appareils éligibles MaPrimeRénov').
 
 Données clés : fabricant, modèle, puissance (kW), label Flamme Verte,
 diamètre sortie fumée, type (étanche / non étanche).
+
+> La base ADEME constitue la source de référence officielle des appareils
+> éligibles aux dispositifs d'aide (MaPrimeRénov', Flamme Verte).
+> Elle est importée mensuellement dans LIGNIA via le pipeline catalogue.
 
 ### Intervention
 
@@ -304,6 +312,12 @@ Ils sont toujours recalculés à l'insertion selon les remises en vigueur.
 Les ouvrages sont partagés dans le tenant et créés depuis les lignes
 d'un devis existant.
 
+Les ouvrages constituent le principal accélérateur de chiffrage de LIGNIA.
+Ils permettent de transformer le savoir-faire métier d'un artisan
+en bibliothèque réutilisable partagée dans son entreprise.
+Un ouvrage bien configuré peut faire passer la création d'un devis
+de 20 minutes à 2 minutes.
+
 ### Devis
 
 | | |
@@ -327,6 +341,10 @@ Commande fournisseur générée depuis un devis signé.
 Regroupement automatique par fournisseur.
 Utilise toujours la référence fournisseur figée dans le snapshot du devis.
 
+Vision V2 : à la réception de la facture fournisseur, Amélie pourra lier
+le numéro de facture externe au bon de commande.
+Cela permettra la réconciliation comptable sans ressaisie.
+
 ### Facture
 
 | | |
@@ -336,6 +354,13 @@ Utilise toujours la référence fournisseur figée dans le snapshot du devis.
 
 Types : Acompte (à la signature), Situation (à l'avancement),
 Solde (à la clôture), Avoir, Retenue de garantie BTP.
+
+Compatibilité comptable :
+- Export compatible avec les principaux logiciels du marché
+  (exemples : Pennylane, Sage, EBP)
+- Format Facture-X (norme française e-facture) — V3
+- Chaque ligne de facture porte un code comptable (706/707/607)
+  et un axe analytique (INSTALLATION/ENTRETIEN/SAV/RAMONAGE)
 
 ### Note de calcul simplifiée
 
@@ -383,6 +408,10 @@ Valeurs possibles :
 Objectif : préparer les futurs workflows IA et devis vocal,
 et permettre l'audit de la source de chaque ligne.
 
+> Le canal VOIX doit permettre à terme la création d'un devis sans clavier.
+> C'est une vision stratégique forte de LIGNIA : un artisan sur chantier
+> dicte ses lignes de devis à voix haute, sans toucher à l'écran.
+
 ---
 
 ## Niveau 4 — Écosystème fournisseurs
@@ -429,5 +458,6 @@ Parc installé
   ↓ Cycle récurrent
 Interventions (Ramonage / Entretien / SAV)
   ↓
-Factures → Export comptable
+Factures → Export comptable (Pennylane / Sage / EBP)
+         → Facture-X V3
 ```

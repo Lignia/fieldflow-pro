@@ -189,6 +189,12 @@ Documents générés : Compte-rendu d'entretien.
 Abonnement annuel couvrant ramonage + entretien.
 Génère automatiquement les interventions récurrentes.
 
+**Aides et obligations réglementaires**
+Le ramonage est une obligation légale annuelle (condition des assurances habitation).
+L'entretien annuel des poêles granulés est recommandé par les fabricants
+pour maintenir la garantie appareil.
+LIGNIA génère les certificats nécessaires à ces deux obligations.
+
 ---
 
 ## Cycle 3 — SAV
@@ -279,6 +285,13 @@ Signaux déclencheurs possibles :
 > au cycle commercial (Cycle 1).
 > C'est lui qui transforme la gestion d'installation en source
 > de chiffre d'affaires récurrent et proactif.
+
+**Lien avec les aides à la rénovation**
+Un remplacement d'appareil peut ouvrir droit à MaPrimeRénov'
+si le nouvel appareil est éligible (base ADEME) et si l'artisan est certifié RGE.
+LIGNIA peut pré-qualifier cette éligibilité depuis la fiche installation
+lors de la détection de fin de vie.
+Statut : vision cible V3.
 
 ---
 

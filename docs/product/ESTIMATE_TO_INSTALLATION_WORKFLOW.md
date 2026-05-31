@@ -1,21 +1,26 @@
 # ESTIMATE_TO_INSTALLATION_WORKFLOW
 
 > Auteur : Claude Analytics  
-> Date : mai 2026  
-> Statut : document de référence workflow — lecture obligatoire avant tout prompt Lovable ou Claude Exec sur les modules Devis, VT, Installation, SAV
+> Date : mai 2026 — mis à jour post-arbitrages D-26 / D-28 / D-30  
+> Statut : document de référence workflow — lecture obligatoire avant tout prompt Lovable ou Claude Exec sur les modules Devis, VT, Installation, SAV  
+> **Référence canonique pour le cycle de vie installation : LIGNIA_LIFECYCLE.md**
 
 ---
 
-## Pourquoi ce document existe
+## Arbitrages actés dans ce document
 
-Les tables existent. Les briques sont posées. Ce qui manquait était un document qui les relie dans l'ordre métier réel.
+| Décision | Contenu | Source |
+|---|---|---|
+| D-26 | 1 installation = 1 appareil principal. N installations par client/propriété. `heating_appliance_id` scalaire, pas de table pivot V1. | Fondateur — mai 2026 |
+| D-28 | Signature → installation `status = draft`. Clôture chantier → installation `status = active`. | Fondateur — mai 2026 |
+| D-30 | `catalog_items.heating_appliance_id` = P1, pas P0. Ne bloque pas les pilotes. | Fondateur — mai 2026 |
 
-`billing.quotes` a déjà `quote_kind` (estimate / final / service), `version_number`, `previous_quote_id`, `installation_id`, `tva_context`.  
-`core.technical_surveys` a déjà 130 colonnes fumisterie, ventilation, mesures toiture, raccordement.  
-`operations.service_requests` et `operations.interventions` sont déjà liés à `core.installations`.  
-`core.installations` a déjà `origin`, `installed_by_self`, `takeover_date`, `predicted_replacement_date`.
+## Décisions ouvertes (ne pas exécuter sans décision)
 
-Le problème n'est pas l'architecture. C'est que personne n'avait écrit dans quel ordre utiliser ces briques.
+| Ref | Sujet |
+|---|---|
+| D-27 | Contenu minimal de `appliance_snapshot` — non décidé |
+| D-29 | `catalog_domain` dans `quote_lines` : créer la colonne ou utiliser `appliance_id IS NOT NULL` — non décidé |
 
 ---
 
@@ -33,7 +38,9 @@ Visite technique
 ↓
 Photos chantier (avant travaux)
 ↓
-Devis final (quote_kind = final, previous_quote_id = estimatif)
+Devis final (quote_kind = final, previous_quote_id = id estimatif)
+↓
+Signature → installation créée status = draft  [D-28]
 ↓
 Acompte
 ↓
@@ -49,7 +56,7 @@ Réception chantier
 ↓
 Facture
 ↓
-Installation créée (core.installations)
+Clôture chantier → installation status = active  [D-28]
 ↓
 Entretien annuel planifié
 ↓
@@ -62,19 +69,28 @@ Remplacement à terme
 ```
 Client appelle : "J'ai un MCZ installé en 2017"
 ↓
-Création installation manuelle (core.installations, origin = 'takeover')
+Création installation manuelle (core.installations, origin = 'takeover', status = active)
 ↓
-  ├── Si entretien → Devis SAV (quote_kind = service)
-  │                → Intervention planifiée
-  │                → Facture
+  ├── Flux B1 — Entretien
+  │     Devis SAV (quote_kind = service)  → voir règles service dans LIGNIA_V1_MASTER
+  │     Intervention planifiée
+  │     Facture
   │
-  ├── Si panne → Service request (operations.service_requests)
-  │             → Intervention (operations.interventions)
-  │             → Devis réparation si pièces
+  ├── Flux B2 — Panne / SAV
+  │     Service request (operations.service_requests)
+  │     Intervention (operations.interventions)
+  │     Devis réparation si pièces (quote_kind = service)
+  │     Facture
   │
-  └── Si remplacement → Devis estimatif nouvel appareil (Flux A)
-                       → predicted_replacement_date mis à jour
+  └── Flux B3 — Remplacement
+        Nouveau devis estimatif (Flux A dès étape 2)
+        actual_replacement_date rempli sur l'ancienne installation
+        Nouvelle installation créée à la clôture (status = active)
+        predecessor_installation_id → ancienne installation [P3 — colonne à créer]
 ```
+
+**Note Flux B :** `quote_kind = service` suit les règles définies dans `LIGNIA_V1_MASTER.md` :
+1-3 lignes max, pas d'acompte, pas de sections Appareil/Fumisterie/Pose, UI ultra-compacte, optimisé mobile (Luc).
 
 ---
 
@@ -84,7 +100,7 @@ Création installation manuelle (core.installations, origin = 'takeover')
 
 **Objet créé :** `core.projects` + `core.customers`  
 **Données collectées :** type d'appareil souhaité, combustible, surface à chauffer, budget estimé, délai souhaité  
-**Table impliquée :** `core.technical_surveys.desired_device_type`, `heating_volume_m3`, `estimated_budget_eur`  
+**Tables impliquées :** `core.technical_surveys.desired_device_type`, `heating_volume_m3`, `estimated_budget_eur`  
 **Statut projet :** `prospect`
 
 ---
@@ -93,70 +109,60 @@ Création installation manuelle (core.installations, origin = 'takeover')
 
 **Objet créé :** `billing.quotes` avec `quote_kind = 'estimate'`  
 **Contenu :** appareil pressenti (`appliance_id`), fumisterie estimée, pose estimée  
-**Caractéristique clé :** prix indicatifs, pas de relevés réels. L'artisan travaille depuis sa connaissance du type de chantier, pas depuis les mesures.  
-**Colonnes clés utilisées :**
+**Caractéristique clé :** prix indicatifs, pas de relevés réels.
+
+**Règles issues de LIGNIA_V1_MASTER :**
+- Non contractuel. Ton informatif.
+- PDF : "Proposition commerciale — sous réserve de visite technique"
+- Pas d'acompte. Pas de signature engageante. Pas de `signed_at`.
+- UI Editor : sans acompte, sans dates visite/travaux.
+
+**Colonnes clés :**
 - `quote_kind = 'estimate'`
-- `appliance_id` sur les lignes appareil → doit être persisté (P0-01)
+- `appliance_id` sur les lignes appareil → doit être persisté [P0-01]
 - `tva_context` → déjà rempli à 100% en base
 - `aides_estimees_total` → déjà présent sur `billing.quotes`
-
-**Ce qui ne doit PAS bloquer à cette étape :**  
-L'estimatif peut être envoyé au client avec une mention "sous réserve de visite technique". Il n'a pas besoin d'être parfait. Il doit être rapide.
 
 ---
 
 ### Étape 3 — Visite technique
 
 **Objet créé :** `core.technical_surveys` lié au projet  
-**Durée réelle terrain :** 45min à 1h30  
-**Ce que l'artisan mesure et saisit :**
+**Durée réelle terrain :** 45min à 1h30
+
+**Données collectées (sélection — table complète à 130 colonnes) :**
 
 ```
 Fumisterie
-  flue_scenario         → type d'installation (conduit existant, tubage, extérieur...)
-  flue_diameter_mm      → diamètre conduit existant
-  new_flue_diameter_mm  → diamètre préconisé
-  new_flue_height_m     → hauteur conduit nécessaire
-  liner_diameter_mm     → si tubage
-  liner_length_m        → longueur tubage
-  flue_bends_count      → coudes
-  stack_above_ridge     → conduit dépasse le faîtage
+  flue_scenario, flue_diameter_mm, new_flue_diameter_mm
+  new_flue_height_m, liner_diameter_mm, liner_length_m
+  flue_bends_count, stack_above_ridge
 
 Appareil
-  appliance_outlet_position    → sortie fumée appareil
-  connection_diameter_mm       → diamètre raccordement
-  tee_required                 → té de ramonage nécessaire
-  sealed_combustion            → étanche ou non
-  is_canalisable               → si distribution d'air
+  appliance_outlet_position, connection_diameter_mm
+  tee_required, sealed_combustion, is_canalisable
 
 Pièce
-  room_area_m2, room_height_m  → pour calcul volume
-  wall_backing_material        → protection murale
-  floor_plate_required         → dalle
-  door_width_cm                → accès livraison appareil
+  room_area_m2, room_height_m, wall_backing_material
+  floor_plate_required, door_width_cm
 
-Toiture (mesures)
-  measure_roof_slope_pct
-  measure_floor_to_ridge_m
+Toiture
+  measure_roof_slope_pct, measure_floor_to_ridge_m
   measure_flue_ridge_dist_left_m / right_m
-  stack_above_ridge
 
 Ventilation
-  fresh_air_existing           → amenée d'air existante
-  fresh_air_to_create          → à créer
-  fresh_air_diameter_mm
+  fresh_air_existing, fresh_air_to_create, fresh_air_diameter_mm
 ```
 
-**Photos obligatoires à cette étape :**
+**Photos obligatoires :**
 - Foyer existant ou emplacement prévu
 - Conduit existant (si reprise)
 - Toiture vue de l'extérieur
-- Accès au chantier (escaliers, porte d'entrée si appareil lourd)
+- Accès chantier (escaliers, porte si appareil lourd)
 - Tableau électrique (si poêle à granulés)
 
-Les photos ont deux fonctions :
-1. Permettre le devis final depuis le bureau sans retourner sur place
-2. Protection juridique en cas de litige post-installation
+Stockage V1 : `core.technical_surveys.croquis_storage_path` pour le croquis.  
+Photos : `core.installations.payload` (JSONB) en attendant colonnes dédiées P2.
 
 **Statut projet après VT :** `surveyed`
 
@@ -164,49 +170,67 @@ Les photos ont deux fonctions :
 
 ### Étape 4 — Devis final
 
-**Objet créé :** `billing.quotes` avec `quote_kind = 'final'`, `previous_quote_id` = id de l'estimatif  
-**Différence avec l'estimatif :**
-- Quantités réelles (longueur tubage, nombre de coudes, hauteur conduit)
-- Appareil confirmé (parfois différent de l'estimatif après VT)
-- Aides calculées avec les vraies données (RE2020, surface, année construction)
+**Objet créé :** `billing.quotes` avec `quote_kind = 'final'`, `previous_quote_id` = id de l'estimatif
 
-**Colonnes clés utilisées :**
+**Règles issues de LIGNIA_V1_MASTER :**
+- Document contractuel signable.
+- Prix exacts. Références catalogue obligatoires.
+- PDF : header standard "DEVIS". Zone signature.
+- Acompte présent. Déclenche facture d'acompte.
+- UI Editor : dense, toutes sections, marge interne visible.
+
+**Colonnes clés :**
 - `previous_quote_id` → lien avec l'estimatif
 - `version_number` → incrémenté
-- `thread_id` → regroupe estimatif + final dans la même conversation
-- `tva_context` → confirmé depuis les données VT (building_status, construction_year)
+- `thread_id` → regroupe estimatif + final
+- `tva_context` → confirmé depuis données VT
 - `reste_a_charge_estime` → net après aides
 
-**Lien VT → Devis final :**  
-Ajout nécessaire : `billing.quotes.technical_survey_id` (FK vers `core.technical_surveys`).  
-Ce champ n'existe pas encore. C'est le P2-03 du plan d'exécution.
+**Lien VT → Devis final :** `billing.quotes.technical_survey_id` manquant. À ajouter en P2-03.
 
 ---
 
 ### Étape 5 — Signature et acompte
 
-**Statut devis :** `quote_status = 'signed'`  
+**S'applique uniquement à `quote_kind = 'final'`.** L'estimatif ne déclenche pas ces effets.
+
 **Données créées :**
-- `signed_at` sur `billing.quotes`
+- `quote_status = 'signed'`, `signed_at` horodaté
 - Acompte calculé depuis `deposit_pct`
-- Transition client de `prospect` → `active`
+- Transition client `prospect` → `active`
+
+**Déclenchement automatique [D-28] :**
+- `core.installations` créée avec `status = 'draft'`
+- Données pré-remplies depuis la ligne devis appareil :
+
+```
+brand                ← appliance.normalized_brand
+model                ← appliance.normalized_model / commercial_name
+heating_appliance_id ← appliance_id ligne devis [après P0-04]
+catalog_item_id      ← product_id ligne devis
+fuel_type            ← appliance.fuel_type
+device_type          ← appliance.appliance_type
+project_id, customer_id, property_id ← depuis le devis
+installed_by_self    ← true
+origin               ← 'new_installation'
+status               ← 'draft'
+```
+
+L'installation `draft` permet la planification de pose sans bloquer le workflow si les données de clôture ne sont pas encore connues.
 
 ---
 
-### Étape 6 — Commande fournisseur
+### Étape 6 — Commande fournisseur [P1-06]
 
 **Objet créé :** `billing.purchase_orders` + `billing.purchase_order_lines`  
-**Source :** lignes du devis signé groupées par `supplier_name_snapshot`  
-**Vue à construire :** liste articles par fournisseur avec quantités et références  
-**C'est le P1-06 du plan d'exécution — à construire avant les pilotes.**
+**Périmètre V1 (D-28 dans DECISION_LOG à créer) :** vue liste lecture seule, articles groupés par `supplier_name_snapshot`, avec quantités et références. Pas d'envoi électronique. Pas de réconciliation comptable (V2).
 
 ---
 
 ### Étape 7 — Planification
 
 **Objet créé :** `operations.interventions` avec `intervention_type = 'installation'`  
-**Lié à :** `core.projects`, `core.customers`, `core.properties`  
-**Données :** date planifiée, technicien assigné, durée estimée
+**Possible dès que l'installation est en `draft`** (déclenché à la signature).
 
 ---
 
@@ -216,49 +240,42 @@ Ce champ n'existe pas encore. C'est le P2-03 du plan d'exécution.
 - Appareil installé en place
 - Conduit terminé (sortie toiture)
 - Plaque signalétique (numéro de série)
-- Essai de mise en chauffe (si possible une flamme visible)
+- Essai de mise en chauffe
 
-Les photos après travaux sont le pendant des photos avant. Sans elles, en cas de litige sur la qualité d'installation, l'artisan n'a pas de preuve.
+Stockage : `core.installations.payload` JSONB pour V1.
 
 ---
 
 ### Étape 9 — Facture
 
 **Objet créé :** `billing.invoices` + `billing.invoice_lines`  
-**Source :** lignes du devis final signé  
 **Statut projet :** `completed`
 
 ---
 
-### Étape 10 — Création de l'installation (Parc installé)
+### Étape 10 — Clôture chantier → Installation active [D-28]
 
-**Objet créé :** `core.installations`  
-**Déclencheur :** bouton "Clôturer le chantier" sur la fiche Projet (à construire en P2-01)  
-**Données pré-remplies depuis le devis final :**
+**Déclencheur :** bouton "Clôturer le chantier" sur la fiche Projet [à construire P2-01]
 
+**Transition :** `core.installations.status` : `draft` → `active`
+
+**Données saisies manuellement à la clôture (obligatoires) :**
 ```
-brand                  ← appliance.normalized_brand
-model                  ← appliance.normalized_model / commercial_name
-heating_appliance_id   ← appliance_id de la ligne devis (après P0-04)
-catalog_item_id        ← product_id de la ligne devis
-fuel_type              ← appliance.fuel_type
-device_type            ← appliance.appliance_type
-warranty_years         ← appliance.warranty_years (si rempli)
-project_id             ← depuis le devis
-customer_id            ← depuis le devis
-property_id            ← depuis le devis
-installed_by_self      ← true (installation en propre)
-origin                 ← 'new_installation'
+serial_number
+commissioning_date
 ```
 
-**Données saisies manuellement à la clôture :**
+**Données calculées automatiquement :**
 ```
-serial_number          → obligatoire
-commissioning_date     → obligatoire
-manufacturer_warranty_start → calculé depuis commissioning_date
-manufacturer_warranty_end   → calculé depuis warranty_years
-next_sweep_date        → J+12 mois automatiquement
+manufacturer_warranty_start  ← commissioning_date
+manufacturer_warranty_end    ← commissioning_date + warranty_years
+next_sweep_date              ← commissioning_date + 12 mois
 ```
+
+**Déclenchements automatiques à l'activation :**
+- Installation active dans le parc installé
+- Prochaine échéance ramonage calculée
+- Rappel client programmé
 
 ---
 
@@ -271,155 +288,74 @@ next_sweep_date        → J+12 mois automatiquement
 
 ---
 
-## Détail du Flux B — Client avec appareil existant
+## Modèle installation — règles V1 [D-26]
 
-### Entrée dans le système
-
-L'artisan apprend qu'un client a un appareil installé (pas par lui). Il crée l'installation manuellement :
-
-```
-core.installations
-  origin             = 'takeover'
-  installed_by_self  = false
-  takeover_date      = date de la première intervention
-  brand              = saisie libre
-  model              = saisie libre
-  serial_number      = lu sur la plaque (si accessible)
-  commissioning_date = approximatif (fourni par le client)
-```
-
-Si l'appareil est dans `heating_appliances`, l'artisan peut le rechercher pour relier `heating_appliance_id` → données techniques disponibles immédiatement (diamètre conduit, garantie constructeur).
-
-### Les trois sous-flux du Flux B
-
-**Flux B1 — Entretien simple**
-```
-Installation existante
-↓
-Planification ramonage/entretien
-↓
-Intervention (operations.interventions)
-↓
-Devis entretien si pièces (quote_kind = service)
-↓
-Facture
-↓
-next_sweep_date mis à jour
-```
-
-**Flux B2 — Panne / SAV**
-```
-Client appelle
-↓
-Service request créé (operations.service_requests)
-  source = 'client_call'
-  installation_id = installation existante
-↓
-Diagnostic (intervention)
-↓
-Devis réparation si pièces nécessaires
-↓
-Facture
-```
-
-**Flux B3 — Remplacement**
-```
-Installation existante (predicted_replacement_date atteinte)
-↓
-Nouveau devis estimatif (Flux A dès l'étape 2)
-  L'ancien appareil reste dans le Parc comme 'replaced'
-  actual_replacement_date rempli sur l'ancienne installation
-↓
-Nouvelle installation créée à la clôture
-  predecessor_installation_id → ancienne installation (colonne à ajouter en P3)
-```
-
----
-
-## Les photos dans LIGNIA
-
-### Pourquoi c'est sous-priorisé à tort
-
-Dans le métier bois-énergie, une mauvaise installation peut provoquer un incendie. La responsabilité de l'installateur est engagée pendant 10 ans (garantie décennale). Sans photos datées avant et après travaux, l'artisan n'a aucune preuve en cas de litige.
-
-Les photos ont plus de valeur commerciale et juridique que `finish_options` ou `autonomy_hours_max`.
-
-### Les moments obligatoires
-
-| Moment | Photos | Utilité |
-|---|---|---|
-| VT — avant | Foyer, conduit, toiture, accès | Preuve état initial, input devis final |
-| Pose — pendant | Étapes clés installation | Traçabilité technique |
-| Réception — après | Appareil posé, conduit terminé, plaque | Preuve conformité, garantie |
-| SAV | État constaté avant intervention | Protection litige |
-
-### Où stocker
-
-`core.technical_surveys.croquis_storage_path` existe déjà pour le croquis de la VT. Le modèle pour les photos est identique : `storage_path` dans `core.installations.payload` en attendant une colonne dédiée.
-
-**Aucune migration nécessaire pour V1.** Le JSONB `payload` sur `core.installations` peut stocker des chemins photos immédiatement. La colonne dédiée viendra en P2.
+- 1 installation = 1 appareil principal
+- Un client peut avoir N installations (N posés chez lui sur plusieurs années)
+- Une propriété peut avoir N installations (poêle + cuisinière = 2 installations séparées)
+- `heating_appliance_id` = colonne scalaire UUID, FK vers `catalog.heating_appliances`
+- Pas de table pivot `installation_devices` en V1
 
 ---
 
 ## Briques existantes vs manquantes
 
-### Ce qui existe déjà et peut être branché
+### Ce qui existe déjà
 
 | Brique | Table | Statut |
 |---|---|---|
-| Devis estimatif / final / SAV | `billing.quotes.quote_kind` | ✅ existe, 82+12+1 devis en base |
-| Versioning devis | `previous_quote_id`, `thread_id`, `version_number` | ✅ existe |
-| Lien devis → installation (SAV) | `billing.quotes.installation_id` | ✅ existe |
-| Aides estimées | `aides_estimees_total`, `reste_a_charge_estime` | ✅ existe |
-| Visite technique | `core.technical_surveys` 130 colonnes | ✅ existe, table vide |
-| Croquis VT | `croquis_storage_path` | ✅ existe |
-| Service request | `operations.service_requests` | ✅ existe |
-| Interventions | `operations.interventions` | ✅ existe |
-| Parc installé | `core.installations` | ✅ existe, 3 entrées |
-| Remplacement prévu | `predicted_replacement_date` | ✅ existe |
-| Flux B (reprise) | `origin`, `installed_by_self`, `takeover_date` | ✅ existe |
+| Devis estimatif / final / SAV | `billing.quotes.quote_kind` | ✅ 82+12+1 en base |
+| Versioning devis | `previous_quote_id`, `thread_id`, `version_number` | ✅ |
+| Lien devis SAV → installation | `billing.quotes.installation_id` | ✅ |
+| Aides estimées | `aides_estimees_total`, `reste_a_charge_estime` | ✅ |
+| Visite technique | `core.technical_surveys` 130 colonnes | ✅ table vide |
+| Croquis VT | `croquis_storage_path` | ✅ |
+| Service request + Interventions | `operations.*` | ✅ |
+| Parc installé | `core.installations` | ✅ 3 entrées |
+| Remplacement prévu | `predicted_replacement_date` | ✅ |
+| Flux B (reprise) | `origin`, `installed_by_self`, `takeover_date` | ✅ |
+| Installation draft à la signature | `status` enum | ✅ colonne existe |
 
 ### Ce qui manque et bloque le workflow
 
 | Manque | Table cible | Priorité |
 |---|---|---|
-| `appliance_id` non écrit par la RPC | `billing.quote_lines` | P0-01 |
-| `heating_appliance_id` dans installations | `core.installations` | P0-04 |
-| `heating_appliance_id` dans catalog_items | `catalog.catalog_items` | P0-05 |
+| `appliance_id` non écrit par la RPC | `billing.quote_lines` | **P0-01** |
+| `heating_appliance_id` dans installations | `core.installations` | **P0-04** — décision D-26 actée |
+| Garde prix 0€ sur ligne appareil | Frontend QuoteEditor | **P0-03** |
+| `heating_appliance_id` dans catalog_items | `catalog.catalog_items` | P1 [D-30] |
 | `technical_survey_id` sur le devis final | `billing.quotes` | P2-03 |
 | `predecessor_installation_id` | `core.installations` | P3 |
-| Photos structurées (colonnes dédiées) | `core.installations` | P2 |
-| Clôture chantier → installation automatique | UI Lovable | P2-01 |
-| Formulaire VT | UI Lovable | P2-02 |
+| Photos colonnes dédiées | `core.installations` | P2 |
+| Clôture chantier UI | Lovable | P2-01 |
+| Formulaire VT | Lovable | P2-02 |
 
 ---
 
 ## Règle de lecture pour les prompts
 
-Avant de rédiger un prompt Lovable ou Claude Exec, identifier à quelle étape du workflow appartient la feature :
-
 ```
-Étape 1-2  → Qualification + Estimatif     → touche QuoteEditor
-Étape 3    → Visite technique              → touche TechnicalSurveyForm (à créer)
-Étape 4    → Devis final                  → touche QuoteEditor (quote_kind = final)
-Étape 5-6  → Signature + Commande         → touche PurchaseOrderView (à créer)
-Étape 7-8  → Planification + Pose         → touche InterventionForm
-Étape 9    → Facture                      → touche InvoiceEditor
-Étape 10   → Clôture chantier             → touche ProjectPage + InstallationForm
-Étape 11   → Entretien                    → touche ServiceRequestForm
+Étape 1-2  → Qualification + Estimatif   → QuoteEditor (quote_kind = estimate)
+Étape 3    → Visite technique            → TechnicalSurveyForm (à créer)
+Étape 4    → Devis final                 → QuoteEditor (quote_kind = final)
+Étape 5    → Signature                   → QuoteEditor + création installation draft
+Étape 6    → Commande fournisseur        → PurchaseOrderView (à créer)
+Étape 7-8  → Planification + Pose        → InterventionForm
+Étape 9    → Facture                     → InvoiceEditor
+Étape 10   → Clôture chantier            → ProjectPage + InstallationForm
+Étape 11   → Entretien                   → ServiceRequestForm
 ```
 
-Un prompt qui touche deux étapes à la fois a de fortes chances d'échouer ou de produire des effets de bord.
+Un prompt qui touche deux étapes à la fois a de fortes chances d'échouer.
 
 ---
 
 ## Ce que ce document ne tranche pas
 
-**1 installation = 1 ou N appareils ?**  
-Décision fondateur requise. Voir HEATING_APPLIANCE_EXECUTION_PLAN.md section "Décision fondateur requise avant P0-04".
+**D-27 — Contenu minimal de `appliance_snapshot`** : décision ouverte. Ne pas implémenter sans décision actée.
 
-**Note de calcul simplifiée V3**  
-S'insère entre l'étape 3 (VT) et l'étape 4 (Devis final). Dépend de `flue_diameter_mm` rempli dans `heating_appliances` et de `technical_surveys` opérationnel. Pas avant P3.
+**D-29 — `catalog_domain` dans `quote_lines`** : décision ouverte. Ne pas créer la colonne sans décision actée.
 
-**Espace client**  
-Pas modélisé dans ce document. Potentiellement utile pour la signature électronique du devis final et le partage des photos de réception. P3 ou plus.
+**Note de calcul simplifiée V3** : s'insère entre étape 3 et étape 4. Dépend de `flue_diameter_mm` rempli + VT opérationnelle. P3.
+
+**Espace client** : signature électronique, partage photos réception. P3.

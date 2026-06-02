@@ -49,7 +49,10 @@ Non négociables :
 1. INVARIANT 4 : quote_lines = snapshot immuable — jamais modifier après création
 2. INVARIANT 5 : pricing runtime via resolve_item_price uniquement
 3. INVARIANT 7 : ne pas modifier resolve_item_price, search_quote_items_v2, replace_quote_lines
-4. cost_price : jamais importé, jamais stocké, jamais lu frontend (D-25)
+4. catalog_items.cost_price : contrainte SQL CHECK (cost_price IS NULL) active —
+   le prix d'achat fournisseur ne vit PAS dans le catalogue (décision D-25)
+5. quote_lines.unit_cost_price : coût saisi manuellement par l'artisan pour sa marge —
+   champ légitime, ne jamais l'alimenter automatiquement depuis un catalogue ou une RPC
 
 Si une de ces règles est en conflit avec ma demande,
 ARRÊTE et explique le conflit avant d'écrire du code.
@@ -57,4 +60,4 @@ ARRÊTE et explique le conflit avant d'écrire du code.
 
 ---
 
-*Mis à jour : juin 2026. Source : ENGINEERING_PRINCIPLES.md, DECISION_LOG D-25.*
+*Mis à jour : juin 2026. Source : ENGINEERING_PRINCIPLES.md, DECISION_LOG D-25, vérification Supabase (62 lignes unit_cost_price actives en base).*

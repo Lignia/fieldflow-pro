@@ -112,6 +112,11 @@ Ces règles ne se discutent pas. Aucun patch ne les viole.
 - [ ] Vérifier si search_quote_items_v2 utilise search_keywords ou search_vector
 - [ ] Si search_keywords : UPDATE batch Joncoux (stratégie B — synonymes par item_family)
 
+### Appareils
+- [ ] Fix replace_quote_lines : persister appliance_id dans l'INSERT de la RPC
+- [ ] Payload frontend handleSave : passer appliance_id dans le map p_lines
+- [ ] Garde : bloquer handleSave(true) si une ligne a appliance_id défini et unit_price_ht = 0
+
 ---
 
 ## Backlog P1 — avant premiers clients payants
@@ -184,4 +189,4 @@ Voir `docs/architecture/project/DECISION_LOG.md` (D-01 à D-24 documentées).
 
 ---
 
-*Dernière mise à jour : 2026-05-23*
+*Dernière mise à jour : 2026-06-03*

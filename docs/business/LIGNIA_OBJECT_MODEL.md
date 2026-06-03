@@ -295,8 +295,8 @@ Les prestations peuvent être regroupées dans des Ouvrages/Kits.
 
 | | |
 |---|---|
-| **État actuel** | Non implémenté |
-| **Vision cible** | Tables quote_kits + quote_kit_lines à créer — V1 |
+| **État actuel** | Partiellement implémenté — sauvegarde depuis devis opérationnelle (RPC `save_lines_as_bundle`, bouton "Bibliothèque" dans QuoteEditor). Bibliothèque navigable et réinsertion dans un devis : à construire. |
+| **Vision cible** | Tables `quote_kits` + `quote_kit_lines` à créer, bibliothèque navigable — V1/V2 |
 
 > Un ouvrage n'est pas un produit.
 > Un ouvrage est une combinaison réutilisable de produits et de prestations.
@@ -335,7 +335,8 @@ C'est ce snapshot qui sert de base au bon de commande fournisseur.
 | | |
 |---|---|
 | **État actuel** | Tables présentes, vides |
-| **Vision cible** | Généré depuis le devis signé — V2 |
+| **Vision cible V1 (P1)** | Vue lecture seule — liste articles groupée par fournisseur, avec quantités et références. Générée depuis le devis signé. Pas d'envoi électronique. Pas de réconciliation comptable. |
+| **Vision cible V2** | Bon de commande complet avec envoi électronique, suivi de livraison et réconciliation comptable. |
 
 Commande fournisseur générée depuis un devis signé.
 Regroupement automatique par fournisseur.
@@ -461,3 +462,5 @@ Interventions (Ramonage / Entretien / SAV)
 Factures → Export comptable (Pennylane / Sage / EBP)
          → Facture-X V3
 ```
+
+*Dernière mise à jour : 2026-06-03*

@@ -8,7 +8,7 @@ Ce document définit les règles de codage **obligatoires** pour tout patch fron
 
 **Contexte critique :**
 - `QuoteEditor.tsx` = 73 Ko, composant critique, ne jamais refactorer
-- `CatalogPopover` = flow fumisterie stable, ne jamais modifier
+- `CatalogPopover` = ne jamais modifier le comportement des onglets existants (Tous, Conduits, Terminaux, Raccords, Main d'œuvre). L'ajout de nouveaux onglets isolés est permis à condition que chaque onglet soit un composant dédié distinct (ex : `ApplianceSearchTab.tsx`). Commit de référence : 5ef054495710df35bb4e402293212cb61a9f23d9.
 - `useCatalogSearch` (SHA 9e54452) = ne jamais modifier
 - Chaque règle ci-dessous protège une invariance confirmée par audit runtime
 
@@ -78,14 +78,14 @@ Ce document définit les règles de codage **obligatoires** pour tout patch fron
 
 ## Séparation UI / logique métier
 
-- `AddLineDrawer` gère uniquement recherche, affichage, sélection.
+- `ApplianceSearchTab` gère uniquement recherche appareils, affichage et sélection. Il ne connaît pas `quote_lines`.
 - `QuoteEditor` reste propriétaire de la création réelle des lignes devis.
-- `CatalogPopover` ne doit pas connaître les appareils.
+- `CatalogPopover` porte les onglets fumisterie existants. L'onglet Appareils est délégué à `ApplianceSearchTab`.
 - `useApplianceSearch` ne doit pas connaître `quote_lines`.
 - Aucun composant UI ne doit recalculer un prix achat.
 - Aucun composant UI ne doit modifier `metadata.pricing` sauf au moment de création de la ligne.
 - La conversion résultat recherche → ligne devis doit rester dans un handler unique.
-- La création d'une ligne appareil doit rester séparée de la création d'une ligne catalogue.
+- La création d'une ligne appareil (`addAppliance`) doit rester séparée de la création d'une ligne catalogue (`addItem`).
 
 ---
 
@@ -214,7 +214,7 @@ Ce document définit les règles de codage **obligatoires** pour tout patch fron
 - Ne pas "nettoyer" `QuoteEditor`.
 - Ne pas extraire des sous-composants non demandés.
 - Ne pas renommer handlers existants sauf nécessité locale.
-- Ne pas modifier `CatalogPopover`.
+- Ne pas modifier le comportement des onglets existants de `CatalogPopover`.
 - Ne pas modifier `useCatalogSearch`.
 - Ne pas modifier le design system global.
 - Ne pas introduire de nouvelle lib.
@@ -227,10 +227,10 @@ Ce document définit les règles de codage **obligatoires** pour tout patch fron
 
 - `components` ne doivent pas importer depuis `pages`.
 - `hooks` ne doivent pas importer depuis `components`.
-- `QuoteEditor` peut importer `AddLineDrawer`.
-- `AddLineDrawer` peut importer hooks + UI components.
+- `QuoteEditor` peut importer `ApplianceSearchTab` et autres composants isolés.
+- `ApplianceSearchTab` peut importer hooks + UI components.
 - `useApplianceSearch` importe uniquement Supabase client, user context, toast si nécessaire.
-- Pas d'import croisé `QuoteEditor` ↔ `AddLineDrawer`.
+- Pas d'import croisé `QuoteEditor` ↔ `ApplianceSearchTab` au-delà du contrat de props.
 - Les types partagés doivent être dans un fichier neutre si nécessaire, pas dans `QuoteEditor`.
 
 ---

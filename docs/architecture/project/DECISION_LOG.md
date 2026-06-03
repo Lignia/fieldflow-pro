@@ -377,7 +377,7 @@ Catalogue central : 6 267 articles publiés (Joncoux 6 093 + KEMP 166 + LIGNIA o
 | 2026-06-03 | CANONICAL-AUDIT | ✅ Appliqué — décision fondateur |
 
 **Contexte** : P0-04 (ajout de `heating_appliance_id` dans `core.installations`) était bloqué tant que la cardinalité installation/appareil n'était pas tranchée.
-**Décision** : V1 — 1 installation = 1 appareil principal. Un client peut avoir N installations. Une propriété peut avoir N installations. `heating_appliance_id` reste une colonne scalaire UUID dans `core.installations`. Pas de table pivot `installation_devices` en V1.
+**Décision** : V1 — 1 installation = 1 appareil principal. Un client peut avoir N installations. Une propriété peut avoir N installations. `heating_appliance_id` sera ajouté comme colonne scalaire UUID dans `core.installations` (migration prévue en P0-04). Pas de table pivot `installation_devices` en V1.
 **Alternatives rejetées** : Table pivot N:N — cas multi-appareils rares dans le scope bois-énergie V1 (poêle + cuisinière = 2 installations séparées, pas 1 installation à 2 appareils).
 **Règle** : Poêle granulés + cuisinière à bois chez un même client = 2 lignes `core.installations`. Ne pas créer de table pivot avant retours terrain sur les cas multi-appareils.
 
@@ -391,7 +391,7 @@ Catalogue central : 6 267 articles publiés (Joncoux 6 093 + KEMP 166 + LIGNIA o
 
 **Contexte** : `appliance_snapshot` JSONB nullable existe dans `billing.quote_lines`. Son contenu n'a jamais été défini. Aucune user story P0/P1 ne dépend de ce snapshot — `appliance_id` (FK live) + les champs déjà snapshotés (`brand`, `raw_label_snapshot`) couvrent tous les besoins V1.
 **Décision** : Non décidée. Ne pas écrire ce champ avant les pilotes.
-**Contenu proposé (non validé)** : `{id, normalized_brand, normalized_model, fuel_type, nominal_power_kw, flamme_verte_stars, flue_diameter_mm, ademe_fonds_air_bois_status}`
+**Exemple non normatif** : `{id, normalized_brand, normalized_model, fuel_type, nominal_power_kw, flamme_verte_stars, flue_diameter_mm, ademe_fonds_air_bois_status}`
 **Trigger de reprise** : Premier signalement d'incohérence données ADEME sur un devis historique, ou démarrage du SAV avancé (Cycle 3).
 **Règle** : Bloquer toute implémentation de `appliance_snapshot` jusqu'à décision fondateur post-pilotes.
 
@@ -420,8 +420,8 @@ Catalogue central : 6 267 articles publiés (Joncoux 6 093 + KEMP 166 + LIGNIA o
 **Contexte** : `catalog_domain = "APPAREIL"` est écrit côté frontend dans `addAppliance()` mais la colonne n'existe pas dans `billing.quote_lines`. La valeur est silencieusement perdue à chaque save. Aucune user story P0/P1 ne nécessite cette colonne — le type d'une ligne est déductible à 100% des colonnes existantes : `appliance_id IS NOT NULL` → APPAREIL, `supplier_name_snapshot = 'TENANT_PRIVATE'` → PRESTATION, sinon FUMISTERIE.
 **Option A** : Créer la colonne TEXT dans `billing.quote_lines` + l'écrire dans `replace_quote_lines`.
 **Option B** : Abandonner `catalog_domain` et utiliser la déduction runtime ci-dessus pour V1.
-**Trigger de reprise** : Demande explicite de reporting analytique par domaine par un client payant.
-**Règle** : Ne pas créer la colonne avant décision fondateur. Ne pas supprimer le code frontend avant décision.
+**Trigger de reprise** : Demande explicite de reporting analytique par domaine par un client payant, ou retour terrain après les 5 devis pilotes.
+**Règle** : Ne pas créer la colonne avant décision fondateur. Ne pas supprimer le code frontend avant décision. Décision à réévaluer après les 5 devis pilotes.
 
 ---
 

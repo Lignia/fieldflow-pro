@@ -161,22 +161,6 @@ Ajouter `heating_appliance_id uuid REFERENCES catalog.heating_appliances(id) ON 
 
 ---
 
-### P0-05 — `catalog_items` sans lien vers `heating_appliances`
-
-| | |
-|---|---|
-| **Priorité** | P0 |
-| **Responsable** | Claude Exec |
-| **Prérequis** | Aucun |
-| **Effort** | 20min |
-| **Risque si ignoré** | Impossible de croiser "cet article catalogue" avec "cet appareil ADEME". La prescription et le devis final resteront découplés des données techniques. |
-| **Valeur métier** | Crée le pont commercial ↔ technique sans fusionner les tables |
-
-**Ce qui doit être fait :**  
-Ajouter `heating_appliance_id uuid REFERENCES catalog.heating_appliances(id) ON DELETE SET NULL` dans `catalog.catalog_items`.
-
----
-
 ## PARTIE 2 — P1 : Avant les pilotes
 
 ### P1-01 — Import Invicta (200-500 modèles)
@@ -260,6 +244,22 @@ Importer le fichier Invicta via `map_supplier.py` configuré pour le domaine `AP
 
 **Ce qui doit être fait :**  
 Page ou modal "Articles à commander" depuis un devis signé, groupée par fournisseur (`supplier_name_snapshot`), avec quantités et références.
+
+---
+
+### P1-07 — `catalog_items` sans lien vers `heating_appliances`
+
+| | |
+|---|---|
+| **Priorité** | P1 |
+| **Responsable** | Claude Exec |
+| **Prérequis** | P0-01, P0-02, P0-03, P0-04 fermés |
+| **Effort** | 20min |
+| **Risque si ignoré** | Impossible de croiser "cet article catalogue" avec "cet appareil ADEME". La prescription et le devis final resteront découplés des données techniques. |
+| **Valeur métier** | Crée le pont commercial ↔ technique sans fusionner les tables |
+
+**Ce qui doit être fait :**  
+Ajouter `heating_appliance_id uuid REFERENCES catalog.heating_appliances(id) ON DELETE SET NULL` dans `catalog.catalog_items`.
 
 ---
 
@@ -446,7 +446,7 @@ Pour permettre le workflow complet :
   P2-03 : quotes.technical_survey_id                      [Claude Exec, 20min]
 
 ÉTAPE 6 — Parc installé complet
-  P0-05 : catalog_items.heating_appliance_id              [Claude Exec, 20min]
+  P1-07 : catalog_items.heating_appliance_id              [Claude Exec, 20min]
   P2-04 : SAV depuis installation                         [Lovable, 3-5h]
 ```
 
@@ -490,7 +490,7 @@ Effort total chemin critique : **~40-55h** réparties sur 6-8 semaines.
 
 | Qui | Actions |
 |---|---|
-| **Claude Exec** | P0-01, P0-04, P0-05, P1-01, P1-02, P1-03, P2-03, P2-05 |
+| **Claude Exec** | P0-01, P0-04, P1-01, P1-02, P1-03, P1-07, P2-03, P2-05 |
 | **Lovable** | P0-02, P0-03, P1-04, P1-05, P1-06, P2-01, P2-02, P2-04 |
 | **Fondateur** | Décision 1:1 installations · Validation terrain 5 devis · Arbitrage roadmap S8 |
 | **Aucun maintenant** | P3-01 à P3-05 |

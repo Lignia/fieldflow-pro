@@ -7,7 +7,7 @@
 
 ## État actuel — Mai 2026
 
-Sessions appliquées : CAT-3, RESET-CATALOG-2 v1.3, SQI-1, SEC-1, SQI-2, PRICING-1, WRAPPER-1, ARCH-DOC-1, DOC-ALIGN-1, CATALOG-STABILIZE-1, SESSION-2, SESSION-3, SESSION-C (Joncoux 6 093 articles), RUNTIME-CONSOLIDATION.
+Sessions appliquées : CAT-3, RESET-CATALOG-2 v1.3, SQI-1, SEC-1, SQI-2, PRICING-1, WRAPPER-1, ARCH-DOC-1, DOC-ALIGN-1, CATALOG-STABILIZE-1, SESSION-2, SESSION-3, SESSION-C (Joncoux 6 093 articles), RUNTIME-CONSOLIDATION, CANONICAL-AUDIT.
 Catalogue central : 6 267 articles publiés (Joncoux 6 093 + KEMP 166 + LIGNIA ouvrages 8).
 
 ---
@@ -356,4 +356,86 @@ Catalogue central : 6 267 articles publiés (Joncoux 6 093 + KEMP 166 + LIGNIA o
 
 ---
 
-*ARCH-DOC-1 v1.6 — 2026-05-21 — RUNTIME-CONSOLIDATION*
+## D-25 — [CANONICAL-AUDIT] Deux règles distinctes sur le coût d'achat
+
+| Date | Session | Statut |
+|---|---|---|
+| 2026-06-03 | CANONICAL-AUDIT | ✅ Appliqué |
+
+**Contexte** : La règle sur `cost_price` était implicite dans ENGINEERING_PRINCIPLES mais sans ID de décision. Risque qu'un import maladroit alimente `cost_price` et fausse la marge d'Arnaud sans alerte.
+**Décision — Règle A** : `catalog_items.cost_price` est soumis à une contrainte SQL `CHECK (cost_price IS NULL)` active en base. Le prix d'achat fournisseur ne vit pas dans le catalogue. Jamais importé, jamais stocké.
+**Décision — Règle B** : `quote_lines.unit_cost_price` est un champ légitime et actif (62 lignes remplies, vérifié juin 2026). C'est le coût saisi manuellement par l'artisan pour calculer sa marge dans le devis. Ne jamais l'alimenter automatiquement depuis une RPC ou un import.
+**Alternatives rejetées** : Stocker le prix d'achat fournisseur pour calculer la marge automatiquement — rejeté pour confidentialité des remises et simplicité.
+**Règle** : La marge est calculable dans LIGNIA via `unit_cost_price` saisi par l'artisan. Le prix d'achat fournisseur n'est pas stocké dans le catalogue. Ce sont deux choses distinctes.
+
+---
+
+## D-26 — [CANONICAL-AUDIT] 1 installation = 1 appareil principal (V1)
+
+| Date | Session | Statut |
+|---|---|---|
+| 2026-06-03 | CANONICAL-AUDIT | ✅ Appliqué — décision fondateur |
+
+**Contexte** : P0-04 (ajout de `heating_appliance_id` dans `core.installations`) était bloqué tant que la cardinalité installation/appareil n'était pas tranchée.
+**Décision** : V1 — 1 installation = 1 appareil principal. Un client peut avoir N installations. Une propriété peut avoir N installations. `heating_appliance_id` reste une colonne scalaire UUID dans `core.installations`. Pas de table pivot `installation_devices` en V1.
+**Alternatives rejetées** : Table pivot N:N — cas multi-appareils rares dans le scope bois-énergie V1 (poêle + cuisinière = 2 installations séparées, pas 1 installation à 2 appareils).
+**Règle** : Poêle granulés + cuisinière à bois chez un même client = 2 lignes `core.installations`. Ne pas créer de table pivot avant retours terrain sur les cas multi-appareils.
+
+---
+
+## D-27 — [CANONICAL-AUDIT] Contenu minimal de `appliance_snapshot` — DÉCISION OUVERTE
+
+| Date | Session | Statut |
+|---|---|---|
+| 2026-06-03 | CANONICAL-AUDIT | ⚠️ Décision ouverte — ne pas implémenter |
+
+**Contexte** : `appliance_snapshot` JSONB nullable existe dans `billing.quote_lines`. Son contenu n'a jamais été défini. Aucune user story P0/P1 ne dépend de ce snapshot — `appliance_id` (FK live) + les champs déjà snapshotés (`brand`, `raw_label_snapshot`) couvrent tous les besoins V1.
+**Décision** : Non décidée. Ne pas écrire ce champ avant les pilotes.
+**Contenu proposé (non validé)** : `{id, normalized_brand, normalized_model, fuel_type, nominal_power_kw, flamme_verte_stars, flue_diameter_mm, ademe_fonds_air_bois_status}`
+**Trigger de reprise** : Premier signalement d'incohérence données ADEME sur un devis historique, ou démarrage du SAV avancé (Cycle 3).
+**Règle** : Bloquer toute implémentation de `appliance_snapshot` jusqu'à décision fondateur post-pilotes.
+
+---
+
+## D-28 — [CANONICAL-AUDIT] Périmètre commande fournisseur V1
+
+| Date | Session | Statut |
+|---|---|---|
+| 2026-06-03 | CANONICAL-AUDIT | ✅ Appliqué |
+
+**Contexte** : `LIGNIA_OBJECT_MODEL.md` indiquait "V2". Les roadmaps récentes ont avancé à "P1". Le périmètre V1 n'avait jamais été précisé — risque qu'un agent construise un bon de commande complet (10h) au lieu de la vue lecture seule dont Amélie a besoin (2-3h).
+**Décision** : Commande fournisseur V1 = vue lecture seule uniquement. Liste articles groupée par `supplier_name_snapshot`, avec quantités et références. Pas d'envoi électronique. Pas de réconciliation comptable. Pas de suivi de livraison.
+**V2** : Bon de commande complet avec envoi, suivi et réconciliation comptable.
+**Alternatives rejetées** : Construire directement le bon de commande V2 — sur-ingénierie avant pilotes.
+**Règle** : P1-06 Lovable = vue lecture seule uniquement. Ne pas ajouter l'envoi électronique ni la réconciliation avant V2.
+
+---
+
+## D-29 — [CANONICAL-AUDIT] `catalog_domain` dans `quote_lines` — DÉCISION OUVERTE
+
+| Date | Session | Statut |
+|---|---|---|
+| 2026-06-03 | CANONICAL-AUDIT | ⚠️ Décision ouverte — ne pas créer la colonne |
+
+**Contexte** : `catalog_domain = "APPAREIL"` est écrit côté frontend dans `addAppliance()` mais la colonne n'existe pas dans `billing.quote_lines`. La valeur est silencieusement perdue à chaque save. Aucune user story P0/P1 ne nécessite cette colonne — le type d'une ligne est déductible à 100% des colonnes existantes : `appliance_id IS NOT NULL` → APPAREIL, `supplier_name_snapshot = 'TENANT_PRIVATE'` → PRESTATION, sinon FUMISTERIE.
+**Option A** : Créer la colonne TEXT dans `billing.quote_lines` + l'écrire dans `replace_quote_lines`.
+**Option B** : Abandonner `catalog_domain` et utiliser la déduction runtime ci-dessus pour V1.
+**Trigger de reprise** : Demande explicite de reporting analytique par domaine par un client payant.
+**Règle** : Ne pas créer la colonne avant décision fondateur. Ne pas supprimer le code frontend avant décision.
+
+---
+
+## D-30 — [CANONICAL-AUDIT] `catalog_items.heating_appliance_id` = P1
+
+| Date | Session | Statut |
+|---|---|---|
+| 2026-06-03 | CANONICAL-AUDIT | ✅ Appliqué — décision fondateur |
+
+**Contexte** : `HEATING_APPLIANCE_EXECUTION_PLAN.md` classait ce travail en P0. Fondateur a arbitré P1 — ce lien ne bloque pas les pilotes, le devis, la signature, ni le parc installé.
+**Décision** : La colonne `heating_appliance_id` dans `catalog.catalog_items` est une priorité P1. Elle prépare la prescription produit et la note de calcul V3. Ne pas créer cette migration avant que P0-01, P0-02, P0-03 et P0-04 soient tous fermés.
+**Alternatives rejetées** : P0 — création prématurée qui mobilise du temps avant que les vrais P0 soient résolus.
+**Règle** : Ne pas exécuter cette migration tant que les 4 P0 appareils ne sont pas fermés.
+
+---
+
+*ARCH-DOC-1 v1.7 — 2026-06-03 — CANONICAL-AUDIT*

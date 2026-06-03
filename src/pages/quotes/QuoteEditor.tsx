@@ -1065,6 +1065,18 @@ export default function QuoteEditor() {
       return;
     }
 
+    if (finalize) {
+      const appliancesAtZero = itemLines.filter(
+        (l) => l.appliance_id && (l.unit_price_ht == null || l.unit_price_ht <= 0),
+      );
+      if (appliancesAtZero.length > 0) {
+        toast.error(
+          "Un appareil ajouté au devis n'a pas de prix de vente HT. Renseignez son prix avant d'envoyer le devis.",
+        );
+        return;
+      }
+    }
+
     setSavingAll(true);
     try {
       await billingDb.from("quotes").update({
@@ -1104,6 +1116,7 @@ export default function QuoteEditor() {
             section_key: l.section_key ?? null,
             line_type: isItem ? "item" : "text",
             product_id: li?.product_id ?? null,
+            appliance_id: li?.appliance_id ?? null,
             label: isItem ? resolveDisplayLabel(li!) : l.label,
             qty: li?.qty ?? 0,
             unit: li?.unit ?? "u",

@@ -1,3 +1,18 @@
+> ---
+> ## ⛔ DOCUMENT SUPERSEDED — NE PAS EXÉCUTER
+>
+> Ce plan de reconstruction a été **audité et écarté (NO GO)**. Il décrit une approche
+> destructive (suppressions / DROP avant remplacement) et impose `item_family` NOT NULL
+> globalement, ce qui est incompatible avec la doctrine V1 retenue (`product_type` axe
+> universel, `item_family` sous-classification fumisterie conditionnelle).
+>
+> **Références actives à suivre à la place :**
+> - Modèle cible : [`CATALOG_ITEMS_V1_FINAL.md`](./CATALOG_ITEMS_V1_FINAL.md)
+> - Plan d'exécution : [`CATALOG_EXECUTION_PLAN_V1_FINAL.md`](./CATALOG_EXECUTION_PLAN_V1_FINAL.md)
+>
+> Conservé uniquement pour historique. Figé juin 2026.
+> ---
+
 # CATALOG_ITEMS REBUILD PLAN V1
 
 > Statut : **PRÊT À EXÉCUTER**

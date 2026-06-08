@@ -1,3 +1,18 @@
+> ---
+> ## ⚠️ DOCUMENT SUPERSEDED — HISTORIQUE
+>
+> Ce modèle canonique est **remplacé** par la référence officielle :
+> [`CATALOG_ITEMS_V1_FINAL.md`](./CATALOG_ITEMS_V1_FINAL.md)
+>
+> Points dépassés par la doctrine V1 figée : l'invariant n°3 ci-dessous (« `item_family`
+> obligatoire » global) est désormais conditionné à la fumisterie uniquement ; `product_type`
+> est l'axe universel du catalogue (non listé ici). Se référer à `CATALOG_ITEMS_V1_FINAL.md`
+> pour toute question de périmètre des champs et de doctrine.
+>
+> Conservé pour historique uniquement. Ne pas l'utiliser comme source de vérité.
+> Figé juin 2026.
+> ---
+
 # CATALOG_ITEMS V1 — MODÈLE CANONIQUE FIGÉ
 
 > Statut : **FIGÉ** — Ne pas modifier sans décision fondateur explicite.

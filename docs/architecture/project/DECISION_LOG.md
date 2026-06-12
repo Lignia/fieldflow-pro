@@ -7,7 +7,7 @@
 
 ## État actuel — Mai 2026
 
-Sessions appliquées : CAT-3, RESET-CATALOG-2 v1.3, SQI-1, SEC-1, SQI-2, PRICING-1, WRAPPER-1, ARCH-DOC-1, DOC-ALIGN-1, CATALOG-STABILIZE-1, SESSION-2, SESSION-3, SESSION-C (Joncoux 6 093 articles), RUNTIME-CONSOLIDATION, CANONICAL-AUDIT.
+Sessions appliquées : CAT-3, RESET-CATALOG-2 v1.3, SQI-1, SEC-1, SQI-2, PRICING-1, WRAPPER-1, ARCH-DOC-1, DOC-ALIGN-1, CATALOG-STABILIZE-1, SESSION-2, SESSION-3, SESSION-C (Joncoux 6 093 articles), RUNTIME-CONSOLIDATION, CANONICAL-AUDIT, CATALOG-V1-FREEZE.
 Catalogue central : 6 267 articles publiés (Joncoux 6 093 + KEMP 166 + LIGNIA ouvrages 8).
 
 ---
@@ -18,7 +18,7 @@ Catalogue central : 6 267 articles publiés (Joncoux 6 093 + KEMP 166 + LIGNIA o
 |---|---|
 | Date | YYYY-MM-DD |
 | Session | NOM |
-| Statut | ✅ Appliqué / ⚠️ Dette / 🚧 Obsolète |
+| Statut | ✅ Appliqué / ⚠️ Dette / 🚧 Obsolète / 🚧 Superseded |
 
 **Contexte** — **Décision** — **Alternatives rejetées** — **Conséquences** — **Règle à retenir**
 
@@ -182,7 +182,13 @@ Catalogue central : 6 267 articles publiés (Joncoux 6 093 + KEMP 166 + LIGNIA o
 
 | Date | Session | Statut |
 |---|---|---|
-| 2026-05-17 | DOC-ALIGN-1 | ✅ Appliqué |
+| 2026-05-17 | DOC-ALIGN-1 | 🚧 Superseded (CATALOG-V1-FREEZE, 2026-06-08) |
+
+> 🚧 SUPERSEDED — La règle d'origine ci-dessous (`manufacturer_name = 'unknown'` à l'import) est
+> remplacée par la doctrine V1 : `manufacturer_name = NULL` si le fabricant est inconnu, jamais la
+> chaîne `'unknown'`. Voir CATALOG_ITEMS_V1_FINAL.md règle I-08. Raison : `'unknown'` crée un faux
+> fabricant qui pollue agrégations et `DISTINCT` ; aucune ligne `'unknown'` n'existe en base
+> (vérifié juin 2026). Texte d'origine conservé ci-dessous pour historique.
 
 **Décision** : La règle s'applique uniquement à l'import. Pas de migration SQL ni de DEFAULT.
 **Règle** : Tout nouvel import doit valider `manufacturer_name IS NOT NULL OR manufacturer_name = 'unknown'`.
@@ -434,8 +440,56 @@ Catalogue central : 6 267 articles publiés (Joncoux 6 093 + KEMP 166 + LIGNIA o
 **Contexte** : `HEATING_APPLIANCE_EXECUTION_PLAN.md` classait ce travail en P0. Fondateur a arbitré P1 — ce lien ne bloque pas les pilotes, le devis, la signature, ni le parc installé.
 **Décision** : La colonne `heating_appliance_id` dans `catalog.catalog_items` est une priorité P1. Elle prépare la prescription produit et la note de calcul V3. Ne pas créer cette migration avant que P0-01, P0-02, P0-03 et P0-04 soient tous fermés.
 **Alternatives rejetées** : P0 — création prématurée qui mobilise du temps avant que les vrais P0 soient résolus.
-**Règle** : Ne pas exécuter cette migration tant que les 4 P0 appareils ne sont pas fermés.
+**Règle** : Ne pas exécuter cette migration tant que les 4 P0 appareils ne sont pas fermés. Dans le corpus catalogue V1, ce champ est désigné « P1 READY — non créé en base ».
 
 ---
 
-*ARCH-DOC-1 v1.7 — 2026-06-03 — CANONICAL-AUDIT*
+## D-31 — [CATALOG-V1-FREEZE] `product_type` = axe universel du catalogue
+
+| Date | Session | Statut |
+|---|---|---|
+| 2026-06-08 | CATALOG-V1-FREEZE | ✅ Appliqué — décision fondateur |
+
+**Contexte** : Le modèle catalogue doit accueillir fumisterie, appareils, pièces détachées, consommables et prestations dans une table unique `catalog_items`. Les 13 valeurs d'`item_family` sont exclusivement fumisterie et ne peuvent pas classer un poêle, une chaudière ou une pièce d'appareil. La colonne `product_type` (enum `appliance`/`part`/`service`/`consumable`) existe déjà en base mais a été alimentée en masse par valeur statique aux imports historiques (constat : 22 788 lignes à `part`, 8 à `service`, vérifié juin 2026), donc sans sémantique exploitable.
+
+**Décision** : `product_type` est l'**axe universel** de nature commerciale du catalogue. Tout article en porte un, jamais NULL. C'est l'axe transverse qui distingue appareil / pièce / service / consommable, indépendamment de la fumisterie. Il doit être **dérivé à l'import** depuis la catégorie source (voir SUPPLIER_MAPPING_STRATEGY_V1), jamais affecté en valeur statique. Une valeur indéterminable → `data_quality_status='needs_review'`.
+
+**Alternatives rejetées** :
+- Créer une 14ᵉ valeur `item_family='appliance'` → mélange deux axes de nature différente dans un seul champ ; rejeté.
+- Garder `product_type` statique et naviguer uniquement par `item_family` → impossible pour les appareils, qui n'ont pas de famille fumisterie.
+- Supprimer `product_type` (il était listé en REJETÉ dans une version antérieure de V1_FINAL) → laisserait le catalogue sans axe de nature universel.
+
+**Conséquences** :
+- `product_type` passe de CHAMP REJETÉ à CHAMP CORE dans CATALOG_ITEMS_V1_FINAL.md (R-11, I-11).
+- La navigation catalogue se fait par `product_type` (niveau 1) puis `item_family` (fumisterie) / `appliance_type` (appareils) au niveau 2.
+- Le pipeline doit implémenter une règle de dérivation `catégorie source → product_type` (P-00d).
+- Cohérent avec D-11 (`product_kind` reste l'implémentation de `component_type`, axe distinct et non concurrent).
+
+**Règle** : `product_type` est l'axe de nature universel, dérivé à l'import, jamais statique, jamais NULL. `item_family` ne le remplace pas. Ne jamais classer un article par défaut silencieux : indéterminable → `data_quality_status='needs_review'`.
+
+---
+
+## D-32 — [CATALOG-V1-FREEZE] `item_family` = sous-classification fumisterie conditionnelle
+
+| Date | Session | Statut |
+|---|---|---|
+| 2026-06-08 | CATALOG-V1-FREEZE | ✅ Appliqué — décision fondateur |
+
+**Contexte** : `item_family` (13 valeurs) avait été décrit comme obligatoire pour tout article (R-03 / I-04 historiques, plan REBUILD SUPERSEDED prévoyait `item_family` NOT NULL global avec retrait de la clause `OR IS NULL` du CHECK). Or les 13 valeurs sont fumisterie : aucune ne désigne un appareil ni une pièce d'appareil. Rendre `item_family` NOT NULL globalement bloquerait tout import d'appareils.
+
+**Décision** : `item_family` est une **sous-classification fumisterie**. Elle est obligatoire **uniquement pour les articles fumisterie** et reste `NULL` pour les appareils (`product_type='appliance'`), les pièces détachées d'appareil et les consommables non fumisterie. Elle n'est **jamais** rendue NOT NULL globalement ; la clause `OR item_family IS NULL` du CHECK `catalog_items_item_family_check` est **conservée**. Aucune valeur `item_family` nouvelle n'est créée en V1.
+
+**Alternatives rejetées** :
+- `item_family` NOT NULL global (plan REBUILD, SUPERSEDED) → bloque les appareils ; explicitement écarté.
+- Ajouter des valeurs `item_family` pour appareils → changement de modèle, rejeté en V1.
+
+**Conséquences** :
+- R-03 et I-04 de CATALOG_ITEMS_V1_FINAL.md réécrites en obligation conditionnelle fumisterie.
+- Le plan REBUILD (étape 8 « retirer IS NULL du CHECK ») est définitivement caduc — déjà SUPERSEDED.
+- Les prestations LIGNIA conservent `item_family='service'` (D-18) : la conditionnalité n'interdit pas l'usage de `service`/`labor`/`environment` là où il est déjà acté, elle dispense les appareils/pièces de toute famille.
+
+**Règle** : `item_family` obligatoire pour la fumisterie, `NULL` autorisé pour appareils/pièces d'appareil/consommables non fumisterie. Jamais NOT NULL global. Source de vérité du filtrage par nature = `product_type`, pas `item_family`.
+
+---
+
+*ARCH-DOC-1 v1.8 — 2026-06-08 — CATALOG-V1-FREEZE*

@@ -16,15 +16,18 @@ CSV fournisseur et la table `catalog_items`. Constat factuel (détail : voir
    Poujoulat) n'est jamais lue par `map_supplier.py`, donc jamais produite.
 2. **`valid_from`** — jamais généré par le pipeline (0 occurrence sur toute la chaîne).
 3. **`description_fabricant`** — conservée jusqu'au JSON, puis non persistée dans `catalog_items`
-   par la chaîne d'import actuelle.
+   par la chaîne d'import actuelle. Cette troisième perte est documentée pour exhaustivité de
+   l'audit pipeline (voir `audits/OPENFIRE_PIPELINE_LOSS_AUDIT.md`) mais n'est **pas un critère
+   de « done » V1** (section 6) — sa correction en Phase 3 est laissée à l'appréciation de
+   Claude Exec sans bloquer la validation.
 
 S'ajoute une quatrième anomalie d'alimentation : **`product_type`** est écrit en valeur
 statique par import, au lieu d'être dérivé de la catégorie source. Il doit être dérivé à
 l'import (voir Phase 2 et SUPPLIER_MAPPING_STRATEGY_V1).
 
-Conséquence : la correction doit porter sur **trois maillons coordonnés**
-(`map_supplier.py` → `import_supplier_direct.py` → RPC `import_supplier_items`). Corriger deux
-maillons sur trois ne produit aucun effet en base.
+Conséquence : la correction des deux pertes bloquantes (`item_family`, `valid_from`) doit porter
+sur **trois maillons coordonnés** (`map_supplier.py` → `import_supplier_direct.py` → RPC
+`import_supplier_items`). Corriger deux maillons sur trois ne produit aucun effet en base.
 
 ---
 

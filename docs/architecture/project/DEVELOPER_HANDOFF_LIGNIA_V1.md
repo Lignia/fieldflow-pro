@@ -33,6 +33,11 @@ contient aujourd'hui.
 6. `catalog/D-25_TVA_catalogue_doctrine.md` — doctrine TVA (suggestion surchargeable).
 7. `project/DECISION_LOG.md` — l'historique des décisions (D-01 à D-32).
 
+> **Note de lecture sur le DECISION_LOG :** D-27 et D-29 sont des décisions OUVERTES — elles
+> documentent explicitement ce qu'il **NE FAUT PAS implémenter** avant décision fondateur
+> (respectivement : `appliance_snapshot` et la colonne `catalog_domain` dans `quote_lines`).
+> Ne pas les traiter comme des spécifications à suivre.
+
 ## 3. Les deux axes du catalogue (à comprendre avant tout)
 
 Le catalogue a **deux axes complémentaires, jamais concurrents** :
@@ -96,7 +101,7 @@ ou non.
   Aucune logique TVA côté frontend.
 - Prestations : `product_type='service'` fait foi pour le filtrage ; `is_labor=true` = sous-cas
   main-d'œuvre ; `item_family='service'`/`'labor'` autorisés pour les prestations liées au
-  chauffage bois (R-12 ; D-18).
+  chauffage bois (R-12 ; D-18) ; `is_purchasable=false` obligatoire (R-12).
 - Suppression interdite : on **archive** (`is_active=false`), on ne DELETE jamais un article
   (R-05).
 - Pricing runtime : via `resolve_item_price` uniquement (ne pas la réécrire ; D-05).
@@ -119,12 +124,13 @@ import_supplier_items → catalog_items` **jette trois informations présentes d
 
 1. `item_family` — la catégorie source n'est jamais lue par `map_supplier.py`.
 2. `valid_from` — jamais produit par la chaîne d'import actuelle.
-3. `description_fabricant` — survit jusqu'au JSON puis non persistée dans `catalog_items`.
+3. `description_fabricant` — survit jusqu'au JSON puis non persistée dans `catalog_items`
+   (perte documentée pour exhaustivité — non bloquante pour le « done » V1, voir plan Phase 3).
 
 S'ajoute `product_type` écrit en valeur statique au lieu d'être dérivé. Conséquence : toute
-correction touche **trois maillons coordonnés**. Corriger un script sans corriger la RPC ne
-change rien en base. C'est l'erreur la plus probable pour un repreneur. Les chiffres et les
-mesures de remplissage qui prouvent ces pertes sont dans OPENFIRE_PIPELINE_LOSS_AUDIT.
+correction des deux pertes bloquantes touche **trois maillons coordonnés**. Corriger un script
+sans corriger la RPC ne change rien en base. C'est l'erreur la plus probable pour un repreneur.
+Les chiffres et les mesures de remplissage qui prouvent ces pertes sont dans OPENFIRE_PIPELINE_LOSS_AUDIT.
 
 ## 8. Pièges connus vérifiés (à ne pas redécouvrir à ses dépens)
 
@@ -145,6 +151,10 @@ mesures de remplissage qui prouvent ces pertes sont dans OPENFIRE_PIPELINE_LOSS_
   NULL). Une valeur hors liste fait échouer l'INSERT.
 - **Catégorie fumisterie inconnue à l'import** : règle P-00 = stop + `needs_review` + rapport.
   Jamais de repli silencieux vers une famille par défaut.
+- **`needs_human_review` (sécurité DTU/DTA, D-01) et `data_quality_status='needs_review'`
+  (qualité import, P-00) sont indépendants** et peuvent coexister sur une même ligne. Une vue
+  « articles à vérifier » dans Lovable doit interroger les deux champs — ils ne sont pas
+  équivalents et ne se substituent pas l'un à l'autre.
 
 ## 9. Dette reportée (hors périmètre V1, à traiter plus tard)
 

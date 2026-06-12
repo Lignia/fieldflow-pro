@@ -264,7 +264,7 @@ La compatibilité combustible d'un article conduit n'est alimentée que si le fo
 Tout article porte un `product_type` parmi `appliance`, `part`, `service`, `consumable`. C'est l'axe de nature du catalogue ; il n'est jamais NULL. `item_family` ne le remplace pas : les deux axes sont complémentaires (voir section 0).
 
 **R-12 — Arbitrage des prestations (service / labor).**
-La nature « prestation » est portée par **`product_type = 'service'`** : c'est la source de vérité du filtrage pour toute prestation (pose, entretien, ramonage, SAV). **`is_labor = true`** indique spécifiquement une ligne de main-d'œuvre (distinction comptable / TVA), sous-cas de `product_type = 'service'`. **`item_family = 'service'` et `item_family = 'labor'` sont autorisés pour les prestations liées au chauffage bois, pas uniquement la fumisterie conduit** ; les prestations non concernées conservent `item_family = NULL`. En cas de filtrage « prestations », la source de vérité est `product_type = 'service'`, jamais `item_family`. Voir D-18.
+La nature « prestation » est portée par **`product_type = 'service'`** : c'est la source de vérité du filtrage pour toute prestation (pose, entretien, ramonage, SAV). **`is_labor = true`** indique spécifiquement une ligne de main-d'œuvre (distinction comptable / TVA), sous-cas de `product_type = 'service'`. **`item_family = 'service'` et `item_family = 'labor'` sont autorisés pour les prestations liées au chauffage bois, pas uniquement la fumisterie conduit** ; les prestations non concernées conservent `item_family = NULL`. En cas de filtrage « prestations », la source de vérité est `product_type = 'service'`, jamais `item_family`. **Les prestations (`product_type = 'service'`) doivent avoir `is_purchasable = false` — elles ne sont jamais commandées à un fournisseur.** Voir D-18.
 
 ---
 
@@ -308,5 +308,5 @@ Le pipeline détermine `product_type` (axe universel) pour toute ligne, notammen
 ---
 
 *CATALOG-V1-FINAL — figé juin 2026 — Thomas + Claude Analytics*
-*Révision doctrine product_type/item_family — juin 2026.*
+*Révision doctrine product_type/item_family — juin 2026. Correctifs post-audit : R-12 is_purchasable.*
 *Document de référence officielle. Annule CATALOG_ITEMS_V1_CANONICAL.md pour toute question de périmètre des champs.*

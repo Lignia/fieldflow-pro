@@ -13,7 +13,7 @@
 
 `item_family` est une **sous-classification fumisterie** : elle qualifie la nature fumisterie d'un article. Elle est obligatoire pour les articles fumisterie et reste `NULL` pour les appareils, les pièces détachées d'appareil et les consommables non fumisterie. Elle n'est jamais rendue NOT NULL globalement, et aucune valeur nouvelle n'est créée en V1.
 
-Les deux axes sont **complémentaires, jamais concurrents** : `product_type` dit *quelle nature*, `item_family` sous-classe la seule fumisterie. `catalog_items` est le référentiel commercial de tout ce qui se vend ; `heating_appliances` est le référentiel technique des appareils (sans donnée tarifaire), relié optionnellement via `heating_appliance_id` (champ V2 READY, non encore créé en base — voir section 2).
+Les deux axes sont **complémentaires, jamais concurrents** : `product_type` dit *quelle nature*, `item_family` sous-classe la seule fumisterie. `catalog_items` est le référentiel commercial de tout ce qui se vend ; `heating_appliances` est le référentiel technique des appareils (sans donnée tarifaire), relié optionnellement via `heating_appliance_id` (champ **P1 READY**, non encore créé en base — voir section 2).
 
 **Navigation catalogue.** La navigation se fait par `product_type` (niveau 1), puis `item_family` pour la fumisterie et `appliance_type` pour les appareils (niveau 2) ; `manufacturer_name` et `fuel_type` sont des filtres transverses. Un appareil à `item_family = NULL` n'est pas un trou de navigation : son axe de classement est `appliance_type`.
 
@@ -29,7 +29,7 @@ Obligatoires. Tout article qui ne respecte pas ces contraintes est rejeté par l
 | `supplier_ref` | TEXT | — | Référence immuable chez le fournisseur. Jamais modifiée après création. Clé d'idempotence des imports. |
 | `supplier_name` | TEXT | — | Fournisseur d'achat — celui qui facture l'artisan. Clé de résolution de remise. |
 | `name` | TEXT | — | Désignation commerciale. Affiché sur le devis, le bon de commande, la facture. |
-| `product_type` | ENUM | — | **Axe universel du catalogue.** Nature commerciale de tout article. 4 valeurs fermées. Présent sur tout article. |
+| `product_type` | ENUM | — | **Axe universel du catalogue (cible).** Nature commerciale de tout article. 4 valeurs fermées. Présent sur tout article. À dériver à l'import conformément à SUPPLIER_MAPPING_STRATEGY_V1 (voir I-11). Valeur indéterminable → `data_quality_status='needs_review'`, jamais de défaut statique. |
 | `item_family` | TEXT | NULL | **Sous-classification fumisterie.** 13 valeurs fermées. Obligatoire pour les articles fumisterie uniquement ; `NULL` pour appareils, pièces d'appareil et consommables non fumisterie. Pilote la TVA suggérée et la navigation catalogue pour la fumisterie. |
 | `valid_from` | DATE | — | Date de mise à jour du tarif fournisseur. Obligatoire dans tout import. |
 | `unit_price_ht` | NUMERIC | — | Prix public HT. Base du calcul de remise. Seul prix stocké sur l'article. |
@@ -49,6 +49,15 @@ Obligatoires. Tout article qui ne respecte pas ces contraintes est rejeté par l
 
 **Valeurs fermées de `product_type` (4) :**
 `appliance` · `part` · `service` · `consumable`
+
+> État d'alimentation : `product_type` est l'axe de nature **cible** du catalogue. Les imports
+> doivent le **dériver** depuis la catégorie source (préfixe `APP/` → `appliance`, prestations →
+> `service`, fumisterie physique → `product_type` dérivé par la spécification de mapping fournisseur,
+> généralement `part` ; `consumable` réservé aux catégories explicitement identifiées comme
+> consommables ; voir SUPPLIER_MAPPING_STRATEGY_V1). Une catégorie indéterminable →
+> `data_quality_status='needs_review'`, import bloqué jusqu'à arbitrage ; `product_type` ne prend
+> jamais la valeur `'needs_review'`. La doctrine (axe universel) est inchangée ; seule est
+> précisée l'exigence de dérivation à l'import.
 
 **Valeurs fermées de `item_family` (13) :**
 `conduit_principal` · `systeme_etanche` · `tubage_flexible` · `tubage_rigide` · `raccordement_visible` · `raccordement_pellets_visible` · `sortie_toiture` · `gaine_technique` · `accessoire_fumisterie` · `adaptateur_transition` · `environment` · `service` · `labor`
@@ -71,7 +80,6 @@ Utiles. Alimentés progressivement selon les fournisseurs et les cas d'usage. Un
 | `bareme_code` | TEXT | Code bordereau remise différenciée | Quand le CSV fournisseur le fournit. |
 | `replaced_by_item_id` | UUID | FK vers l'article successeur | Quand un article est remplacé par une nouvelle référence. |
 | `is_obsolete` | BOOLEAN | Discontinué, non commandable. Distinct de `is_active`. | Défaut false. Article encore utilisable en stock mais non réassortissable. |
-| `heating_appliance_id` | UUID | **V2 READY — non encore créé en base.** Lien optionnel futur vers `heating_appliances`. | Ne pas utiliser en V1 tant que la migration n'existe pas. Fait partie de la doctrine cible (lien commercial → technique). |
 
 ### Dimensions fumisterie
 
@@ -105,10 +113,10 @@ Utiles. Alimentés progressivement selon les fournisseurs et les cas d'usage. Un
 
 | Champ | Type | Définition | Règle |
 |---|---|---|---|
-| `appliance_type` | TEXT | Type d'appareil. Axe de navigation des appareils (niveau 2). | TEXT en base ; **8 valeurs fermées par convention pipeline** (non contraintes en base V1). Valeur inconnue → `needs_review`, jamais de valeur libre. **Interdit si `heating_appliance_id` est renseigné** (voir R-07, conditionnel V2). |
+| `appliance_type` | TEXT | Type d'appareil. Axe de navigation des appareils (niveau 2). | TEXT en base, **contraint par le CHECK `catalog_items_appliance_type_check` (8 valeurs autorisées + NULL)**. Valeur inconnue → `data_quality_status='needs_review'`, jamais de valeur libre. **Interdit si `heating_appliance_id` est renseigné** (voir R-07, conditionnel P1 READY). |
 | `fuel_type` | TEXT | Compatibilité combustible | Uniquement si fourni explicitement par le fournisseur. Jamais inféré. |
 
-**Valeurs fermées de `appliance_type` (8, convention pipeline) :**
+**Valeurs fermées de `appliance_type` (8, contraintes en base par CHECK) :**
 `poele_bois` · `poele_granules` · `insert_bois` · `insert_granules` · `chaudiere_bois` · `chaudiere_granules` · `foyer_ferme` · `cheminee_foyer_ouvert`
 
 **Valeurs fermées de `fuel_type` (6) :**
@@ -171,7 +179,15 @@ Présentes en base, non alimentées en V1, activables sans migration.
 | `min_order_qty` | V2 commande fournisseur active |
 | `lead_time_days` | V2 commande fournisseur active |
 
-> Note : `heating_appliance_id` est cité en section 2 comme V2 READY mais, contrairement aux colonnes ci-dessus, **n'existe pas encore en base** : sa création nécessitera une migration V2.
+### P1 READY — Champs non encore créés en base
+
+Ces champs font partie de la doctrine cible mais **n'existent pas en base aujourd'hui**.
+Leur création nécessitera une migration P1. Ne pas les utiliser ni les référencer dans le
+pipeline V1.
+
+| Champ | Type cible | Rôle | Règle V1 |
+|---|---|---|---|
+| `heating_appliance_id` | UUID | Lien optionnel `catalog_items → heating_appliances` (commercial → technique) | **P1 READY — non créé en base.** Ne pas utiliser tant que la migration P1 n'existe pas (voir D-30). |
 
 ---
 
@@ -232,8 +248,8 @@ Tout fichier d'import sans date de tarif est rejeté. Un article sans date de ta
 **R-06 — `is_central = true` requiert `tenant_id IS NULL`, et inversement.**
 Un article central appartient à tous les tenants et n'a pas de tenant_id. Un article privé appartient à un artisan et a un tenant_id. Ces deux états ne peuvent pas coexister.
 
-**R-07 — `appliance_type` est interdit si `heating_appliance_id` est renseigné (conditionnel V2).**
-Cette règle s'appliquera lorsque la colonne `heating_appliance_id` sera créée en base (V2). Un appareil lié à la base ADEME via `heating_appliance_id` tirera son type de `heating_appliances.appliance_type` ; la colonne `catalog_items.appliance_type` ne devra jamais dupliquer cette information. En V1, `heating_appliance_id` n'existant pas, `appliance_type` est l'axe de navigation des appareils.
+**R-07 — `appliance_type` est interdit si `heating_appliance_id` est renseigné (conditionnel P1 READY).**
+Cette règle s'appliquera lorsque la colonne `heating_appliance_id` sera créée en base (P1 READY, voir D-30). Un appareil lié à la base ADEME via `heating_appliance_id` tirera son type de `heating_appliances.appliance_type` ; la colonne `catalog_items.appliance_type` ne devra jamais dupliquer cette information. En V1, `heating_appliance_id` n'existant pas, `appliance_type` est l'axe de navigation des appareils.
 
 **R-08 — `warning_message` et `review_reason` sont limités à 200 caractères.**
 Ces champs sont des messages opérationnels courts destinés à l'artisan. Ils ne contiennent pas de règles normatives, de références DTU/CPT/DTA, ni de paragraphes d'explication.
@@ -246,6 +262,9 @@ La compatibilité combustible d'un article conduit n'est alimentée que si le fo
 
 **R-11 — `product_type` est l'axe universel et obligatoire.**
 Tout article porte un `product_type` parmi `appliance`, `part`, `service`, `consumable`. C'est l'axe de nature du catalogue ; il n'est jamais NULL. `item_family` ne le remplace pas : les deux axes sont complémentaires (voir section 0).
+
+**R-12 — Arbitrage des prestations (service / labor).**
+La nature « prestation » est portée par **`product_type = 'service'`** : c'est la source de vérité du filtrage pour toute prestation (pose, entretien, ramonage, SAV). **`is_labor = true`** indique spécifiquement une ligne de main-d'œuvre (distinction comptable / TVA), sous-cas de `product_type = 'service'`. **`item_family = 'service'` et `item_family = 'labor'` sont autorisés pour les prestations liées au chauffage bois, pas uniquement la fumisterie conduit** ; les prestations non concernées conservent `item_family = NULL`. En cas de filtrage « prestations », la source de vérité est `product_type = 'service'`, jamais `item_family`. Voir D-18.
 
 ---
 
@@ -284,7 +303,7 @@ Toute ligne avec `item_family` IN (`conduit_principal`, `systeme_etanche`, `tuba
 Un import central (Joncoux, Poujoulat, KEMP) produit des lignes avec `is_central = true` et `tenant_id = NULL`. Un import privé artisan produit des lignes avec `is_central = false` et `tenant_id = UUID_du_tenant`. Un pipeline qui mélange les deux états est en erreur.
 
 **I-11 — `product_type` est obligatoire dans chaque ligne du fichier source.**
-Le pipeline détermine `product_type` (axe universel) pour toute ligne, notamment via la catégorie source. Une ligne dont le `product_type` ne peut être déterminé est signalée pour revue (`needs_review`), jamais classée par défaut silencieux.
+Le pipeline détermine `product_type` (axe universel) pour toute ligne, notamment via la catégorie source. Une ligne dont le `product_type` ne peut être déterminé est signalée pour revue (`data_quality_status='needs_review'`), jamais classée par défaut silencieux.
 
 ---
 

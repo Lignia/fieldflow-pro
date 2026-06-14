@@ -59,7 +59,7 @@ DANGEROUS_WORD = [
 # Source : POUJOULAT_ITEM_FAMILY_MATRIX_V1.md (figé juin 2026)
 # Clé du mapping : of_seller_product_category_name après normalize_columns() puis
 #   resolve_category() → re.sub(r"[^a-z0-9]+", "_", cat.lower()).strip("_")
-# 126 entrées couvrant 100 % des 16 529 lignes Poujoulat.
+# 127 entrées couvrant 100 % des 16 529 lignes Poujoulat.
 #
 # item_family : 8 valeurs parmi les 13 autorisées par le CHECK V1 :
 #   sortie_toiture | accessoire_fumisterie | systeme_etanche | conduit_principal
@@ -89,6 +89,7 @@ POUJOULAT_CATEGORY_MAP = {
     "st_stvf":  ("sortie_toiture", "part"),   # ST../STVF sortie Vendée faîtage
     "st":       ("sortie_toiture", "part"),   # ST.. seul  bandeaux décor sortie
     "st_strp":  ("sortie_toiture", "part"),   # ST../STRP embase étanchéité
+    "st_st":    ("sortie_toiture", "part"),   # ST../ST   embase étanchéité (22 articles)
     "st_shp":   ("sortie_toiture", "part"),   # ST../SHP  embase multi ardoise
     "st_auc":   ("sortie_toiture", "part"),   # ST../AUC  kit France Classique ST
     # Sous-gammes ST rattachées accessoires / conduit isolé

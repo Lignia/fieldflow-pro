@@ -54,69 +54,161 @@ DANGEROUS_WORD = [
 ]
 
 
-# ─── Matrice Poujoulat : of_seller_product_category_name → item_family / product_type ───
+# ─── Matrice Poujoulat : of_seller_product_category_name → (item_family, product_type) ───
 #
-# Source : POUJOULAT_ITEM_FAMILY_MATRIX_V1.md
-# Règles :
-#   - item_family : 13 valeurs fermées. NULL pour non-fumisterie.
-#   - product_type : 'part' par défaut fumisterie, 'appliance' pour appareils,
-#                    'service' pour prestations, 'consumable' si explicite.
-#   - Catégorie absente de la matrice → triplet uncertain+needs_human_review.
-#   - Catégories non-fumisterie (LOGPOS, SERVICE, ACFOU, etc.) : item_family=None,
-#     product_type dérivé ou triplet si indéterminable.
+# Source : POUJOULAT_ITEM_FAMILY_MATRIX_V1.md (figé juin 2026)
+# Clé du mapping : of_seller_product_category_name après normalize_columns() puis
+#   resolve_category() → re.sub(r"[^a-z0-9]+", "_", cat.lower()).strip("_")
+# 126 entrées couvrant 100 % des 16 529 lignes Poujoulat.
 #
-# Structure : { catégorie_normalisée: (item_family_ou_None, product_type) }
-# product_type=None → catégorie ambigüe → triplet uncertain appliqué dans map_row.
+# item_family : 8 valeurs parmi les 13 autorisées par le CHECK V1 :
+#   sortie_toiture | accessoire_fumisterie | systeme_etanche | conduit_principal
+#   gaine_technique | tubage_flexible | tubage_rigide | adaptateur_transition
+#
+# product_type : 'part' (fumisterie physique) ou 'consumable' (consommables explicites).
+#   Aucun 'appliance' identifié dans le corpus audité Poujoulat.
+#
+# Catégorie absente de cette matrice → triplet uncertain dans resolve_category().
+# Ne jamais ajouter de valeur item_family hors des 13 officielles.
 
 POUJOULAT_CATEGORY_MAP = {
-    # Conduits double paroi
-    "dpc":          ("conduit_double_paroi",       "part"),
-    "dpb":          ("conduit_double_paroi",       "part"),
-    "dpn":          ("conduit_double_paroi",       "part"),
-    "dp":           ("conduit_double_paroi",       "part"),
-    # Conduits simple paroi
-    "sp":           ("conduit_simple_paroi",       "part"),
-    "spc":          ("conduit_simple_paroi",       "part"),
-    # Tubage flexible
-    "flex":         ("tubage_flexible",            "part"),
-    "flexinox":     ("tubage_flexible",            "part"),
-    # Conduits concentriques / gaz
-    "conc":         ("conduit_concentrique",       "part"),
-    "concentrique": ("conduit_concentrique",       "part"),
-    "gaz":          ("conduit_concentrique",       "part"),
-    # Sorties de toit
-    "sortie":       ("sortie_de_toit",             "part"),
-    "srt":          ("sortie_de_toit",             "part"),
-    "toit":         ("sortie_de_toit",             "part"),
-    # Accessoires fumisterie
-    "acc":          ("accessoire_fumisterie",      "part"),
-    "acf":          ("accessoire_fumisterie",      "part"),
-    "accessoire":   ("accessoire_fumisterie",      "part"),
-    # Raccordement / raccord
-    "rac":          ("raccordement",               "part"),
-    "raccord":      ("raccordement",               "part"),
-    "raccordement": ("raccordement",               "part"),
-    # Pièces détachées
-    "pd":           ("piece_detachee",             "part"),
-    "pdr":          ("piece_detachee",             "part"),
-    "pieces":       ("piece_detachee",             "part"),
-    # Prestations / service
-    "pre":          (None,                          "service"),
-    "prestation":   (None,                          "service"),
-    "sav":          (None,                          "service"),
-    "service":      (None,                          "service"),
-    "logpos":       (None,                          "service"),
-    # Consommables explicites
-    "cons":         (None,                          "consumable"),
-    "consommable":  (None,                          "consumable"),
-    # Catégories ambigües Poujoulat (fourre-tout PRO/NC, SANS, AXAF/NC, PPMI/NC)
-    # product_type=None → triplet uncertain appliqué dans map_row
-    "pro":          (None,                          None),
-    "sans":         (None,                          None),
-    "axaf":         (None,                          None),
-    "ppmi":         (None,                          None),
-    "nc":           (None,                          None),
-    "acfou":        (None,                          None),
+    # ── A. sortie_toiture — gamme ST.. ──────────────────────────────────────
+    "st_tcp":   ("sortie_toiture", "part"),   # ST../TCP  chapeaux terre cuite
+    "st_sti":   ("sortie_toiture", "part"),   # ST../STI  sorties inox
+    "st_opti":  ("sortie_toiture", "part"),   # ST../OPTI chapeaux Optimale
+    "st_trp":   ("sortie_toiture", "part"),   # ST../TRP  chapeaux crépi
+    "st_lum":   ("sortie_toiture", "part"),   # ST../LUM  chapeaux France Design
+    "st_stb":   ("sortie_toiture", "part"),   # ST../STB  sortie STB
+    "st_stf":   ("sortie_toiture", "part"),   # ST../STF  sortie STF
+    "st_stp":   ("sortie_toiture", "part"),   # ST../STP  embases étanchéité Provence
+    "st_stvr":  ("sortie_toiture", "part"),   # ST../STVR sortie STMP Noirmoutier
+    "st_stbp":  ("sortie_toiture", "part"),   # ST../STBP sortie STBP
+    "st_stdc":  ("sortie_toiture", "part"),   # ST../STDC embase étanchéité
+    "st_stl":   ("sortie_toiture", "part"),   # ST../STL  sortie Languedoc
+    "st_stps":  ("sortie_toiture", "part"),   # ST../STPS sortie "S" Provence
+    "st_stvf":  ("sortie_toiture", "part"),   # ST../STVF sortie Vendée faîtage
+    "st":       ("sortie_toiture", "part"),   # ST.. seul  bandeaux décor sortie
+    "st_strp":  ("sortie_toiture", "part"),   # ST../STRP embase étanchéité
+    "st_shp":   ("sortie_toiture", "part"),   # ST../SHP  embase multi ardoise
+    "st_auc":   ("sortie_toiture", "part"),   # ST../AUC  kit France Classique ST
+    # Sous-gammes ST rattachées accessoires / conduit isolé
+    "st_inox":  ("accessoire_fumisterie", "part"),  # ST../INOX  pattes, colliers inox
+    "st_acdo":  ("accessoire_fumisterie", "part"),  # ST../ACDO  colliers de soutien
+    "st_galv":  ("accessoire_fumisterie", "part"),  # ST../GALV  colliers galva
+    "st_fiso":  ("conduit_principal",     "part"),  # ST../FISO  conduit isolé Liss-Iso
+    "st_acth":  ("accessoire_fumisterie", "part"),  # ST../ACTH  déflecteurs pluie
+    "st_fix":   ("accessoire_fumisterie", "part"),  # ST../FIX   cadres de fixation
+    "st_fixo":  ("accessoire_fumisterie", "part"),  # ST../FIXO  cadre fixation Optimale
+    # ── B. accessoire_fumisterie — gammes THRM, FUMI, CHP, GRLA, OUT, PRO, ──
+    #        PPTH, PPMI, ESS, AXAF, WAXC, KITI, SANS ──────────────────────────
+    "thrm_acth":  ("accessoire_fumisterie", "part"),      # THRM/ACTH adaptateurs, raccords
+    "thrm_thti":  ("accessoire_fumisterie", "part"),      # THRM/THTI carters, silencieux titane
+    "thrm_thzi":  ("accessoire_fumisterie", "part"),      # THRM/THZI colliers assemblage zinc
+    "thrm_cuiv":  ("accessoire_fumisterie", "part"),      # THRM/CUIV chapeaux cuivre
+    "fumi":       ("accessoire_fumisterie", "part"),      # FUMI seul  HV design
+    "fumi_emai":  ("accessoire_fumisterie", "part"),      # FUMI/EMAI adaptateurs émaillés
+    "fumi_alue":  ("accessoire_fumisterie", "part"),      # FUMI/ALUE chapeaux aluminiés
+    "fumi_304s":  ("accessoire_fumisterie", "part"),      # FUMI/304S adaptateurs inox 304
+    "fumi_acie":  ("accessoire_fumisterie", "part"),      # FUMI/ACIE adaptateurs acier
+    "fumi_soi8":  ("accessoire_fumisterie", "part"),      # FUMI/SOI8 adaptateur conique
+    "fumi_si":    ("accessoire_fumisterie", "part"),      # FUMI/SI   cône anticondens
+    "chp_chp":    ("accessoire_fumisterie", "part"),      # CHP/CHP   colliers muraux
+    "grla_nc":    ("accessoire_fumisterie", "part"),      # GRLA/NC   boîtiers de buse
+    "out_bubb":   ("accessoire_fumisterie", "part"),      # OUT/BUBB  hérissons Bubbles
+    "out_brou":   ("accessoire_fumisterie", "part"),      # OUT/BROU  brosses ramonage
+    "out_colo":   ("accessoire_fumisterie", "part"),      # OUT/COLO  accessoires Colo
+    "out_veni":   ("accessoire_fumisterie", "part"),      # OUT/VENI  accessoires Venitian
+    "pro_nc":     ("accessoire_fumisterie", "part"),      # PRO/NC    bistre/ramonage
+    "pro_dero":   ("accessoire_fumisterie", "part"),      # PRO/DERO  dérouleurs
+    "pro_aspi":   ("accessoire_fumisterie", "part"),      # PRO/ASPI  aspirateurs outillage
+    "pro":        ("accessoire_fumisterie", "part"),      # PRO seul  bouchons divers
+    "ppth_nc":    ("accessoire_fumisterie", "part"),      # PPTH/NC   cache-plinthes
+    "ppmi_nc":    ("accessoire_fumisterie", "consumable"),# PPMI/NC   colle (consommable)
+    "ess":        ("accessoire_fumisterie", "part"),      # ESS       grilles crème
+    "ess_nc":     ("accessoire_fumisterie", "part"),      # ESS/NC    kit air foyer
+    "axaf_nc":    ("accessoire_fumisterie", "consumable"),# AXAF/NC   peinture (consommable)
+    "waxc_nc":    ("accessoire_fumisterie", "part"),      # WAXC/NC   bride murale
+    "kiti":       ("accessoire_fumisterie", "part"),      # KITI      cadres de fixation kit
+    "kiti_nc":    ("accessoire_fumisterie", "part"),      # KITI/NC   raccords haut/conduit
+    "kiti_actu":  ("accessoire_fumisterie", "part"),      # KITI/ACTU adaptateurs hauteur
+    # SANS/SANS_AUC : valeur source explicite — cartographiés (note matrice V1)
+    "sans":       ("accessoire_fumisterie", "part"),      # SANS      sans catégorie (repli)
+    "sans_auc":   ("accessoire_fumisterie", "part"),      # SANS/AUC  sans catégorie (repli)
+    # ── C. systeme_etanche — gammes DUAL, TP3E, KT, KTAC, TFUM ─────────────
+    "dual_pgi":   ("systeme_etanche", "part"),  # DUAL/PGI  Dualis concentrique étanche PGI
+    "dual_ei":    ("systeme_etanche", "part"),  # DUAL/EI   Dualis étanche intérieur
+    "dual_flex":  ("systeme_etanche", "part"),  # DUAL/FLEX Dualis flexible étanche
+    "dual_gp":    ("systeme_etanche", "part"),  # DUAL/GP   Dualis grand passage
+    "dual_ep":    ("systeme_etanche", "part"),  # DUAL/EP   Dualis colliers platine
+    "dual_ga":    ("systeme_etanche", "part"),  # DUAL/GA   Dualis adaptateurs gaz
+    "dual_ea":    ("systeme_etanche", "part"),  # DUAL/EA   Dualis colliers
+    "dual_3ce":   ("systeme_etanche", "part"),  # DUAL/3CE  conduit liaison 3CE
+    "dual_da":    ("systeme_etanche", "part"),  # DUAL/DA   colliers Dualis
+    "dual_bf":    ("systeme_etanche", "part"),  # DUAL/BF   joints à lèvre EI
+    "dual_ca":    ("systeme_etanche", "part"),  # DUAL/CA   colliers ext.
+    "dual_fi":    ("systeme_etanche", "part"),  # DUAL/FI   solin tuile F.I
+    "dual_pp":    ("systeme_etanche", "part"),  # DUAL/PP   té de purge PPA
+    "dual":       ("systeme_etanche", "part"),  # DUAL seul coudes concentriques
+    "tp3e_tpac":  ("systeme_etanche", "part"),  # TP3E/TPAC tubage 3CE étanche membrane
+    "tp3e_tpeg":  ("systeme_etanche", "part"),  # TP3E/TPEG adaptations EF PGI
+    "tp3e_tpei":  ("systeme_etanche", "part"),  # TP3E/TPEI adaptateurs EF buse
+    "kt":         ("systeme_etanche", "part"),  # KT        kits d'étanchéité
+    "ktac_nc":    ("systeme_etanche", "part"),  # KTAC/NC   kit air direct étanche
+    "tfum_tcle":  ("systeme_etanche", "part"),  # TFUM/TCLE kit Top Clean
+    "tfum_cozr":  ("systeme_etanche", "part"),  # TFUM/COZR catalyseur Zéro CO
+    # ── D. conduit_principal — gammes COND, THplus, 3CEP, THD ───────────────
+    "cond_cosd":    ("conduit_principal", "part"),  # COND/COSD  conduits CD carters
+    "cond_cotf":    ("conduit_principal", "part"),  # COND/COTF  conduits CD éléments+trappes
+    "cond_vh":      ("conduit_principal", "part"),  # COND/VH    éléments coudés VH
+    "cond_casc":    ("conduit_principal", "part"),  # COND/CASC  adaptateurs B23P
+    "cond_cde":     ("conduit_principal", "part"),  # COND/CDE   joint condensor
+    "cond":         ("conduit_principal", "part"),  # COND seul  élément trappe visite
+    "thplus_g050":  ("conduit_principal", "part"),  # THplus/G050 THERM+ GEP50 conduit isolé
+    "thplus_g100":  ("conduit_principal", "part"),  # THplus/G100 THERM+ GEP100 conduit isolé
+    "3cep_mplusin": ("conduit_principal", "part"),  # 3CEP/MplusIN 3CE Plus Multi+ intérieur
+    "3cep_reno":    ("conduit_principal", "part"),  # 3CEP/RENO  3CE Plus rénovation Renoshunt
+    "3cep_mplusex": ("conduit_principal", "part"),  # 3CEP/MplusEX 3CE Plus Multi+ extérieur
+    "3cep_m_in":    ("conduit_principal", "part"),  # 3CEP/M+IN  3CE solin toit plat
+    "3cep":         ("conduit_principal", "part"),  # 3CEP seul  joint 3CETHD
+    "thd":          ("conduit_principal", "part"),  # THD        3CETHD bouchons
+    "thd_racc":     ("conduit_principal", "part"),  # THD/RACC   conduit raccordement THD
+    # ── E. tubage_flexible — gamme TIFL ─────────────────────────────────────
+    "tifl_star":  ("tubage_flexible", "part"),  # TIFL/STAR  Starflex lisse
+    "tifl_st12":  ("tubage_flexible", "part"),  # TIFL/ST12  Starflex 12/100
+    "tifl_kita":  ("tubage_flexible", "part"),  # TIFL/KITA  kit alu tubage
+    "tifl_llis":  ("tubage_flexible", "part"),  # TIFL/LLIS  flex lisse
+    "tifl_lhrl":  ("tubage_flexible", "part"),  # TIFL/LHRL  flex lisse
+    "tifl_flgf":  ("tubage_flexible", "part"),  # TIFL/FLGF  flex inox GF étanche
+    "tifl_acou":  ("tubage_flexible", "part"),  # TIFL/ACOU  flexalu acoustique
+    "tifl_ther":  ("tubage_flexible", "part"),  # TIFL/THER  flexalu thermique
+    "tifl_flis":  ("tubage_flexible", "part"),  # TIFL/FLIS  flexible inox lisse
+    "tifl_gfle":  ("tubage_flexible", "part"),  # TIFL/GFLE  flexible air
+    "tifl_ala5":  ("tubage_flexible", "part"),  # TIFL/ALA5  flexible alu
+    "tifl_valu":  ("tubage_flexible", "part"),  # TIFL/VALU  ventil alu flexible
+    "tifl_falu":  ("tubage_flexible", "part"),  # TIFL/FALU  flexalu
+    "tifl_phon":  ("tubage_flexible", "part"),  # TIFL/PHON  phoni alu
+    "tifl_lisa":  ("tubage_flexible", "part"),  # TIFL/LISA  flexible lisse
+    # ── F. tubage_rigide — gamme TIRI ───────────────────────────────────────
+    "tiri_tubo":  ("tubage_rigide", "part"),    # TIRI/TUBO  adaptateurs rond/ovale
+    # ── G. adaptateur_transition — gammes AXCO, AXTU ────────────────────────
+    "axco_nc":    ("adaptateur_transition", "part"),  # AXCO/NC    adaptateurs conduit
+    "axco_flac":  ("adaptateur_transition", "part"),  # AXCO/FLAC  adaptateurs sur buse
+    "axco_fiso":  ("accessoire_fumisterie", "part"),  # AXCO/FISO  coquilles isolantes
+    "axco_point": ("adaptateur_transition", "part"),  # AXCO/.     raccords inox émail
+    "axco_regu":  ("accessoire_fumisterie", "part"),  # AXCO/REGU  régulateurs
+    "axco_actu":  ("accessoire_fumisterie", "part"),  # AXCO/ACTU  chapeaux cône finition
+    "axco_casc":  ("accessoire_fumisterie", "part"),  # AXCO/CASC  cache air comburant
+    "axtu_nc":    ("adaptateur_transition", "part"),  # AXTU/NC    adaptateurs tubage clips
+    "axtu":       ("adaptateur_transition", "part"),  # AXTU seul  kit raccord tubage
+    # ── H. gaine_technique — gammes VENT, ASFU ──────────────────────────────
+    "vent_vmc":   ("gaine_technique", "part"),  # VENT/VMC   boîtiers galva VMC
+    "vent_vacc":  ("gaine_technique", "part"),  # VENT/VACC  accessoires ventilation
+    "vent_gfle":  ("gaine_technique", "part"),  # VENT/GFLE  flexible air ventilation
+    "vent_galv":  ("gaine_technique", "part"),  # VENT/GALV  STB I/G ventilation
+    "vent":       ("gaine_technique", "part"),  # VENT seul  bande alu adhésive
+    "asfu_elec":  ("gaine_technique", "part"),  # ASFU/ELEC  boîtiers relais aspiration
+    "asfu_roto":  ("gaine_technique", "part"),  # ASFU/ROTO  adaptateurs aspiration
+    "asfu_stat":  ("gaine_technique", "part"),  # ASFU/STAT  aspirateur statique
 }
 
 
@@ -203,7 +295,7 @@ SUPPLIER_CONFIGS = {
         ],
         "vat_default": 20,
         "fix_mojibake_labels": False,
-        # Cé : clef de catégorie structurée Poujoulat (après normalize_columns)
+        # Clé de catégorie structurée Poujoulat (après normalize_columns)
         # Valeur brute CSV : "of_seller_product_category_name"
         # Après normalisation : minuscules, sans accents, séparateurs → _
         "category_column": "of_seller_product_category_name",
@@ -692,11 +784,10 @@ def resolve_category(
         }
 
     # Correction 2 + 3 : dériver via la matrice
-    # Normalisation de la clé : minuscules, sans accents, séparateurs → _
-    # Pour les catégories composites type "DPC/NC" : prendre le premier token
+    # Normalisation de la clé : minuscules, sans accents, tout séparateur → _
     cat_key = strip_accents(raw_category.lower())
     cat_key = re.sub(r"[^a-z0-9]+", "_", cat_key).strip("_")
-    # Tentative clé composée (ex : "dp_c"), puis premier token (ex : "dp")
+    # Tentative clé composée exacte, puis premier token en fallback
     mapping = category_map.get(cat_key)
     if mapping is None:
         first_token = cat_key.split("_")[0]
@@ -706,7 +797,7 @@ def resolve_category(
         # Catégorie réellement absente de la matrice → triplet uncertain
         return {
             "item_family": None,
-            "product_type": "part",  # valeur conservative ; RPC devra gérer
+            "product_type": "part",  # valeur conservative
             "data_quality_status": "uncertain",
             "needs_human_review": True,
             "review_reason": "catégorie fournisseur non cartographiée",
@@ -715,7 +806,7 @@ def resolve_category(
 
     item_family_resolved, product_type_resolved = mapping
 
-    # product_type=None dans la matrice = catégorie ambigüe (PRO/NC, SANS…)
+    # product_type=None dans la matrice = catégorie ambigüe
     # Pas de devinette → triplet uncertain
     if product_type_resolved is None:
         return {
@@ -945,7 +1036,6 @@ def map_row(
     if tarif_date_config:
         # Date du tarif explicitement connue dans la config fournisseur
         valid_from = tarif_date_config
-        # data_quality_status : ne pas dégrader si déjà 'uncertain'
         if data_quality_status == "complete":
             data_quality_status = "complete"  # date connue, source = tarif
     else:

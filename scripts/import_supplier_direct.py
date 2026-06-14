@@ -45,6 +45,27 @@ except ImportError:
 
 CHUNK_SIZE = 200
 
+# ─── Liste blanche des champs autorisés à franchir la RPC ────────────────────────
+# Règle : tout champ produit par map_supplier.py ET attendu par la RPC
+# doit être explicitement nommé ici. Les champs hors liste sont silencieusement
+# supprimés par strip_unknown_fields() avant envoi.
+#
+# CORRECTION 5 (Phase 2) — Ajouts pour pipeline V1 :
+#   valid_from         : date du tarif source ou date import (R-04/I-03/P-00b)
+#                        AJOUTÉ : manquait, aurait été silencieusement supprimé
+#   product_type       : dérivé par resolve_category() / C-1
+#                        AJOUTÉ : manquait, dérivation sans effet sans ce champ
+#   data_quality_status: triplet qualité (complete/partial/uncertain) / I-11
+#                        AJOUTÉ : manquait, statut qualité perdu à l'import
+#   needs_human_review : bool du triplet (catégorie non cartographiée)
+#                        AJOUTÉ : manquait, revue humaine bloquée en base
+#   review_reason      : texte du triplet
+#                        AJOUTÉ : manquait, contexte de revue perdu
+#   appliance_type     : pour appareils (C-3, fournisseurs appareil futurs)
+#                        AJOUTÉ : ne pas bloquer au passage même si Poujoulat
+#                        (fumisterie) ne le produit pas actuellement
+#   item_family        : déjà présent — non modifié, non dupliqué
+
 SAFE_FIELDS = {
     "ean",
     "supplier_ref",
@@ -73,8 +94,15 @@ SAFE_FIELDS = {
     "parser_version",
     "ignored_field_names",
     "tarif_price_source_column",
-    "item_family",
+    "item_family",        # déjà présent avant Phase 2
     "catalog_domain",
+    # ── CORRECTION 5 : champs ajoutés en Phase 2 ──
+    "valid_from",         # date tarif ou date import (R-04 / I-03 / P-00b)
+    "product_type",       # dérivé catégorie (C-1 / SUPPLIER_MAPPING)
+    "data_quality_status",# triplet qualité : complete | partial | uncertain
+    "needs_human_review", # bool : catégorie non cartographiée (I-11)
+    "review_reason",      # texte du triplet (complète needs_human_review)
+    "appliance_type",     # appareil type (C-3, fournisseurs appareil futurs)
 }
 
 FORBIDDEN_FIELDS = {
@@ -161,7 +189,12 @@ def check_forbidden_fields(items):
 
 
 def strip_unknown_fields(item):
-    """Ne conserve que les champs de la liste blanche."""
+    """Ne conserve que les champs de la liste blanche.
+
+    Note : le champ interne '_unmapped_category' (préfixé '_') produit par
+    map_supplier.py pour le rapport dry-run est automatiquement exclu ici
+    car il n'est pas dans SAFE_FIELDS. Il ne franchit jamais la RPC.
+    """
     return {k: v for k, v in item.items() if k in SAFE_FIELDS}
 
 

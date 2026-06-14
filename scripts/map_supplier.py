@@ -10,7 +10,7 @@ Usage:
 
 Python 3.9+
 Dépendances stdlib uniquement :
-  csv, json, re, sys, uuid, pathlib, unicodedata
+  csv, json, re, sys, uuid, pathlib, unicodedata, datetime
 """
 
 import csv
@@ -19,6 +19,7 @@ import re
 import sys
 import uuid
 import unicodedata
+from datetime import date
 from pathlib import Path
 
 
@@ -51,6 +52,72 @@ DANGEROUS_WORD = [
     r"\bpurchase\b",
     r"\bdiscount\b",
 ]
+
+
+# ─── Matrice Poujoulat : of_seller_product_category_name → item_family / product_type ───
+#
+# Source : POUJOULAT_ITEM_FAMILY_MATRIX_V1.md
+# Règles :
+#   - item_family : 13 valeurs fermées. NULL pour non-fumisterie.
+#   - product_type : 'part' par défaut fumisterie, 'appliance' pour appareils,
+#                    'service' pour prestations, 'consumable' si explicite.
+#   - Catégorie absente de la matrice → triplet uncertain+needs_human_review.
+#   - Catégories non-fumisterie (LOGPOS, SERVICE, ACFOU, etc.) : item_family=None,
+#     product_type dérivé ou triplet si indéterminable.
+#
+# Structure : { catégorie_normalisée: (item_family_ou_None, product_type) }
+# product_type=None → catégorie ambigüe → triplet uncertain appliqué dans map_row.
+
+POUJOULAT_CATEGORY_MAP = {
+    # Conduits double paroi
+    "dpc":          ("conduit_double_paroi",       "part"),
+    "dpb":          ("conduit_double_paroi",       "part"),
+    "dpn":          ("conduit_double_paroi",       "part"),
+    "dp":           ("conduit_double_paroi",       "part"),
+    # Conduits simple paroi
+    "sp":           ("conduit_simple_paroi",       "part"),
+    "spc":          ("conduit_simple_paroi",       "part"),
+    # Tubage flexible
+    "flex":         ("tubage_flexible",            "part"),
+    "flexinox":     ("tubage_flexible",            "part"),
+    # Conduits concentriques / gaz
+    "conc":         ("conduit_concentrique",       "part"),
+    "concentrique": ("conduit_concentrique",       "part"),
+    "gaz":          ("conduit_concentrique",       "part"),
+    # Sorties de toit
+    "sortie":       ("sortie_de_toit",             "part"),
+    "srt":          ("sortie_de_toit",             "part"),
+    "toit":         ("sortie_de_toit",             "part"),
+    # Accessoires fumisterie
+    "acc":          ("accessoire_fumisterie",      "part"),
+    "acf":          ("accessoire_fumisterie",      "part"),
+    "accessoire":   ("accessoire_fumisterie",      "part"),
+    # Raccordement / raccord
+    "rac":          ("raccordement",               "part"),
+    "raccord":      ("raccordement",               "part"),
+    "raccordement": ("raccordement",               "part"),
+    # Pièces détachées
+    "pd":           ("piece_detachee",             "part"),
+    "pdr":          ("piece_detachee",             "part"),
+    "pieces":       ("piece_detachee",             "part"),
+    # Prestations / service
+    "pre":          (None,                          "service"),
+    "prestation":   (None,                          "service"),
+    "sav":          (None,                          "service"),
+    "service":      (None,                          "service"),
+    "logpos":       (None,                          "service"),
+    # Consommables explicites
+    "cons":         (None,                          "consumable"),
+    "consommable":  (None,                          "consumable"),
+    # Catégories ambigües Poujoulat (fourre-tout PRO/NC, SANS, AXAF/NC, PPMI/NC)
+    # product_type=None → triplet uncertain appliqué dans map_row
+    "pro":          (None,                          None),
+    "sans":         (None,                          None),
+    "axaf":         (None,                          None),
+    "ppmi":         (None,                          None),
+    "nc":           (None,                          None),
+    "acfou":        (None,                          None),
+}
 
 
 SUPPLIER_CONFIGS = {
@@ -136,6 +203,14 @@ SUPPLIER_CONFIGS = {
         ],
         "vat_default": 20,
         "fix_mojibake_labels": False,
+        # Cé : clef de catégorie structurée Poujoulat (après normalize_columns)
+        # Valeur brute CSV : "of_seller_product_category_name"
+        # Après normalisation : minuscules, sans accents, séparateurs → _
+        "category_column": "of_seller_product_category_name",
+        "category_map": POUJOULAT_CATEGORY_MAP,
+        # Date du tarif source pour valid_from (Option A / P-00b)
+        # Si None : valid_from = date d'import courante
+        "tarif_date": None,
     },
     "dix-neuf": {
         "manufacturer_name": "Dix-Neuf",
@@ -550,6 +625,118 @@ def detect_ignored_field_names(row):
     return names
 
 
+def resolve_category(
+    row,
+    config,
+    fix_encoding,
+    item_family_fallback,
+):
+    """
+    CORRECTION 1 + 2 + 3 : lecture catégorie source, dérivation item_family
+    et product_type via la matrice fournisseur.
+
+    Retourne un dict avec les clés :
+      item_family          : str ou None
+      product_type         : str ('part'|'appliance'|'service'|'consumable')
+      data_quality_status  : 'complete'|'partial'|'uncertain'
+      needs_human_review   : bool
+      review_reason        : str ou None
+      unmapped_category    : str ou None  (pour le rapport dry-run)
+
+    Règle de résolution data_quality_status (hors valid_from) :
+      - catégorie indéterminable ou non cartographiée → 'uncertain'
+      - sinon → 'complete'  (valid_from peut upgrader à 'partial' dans map_row)
+
+    Jamais 'needs_review' — ce concept est porté par needs_human_review/review_reason.
+    """
+    category_column = config.get("category_column")
+    category_map = config.get("category_map")
+
+    # Si pas de matrice configurée pour ce fournisseur :
+    # utiliser le fallback item_family/family/famille existant
+    if not category_column or not category_map:
+        return {
+            "item_family": item_family_fallback,
+            "product_type": "part",  # valeur par défaut safe pour fournisseurs sans matrice
+            "data_quality_status": "complete",
+            "needs_human_review": False,
+            "review_reason": None,
+            "unmapped_category": None,
+        }
+
+    # Correction 1 : lire la catégorie structurée AVANT le fallback
+    raw_category = clean_string(
+        row.get(category_column),
+        fix_encoding=fix_encoding,
+    )
+
+    # Fallback : colonnes génériques si catégorie structurée absente
+    if not raw_category:
+        if item_family_fallback:
+            return {
+                "item_family": item_family_fallback,
+                "product_type": "part",
+                "data_quality_status": "complete",
+                "needs_human_review": False,
+                "review_reason": None,
+                "unmapped_category": None,
+            }
+        # Aucune source de catégorie disponible
+        return {
+            "item_family": None,
+            "product_type": "part",
+            "data_quality_status": "uncertain",
+            "needs_human_review": True,
+            "review_reason": "catégorie fournisseur non cartographiée",
+            "unmapped_category": "(aucune catégorie source)",
+        }
+
+    # Correction 2 + 3 : dériver via la matrice
+    # Normalisation de la clé : minuscules, sans accents, séparateurs → _
+    # Pour les catégories composites type "DPC/NC" : prendre le premier token
+    cat_key = strip_accents(raw_category.lower())
+    cat_key = re.sub(r"[^a-z0-9]+", "_", cat_key).strip("_")
+    # Tentative clé composée (ex : "dp_c"), puis premier token (ex : "dp")
+    mapping = category_map.get(cat_key)
+    if mapping is None:
+        first_token = cat_key.split("_")[0]
+        mapping = category_map.get(first_token)
+
+    if mapping is None:
+        # Catégorie réellement absente de la matrice → triplet uncertain
+        return {
+            "item_family": None,
+            "product_type": "part",  # valeur conservative ; RPC devra gérer
+            "data_quality_status": "uncertain",
+            "needs_human_review": True,
+            "review_reason": "catégorie fournisseur non cartographiée",
+            "unmapped_category": raw_category,
+        }
+
+    item_family_resolved, product_type_resolved = mapping
+
+    # product_type=None dans la matrice = catégorie ambigüe (PRO/NC, SANS…)
+    # Pas de devinette → triplet uncertain
+    if product_type_resolved is None:
+        return {
+            "item_family": None,
+            "product_type": "part",  # valeur conservative
+            "data_quality_status": "uncertain",
+            "needs_human_review": True,
+            "review_reason": "catégorie fournisseur non cartographiée",
+            "unmapped_category": raw_category,
+        }
+
+    return {
+        "item_family": item_family_resolved,
+        "product_type": product_type_resolved,
+        "data_quality_status": "complete",
+        "needs_human_review": False,
+        "review_reason": None,
+        "unmapped_category": None,
+    }
+
+
 def warn_missing_columns(
     row,
     config,
@@ -634,7 +821,7 @@ def map_row(
         )
     )
 
-    # supplier_ref = code brut fournisseur, jamais uppercasé
+    # R-01 : supplier_ref = code brut fournisseur, jamais uppercasé
     supplier_ref = (
         re.sub(r"\s+", "", supplier_ref_raw.strip())
         if supplier_ref_raw
@@ -690,7 +877,9 @@ def map_row(
         or row.get("component_type")
     )
 
-    item_family = clean_string(
+    # item_family fallback générique (colonnes directes)
+    # Lue avant resolve_category pour être passée en fallback
+    item_family_fallback = clean_string(
         row.get("item_family")
         or row.get("family")
         or row.get("famille")
@@ -733,8 +922,51 @@ def map_row(
         fix_encoding=fix_encoding,
     )
 
-    # MODIFICATION 2 — vat_rate depuis config uniquement (read_vat_rate_from_file supprimé)
     vat_rate = config["vat_default"]
+
+    # ── CORRECTIONS 1+2+3 : catégorie → item_family + product_type + statut qualité ──
+    cat_result = resolve_category(
+        row=row,
+        config=config,
+        fix_encoding=fix_encoding,
+        item_family_fallback=item_family_fallback,
+    )
+    item_family         = cat_result["item_family"]
+    product_type        = cat_result["product_type"]
+    data_quality_status = cat_result["data_quality_status"]
+    needs_human_review  = cat_result["needs_human_review"]
+    review_reason       = cat_result["review_reason"]
+    unmapped_category   = cat_result["unmapped_category"]
+
+    # ── CORRECTION 4 : valid_from (Option A / P-00b) ─────────────────────────────
+    # Priorité : date tarif source (config["tarif_date"]) > colonne CSV > date import
+    # R-04 / I-03 : jamais NULL en sortie.
+    tarif_date_config = config.get("tarif_date")
+    if tarif_date_config:
+        # Date du tarif explicitement connue dans la config fournisseur
+        valid_from = tarif_date_config
+        # data_quality_status : ne pas dégrader si déjà 'uncertain'
+        if data_quality_status == "complete":
+            data_quality_status = "complete"  # date connue, source = tarif
+    else:
+        # Chercher une colonne de date dans le CSV
+        date_col_val = clean_string(
+            row.get("date_tarif")
+            or row.get("tarif_date")
+            or row.get("valid_from")
+            or row.get("date_validite")
+        )
+        if date_col_val:
+            valid_from = date_col_val
+            if data_quality_status == "complete":
+                data_quality_status = "complete"
+        else:
+            # Fallback : date d'import courante → data_quality_status = 'partial'
+            # sauf si déjà 'uncertain' (priorité : uncertain > partial)
+            valid_from = date.today().isoformat()
+            if data_quality_status == "complete":
+                data_quality_status = "partial"
+            # 'uncertain' reste 'uncertain' même si valid_from est la date du jour
 
     search_keywords = build_search_keywords(
         normalized_name=normalized_name,
@@ -750,7 +982,6 @@ def map_row(
         "supplier_ref": supplier_ref,
         "name": name_raw,
         "tarif_price": tarif_price,
-        # À valider côté RPC LOT 0.
         "tarif_price_source_column": tarif_price_col,
         "vat_rate": vat_rate,
         "manufacturer_name": config["manufacturer_name"],
@@ -766,7 +997,7 @@ def map_row(
         "technology_type": technology_type,
         "component_role": component_role,
         "finish_color": finish_color,
-        # BLOC 2 — description_fabricant dans le JSON de sortie
+        # BLOC 2
         "description_fabricant": description_fabricant,
         "source_file": source_file,
         "source_system": "CSV_SUPPLIER_IMPORT",
@@ -774,13 +1005,21 @@ def map_row(
         "normalization_status": "needs_review",
         "normalization_source": "csv_mapping_v1",
         "parser_version": "supplier_mapper_v2",
-        # À valider côté RPC LOT 0 : nom exact attendu.
         "ignored_field_names": detect_ignored_field_names(row),
+        # CORRECTIONS 2+3 : catégorie dérivée
+        "item_family": item_family,
+        "product_type": product_type,
+        # CORRECTION 4 : valid_from (jamais NULL)
+        "valid_from": valid_from,
+        # Statut qualité : triplet cohérent, jamais 'needs_review'
+        "data_quality_status": data_quality_status,
+        "needs_human_review": needs_human_review,
+        "review_reason": review_reason,
+        # Pour dry-run rapport seulement (filtré par SAFE_FIELDS à l'import)
+        "_unmapped_category": unmapped_category,
     }
 
     # BLOC 3 — manufacturer_name_column : écrase manufacturer_name par ligne
-    # si la colonne CSV est présente et contient une valeur valide.
-    # Filtre les valeurs parasites Odoo (#N/A, N/A).
     if config.get("manufacturer_name_column"):
         col = config["manufacturer_name_column"]
         val = clean_string(
@@ -845,6 +1084,7 @@ def main():
     items = []
     skipped = []
     seen_ean = set()
+    unmapped_categories = {}  # catégorie_source → count (pour rapport dry-run)
 
     rows = list(read_csv(csv_path))
 
@@ -905,6 +1145,11 @@ def main():
             })
             continue
 
+        # Comptage des catégories non cartographiées pour le rapport
+        uncat = item.get("_unmapped_category")
+        if uncat:
+            unmapped_categories[uncat] = unmapped_categories.get(uncat, 0) + 1
+
         items.append(item)
 
         if ean_key:
@@ -922,7 +1167,6 @@ def main():
         for s in skipped:
             reasons[s["reason"]] = reasons.get(s["reason"], 0) + 1
 
-        # MODIFICATION 3 — taux d'ignorés calculé une seule fois, affiché dans dry-run
         total = len(items) + len(skipped)
         skip_rate = (len(skipped) / total) if total else 0
 
@@ -942,6 +1186,19 @@ def main():
             dry_run=True,
         )
 
+        uncertain_count = sum(
+            1 for it in items
+            if it.get("data_quality_status") == "uncertain"
+        )
+        partial_count = sum(
+            1 for it in items
+            if it.get("data_quality_status") == "partial"
+        )
+        complete_count = sum(
+            1 for it in items
+            if it.get("data_quality_status") == "complete"
+        )
+
         stderr("[DRY-RUN] résultats sans import :")
         stderr(f"  items valides    : {len(items)}")
         stderr(f"  items ignorés    : {len(skipped)}")
@@ -956,12 +1213,20 @@ def main():
             stderr("  prix max         : N/A")
             stderr("  prix moyen       : N/A")
 
+        stderr(f"  data_quality : complete={complete_count} partial={partial_count} uncertain={uncertain_count}")
+
+        if unmapped_categories:
+            stderr(f"  catégories non cartographiées ({len(unmapped_categories)}) :")
+            for cat, cnt in sorted(unmapped_categories.items(), key=lambda x: -x[1]):
+                stderr(f"    {cat!r} : {cnt} articles")
+        else:
+            stderr("  catégories non cartographiées : aucune")
+
         stderr(f"  raisons skips    : {reasons}")
         stderr(f"  batch_id (prévu) : {import_batch_id}")
         stderr(f"  skipped          : {skipped_path}")
         sys.exit(0)
 
-    # MODIFICATION 4 — taux d'ignorés calculé une seule fois, affiché en exécution réelle
     total = len(items) + len(skipped)
     skip_rate = (len(skipped) / total) if total else 0
 

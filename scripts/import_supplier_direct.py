@@ -226,7 +226,7 @@ def run_import(supabase, tenant_id, supplier_name, items):
 
         try:
             response = supabase.rpc(
-                "import_supplier_items",
+                "import_supplier_items_v2",
                 {
                     "p_tenant_id": tenant_id,
                     "p_supplier_name": supplier_name,

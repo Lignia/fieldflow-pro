@@ -1,4 +1,4 @@
-import { Navigate, useLocation } from "react-router-dom";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useCurrentUser } from "@/hooks/useCurrentUser";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Mail, X } from "lucide-react";
@@ -65,9 +65,41 @@ function EmailBanner() {
   );
 }
 
+/**
+ * RecoveryRedirect — intercepte le hash #type=recovery généré par Supabase
+ * quand {{ .ConfirmationURL }} pointe vers la racine du site.
+ * Redirige immédiatement vers /auth/reset-password en conservant le hash intact.
+ */
+function RecoveryRedirect() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    navigate("/auth/reset-password" + window.location.hash, { replace: true });
+  }, [navigate]);
+
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-background">
+      <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+    </div>
+  );
+}
+
 export function AuthGate({ children }: { children: React.ReactNode }) {
   const { authUser, tenantId, loading } = useCurrentUser();
   const { pathname } = useLocation();
+
+  // ── Interception du lien de reset password ──────────────────
+  // Supabase envoie {{ .ConfirmationURL }} qui pointe vers la racine
+  // avec #access_token=...&type=recovery dans le hash.
+  // On intercepte ici et on redirige vers /auth/reset-password.
+  const hash = window.location.hash;
+  const isRecoveryHash =
+    hash.includes("type=recovery") ||
+    (hash.includes("access_token") && hash.includes("type=recovery"));
+
+  if (isRecoveryHash && pathname !== "/auth/reset-password") {
+    return <RecoveryRedirect />;
+  }
 
   if (loading) {
     return (

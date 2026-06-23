@@ -1,5 +1,5 @@
 # LIGNIA — User Stories Complètes
-> Document de référence — v3.4
+> Document de référence — v3.5
 > Claude Analytics + OpenAI + ServiceTitan + Evoliz — Mai 2026
 > Pour : Claude Exec, Claude Read, Lovable, développeurs
 
@@ -705,6 +705,234 @@ CRITÈRES V1 : Appareils dans CatalogPopover onglet "Appareils", import reproduc
 
 ---
 
+### US-C07a — Activer ses fournisseurs depuis la page Catalogue (V1 — TENANT_ADMIN)
+**En tant qu'Arnaud, je veux choisir une fois avec quels fournisseurs je travaille, pour que toute mon équipe ne voie que les articles pertinents.**
+
+```
+CONTEXTE MÉTIER
+  Arnaud a négocié des remises avec Poujoulat et Joncoux.
+  Il ne commande jamais chez Bofill ni Dinak.
+  Quand Sophie crée un devis, elle ne doit pas chercher
+  parmi 22 000 articles de 4 fournisseurs différents.
+
+SCÉNARIO
+  Arnaud ouvre la page Catalogue.
+  Il voit la section "Mes fournisseurs" avec les chips :
+  □ Poujoulat  □ Joncoux  □ Bofill  □ Dinak  □ KEMP SAS
+
+  Les fournisseurs courants du secteur (Poujoulat, Joncoux)
+  sont affichés en premier, sans être activés automatiquement.
+
+  Arnaud clique sur Poujoulat → actif (fond coloré, coche).
+  Il clique sur Joncoux → actif.
+  Il laisse les autres inactifs.
+
+  Dès ce moment, toute l'équipe ne voit que
+  Poujoulat et Joncoux dans leurs recherches.
+
+  Les remises se règlent séparément dans
+  Réglages → Conditions d'achat.
+
+CE QUI NE CHANGE PAS
+  Prestations LIGNIA et appareils ADEME :
+  toujours visibles, hors du filtre fournisseur.
+
+TABLE CIBLE
+  catalog.tenant_suppliers (tenant_id, supplier_name, is_active)
+  supplier_name = valeur exacte de catalog_items.supplier_name
+  Jamais saisi librement — toujours lu depuis la base.
+
+CRITÈRES D'ACCEPTATION
+✅ Section "Mes fournisseurs" avec chips cliquables
+✅ Fournisseurs courants du secteur affichés en premier
+✅ Clic = toggle immédiat, sans bouton Enregistrer
+✅ Actif : fond coloré + coche ✓
+✅ Inactif : fond neutre + grisé
+✅ Changement immédiat pour toute l'équipe
+✅ Mention sous le bandeau :
+   "Les remises se règlent dans Conditions d'achat"
+✅ Prestations et appareils absents de ce bandeau
+```
+
+---
+
+### US-C07b — Recherche catalogue filtrée dans le devis (V1)
+**En tant que Sophie, quand je cherche un article dans un devis, je ne veux voir que les articles des fournisseurs avec lesquels on travaille.**
+
+```
+CONTEXTE MÉTIER
+  Sophie crée un devis pour une installation poêle granulés.
+  Elle tape "coude 150".
+  Elle veut les coudes Poujoulat — pas 400 coudes
+  de 4 fournisseurs différents.
+
+DÉCOUVERTE EN AMONT — bannière dashboard
+  Tant qu'aucun fournisseur n'est activé :
+  Bannière visible sur le dashboard :
+  "Votre catalogue n'est pas encore configuré.
+   Activez vos fournisseurs pour filtrer vos résultats."
+  [Aller au Catalogue]
+  La bannière disparaît dès qu'au moins un fournisseur est activé.
+
+SCÉNARIO NORMAL
+  Sophie ouvre un devis → Ajouter un article → Fumisterie.
+  Elle tape "coude 150".
+  Résultats : uniquement Poujoulat et Joncoux (fournisseurs actifs).
+  Elle sélectionne en 2 clics. Remise appliquée automatiquement.
+
+CAS — zéro résultat chez fournisseurs actifs
+  Sophie tape "coude 150". L'article existe chez Bofill
+  (inactif) mais pas chez Poujoulat ni Joncoux.
+  Afficher :
+  "Aucun résultat chez vos fournisseurs actifs.
+   3 résultats chez d'autres fournisseurs. [Voir]"
+  Le lien "Voir" affiche les résultats sans modifier
+  la configuration des fournisseurs.
+
+CAS — aucun fournisseur actif (filet de sécurité)
+  Tous les articles sont visibles + bandeau discret :
+  "Vous voyez tous les fournisseurs. [Configurer mes fournisseurs]"
+
+CRITÈRES D'ACCEPTATION
+✅ Bannière dashboard tant qu'aucun fournisseur actif
+✅ Recherche devis filtrée automatiquement sur les fournisseurs actifs
+✅ Aucune sélection manuelle de fournisseur dans le devis
+✅ Zéro résultat : lien discret vers autres fournisseurs
+✅ Aucun fournisseur actif : tous visibles + bandeau
+✅ Remise appliquée automatiquement sur les résultats
+✅ Temps de réponse < 500ms
+```
+
+---
+
+### US-C07c — Désactiver un fournisseur (V1)
+**En tant qu'Arnaud, je veux changer de fournisseur sans perdre l'historique de mes devis passés.**
+
+```
+CONTEXTE MÉTIER
+  Arnaud arrête de travailler avec Joncoux.
+  Il passe chez Bofill ce mois-ci.
+  Les devis signés avec articles Joncoux ne doivent pas être affectés.
+
+SCÉNARIO
+  Arnaud clique sur Joncoux (actif) → inactif immédiatement.
+  Arnaud clique sur Bofill (inactif) → actif immédiatement.
+  L'équipe voit le changement dès la prochaine recherche.
+
+RÈGLE MÉTIER CRITIQUE
+  La désactivation n'affecte jamais les devis signés
+  ni les factures existantes.
+  Elle affecte uniquement les nouvelles recherches.
+  (INVARIANT 4 : quote_lines = snapshots immuables)
+
+CRITÈRES D'ACCEPTATION
+✅ Toggle immédiat, sans confirmation ni timer
+✅ Actif → Inactif : le fournisseur disparaît des nouvelles recherches
+✅ Les devis signés ne sont pas affectés (INVARIANT 4)
+✅ Les devis en cours (non signés) ne sont pas rechargés
+✅ Réactivation possible à tout moment en 1 clic
+```
+
+---
+
+### US-C07d — Explorer le catalogue par domaine métier (V1)
+**En tant que Sophie, je veux naviguer dans le catalogue par type de produit, pas par fournisseur.**
+
+```
+CONTEXTE MÉTIER
+  Sophie ne pense pas "Poujoulat" quand elle fait un devis.
+  Elle pense "conduit double paroi" ou "sortie de toit".
+  Le fournisseur est un filtre de second niveau.
+  La navigation principale doit être par usage métier.
+
+SCÉNARIO
+  Sophie ouvre la page Catalogue.
+  Elle voit 4 onglets avec compteurs :
+  [Fumisterie (1 240)] [Appareils (320)]
+  [Prestations (12)] [Pièces SAV (0)]
+
+  Elle clique sur Fumisterie.
+  Elle tape "sortie toiture" → résultats Poujoulat + Joncoux.
+
+  Elle clique sur Appareils : le champ de recherche se vide.
+  (vocabulaire différent par domaine)
+
+  Elle voit "Pièces SAV (0)" → comprend immédiatement
+  que cette section n'est pas encore configurée.
+
+COMPORTEMENT RECHERCHE ENTRE ONGLETS
+  Le terme de recherche se vide au changement d'onglet.
+  Raison : "150" signifie diamètre en fumisterie,
+  puissance kW en appareil — même terme, résultats trompeurs.
+
+COMPTEURS PAR ONGLET
+  Nombre d'articles après filtre fournisseurs actifs.
+  Onglet à 0 = signal immédiat que la section est vide.
+  L'onglet reste visible même à 0 — signal explicite
+  plutôt que section cachée.
+
+CRITÈRES D'ACCEPTATION
+✅ 4 onglets : Fumisterie | Appareils | Prestations | Pièces SAV
+✅ Filtre par catalog_domain dans chaque onglet
+✅ Compteur d'articles par onglet (filtré fournisseurs actifs)
+✅ Onglet Fumisterie actif par défaut
+✅ Recherche vidée au changement d'onglet
+✅ Fournisseurs actifs filtrent Fumisterie et Pièces SAV
+✅ Appareils et Prestations : non filtrés par fournisseur
+✅ Onglet à 0 visible — pas caché
+```
+
+---
+
+### US-C07e — Fournisseur préféré par projet (V2/V3 — à écrire maintenant, développer plus tard)
+**En tant que Sophie, je veux définir un fournisseur préféré sur un projet pour que la recherche IA propose ses articles en priorité.**
+
+```
+CONTEXTE MÉTIER
+  L'IA qui génère un devis ne doit pas mélanger les fournisseurs :
+  Coude Poujoulat + Sortie toiture Bofill + Adaptateur Dinak
+  = incohérent pour la commande et pour l'artisan.
+
+  Le fournisseur préféré du projet garantit la cohérence
+  des articles proposés par l'IA.
+
+SCÉNARIO (V2/V3)
+  Sophie crée le projet Dupont.
+  Elle définit : fournisseur préféré = Poujoulat.
+  Quand l'IA génère le devis, elle cherche :
+    1. Chez Poujoulat en priorité
+    2. Puis Joncoux (fournisseurs actifs)
+    3. Puis autres fournisseurs actifs si non trouvé
+
+  Résultat : un devis cohérent, un seul fournisseur
+  pour la fumisterie, une seule commande à passer.
+
+MODÈLE CIBLE
+  Tenant
+   └─ Fournisseurs actifs (tenant_suppliers) = filtre global
+
+  Projet
+   └─ preferred_supplier_name (nullable) = priorité IA
+
+  Ce champ doit être prévu dans core.projects dès V1
+  même s'il n'est utilisé qu'en V2/V3.
+
+CRITÈRES V2/V3
+✅ Champ optionnel "Fournisseur préféré" sur la fiche projet
+✅ Dropdown des fournisseurs actifs du tenant
+✅ La recherche IA utilise ce champ pour ordonner les résultats
+✅ Sans fournisseur préféré : ordre alphabétique par défaut
+✅ Ne bloque pas la recherche manuelle de Sophie
+
+POURQUOI ÉCRIRE CETTE STORY MAINTENANT
+  La table core.projects devra avoir preferred_supplier_name
+  (nullable, text) dès V2. L'anticiper maintenant évite une
+  migration non prévue quand le devis IA sera développé.
+  Ne pas implémenter avant validation terrain des US-C07a/b/c/d.
+```
+
+---
+
 ## BLOC P — PROJET ET CHANTIER (V1)
 
 ```
@@ -741,24 +969,14 @@ CRITÈRES V2
 ---
 
 ### US-O02 — Réception et facture fournisseur (V2)
-**En tant qu'Amélie, je veux lier la facture fournisseur à ma commande.**
 
 ```
-BESOIN MÉTIER (appris de Evoliz — /buys avec external_document_number)
-  Quand Poujoulat envoie sa facture, Amélie doit pouvoir la lier
-  à la commande passée et l'enregistrer avec son numéro de document.
-  C'est ce qui permet la réconciliation comptable sans ressaisie.
-
 DONNÉES
-  purchase_order_id (lié au devis signé)
-  supplier_invoice_number (numéro externe Poujoulat)
-  supplier_invoice_date
-  montant_ht + TVA (vérification vs commande)
-  statut : RECU | PARTIEL | LITIGE
+  purchase_order_id, supplier_invoice_number, supplier_invoice_date
+  montant_ht + TVA, statut : RECU | PARTIEL | LITIGE
 
 CRITÈRES V2
 ✅ Facture fournisseur liée à la commande en 1 clic
-✅ Numéro de facture fournisseur enregistré
 ✅ Alerte si montant facture ≠ commande
 ✅ Export vers Pennylane / Evoliz / Sage
 ```
@@ -768,96 +986,43 @@ CRITÈRES V2
 ## BLOC FAC — FACTURATION (V2)
 
 ### US-FAC-01 — Types de factures (V2)
-**En tant qu'Amélie, je veux créer des factures adaptées au BTP.**
 
 ```
-BESOIN MÉTIER (appris de Evoliz — typedoc : advance | situation | retention | invoice)
-  Dans le BTP, la facturation suit des étapes :
-  1. Facture d'acompte (30% à la commande) — ACOMPTE
-  2. Facture de situation (facturation à l'avancement) — SITUATION
-  3. Facture de solde (fin de chantier) — SOLDE
-  4. Retenue de garantie (5% libérée après délai) — RETENUE
-  5. Avoir si annulation partielle — AVOIR
-
 CRITÈRES V2
-✅ Types de factures : ACOMPTE | SITUATION | SOLDE | AVOIR | RETENUE
-✅ Numérotation automatique par type (F-2026-NNNN, A-2026-NNNN...)
-✅ Ventilation TVA par taux (5.5% rénovation / 20% neuf)
+✅ Types : ACOMPTE | SITUATION | SOLDE | AVOIR | RETENUE
+✅ Numérotation automatique par type
+✅ Ventilation TVA par taux
 ✅ PDF propre avec logo + CGV + mentions légales
 ```
 
 ---
 
 ### US-FAC-02 — Export comptable (V2)
-**En tant que Sabrina, je veux exporter vers mon logiciel comptable.**
 
 ```
-BESOIN MÉTIER (appris de Evoliz — classifications + analytique + paytermid)
-  Pour que l'export soit exploitable sans ressaisie, chaque ligne de facture
-  doit porter : compte comptable, TVA, axe analytique, conditions de paiement.
-
-  Ces champs sont préparés dès V1 dans le modèle.
-
 DONNÉES EXPORTÉES
   N° document, date, client, montant HT, TVA, TTC
-  accounting_code par ligne (706 pose / 707 fumisterie / 607 achat...)
-  analytic_code par intervention (INSTALLATION / ENTRETIEN / SAV / RAMONAGE)
-  payment_term (30j fin de mois, comptant...)
-  statut paiement
+  accounting_code, analytic_code, payment_term, statut paiement
 
-COMPATIBILITÉ
-  Export CSV / JSON compatible Pennylane, Evoliz, Sage
-  Statut "exporté" anti-doublons
-
-CRITÈRES V2
-✅ Export factures ventes + factures achats fournisseurs
-✅ Champs comptables remplis sans ressaisie
-✅ Statut export traçable
+COMPATIBILITÉ : Pennylane, Evoliz, Sage
 ```
 
 ---
 
-### US-FAC-03 — Paramétrage comptable par TENANT_ADMIN (V2)
-**En tant que Sabrina (ou Arnaud), je veux paramétrer les comptes comptables de l'entreprise.**
+### US-FAC-03 — Paramétrage comptable (V2)
 
 ```
-BESOIN MÉTIER (appris de Evoliz — sale-classifications + purchase-classifications)
-  Chaque type de ligne a son compte comptable.
-  Le TENANT_ADMIN configure une fois, toutes les factures suivent.
-
-PARAMÈTRES À CONFIGURER
-  Compte vente pose : 706 (valeur par défaut pour PRESTATION)
-  Compte vente fumisterie : 707 (valeur par défaut pour FUMISTERIE)
-  Compte vente ramonage : 706
-  Compte achat fournisseur : 607
-  Taux TVA par défaut : 20% (neuf) / 5.5% (rénovation)
-  Conditions de paiement par défaut : 30j fin de mois
-
 CRITÈRES V2
-✅ Configuration en 10 minutes par le comptable
-✅ Compte comptable visible sur chaque ligne de facture
+✅ Comptes comptables par type de ligne configurables
+✅ Conditions de paiement par défaut
 ✅ Override possible ligne par ligne
 ```
 
 ---
 
 ### US-FAC-04 — Numérotation et modèles de documents (V1)
-**En tant que TENANT_ADMIN, je veux paramétrer la numérotation et le PDF des documents.**
 
 ```
-BESOIN MÉTIER (appris de Evoliz — admin_docs + admin_perso)
-  Un document professionnel doit avoir :
-  Numérotation cohérente, logo, CGV, mentions légales.
-  Un artisan qui envoie un devis sans CGV ou avec numérotation incohérente
-  perd en crédibilité.
-
-PARAMÈTRES V1
-  Format numérotation devis : D-{ANNEE}-{NNNN} (configurable)
-  Format numérotation facture : F-{ANNEE}-{NNNN}
-  Logo entreprise
-  CGV PDF attachable
-  Mentions légales (SIRET, TVA intracommunautaire, RCS)
-
 CRITÈRES V1
 ✅ Numérotation auto sans doublon garanti
 ✅ Logo visible sur PDF devis et facture
@@ -869,39 +1034,16 @@ CRITÈRES V1
 ## BLOC DOC — GESTION DOCUMENTAIRE (V1/V2)
 
 ### US-DOC-01 — Documents liés à une intervention ou un projet (V1)
-**En tant qu'Amélie, je veux retrouver tous les documents d'un dossier au même endroit.**
 
 ```
-BESOIN MÉTIER
-  Sur un chantier de 50 000€, les documents s'accumulent :
-  Devis signé, bon de commande, bon de livraison, photos de pose,
-  attestation de fin de travaux, facture acompte, facture solde,
-  certificat de ramonage, facture SAV...
-
-  Aujourd'hui dans les PME : email + drive + classeur papier.
-  Douleur réelle quand un client réclame un document 2 ans après.
-
 DOCUMENTS GÉRÉS V1
-  Devis (PDF généré)
-  Factures (PDF généré)
-  Certificat de ramonage (PDF généré)
-  Attestation de fin de travaux (PDF généré)
-  Photos chantier (uploadées par Yohan)
-
-DOCUMENTS GÉRÉS V2
-  Bon de commande fournisseur (PDF généré)
-  Facture fournisseur (uploadée ou liée)
-  Notice technique appareil
-  Bon de livraison
+  Devis, Factures, Certificat de ramonage,
+  Attestation de fin de travaux, Photos chantier
 
 CRITÈRES V1
 ✅ Tous les documents d'un projet accessibles depuis la fiche projet
 ✅ Recherche par client ou par date
 ✅ Téléchargement en 1 clic
-
-CRITÈRES V2
-✅ Upload de documents externes (factures fournisseurs, notices)
-✅ Historique documentaire lié à l'installation
 ```
 
 ---
@@ -909,23 +1051,11 @@ CRITÈRES V2
 ## BLOC TEAM — GESTION ÉQUIPE (V2)
 
 ### US-TEAM-01 — Profils techniciens et habilitations (V2)
-**En tant qu'Arnaud, je veux affecter les bonnes personnes aux bons chantiers.**
 
 ```
-BESOIN MÉTIER
-  Yohan est qualifié RGE + ramonage. Félicien est en formation ramonage.
-  Certains chantiers requièrent une habilitation spécifique.
-  Arnaud doit pouvoir voir la charge de travail de chacun.
-
-DONNÉES D'UN TECHNICIEN
-  Nom, prénom, rôle (poseur / ramoneur / SAV / polyvalent)
-  Habilitations : RGE | QUALIBOIS | Ramonage certifié
-  Charge : nombre d'interventions cette semaine
-  Historique des chantiers réalisés
-
 CRITÈRES V2
-✅ Profil technicien avec habilitations
-✅ Vue "Charge par technicien" (semaine en cours)
+✅ Profil technicien avec habilitations (RGE, QUALIBOIS, Ramonage)
+✅ Vue "Charge par technicien" semaine en cours
 ✅ Historique des interventions par technicien
 ✅ Alerte si affectation sans habilitation requise
 ```

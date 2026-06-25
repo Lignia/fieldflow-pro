@@ -16,9 +16,6 @@ Utilisateurs principaux :
 - `user` : secrétaire, commercial, poseur — usage quotidien
 - `super_admin` : équipe LIGNIA, accès total
 
-Compte test Rita : `ee7ce528-3526-4cc4-92a5-3b4da865bef7`
-Fournisseurs actifs Rita : Poujoulat ✅ Joncoux ✅ KEMP SAS ❌ LIGNIA ❌
-
 ---
 
 ## ARCHITECTURE FRONTEND
@@ -50,18 +47,17 @@ Toujours utiliser le schéma correspondant à la table cible.
 
 ```typescript
 const { tenantId, userRole, coreUser } = useCurrentUser();
-// src/hooks/useCurrentUser.tsx
 ```
 
-### Hooks existants — ne pas recréer
+### Hooks existants — modifier uniquement si le ticket le demande explicitement
 
-| Hook | Fichier | Ne pas modifier |
-|---|---|---|
-| useCatalog | src/hooks/useCatalog.ts | Sauf fonction citée |
-| useCatalogSearch | src/hooks/useCatalogSearch.ts | Ne pas toucher |
-| useQuoteDetail | src/hooks/useQuoteDetail.ts | Ne pas toucher |
-| useSignQuote | src/hooks/useSignQuote.ts | Ne pas toucher |
-| useCurrentUser | src/hooks/useCurrentUser.tsx | Ne pas toucher |
+| Hook | Fichier |
+|---|---|
+| useCatalog | src/hooks/useCatalog.ts |
+| useCatalogSearch | src/hooks/useCatalogSearch.ts |
+| useQuoteDetail | src/hooks/useQuoteDetail.ts |
+| useSignQuote | src/hooks/useSignQuote.ts |
+| useCurrentUser | src/hooks/useCurrentUser.tsx |
 
 ---
 
@@ -82,16 +78,17 @@ INVARIANT 7  Ne jamais modifier : search_quote_items_v2,
 
 ## FICHIERS SENSIBLES
 
+Gros fichiers — toujours commencer par Plan Mode.
 Ne modifier que la fonction explicitement citée dans le ticket.
 
 ```
-src/pages/quotes/QuoteEditor.tsx      70Ko — Plan Mode obligatoire
-src/pages/Catalog.tsx                 700+ lignes — Plan Mode obligatoire
-src/hooks/useCatalog.ts               modifier uniquement la fonction citée
-src/hooks/useSignQuote.ts             NE PAS TOUCHER
-src/components/ApplianceSearchTab.tsx NE PAS TOUCHER
-src/hooks/useCatalogSearch.ts         NE PAS TOUCHER
-                                      (accepte déjà activeSuppliers en param)
+QuoteEditor.tsx               gros fichier — Plan Mode obligatoire
+Catalog.tsx                   gros fichier — Plan Mode obligatoire
+useCatalog.ts                 modifier uniquement la fonction citée
+useSignQuote.ts               modifier uniquement si ticket l'exige
+ApplianceSearchTab.tsx        modifier uniquement si ticket l'exige
+useCatalogSearch.ts           modifier uniquement si ticket l'exige
+                              (accepte déjà activeSuppliers en param)
 ```
 
 ---
@@ -120,6 +117,12 @@ Fournisseurs visibles
 
 Colonne cost_price
   = toujours NULL — ne jamais afficher (INVARIANT 2)
+
+Modification locale
+  Toujours privilégier une modification locale
+  plutôt qu'un refactoring global.
+  Si une correction peut se faire dans une seule fonction :
+  ne pas toucher au reste du fichier.
 ```
 
 ---
@@ -150,8 +153,21 @@ Exemple : bouton "Importer un catalogue" → admin uniquement.
 ❌ localStorage ou sessionStorage
 ❌ Introduire un formulaire complexe sans instruction explicite dans le ticket
 ❌ Afficher cost_price (toujours NULL)
-❌ Implémenter sur QuoteEditor.tsx sans Plan Mode préalable
-❌ Implémenter sur Catalog.tsx sans Plan Mode préalable
+❌ Implémenter sur un gros fichier sans Plan Mode préalable
+```
+
+---
+
+## CHECKLIST AVANT DE CODER
+
+```
+1. Lire le ticket complètement
+2. Vérifier ce Knowledge File
+3. Plan Mode si gros fichier (QuoteEditor, Catalog)
+4. Modifier le minimum nécessaire
+5. Ne pas toucher ce qui n'est pas dans le ticket
+6. Valider sur le compte de test
+7. Commit
 ```
 
 ---
@@ -176,5 +192,5 @@ Do not touch:
 - [fichier ou fonction B]
 
 Validation:
-[Test sur compte Rita — action → résultat attendu]
+[Test manuel — action → résultat attendu]
 ```

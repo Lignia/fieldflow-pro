@@ -99,14 +99,27 @@ src/hooks/useCatalogSearch.ts         NE PAS TOUCHER
 ## RÈGLES MÉTIER
 
 ```
-TVA appareils (poêles, inserts)  = 5.5%
-TVA fumisterie rénovation        = 10%
-TVA neuf / main d'œuvre         = 20%
+TVA
+  Respecter le vat_rate déjà porté par l'article ou la ligne.
+  Ne jamais inférer un taux de TVA sauf instruction explicite dans le ticket.
+  Cas connu à corriger : addAppliance() dans QuoteEditor.tsx
+  hardcode encore vat_rate: 20 au lieu de 5.5 — ticket BUG-01 en cours.
 
-Suppression article catalogue    = is_active=false (jamais DELETE physique)
-Devis signé                      = immuable (INVARIANT 4)
-Fournisseurs visibles            = ceux actifs dans tenant_suppliers seulement
-Colonne cost_price               = toujours NULL — ne jamais afficher
+Suppression article catalogue
+  = is_active=false (jamais DELETE physique)
+
+Devis signé
+  = immuable (INVARIANT 4)
+
+Fournisseurs visibles
+  Objectif en cours : utiliser tenant_suppliers pour filtrer
+  la recherche catalogue et devis.
+  À ce jour, tenant_suppliers existe et est peuplée,
+  mais le front ne la lit pas encore partout.
+  Ne pas considérer ce filtre comme actif sauf si le ticket le précise.
+
+Colonne cost_price
+  = toujours NULL — ne jamais afficher (INVARIANT 2)
 ```
 
 ---
@@ -135,7 +148,7 @@ Exemple : bouton "Importer un catalogue" → admin uniquement.
 ❌ DELETE physique sur catalog_items → utiliser is_active=false
 ❌ Hardcoder des couleurs hex
 ❌ localStorage ou sessionStorage
-❌ Balise <form> HTML native
+❌ Introduire un formulaire complexe sans instruction explicite dans le ticket
 ❌ Afficher cost_price (toujours NULL)
 ❌ Implémenter sur QuoteEditor.tsx sans Plan Mode préalable
 ❌ Implémenter sur Catalog.tsx sans Plan Mode préalable

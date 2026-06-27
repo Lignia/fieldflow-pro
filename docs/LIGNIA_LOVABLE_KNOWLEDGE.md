@@ -6,6 +6,37 @@
 
 ---
 
+## MODÈLE PRODUIT — SAAS MULTI-TENANT
+
+LIGNIA est une plateforme SaaS B2B vendue en abonnement à des centaines d'artisans.
+Chaque décision d'interface doit fonctionner pour 500 entreprises différentes,
+pas seulement pour l'artisan en cours de test.
+
+Chaque artisan (ou entreprise) = un tenant distinct et isolé.
+Un écran doit être compris et utilisable par un artisan non informatique en moins de 30 secondes.
+Chaque clic économisé est multiplié par des milliers d'utilisateurs.
+Si une fonctionnalité demande une explication, elle est probablement mal conçue.
+Toujours préférer une configuration unique qui bénéficie à toute l'équipe
+plutôt qu'une option répétée à chaque devis.
+
+Catalogue central (géré par LIGNIA éditeur) :
+  Partagé entre tous les tenants en lecture.
+  Seul LIGNIA peut l'importer ou le modifier.
+  is_central = true, tenant_id = NULL.
+
+Catalogue privé (géré par chaque tenant) :
+  Articles créés par l'artisan lui-même.
+  is_central = false, tenant_id = UUID du tenant.
+
+Isolation des données :
+  Ne jamais coder en dur un tenant_id.
+  Utiliser uniquement le tenantId du user courant via useCurrentUser().
+  Quand une table ou une RPC exige tenant_id, utiliser ce tenantId courant.
+  Ne jamais utiliser un UUID de test copié depuis Supabase.
+  La RLS reste la barrière de sécurité principale — ne jamais la contourner.
+
+---
+
 ## PROJET
 
 LIGNIA est un CRM B2B pour artisans bois énergie.
@@ -154,6 +185,7 @@ Exemple : bouton "Importer un catalogue" → admin uniquement.
 ❌ Introduire un formulaire complexe sans instruction explicite dans le ticket
 ❌ Afficher cost_price (toujours NULL)
 ❌ Implémenter sur un gros fichier sans Plan Mode préalable
+❌ Coder en dur un tenant_id ou un UUID arbitraire
 ```
 
 ---

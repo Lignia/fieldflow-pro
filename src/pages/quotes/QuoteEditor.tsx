@@ -922,7 +922,7 @@ export default function QuoteEditor() {
       qty: 1,
       unit: "u",
       unit_price_ht: 0,           // prix à renseigner manuellement
-      vat_rate: 20,               // TVA par défaut — à ajuster
+      vat_rate: 5.5,              // TVA par défaut — à ajuster
       sort_order: rows.length,
       line_category: "device",    // catégorie automatique
       unit_cost_price: null,

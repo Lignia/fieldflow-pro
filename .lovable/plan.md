@@ -1,30 +1,19 @@
+Patch chirurgical dans `src/pages/quotes/QuoteEditor.tsx`.
 
+Modification
+- Ligne 925 dans `addAppliance()` : `vat_rate: 20` -> `vat_rate: 5.5`.
 
-## Plan : Ajouter des console.log de debug dans useCreateQuote.ts
+Raison
+- 5.5% est le taux par defaut pour un appareil en renovation (logement > 2 ans).
+- L'artisan peut modifier manuellement la ligne de devis si le cas est neuf ou non eligible.
+- Aucune logique conditionnelle n'est ajoutee : seul la valeur par defaut change.
 
-### Objectif
-Identifier précisément quelle requête Supabase retourne une erreur 400 lors de la création d'un devis.
+Non-impact
+- `vat_rate` reste editable dans l'interface de ligne de devis.
+- Aucune autre fonction n'est modifiee (`addItem`, `handleSave`, gardes, etc.).
+- Aucune modification de type ni d'import : `vat_rate` accepte deja 5.5, 10 et 20.
 
-### Modifications (fichier unique : `src/hooks/useCreateQuote.ts`)
-
-**1. Après la requête `v_projects_with_customer` (ligne 77)** — ajouter :
-```ts
-console.log('PROJ:', { data: proj, error: projErr });
-```
-
-**2. Après la requête `quotes.insert` (ligne 97)** — ajouter :
-```ts
-console.log('QUOTE:', { data: newQuote, error: quoteErr });
-```
-
-**3. Dans `addLine`, après la requête `quote_lines.insert` (ligne ~130)** — ajouter :
-```ts
-console.log('LINE:', { error: err });
-```
-
-### Aucune logique modifiée
-Uniquement 3 lignes `console.log` ajoutées. Aucun autre fichier touché.
-
-### Étape suivante
-Après implémentation, ouvrir la preview, créer un devis, et lire les console logs pour identifier l'erreur exacte.
-
+Validation
+- Compilation TypeScript de `QuoteEditor.tsx`.
+- Test manuel : ajouter un appareil -> la TVA par defaut affichee est 5.5%.
+- Verifier que l'artisan peut toujours passer la ligne a 20% via l'UI.

@@ -7,11 +7,12 @@ export interface SubmitButtonProps {
   className?: string;
   onClick?: () => void;
   type?: "submit" | "button";
+  disabled?: boolean;
 }
 
-export function SubmitButton({ loading, children, className, onClick, type = "submit" }: SubmitButtonProps) {
+export function SubmitButton({ loading, children, className, onClick, type = "submit", disabled = false }: SubmitButtonProps) {
   return (
-    <Button type={type} className={className ?? "w-full"} disabled={loading} onClick={onClick}>
+    <Button type={type} className={className ?? "w-full"} disabled={disabled || loading} onClick={onClick}>
       {loading && <Loader2 className="animate-spin" />}
       {children}
     </Button>

@@ -11,9 +11,69 @@
 > + User Stories V3 + DECISION_LOG D-01→D-32
 >
 > Auteur : Claude Analytics — 28 juin 2026
-> Version : 1.1 — Ajout hypothèses explicites, niveaux de confiance, impacts transverses
+> Version : 1.2 — Ajout vision IA plateforme métier + règle produit 15-30 min
 > Propriétaire : Thomas
 > Ne pas modifier sans GO Thomas
+
+---
+
+## VISION FONDATRICE
+
+> LIGNIA n'est pas un CRM auquel on ajoute de l'IA.
+> C'est une plateforme métier dont toutes les données sont structurées
+> pour permettre à l'IA d'apporter une vraie valeur.
+
+La différence est fondamentale.
+
+Dans le premier cas : on ajoute ChatGPT qui génère du texte générique.
+
+Dans le second : on construit une architecture où l'IA devient progressivement
+le meilleur compagnon de l'artisan — parce qu'elle opère sur des données métier
+réelles, structurées, vérifiées.
+
+**Ce que ça signifie concrètement pour LIGNIA :**
+
+L'IA de LIGNIA n'est pas de la génération de texte.
+C'est de la recherche technique assistée par IA.
+
+Quand un artisan dit "un coude Apollo concentrique 150 noir" :
+```
+Voix
+↓
+Transcription (Whisper)
+↓
+Extraction métier (diamètre, angle, technologie, finition)
+↓
+search_quote_items_v2
+↓
+article exact dans le catalogue réel
+↓
+ajout au devis avec prix remisé
+```
+
+Ce moteur existe déjà. `search_quote_items_v2` gère le ranking sémantique,
+les synonymes fumisterie ("chapeau chinois" → terminal), les diamètres, les angles,
+les finitions. L'IA vocale est une couche de transcription au-dessus d'un moteur
+métier déjà opérationnel.
+
+---
+
+## RÈGLE PRODUIT IA — NON NÉGOCIABLE
+
+> Aucune fonctionnalité IA ne part en développement tant qu'elle
+> n'économise pas au moins 15 à 30 minutes sur une tâche réelle
+> d'un artisan réel.
+
+> Aucune fonctionnalité "classique" n'est développée si elle ne sera
+> pas ensuite exploitable par l'IA.
+
+Ces deux règles forcent le produit et l'IA à avancer ensemble :
+- Le produit reste utilisable sans IA.
+- L'architecture prépare l'IA dès aujourd'hui.
+- L'IA n'est jamais un gadget — elle est toujours au service d'un parcours métier déjà éprouvé.
+
+**La roadmap IA n'est pas dictée par un calendrier.
+Elle est dictée par la valeur observée chez les artisans pilotes.**
 
 ---
 
@@ -126,7 +186,7 @@ Import local à la demande. Quand un artisan utilise un article pour la premièr
 |---|---|
 | Devis (maintenant) | ✓ Recherche fulltext sur 22 796 articles, résultats filtrés par fournisseurs actifs |
 | BDC V2 | ◈ La `supplier_ref` doit être brute pour que le fournisseur la reconnaisse — problème avec préfixes `POU_` actuels |
-| IA V3 | ◈ Le catalogue central est la base d'entraînement pour `quote_suggest` — plus il est propre et cohérent, meilleure sera l'IA |
+| IA — quand le socle le permet | ◈ Le catalogue central est la base d'entraînement pour `quote_suggest` — plus il est propre et cohérent, meilleure sera l'IA |
 | 500 tenants | ◈ Performance de `search_quote_items_v2` à tester avec N tenants simultanés — index PostgreSQL à surveiller |
 | Marketplace future | ◈ Un catalogue central ouvre la possibilité d'une marketplace où Poujoulat publie directement ses nouveaux produits |
 
@@ -188,7 +248,7 @@ Export comptable → marge réelle par affaire
 | Pilote V1 | ⚑ Si un artisan a des remises complexes, le modèle 2 niveaux bloque |
 | Export Pennylane V2 | ◈ Le prix de revient net (`unit_cost_price`) doit être exporté pour le calcul de marge réelle |
 | 500 tenants | ◈ Chaque tenant a ses remises — `tenant_supplier_discounts` isolé par RLS ✓ |
-| IA V3 | ◈ L'IA pourrait suggérer des remises optimales basées sur l'historique des marges |
+| IA — quand le socle le permet | ◈ L'IA pourrait suggérer des remises optimales basées sur l'historique des marges |
 
 ### Critères de validation pilote
 
@@ -242,7 +302,7 @@ Mise à jour prix composant → bundle périmé ?
 |---|---|
 | BDC V2 | ◈ Pour commander les articles d'un bundle, il faudra retrouver les composants — LIGNIA devra stocker `bundle_lines` JSONB |
 | Catalogue fournisseur | ◈ Si Poujoulat sort une nouvelle version d'un conduit, le bundle "Raccordement granulés" ne le signale pas |
-| IA V3 | ◈ L'IA pourrait suggérer des bundles basés sur l'historique des devis précédents |
+| IA — quand le socle le permet | ◈ L'IA pourrait suggérer des bundles basés sur l'historique des devis précédents |
 
 ### Critères de validation pilote
 
@@ -282,13 +342,14 @@ Facture → export comptable → Pennylane
 ### Décision LIGNIA
 
 ✓ Fonctionnel : sections, sous-totaux, signature, PDF, lignes libres, remises.
-✓ Manquent (prouvés absents) : date expiration, envoi email, tva_context, SIRET client.
+✓ `expiry_date` ET `tva_context` existent dans `billing.quotes` — prouvé Supabase (97 devis tous remplis).
+✓ Manque UX : expiry_date non exposée dans l'interface. tva_context non exposé dans l'interface.
 
 ◈ Hypothèse : les artisans bois énergie solo ou petites structures n'ont pas besoin de la richesse OpenFire pour commencer.
 
-### Verdict : EN RETARD sur les obligations légales (✓ faits), CORRECT sur la simplification (◈ hypothèse)
+### Verdict : CORRECT sur la simplification (◈), EXPOSER ce qui existe déjà (✓)
 
-✓ Fait légal : un devis sans date de validité n'a pas de valeur contractuelle en France (Art. L.441-1 Code de commerce). Ce n'est pas une fonctionnalité optionnelle — c'est une obligation.
+✓ Fait : `expiry_date` et `tva_context` existent en base et sont remplis sur 97/97 devis. Ce ne sont pas des features à créer — ce sont des champs à exposer dans l'UI.
 
 ◈ Hypothèse : les fonctionnalités avancées d'OpenFire (Kanban, étapes, listes de prix par client) ne sont pas nécessaires pour des structures de 1-3 personnes.
 
@@ -298,16 +359,13 @@ Facture → export comptable → Pennylane
 
 | Horizon | Impact |
 |---|---|
-| Légal maintenant | ✓ `expires_at` absent = devis sans valeur contractuelle — correction V1.5 |
 | Pennylane V2 | ◈ Le devis doit porter `tva_context` avant l'export pour que les taux soient corrects |
 | Factur-X V3 | ◈ La position fiscale du devis doit se retrouver dans la facture puis dans le XML Factur-X |
-| IA V3 | ◈ L'IA pourrait suggérer la date d'expiration optimale selon le type de projet |
-| Multi-vendeurs V3 | ◈ Si LIGNIA cible des showrooms avec plusieurs vendeurs, les étapes Kanban deviennent nécessaires |
+| IA — quand le socle le permet | ◈ L'IA pourrait pré-remplir `tva_context` depuis les données de la visite technique |
 
 ### Critères de validation pilote
 
 - Les artisans envoient-ils le PDF manuellement depuis leur messagerie ou demandent-ils l'envoi depuis LIGNIA ?
-- Un client a-t-il signalé un problème lié à l'absence de date de validité ?
 - Les artisans utilisent-ils la fonctionnalité de signature électronique ?
 
 ---
@@ -422,7 +480,7 @@ Factur-X XML → Chorus Pro (2027)
 | Pennylane V2 | ◈ Format d'export CSV normalisé à définir avec Pennylane |
 | Sage/Evoliz V2 | ◈ Formats différents par logiciel comptable — abstraction nécessaire |
 | Chorus Pro V3 | ✓ Obligation légale 2027 PME — colonnes anticipées en base (`facturx_xml`) |
-| SIRET V2 | ✓ Champ `immat_number` absent de `core.customers` — obligatoire Factur-X |
+| SIRET V2 | ✓ Champ `siret` existe dans `core.customers` — à exposer dans l'UI |
 
 ### Critères de validation pilote
 
@@ -482,8 +540,7 @@ Installation planifiée
 | V2 | ◈ BDC automatique depuis devis signé = argument de vente fort |
 | supplier_ref | ✓ Préfixes existants = blocage technique — décision Thomas requise |
 | Drop shipping | ◈ Poujoulat livre chez le client final — `delivery_address` = adresse installation |
-| IA V3 | ◈ L'IA pourrait regrouper automatiquement les articles par fournisseur et optimiser la commande |
-| Évolution fournisseurs | ◈ Chaque nouveau fournisseur demande une configuration de connecteur spécifique |
+| IA — quand le socle le permet | ◈ L'IA pourrait regrouper automatiquement les articles par fournisseur et optimiser la commande |
 
 ### Critères de validation pilote
 
@@ -535,7 +592,7 @@ Confirmation commande → log dans supplier_order_logs
 | V2 | ◈ Push email Poujoulat = première intégration |
 | supplier_ref | ✓ Préfixes = blocage — DECISION_LOG D-33 requis |
 | Partenariat Poujoulat | ◈ Contact commercial nécessaire pour les spécifications d'API |
-| IA V3 | ◈ L'IA pourrait envoyer automatiquement la commande après validation artisan |
+| IA — quand le socle le permet | ◈ L'IA pourrait envoyer automatiquement la commande après validation artisan |
 
 ---
 
@@ -590,7 +647,7 @@ Prochaine DI créée automatiquement
 |---|---|
 | Pilote | ⚑ Bloquant si pilote inclut un ramoneur |
 | V2 | ✓ Module contrats = priorité haute pour le segment ramonage |
-| IA V3 | ◈ Cas d'usage parfait pour une IA prédictive : "Luc, tes 200 interventions de ramonage sont à planifier en octobre-novembre selon l'historique. Voici un planning optimisé par géolocalisation." |
+| IA — quand le socle le permet | ◈ Cas d'usage parfait : "Luc, tes 200 interventions de ramonage sont à planifier en octobre-novembre selon l'historique. Voici un planning optimisé par géolocalisation." Valide la règle 15-30 min — c'est 2h/semaine économisées. |
 | Cash flow | ◈ La facturation récurrente automatique améliore la prévisibilité du CA |
 
 ### Critères de validation pilote
@@ -640,7 +697,7 @@ Facture solde générée
 |---|---|
 | V1 pilote | ⚑ Volume SAV des artisans pilotes à mesurer |
 | V2 | ◈ Bouton "Créer devis depuis SAV" = transition critique |
-| IA V3 | ◈ L'IA pourrait suggérer un diagnostic basé sur l'historique de l'installation (type de panne, âge de l'appareil) |
+| IA — quand le socle le permet | ◈ L'IA pourrait suggérer un diagnostic basé sur l'historique de l'installation. Valide la règle 15-30 min si Amélie passe 20 min à identifier la panne manuellement. |
 
 ### Critères de validation pilote
 
@@ -678,7 +735,7 @@ Yohan (poseur) termine une mise en service. Il doit valider l'installation, fair
 | Pilote | ⚑ À mesurer : utilisation terrain vs bureau |
 | V2 | ◈ PWA (Progressive Web App) = compromis raisonnable sans développement natif |
 | V3 | ◈ Application native si > 100 artisans actifs avec usage terrain confirmé |
-| IA V3 | ◈ "Ce logement date de 1987" → IA suggère TVA 5.5% automatiquement |
+| IA — quand le socle le permet | ◈ "Ce logement date de 1987" → IA suggère TVA 5.5% automatiquement. Valide la règle 15-30 min si l'artisan cherche le bon taux manuellement sur chaque chantier. |
 
 ### Critères de validation pilote
 
@@ -718,6 +775,7 @@ Factur-X 2027 (codes TVA normalisés : S, AE, Z)
 ### Décision LIGNIA
 
 ✓ TVA portée par l'article dans `catalog_items.vat_rate` — prouvé Supabase.
+✓ `tva_context = 'renovation_15ans'` sur 97/97 devis en base — prouvé Supabase.
 ✓ 16 529 articles Poujoulat à `vat_rate=20` alors que doctrine D-25 dit 5.5% pour fumisterie rénovation — prouvé Supabase. Migration non validée par Thomas.
 ✓ BUG-01 corrigé pour `addAppliance()` (5.5% au lieu de 20%) — prouvé commit 613122a.
 ◈ Hypothèse : `tva_context` au niveau projet + taux par défaut dans l'article = solution optimale.
@@ -726,6 +784,8 @@ Factur-X 2027 (codes TVA normalisés : S, AE, Z)
 
 ✓ Fait : la TVA dépend du contexte chantier, pas uniquement du produit (OpenFire a raison sur ce point).
 ✓ Fait : 16 529 articles Poujoulat avec vat_rate incorrect — migration décision Thomas.
+✓ `tva_context` existe en base et est utilisé (97 devis). L'UI ne l'expose pas encore.
+
 ◈ Hypothèse de conception : "taux suggéré dans l'article + tva_context au niveau projet = le meilleur compromis entre simplicité et exactitude."
 
 ### Conséquences à long terme
@@ -772,7 +832,7 @@ Amélie doit coordonner Yohan et Felicien sur 8 chantiers cette semaine. Elle a 
 | Pilote | ⚑ Bloquant pour les structures avec 2+ techniciens |
 | V2 | ◈ Vue semaine par technicien = minimum viable |
 | V3 | ◈ Optimisation tournées + géolocalisation |
-| IA V3 | ◈ Suggestion automatique du technicien selon compétences et localisation |
+| IA — quand le socle le permet | ◈ Suggestion automatique du technicien selon compétences et localisation |
 
 ### Critères de validation pilote
 
@@ -783,7 +843,7 @@ Amélie doit coordonner Yohan et Felicien sur 8 chantiers cette semaine. Elle a 
 
 ## 14. MATRICE D'IMPACT TRANSVERSE À LONG TERME
 
-Pour chaque décision majeure, les conséquences en 2028-2029 quand LIGNIA aura 500 tenants, une IA opérationnelle et des connecteurs comptables actifs.
+Pour chaque décision majeure, les conséquences quand LIGNIA aura 500 tenants, une IA opérationnelle et des connecteurs comptables actifs.
 
 | Décision | Impact IA | Impact Facturation/Compta | Impact Fournisseurs | Impact Scalabilité |
 |---|---|---|---|---|
@@ -819,7 +879,7 @@ Pour chaque décision majeure, les conséquences en 2028-2029 quand LIGNIA aura 
 | Import local à la demande | Catalogue central avec alerte "tarif mis à jour" | ◈ Si la performance tient à 500 tenants |
 | Push panier vers site fournisseur | Push email automatique puis API directe | ✓ Après résolution des préfixes supplier_ref |
 | Bundle = composants liés | Bundle + composants JSONB pour BDC | ◈ Quand les BDC seront implémentés |
-| Modification TVA manuelle | Suggestion IA basée sur visite technique | ◈ Quand l'IA V3 sera opérationnelle |
+| Modification TVA manuelle | Suggestion IA basée sur visite technique | ◈ Quand l'IA aura validé la règle 15-30 min |
 | Contrat maintenance manuel | DI automatiques + planning optimisé | ◈ V2 — segment ramonage |
 
 ### DÉCISIONS À ABANDONNER — définitives
@@ -840,6 +900,7 @@ Pour chaque décision majeure, les conséquences en 2028-2029 quand LIGNIA aura 
 | DTU compliance (ENUM `dtu_result`) | ✓ Prouvé en base | Conformité EN13384 automatique |
 | Traçabilité `heating_appliance_id` → installation | ◈ Colonne présente, UI absente | Garanties auto-calculées |
 | Doctrine TVA D-25 par famille | ✓ Document + code | Seul logiciel avec TVA 5.5% fumisterie par défaut |
+| search_quote_items_v2 avec ranking sémantique | ✓ Moteur prouvé, actif | Base de l'IA vocale — déjà opérationnel |
 
 ---
 
@@ -849,9 +910,9 @@ Ces éléments ne sont pas des fonctionnalités — ce sont des obligations lég
 
 | Obligation | Source légale | Statut LIGNIA | Priorité |
 |---|---|---|---|
-| Date de validité du devis | Art. L.441-1 Code de commerce | ✓ ABSENT — `expires_at` manquant | **V1 — bloquant légal** |
+| Date de validité du devis | Art. L.441-1 Code de commerce | ✓ `expiry_date` existe en base, non exposé dans UI | **Exposer dans l'UI** |
 | Numérotation séquentielle sans trou | Art. 242 nonies A CGI | ✓ Trigger `t2_set_invoice_number` actif | ✅ Couvert |
-| SIRET sur la facture | Art. 242 nonies A CGI | ✓ `immat_number` absent de `core.customers` | V2 |
+| SIRET sur la facture | Art. 242 nonies A CGI | ✓ `siret` existe dans `core.customers`, non exposé | Exposer dans l'UI |
 | Mentions TVA par taux sur facture | Art. 289 CGI | ⚠️ Partiellement — UI incomplète | V2 |
 | Impossibilité d'antidater une facture | Art. 289 CGI | ✓ Garde-fou ABSENT | V2 |
 | Attestation TVA réduite (>300€ TTC) | BOI-TVA-LIQ-30-20-90-20 | ✓ ABSENTE | V2 |
@@ -859,8 +920,9 @@ Ces éléments ne sont pas des fonctionnalités — ce sont des obligations lég
 
 ---
 
-*LIGNIA DESIGN DOCTRINE — v1.1*
+*LIGNIA DESIGN DOCTRINE — v1.2*
 *28 juin 2026 — Claude Analytics*
-*Correction OpenAI : hypothèses explicites + niveaux de confiance + impacts transverses*
+*v1.1 : hypothèses explicites + niveaux de confiance + impacts transverses (corrections OpenAI)*
+*v1.2 : vision IA plateforme métier + règle produit 15-30 min (OpenAI) + corrections factuelles (expiry_date, tva_context, siret existent déjà)*
 *Sources : OpenFire 10 pages + GitHub + Supabase + D-25 + USER_STORIES_V3*
 *Prochain enrichissement : après retours pilote 5 artisans*

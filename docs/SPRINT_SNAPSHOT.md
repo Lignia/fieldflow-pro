@@ -1,14 +1,27 @@
 # LIGNIA SPRINT SNAPSHOT
 
-> Ce document est la photo officielle du produit à un instant T.
-> Il ne résume pas les conversations. Il décrit l'état du produit.
-> Il est mis à jour par Claude Analytics à la fin de chaque sprint, validé par Thomas.
-> Il est le premier document injecté dans toute nouvelle conversation IA.
+> Photo officielle du produit à un instant T.
+> Ne résume pas les conversations. Décrit l'état du produit.
+> Mis à jour par Claude Analytics à la fin de chaque sprint, validé par Thomas.
+> Premier document injecté dans toute nouvelle conversation IA.
 >
-> Version : Sprint 0 — Fin de phase Exploration
+> Version : Sprint 0 — Fin de phase Exploration / Fondation
 > Date : 28 juin 2026
-> SHA GitHub : 14e6a88
+> SHA GitHub : 3d5ceda (LIGNIA_PRODUCT_MAP)
 > Validé par : Thomas
+
+---
+
+## DÉMARRAGE NOUVELLE CONVERSATION — 3 ÉTAPES
+
+```
+1. Lire ce document                    → 3 minutes
+2. Lire LIGNIA_OPERATING_MODEL.md      → 2 minutes
+3. Confirmer à Thomas : "Prêt. Prochain objectif : BUG-04 PDF facture."
+```
+
+**Ne pas refaire :** audits documentaires, benchmark OpenFire, discussions de gouvernance.
+**Si un sujet inconnu surgit :** chercher dans DECISION_LOG, puis DESIGN_DOCTRINE, puis demander à Thomas.
 
 ---
 
@@ -20,76 +33,81 @@ Stack        : React + TypeScript + Vite (Lovable) ↔ Supabase PostgreSQL
 Repo         : Lignia/fieldflow-pro
 Supabase     : hejxvqghsyaauwzkfikg
 Schémas DB   : catalog / billing / core / operations / ai
-Phase        : Entrée en construction (pilote 5 artisans)
+Phase        : Sprint 1 — Construction produit
 ```
 
 ---
 
-## 2. ÉTAT RÉEL DU PRODUIT — 28 JUIN 2026
-
-### Base de données (chiffres vérifiés Supabase)
+## 2. ÉTAT RÉEL DU PRODUIT — 28 JUIN 2026 (vérifié Supabase)
 
 ```
 Catalogue central    : 22 796 articles (is_central=true)
 Fournisseurs         : 4 (Poujoulat 16 529, Joncoux 6 093, KEMP 166, LIGNIA 8)
 Tenants actifs       : 7
-Fournisseurs actifs  : 14 (Poujoulat + Joncoux actifs sur 7 tenants)
-Clients              : 26
-Projets              : 16
-Devis                : 97
+Clients              : 26 (0 avec SIRET renseigné — colonne existe, UI absente)
+Projets              : 16 (statuts : lead_qualified 5, estimate_sent 4, signed 3...)
+Devis                : 97 (tous avec expiry_date ✓, tous avec tva_context='renovation_15ans' ✓)
 Lignes de devis      : 107
 Factures             : 3 (toutes deposit, toutes draft)
-Installations        : 3 (toutes draft)
+Installations        : 3
 ```
 
-### Ce qui fonctionne (prouvé par le code et la base)
+### Ce qui fonctionne (prouvé code + base)
 
 ```
-✓ Authentification multi-tenant avec RLS
-✓ Catalogue central searchable via search_quote_items_v2
+✓ Auth multi-tenant RLS
+✓ Catalogue central + search_quote_items_v2 (ranking sémantique actif)
+✓ family_search_profiles (34 lignes, boost_score par gamme)
+✓ search_synonyms (57 lignes, jargon fumisterie)
 ✓ QuoteEditor : sections, lignes, remises, signature, PDF devis
+✓ expiry_date : 97/97 devis remplis (champ actif, à exposer dans UI)
+✓ tva_context : 97/97 devis à 'renovation_15ans' (champ actif, à exposer UI)
 ✓ Acompte automatique à la signature (sign_quote_and_initialize)
-✓ Numérotation automatique devis et factures (triggers actifs)
+✓ Numérotation automatique devis + factures (triggers actifs)
 ✓ Remises fournisseurs par famille (SupplierDiscounts.tsx)
-✓ Resolve_item_price (calcul prix net automatique)
-✓ SAV : ServiceRequestCreate + ServiceRequestDetail (52Ko fonctionnel)
-✓ Interventions : création et détail (8 types dont technical_survey)
-✓ Parc installé : core.installations avec vue v_installations_with_customer
-✓ Bundles/ouvrages : save_lines_as_bundle branché dans QuoteEditor
-✓ Appareils ADEME : 1 516 références Flamme Verte dans heating_appliances
-✓ TVA appareils : addAppliance() corrigée à 5.5% (commit 613122a)
+✓ resolve_item_price (calcul prix net automatique)
+✓ SAV : ServiceRequestCreate + ServiceRequestDetail (52Ko)
+✓ Interventions : création + détail (8 types)
+✓ Parc installé : core.installations
+✓ Bundles : save_lines_as_bundle branché dans QuoteEditor
+✓ Appareils ADEME : 1 516 références Flamme Verte
+✓ TVA appareils : addAppliance() à 5.5% (commit 613122a)
+✓ Pipeline projet : 17 statuts (lead_new → closed), utilisé en base
+✓ siret dans core.customers : colonne existe, UI ne l'expose pas
+✓ Onboarding : OnboardingCompanyPage.tsx (20Ko) fonctionnel
 ```
 
 ### Ce qui est absent ou cassé (prouvé)
 
 ```
-❌ PDF facture : bouton disabled (BUG-04 — bloquant pilote)
-❌ Planning : Planning.tsx = 679 octets, stub vide
-❌ Contacts multiples par client : table customer_contacts absente
-❌ Date expiration devis : expires_at absent de billing.quotes
-❌ Envoi email devis/facture depuis l'app
-❌ Commande fournisseur : tables présentes, 0 ligne, 0 front
-❌ Facture solde avec déduction acompte (parent_invoice_id jamais rempli)
-❌ Export comptable (Pennylane, Sage, FEC)
-❌ Contrats de maintenance : colonnes présentes, 0 logique
+❌ PDF facture : bouton disabled — BUG-04 PRIORITÉ 1
+❌ Planning : Planning.tsx = stub vide (679 octets)
+❌ Commande fournisseur : tables prêtes, 0 front, 0 ligne
+❌ Facture solde : parent_invoice_id jamais rempli
+❌ Export comptable Pennylane
+❌ Contrats maintenance : colonnes présentes, 0 logique
 ❌ Cerfa 15497 ramonage
-⚠️ TVA Poujoulat : 16 529 articles à 20% au lieu de 5.5% (migration en attente GO Thomas)
-⚠️ supplier_ref Poujoulat et KEMP préfixés (POU_, KEMP_) — bloquant BDC V2
-⚠️ catalog_domain documenté dans US mais absent de la base
+❌ Bouton "Créer devis depuis SAV"
+⚠️ TVA Poujoulat : 16 529 articles à 20% (migration en attente GO Thomas)
+⚠️ supplier_ref préfixée POU_/KEMP_ (bloquant BDC V1)
+⚠️ Bibliothèque ouvrages (réinsertion bundle) : BUG-03
+⚠️ Archivage articles : BUG-02
 ```
 
 ---
 
 ## 3. DÉCISIONS ARCHITECTURALES FIGÉES
 
-Ces décisions ne sont plus discutables sans session explicite + entrée DECISION_LOG.
+Ne pas rediscuter sans session explicite + entrée DECISION_LOG.
 
 ```
-✓ Catalogue SaaS central (pas d'import local par tenant)
+✓ Catalogue SaaS central — pas d'import local par tenant
 ✓ Snapshot immuable quote_lines après signature (INVARIANT 4)
-✓ Séparation CRM / comptabilité (LIGNIA exporte, Pennylane comptabilise)
+✓ Séparation CRM / comptabilité — LIGNIA exporte, Pennylane comptabilise
 ✓ RLS Supabase = seule barrière de sécurité multi-tenant
-✓ search_quote_items_v2, resolve_item_price, replace_quote_lines = intouchables
+✓ search_quote_items_v2 — NE JAMAIS MODIFIER
+✓ resolve_item_price — NE JAMAIS MODIFIER
+✓ replace_quote_lines — NE JAMAIS MODIFIER
 ✓ cost_price = NULL absolu (INVARIANT 2)
 ✓ Acompte automatique à la signature
 ✓ Pas de comptabilité intégrée, pas de gestion de stock
@@ -98,126 +116,71 @@ Ces décisions ne sont plus discutables sans session explicite + entrée DECISIO
 
 ---
 
-## 4. DOCUMENTS ACTIFS — LISTE COMPLÈTE
+## 4. DOCUMENTS ACTIFS
 
-| Document | Rôle | Lire si... |
-|---|---|---|
-| `docs/SPRINT_SNAPSHOT.md` (ce fichier) | Photo du produit | Démarrage toute nouvelle conversation |
-| `docs/LIGNIA_OPERATING_MODEL.md` | Gouvernance et workflow | Question sur qui fait quoi |
-| `docs/RELEASE_BOARD.md` | Statuts tickets | Que fait-on aujourd'hui ? |
-| `docs/BACKLOG_PILOTE_5_ARTISANS.md` | Tickets détaillés | Avant d'envoyer un ticket Lovable |
-| `LIGNIA_ARCHITECTURE_LEDGER.md` (racine) | Schéma technique complet | Avant toute migration ou RPC |
-| `docs/LIGNIA_DESIGN_DOCTRINE.md` | Pourquoi LIGNIA est conçu ainsi | Avant une décision architecturale |
-| `docs/architecture/project/DECISION_LOG.md` | Journal des décisions | Pourquoi cette décision a été prise ? |
-| `docs/architecture/catalog/D-25_TVA_catalogue_doctrine.md` | Doctrine TVA | Avant tout devis ou migration TVA |
-| `docs/product/LIGNIA_USER_STORIES_V3.md` | Ce que le produit doit faire | Avant de spécifier une nouvelle US |
-| `docs/runtime/CRITICAL_FILES.md` | Fichiers protégés | Avant tout ticket Lovable |
-| `docs/runtime/IMPORT_RUNBOOK.md` | Import fournisseur | Avant un import catalogue |
-| `AGENTS.md` (racine) | Workspace Lovable | Lu automatiquement par Lovable |
-| `docs/LIGNIA_LOVABLE_KNOWLEDGE.md` | Project Knowledge Lovable | Collé dans Lovable Project Settings |
+| Document | Quand l'ouvrir |
+|---|---|
+| `docs/SPRINT_SNAPSHOT.md` (ce fichier) | Démarrage toute nouvelle conversation |
+| `docs/LIGNIA_OPERATING_MODEL.md` | Qui fait quoi, workflow, formats prompts |
+| `docs/LIGNIA_PRODUCT_MAP.md` | Quoi construire et dans quel ordre |
+| `docs/RELEASE_BOARD.md` | Statuts tickets du sprint courant |
+| `LIGNIA_ARCHITECTURE_LEDGER.md` | Avant toute migration ou RPC |
+| `docs/LIGNIA_DESIGN_DOCTRINE.md` | Avant une décision architecturale |
+| `docs/architecture/project/DECISION_LOG.md` | Pourquoi une décision a été prise |
+| `docs/architecture/catalog/D-25_TVA_catalogue_doctrine.md` | Avant tout sujet TVA |
+| `docs/product/LIGNIA_USER_STORIES_V3.md` | Avant de spécifier une nouvelle US |
+| `docs/runtime/CRITICAL_FILES.md` | Avant tout ticket Lovable |
+| `AGENTS.md` (racine) | Lu automatiquement par Lovable |
+| `docs/LIGNIA_LOVABLE_KNOWLEDGE.md` | Collé dans Lovable Project Settings |
 
-**Tout le reste est archive.** Ne pas injecter dans une nouvelle conversation.
+**Tout le reste est archive.**
 
 ---
 
-## 5. SPRINT EN COURS — PILOTE 5 ARTISANS
+## 5. SPRINT 1 — OBJECTIFS
 
-### Objectif du sprint
+### Epic Facturation (priorité absolue)
 
-Rendre LIGNIA utilisable par 5 artisans réels dans leurs vraies journées de travail.
+**Objectif utilisateur :** un artisan peut créer un acompte, générer son PDF, envoyer sa facture et encaisser — sans sortir de LIGNIA.
 
-### Tickets et statuts
+**Critères d'acceptation :**
+- [ ] PDF facture s'ouvre depuis InvoiceDetail (BUG-04)
+- [ ] Artisan peut créer une facture solde depuis un devis signé
+- [ ] Acompte déduit automatiquement dans la facture solde
+- [ ] Statut facture passe de draft → sent → paid
 
-| ID | Ticket | Statut | Bloque |
+**Tickets dans l'ordre :**
+
+| ID | Ticket | Exécutant | Statut |
 |---|---|---|---|
-| BUG-01 | TVA appareils 20% → 5.5% | ✅ DONE (commit 613122a) | — |
-| BUG-02 | Archivage articles (is_active=false) | ⬜ À faire | — |
-| BUG-03 | Bibliothèque ouvrages (réinsertion bundle) | ⬜ À faire | — |
-| BUG-04 | PDF facture (bouton disabled) | ⬜ **PRIORITÉ 1** | Pilote bloquant |
-| FEAT-05 | Bandeau fournisseurs actifs | ⬜ À faire | — |
-| FEAT-06 | Recherche filtrée par fournisseur | ⬜ À faire | — |
-| FEAT-07 | Bannière dashboard | ⬜ À faire | — |
-| FEAT-08 | Masquer bouton import (admin only) | ⬜ À faire | — |
-| FEAT-09 | Supprimer colonne Coût HT devis | ⬜ À faire | — |
-| SEC-10 | provision-tenant JWT | ⬜ À faire | Claude Exec |
-| SEC-11 | DROP tables staging | ⬜ À faire | Claude Exec |
-| DOCS-12 | Archiver 22 documents obsolètes | ⬜ À faire | Claude Exec |
-| TEST-13 | Test pilote artisans réels | ⬜ Après S1+S2 | Thomas |
-| AJUST-14 | Ajustements post-test | ⬜ Après TEST-13 | — |
-| US-C01 | Date expiration devis (légal) | ⬜ À faire | Lovable |
-
-### Prochaine action immédiate
-
-**BUG-04 — PDF facture.** Ticket Lovable prêt à envoyer.
-Thomas envoie le ticket. Claude Analytics vérifie le commit résultant.
+| BUG-01 | TVA appareils 20% → 5.5% | Lovable | ✅ DONE (commit 613122a) |
+| BUG-04 | PDF facture (bouton disabled) | Lovable | ⬜ **PRIORITÉ 1** |
+| BUG-02 | Archivage articles | Lovable | ⬜ |
+| BUG-03 | Bibliothèque ouvrages | Lovable | ⬜ |
+| US-C01 | Exposer expiry_date dans UI devis | Lovable | ⬜ |
+| SEC-10 | provision-tenant JWT | Claude Exec | ⬜ |
+| SEC-11 | DROP tables staging | Claude Exec | ⬜ |
 
 ---
 
-## 6. DÉCISIONS EN ATTENTE DE GO THOMAS
+## 6. DÉCISIONS EN ATTENTE GO THOMAS
 
-Ces sujets ont été analysés. Ils attendent une décision Thomas avant d'avancer.
-
-| Sujet | Analyse disponible | Décision requise |
-|---|---|---|
-| Migration TVA Poujoulat | Tableau famille-par-famille dans D-25 | Valider ou rejeter chaque famille |
-| supplier_ref préfixée (POU_, KEMP_) | Audit de gouvernance produit | Nettoyer ou mapper dans le connecteur |
-| catalog_domain | Absent de la base, documenté dans USER_STORIES | Créer la migration ou supprimer US-C07d |
-| Snapshot sans trigger SQL | Audit identifié — protection applicative seulement | Accepter ou créer le trigger |
+| Sujet | Impact si GO |
+|---|---|
+| Migration TVA Poujoulat (16 529 articles 20%→5.5%) | Devis fiscalement corrects |
+| Normalisation supplier_ref (supprimer POU_/KEMP_) | Débloque BDC V1 |
+| catalog_domain : créer colonne ou supprimer US-C07d | Cohérence US/base |
 
 ---
 
-## 7. CE QUE LA PROCHAINE CONVERSATION DOIT SAVOIR
+## 7. COMMENT METTRE À JOUR CE DOCUMENT
 
-### Pour démarrer en 5 minutes
-
-```
-1. Lire ce document (SPRINT_SNAPSHOT) — 3 minutes
-2. Lire RELEASE_BOARD.md — 1 minute
-3. Confirmer à Thomas : "Je suis prêt. Prochaine action : BUG-04."
-```
-
-### Ce qu'il ne faut pas refaire
-
-```
-✗ Relire les benchmarks OpenFire (doctrine gelée)
-✗ Refaire l'audit documentaire (stabilisé)
-✗ Rediscuter la gouvernance (figée dans OPERATING_MODEL)
-✗ Produire de nouveaux documents de réflexion
-✗ Chercher à comprendre toute la base de données dès le départ
-```
-
-### Ce qu'il faut faire si un sujet inconnu surgit
-
-```
-1. Chercher dans DECISION_LOG si la décision existe déjà
-2. Chercher dans DESIGN_DOCTRINE si c'est un choix architectural documenté
-3. Si introuvable → demander à Thomas si c'est nouveau ou oublié
-4. Si nouveau → analyser en 1 session max, décision Thomas, entrée DECISION_LOG
-```
+**Qui :** Claude Analytics, sur GO Thomas, fin de chaque sprint.
+**Chiffres :** toujours vérifiés par requête Supabase en temps réel.
+**Commit :** `docs(snapshot): Sprint N — [features livrées en 5 mots]`
 
 ---
 
-## 8. COMMENT METTRE À JOUR CE DOCUMENT
-
-**Qui :** Claude Analytics, sur GO Thomas, à la fin de chaque sprint.
-
-**Quand :** quand tous les tickets du sprint sont DONE ou reportés au sprint suivant.
-
-**Ce qui change à chaque mise à jour :**
-- Section 2 : chiffres Supabase (requête SQL)
-- Section 5 : statuts des tickets
-- Section 6 : décisions en attente
-
-**Ce qui ne change jamais sauf décision explicite :**
-- Section 1 : identité du projet
-- Section 3 : décisions architecturales figées
-- Section 4 : liste des documents actifs
-
-**Format du commit :**
-`docs(snapshot): Sprint N — [features livrées en 5 mots]`
-
----
-
-*LIGNIA SPRINT SNAPSHOT — v1.0*
-*28 juin 2026 — Fin de phase Exploration*
-*Préparé par Claude Analytics — Validé par Thomas*
+*LIGNIA SPRINT SNAPSHOT — v1.1*
+*28 juin 2026 — Corrections factuelles (expiry_date, tva_context, siret existent en base)*
+*Fin de phase Fondation. Sprint 1 démarre sur Epic Facturation.*
